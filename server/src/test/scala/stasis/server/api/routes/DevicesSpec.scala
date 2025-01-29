@@ -18,11 +18,17 @@ import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.core.commands.proto.Command
+import stasis.core.commands.proto.CommandParameters
+import stasis.core.commands.proto.CommandSource
+import stasis.core.commands.proto.LogoutUser
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.layers.telemetry.TelemetryContext
+import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore
+import stasis.server.persistence.devices.MockDeviceCommandStore
 import stasis.server.persistence.devices.MockDeviceKeyStore
 import stasis.server.persistence.devices.MockDeviceStore
 import stasis.server.persistence.nodes.ServerNodeStore
@@ -33,6 +39,7 @@ import stasis.server.security.ResourceProvider
 import stasis.server.security.mocks.MockResourceProvider
 import stasis.shared.api.requests._
 import stasis.shared.api.responses.CreatedDevice
+import stasis.shared.api.responses.DeletedCommand
 import stasis.shared.api.responses.DeletedDevice
 import stasis.shared.api.responses.DeletedDeviceKey
 import stasis.shared.model.devices.Device
@@ -44,7 +51,6 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-
   import stasis.shared.api.Formats._
 
   "Devices routes (full permissions)" should "respond with all devices" in withRetry {
@@ -249,7 +255,46 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
-  they should "respond with list of device keys" in withRetry {
+  they should "respond with commands for specific devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Get(s"/$device/commands") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]] should be(Seq(command.copy(sequenceId = 1)))
+    }
+  }
+
+  they should "create new commands for specific devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+
+    Post(s"/$device/commands").withEntity(LogoutUser(reason = Some("Test reason"))) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.deviceCommandStore
+        .view()
+        .list()
+        .map { result =>
+          result.toList match {
+            case message :: Nil =>
+              message.parameters should be(a[LogoutUser])
+              message.target should be(Some(device))
+
+            case other => fail(s"Unexpected result received: [$other]")
+          }
+        }
+    }
+  }
+
+  they should "respond with list of all device keys" in withRetry {
     val fixtures = new TestFixtures {}
 
     val device = devices.head.id
@@ -264,9 +309,104 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Future.sequence(devices.map(fixtures.deviceStore.manage().put)).await
     fixtures.deviceKeyStore.manageSelf().put(Seq(device), deviceKey).await
 
-    Get(s"/keys") ~> fixtures.routes ~> check {
+    Get("/keys") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DeviceKey]] should be(Seq(deviceKey.copy(value = ByteString.empty)))
+    }
+  }
+
+  they should "respond with list of all device commands" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    Future.sequence(devices.map(fixtures.deviceStore.manage().put)).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Get("/commands") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]] should be(Seq(command.copy(sequenceId = 1)))
+    }
+  }
+
+  they should "create new commands without a specific device" in withRetry {
+
+    val fixtures = new TestFixtures {}
+
+    fixtures.deviceStore.manage().put(devices.head).await
+
+    Post("/commands").withEntity(LogoutUser(reason = Some("Test reason"))) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.deviceCommandStore
+        .view()
+        .list()
+        .map { result =>
+          result.toList match {
+            case message :: Nil =>
+              message.parameters should be(a[LogoutUser])
+              message.target should be(empty)
+
+            case other => fail(s"Unexpected result received: [$other]")
+          }
+        }
+    }
+  }
+
+  they should "delete existing commands" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Delete("/commands/1") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedCommand] should be(DeletedCommand(existing = true))
+
+      fixtures.deviceCommandStore
+        .view()
+        .list()
+        .map(_ should be(empty))
+    }
+  }
+
+  they should "not delete missing commands" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    Delete("/commands/1") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[DeletedCommand] should be(DeletedCommand(existing = false))
+    }
+  }
+
+  they should "truncate old commands" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore
+      .manageSelf()
+      .put(Seq(device), command.copy(created = Instant.now().minusSeconds(30)))
+      .await
+    fixtures.deviceCommandStore
+      .manageSelf()
+      .put(Seq(device), command.copy(created = Instant.now().plusSeconds(5)))
+      .await
+    fixtures.deviceCommandStore
+      .manageSelf()
+      .put(Seq(device), command.copy(created = Instant.now().plusSeconds(30)))
+      .await
+
+    Put(s"/commands/truncate?older_than=${Instant.now()}") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.deviceCommandStore
+        .view()
+        .list()
+        .map(_.size should be(2))
     }
   }
 
@@ -583,6 +723,126 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     }
   }
 
+  they should "respond with commands for specific devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Get(s"/own/$device/commands") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]] should be(
+        Seq(
+          command.copy(sequenceId = 1),
+          command.copy(sequenceId = 2),
+          command.copy(sequenceId = 3)
+        )
+      )
+    }
+  }
+
+  they should "respond with unprocessed commands for specific devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Get(s"/own/$device/commands?last_sequence_id=2") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]] should be(
+        Seq(
+          command.copy(sequenceId = 3)
+        )
+      )
+    }
+  }
+
+  they should "respond with commands for specific devices (newer than provided timestamp)" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val now = Instant.now()
+
+    fixtures.deviceStore.manage().put(devices.head).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(10))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(5))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.plusSeconds(1))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.plusSeconds(30))).await
+
+    Get(s"/own/$device/commands?newer_than=$now") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]].map(_.sequenceId) should be(Seq(3, 4))
+    }
+  }
+
+  they should "not provide commands older than device" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    val now = Instant.now()
+
+    fixtures.deviceStore.manage().put(devices.head.copy(created = now.minusSeconds(10))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(10))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(15))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(20))).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command.copy(created = now.minusSeconds(30))).await
+
+    Get(s"/own/$device/commands?newer_than=$now") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+      responseAs[Seq[Command]] should be(empty)
+    }
+  }
+
+  they should "fail to provide commands if the device does not exist" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+    fixtures.deviceCommandStore.manageSelf().put(Seq(device), command).await
+
+    Get(s"/own/$device/commands") ~> fixtures.routes ~> check {
+      status should be(StatusCodes.InternalServerError)
+    }
+  }
+
+  they should "create new commands for specific devices" in withRetry {
+    val fixtures = new TestFixtures {}
+
+    val device = devices.head.id
+
+    fixtures.deviceStore.manage().put(devices.head).await
+
+    Post(s"/own/${devices.head.id}/commands").withEntity(LogoutUser(reason = Some("Test reason"))) ~> fixtures.routes ~> check {
+      status should be(StatusCodes.OK)
+
+      fixtures.deviceCommandStore
+        .view()
+        .list()
+        .map { result =>
+          result.toList match {
+            case message :: Nil =>
+              message.parameters should be(a[LogoutUser])
+              message.target should be(Some(device))
+
+            case other => fail(s"Unexpected result received: [$other]")
+          }
+        }
+    }
+  }
+
   they should "respond with list of device keys" in withRetry {
     val fixtures = new TestFixtures {}
 
@@ -620,6 +880,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val deviceStore: DeviceStore = MockDeviceStore()
     lazy val deviceKeyStore: DeviceKeyStore = MockDeviceKeyStore()
+    lazy val deviceCommandStore: DeviceCommandStore = MockDeviceCommandStore()
 
     lazy val nodeStore: NodeStore = MockNodeStore()
     lazy val serverNodeStore: ServerNodeStore = ServerNodeStore(nodeStore)
@@ -636,6 +897,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         deviceKeyStore.viewSelf(),
         deviceKeyStore.manage(),
         deviceKeyStore.manageSelf(),
+        deviceCommandStore.view(),
+        deviceCommandStore.viewSelf(),
+        deviceCommandStore.manage(),
+        deviceCommandStore.manageSelf(),
         serverNodeStore.manageSelf()
       )
     )
@@ -680,6 +945,14 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     )
   )
 
+  private val command = Command(
+    sequenceId = 0,
+    source = CommandSource.User,
+    target = Some(devices.head.id),
+    parameters = CommandParameters.Empty,
+    created = Instant.now()
+  )
+
   private val createRequestPrivileged = CreateDevicePrivileged(
     name = "test-device",
     node = Some(Node.generateId()),
@@ -720,5 +993,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Marshal(request).to[RequestEntity].await
 
   private implicit def updateRequestToEntity(request: UpdateDeviceState): RequestEntity =
+    Marshal(request).to[RequestEntity].await
+
+  private implicit def createRequestToEntity(request: CommandParameters): RequestEntity =
     Marshal(request).to[RequestEntity].await
 }

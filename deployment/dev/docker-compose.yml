@@ -190,6 +190,7 @@ services:
       - STASIS_CLIENT_OPS_SCHEDULING_MIN_DELAY=30 seconds
       - STASIS_CLIENT_OPS_SCHEDULING_MAX_EXTRA_DELAY=5 minutes
       - STASIS_CLIENT_OPS_MONITORING_INTERVAL=10 seconds
+      - STASIS_CLIENT_OPS_COMMANDS_INTERVAL=30 seconds
     volumes:
       - ./secrets/localhost.p12:/home/demiourgos728/.config/stasis-client/certs/client.p12
       - ./secrets/identity.p12:/home/demiourgos728/.config/stasis-client/certs/identity.p12
