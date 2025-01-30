@@ -377,6 +377,8 @@ class DefaultCommandProcessorSpec : WordSpec({
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands]!! shouldBeGreaterThanOrEqual (1)
 
+            delay(defaultInterval.toMillis() / 2)
+
             processor.stop()
 
             delay(defaultInterval.toMillis() * 2)

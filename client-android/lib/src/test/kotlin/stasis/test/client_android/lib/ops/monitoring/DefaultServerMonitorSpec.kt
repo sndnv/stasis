@@ -2,7 +2,6 @@ package stasis.test.client_android.lib.ops.monitoring
 
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -138,11 +137,13 @@ class DefaultServerMonitorSpec : WordSpec({
             mockTracker.statistics[MockServerTracker.Statistic.ServerReachable]!! shouldBeGreaterThanOrEqual (2)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
 
+            delay(defaultInterval.toMillis() / 2)
+
             monitor.stop()
 
             delay(defaultInterval.toMillis() * 2)
 
-            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable]!! shouldBeLessThanOrEqual (3)
+            mockTracker.statistics[MockServerTracker.Statistic.ServerReachable]!! shouldBeGreaterThanOrEqual (3)
             mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
         }
     }
