@@ -36,7 +36,10 @@ class DeviceStatusViewModel @Inject constructor(
         viewModelScope.launch {
             val value: Device? = deviceCache.getOrLoad(
                 key = 0,
-                load = { providerContext.api.device().getOrRenderFailure(withContext = application) }
+                load = {
+                    providerContext.api.device().getOrRenderFailure(withContext = application)
+                        ?: throw RuntimeException("No device found") // retrieval failed; trigger faster cache refresh
+                }
             )
 
             value?.let { deviceData.postValue(it) }

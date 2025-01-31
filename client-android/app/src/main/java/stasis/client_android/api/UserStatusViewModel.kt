@@ -35,7 +35,10 @@ class UserStatusViewModel @Inject constructor(
         viewModelScope.launch {
             val value: User? = userCache.getOrLoad(
                 key = 0,
-                load = { providerContext.api.user().getOrRenderFailure(withContext = application) }
+                load = {
+                    providerContext.api.user().getOrRenderFailure(withContext = application)
+                        ?: throw RuntimeException("No user found") // retrieval failed; trigger faster cache refresh
+                }
             )
 
             value?.let { userData.postValue(it) }
