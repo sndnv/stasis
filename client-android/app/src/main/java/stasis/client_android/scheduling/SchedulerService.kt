@@ -127,6 +127,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                 context = this@SchedulerService,
                                 activeSchedule = activeSchedule
                             )
+
                             else -> if (schedulingEnabled) {
                                 val invocation =
                                     Instant.now().plusMillis(publicSchedule.executionDelay())
@@ -168,6 +169,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                 context = this@SchedulerService,
                                 activeSchedule = activeSchedule
                             )
+
                             else -> if (schedulingEnabled) {
                                 val invocation =
                                     Instant.now().plusMillis(publicSchedule.executionDelay())
@@ -223,6 +225,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                 context = this@SchedulerService,
                                 activeScheduleId = message.activeScheduleId
                             )
+
                             else -> {
                                 val onComplete: (Throwable?) -> Unit = { e ->
                                     if (BuildConfig.DEBUG) {
@@ -255,12 +258,15 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                             f = onComplete
                                         )
                                     }
+
                                     is OperationScheduleAssignment.Expiration -> executor.startExpiration(
                                         f = onComplete
                                     )
+
                                     is OperationScheduleAssignment.Validation -> executor.startValidation(
                                         f = onComplete
                                     )
+
                                     is OperationScheduleAssignment.KeyRotation -> executor.startKeyRotation(
                                         f = onComplete
                                     )
@@ -272,6 +278,7 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                                         context = this@SchedulerService,
                                         activeSchedule = activeSchedule
                                     )
+
                                     else -> if (schedulingEnabled) {
                                         val invocation = Instant.now()
                                             .plusMillis(publicSchedule.executionDelay())
@@ -294,7 +301,10 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
         private suspend fun getSchedules(): List<Schedule> =
             publicSchedules.getOrLoad(
                 key = 0,
-                load = { api.publicSchedules().getOrElse { emptyList() } }
+                load = {
+                    api.publicSchedules()
+                        .get() // on failure, triggers faster cache refresh
+                }
             ) ?: emptyList()
     }
 
