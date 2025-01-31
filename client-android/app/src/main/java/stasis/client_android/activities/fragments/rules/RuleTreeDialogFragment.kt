@@ -12,11 +12,14 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.amrdeveloper.treeview.TreeNode
 import com.amrdeveloper.treeview.TreeViewAdapter
 import com.amrdeveloper.treeview.TreeViewHolder
 import com.amrdeveloper.treeview.TreeViewHolderFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
@@ -29,9 +32,12 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
+import stasis.client_android.lib.utils.Try
 import stasis.client_android.persistence.rules.RulesConfig
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.pullArguments
+import stasis.client_android.utils.LiveDataExtensions.and
+import stasis.client_android.utils.LiveDataExtensions.liveData
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.file.FileSystem
@@ -63,67 +69,89 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
 
         binding.rulesTree.layoutManager = LinearLayoutManager(requireContext())
 
-        pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
-            binding.rulesTreeTitle.text = when (val d = arguments.definition) {
-                null -> getString(R.string.rules_tree_title_default)
-                is Left -> getString(R.string.rules_tree_title, d.value.toMinimizedString())
-                is Right -> getString(R.string.rules_tree_title, d.value.info)
-            }
+        val fs: FileSystem = FileSystems.getDefault()
 
-            val fs: FileSystem = FileSystems.getDefault()
+        fun loadSpec(arguments: Arguments): LiveData<Specification> = liveData {
+            withContext(Dispatchers.IO) {
 
-            val spec = Specification(
-                rules = arguments.rules,
-                onMatchIncluded = {},
-                filesystem = fs
-            )
-            val included = spec.included.map { it.toAbsolutePath().toString() }.toSet()
-            val excluded = spec.excluded.map { it.toAbsolutePath().toString() }.toSet()
-
-            val factory = TreeViewHolderFactory { v, _ -> Holder(view = v, included = included, excluded = excluded) }
-
-            val adapter = TreeViewAdapter(factory)
-            binding.rulesTree.adapter = adapter
-
-            val root = arguments.rules
-                .map { it.directory }
-                .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
-
-            try {
-                val paths = TreeFileVisitor().walk(fs, root)
-                adapter.updateTreeNodes(listOf(FileTreeNode.fromPaths(root = root, paths = paths, fs = fs)))
-
-                adapter.setTreeNodeLongClickListener { treeNode, _ ->
-                    val node = (treeNode.value as FileTreeNode)
-                    RuleTreeEntryContextDialogFragment(
-                        definition = arguments.definition?.fold({ it }, { it.id }),
-                        selectedNode = node,
-                        nodeColor = nodeColor(requireContext(), node, included, excluded),
-                        onRuleCreationRequested = { rule ->
-                            arguments.onRuleCreationRequested(rule)
-                            dialog?.dismiss()
-                        }
-                    ).show(childFragmentManager, RuleTreeEntryContextDialogFragment.Tag)
-                    true
-                }
-
-                adapter.expandAll()
-
-                binding.rulesTreeLoadInProgress.isVisible = false
-                binding.rulesTreeError.isVisible = false
-                binding.rulesTree.isVisible = true
-            } catch (e: Exception) {
-                when (e) {
-                    is UncheckedIOException, is IOException -> {
-                        binding.rulesTreeLoadInProgress.isVisible = false
-                        binding.rulesTreeError.isVisible = true
-                        binding.rulesTree.isVisible = false
-                    }
-
-                    else -> throw e
-                }
+                Specification(
+                    rules = arguments.rules,
+                    onMatchIncluded = {},
+                    filesystem = fs
+                )
             }
         }
+
+        fun walkFileTree(arguments: Arguments): LiveData<Try<List<String>>> = liveData {
+            withContext(Dispatchers.IO) {
+                val root = arguments.rules
+                    .map { it.directory }
+                    .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
+
+                Try { TreeFileVisitor().walk(fs, root) }
+            }
+        }
+
+        pullArguments<Arguments>()
+            .and { loadSpec(it) }
+            .and { walkFileTree(it.first) }
+            .observe(viewLifecycleOwner) { e ->
+                val (arguments, spec) = e.first
+
+                binding.rulesTreeTitle.text = when (val d = arguments.definition) {
+                    null -> getString(R.string.rules_tree_title_default)
+                    is Left -> getString(R.string.rules_tree_title, d.value.toMinimizedString())
+                    is Right -> getString(R.string.rules_tree_title, d.value.info)
+                }
+
+                val included = spec.included.map { it.toAbsolutePath().toString() }.toSet()
+                val excluded = spec.excluded.map { it.toAbsolutePath().toString() }.toSet()
+
+                val factory =
+                    TreeViewHolderFactory { v, _ -> Holder(view = v, included = included, excluded = excluded) }
+
+                val adapter = TreeViewAdapter(factory)
+                binding.rulesTree.adapter = adapter
+
+                val root = arguments.rules
+                    .map { it.directory }
+                    .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
+
+                try {
+                    val paths = e.second.get()
+                    adapter.updateTreeNodes(listOf(FileTreeNode.fromPaths(root = root, paths = paths, fs = fs)))
+
+                    adapter.setTreeNodeLongClickListener { treeNode, _ ->
+                        val node = (treeNode.value as FileTreeNode)
+                        RuleTreeEntryContextDialogFragment(
+                            definition = arguments.definition?.fold({ it }, { it.id }),
+                            selectedNode = node,
+                            nodeColor = nodeColor(requireContext(), node, included, excluded),
+                            onRuleCreationRequested = { rule ->
+                                arguments.onRuleCreationRequested(rule)
+                                dialog?.dismiss()
+                            }
+                        ).show(childFragmentManager, RuleTreeEntryContextDialogFragment.Tag)
+                        true
+                    }
+
+                    adapter.expandAll()
+
+                    binding.rulesTreeLoadInProgress.isVisible = false
+                    binding.rulesTreeError.isVisible = false
+                    binding.rulesTree.isVisible = true
+                } catch (e: Exception) {
+                    when (e) {
+                        is UncheckedIOException, is IOException -> {
+                            binding.rulesTreeLoadInProgress.isVisible = false
+                            binding.rulesTreeError.isVisible = true
+                            binding.rulesTree.isVisible = false
+                        }
+
+                        else -> throw e
+                    }
+                }
+            }
 
         binding.rulesTreeHelpButton.setOnClickListener {
             InformationDialogFragment()
