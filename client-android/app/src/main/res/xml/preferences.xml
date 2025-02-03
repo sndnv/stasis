@@ -43,6 +43,18 @@
             app:title="@string/settings_manage_device_secret_locally_import_title" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/settings_category_advanced">
+        <SwitchPreference
+            app:defaultValue="false"
+            app:key="restrictions_ignored"
+            app:title="@string/settings_restrictions_ignored_title" />
+
+        <Preference
+            app:key="show_commands"
+            app:summary="@string/settings_commands_summary"
+            app:title="@string/settings_commands_title" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/settings_category_debug">
         <SwitchPreference
             app:defaultValue="true"
@@ -60,11 +72,6 @@
             app:entryValues="@array/settings_command_refresh_interval_values"
             app:key="command_refresh_interval"
             app:title="@string/settings_command_refresh_interval_title" />
-
-        <Preference
-            app:key="show_commands"
-            app:summary="@string/settings_commands_summary"
-            app:title="@string/settings_commands_title" />
 
         <Preference
             app:key="reset_config"

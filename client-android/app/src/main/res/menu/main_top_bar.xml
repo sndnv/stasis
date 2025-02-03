@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/active_restrictions"
+        android:contentDescription="@string/debug_mode_button_hint"
+        android:icon="@drawable/ic_restrictions"
+        android:title="@string/debug_mode_button_hint"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/debug_mode"
         android:contentDescription="@string/debug_mode_button_hint"
         android:icon="@drawable/ic_debug"

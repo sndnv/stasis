@@ -12,7 +12,9 @@ import androidx.core.app.NotificationCompat
 import androidx.navigation.NavDeepLinkBuilder
 import stasis.client_android.R
 import stasis.client_android.activities.MainActivity
+import stasis.client_android.activities.helpers.Common.asRestrictionsString
 import stasis.client_android.activities.helpers.Common.toAssignmentTypeString
+import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.scheduling.SchedulerService
 import java.util.Locale
@@ -182,10 +184,17 @@ object NotificationManagerExtensions {
         } else {
             val icon = R.drawable.ic_close
             val title = context.getString(R.string.notification_operation_failed_title, operation)
-            val text = context.getString(
-                R.string.notification_operation_failed_text,
-                failure.message ?: failure.javaClass.simpleName
-            )
+            val text = when (failure) {
+                is OperationRestrictedFailure -> context.getString(
+                    R.string.notification_operation_failed_with_restrictions_text,
+                    failure.restrictions.asRestrictionsString(context)
+                )
+
+                else -> context.getString(
+                    R.string.notification_operation_failed_text,
+                    failure.message ?: failure.javaClass.simpleName
+                )
+            }
 
             Triple(icon, title, text)
         }
