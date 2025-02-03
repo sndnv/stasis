@@ -8,18 +8,18 @@ import androidx.room.Query
 
 @Dao
 interface ActiveScheduleEntityDao {
-    @Query("SELECT * FROM schedules")
+    @Query("SELECT * FROM active_schedules")
     fun get(): LiveData<List<ActiveScheduleEntity>>
 
-    @Query("SELECT * FROM schedules")
+    @Query("SELECT * FROM active_schedules")
     suspend fun getAsync(): List<ActiveScheduleEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(entity: ActiveScheduleEntity): Long
 
-    @Query("DELETE FROM schedules WHERE id == :id")
+    @Query("DELETE FROM active_schedules WHERE id == :id")
     suspend fun delete(id: Long)
 
-    @Query("DELETE FROM schedules")
+    @Query("DELETE FROM active_schedules")
     suspend fun clear()
 }
