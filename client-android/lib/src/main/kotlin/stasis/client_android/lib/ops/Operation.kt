@@ -45,6 +45,11 @@ interface Operation {
         val failures: Int,
         val completed: Instant?
     )
+
+    sealed class Restriction {
+        data object NoConnection : Restriction()
+        data object LimitedNetwork : Restriction()
+    }
 }
 
 typealias OperationId = UUID

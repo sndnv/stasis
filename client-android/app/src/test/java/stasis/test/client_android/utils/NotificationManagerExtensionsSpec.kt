@@ -16,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
 import stasis.client_android.utils.NotificationManagerExtensions
@@ -177,6 +179,32 @@ class NotificationManagerExtensionsSpec {
         assertThat(
             notification.captured.extras.getString(Notification.EXTRA_TEXT),
             containsString("Test failure")
+        )
+    }
+
+    @Test
+    fun createOperationFailedWithRestrictionsNotifications() {
+        val notification = slot<Notification>()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val manager = mockk<NotificationManager>()
+        justRun { manager.notify(any(), capture(notification)) }
+
+        manager.putOperationCompletedNotification(
+            context = context,
+            activeSchedule = schedule,
+            failure = OperationRestrictedFailure(restrictions = listOf(Operation.Restriction.LimitedNetwork))
+        )
+
+        assertThat(
+            notification.captured.extras.getString(Notification.EXTRA_TITLE),
+            containsString("Expiration operation failed")
+        )
+
+        assertThat(
+            notification.captured.extras.getString(Notification.EXTRA_TEXT),
+            containsString("Operation could not be started: restricted or metered network")
         )
     }
 

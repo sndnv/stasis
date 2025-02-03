@@ -87,6 +87,24 @@ object Common {
         }
     }
 
+    fun List<Operation.Restriction>.asRestrictionsString(context: Context, separator: String = ", "): String {
+        return this.joinToString(separator) {
+            when (it) {
+                is Operation.Restriction.NoConnection -> context.getString(R.string.operation_restriction_no_connection)
+                is Operation.Restriction.LimitedNetwork -> context.getString(R.string.operation_restriction_limited_network)
+            }
+        }
+    }
+
+    fun List<Operation.Restriction>.asRestrictionsHintString(context: Context, separator: String = ", "): String {
+        return this.joinToString(separator) {
+            when (it) {
+                is Operation.Restriction.NoConnection -> context.getString(R.string.operation_restriction_no_connection_hint)
+                is Operation.Restriction.LimitedNetwork -> context.getString(R.string.operation_restriction_limited_network_hint)
+            }
+        }
+    }
+
     fun DatasetDefinition.Retention.asString(context: Context): String {
         val duration = this.duration.asString(context)
 

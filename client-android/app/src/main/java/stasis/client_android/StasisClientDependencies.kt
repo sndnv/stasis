@@ -58,11 +58,13 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.DefaultCredentialsManagementBridge
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getPingInterval
+import stasis.client_android.settings.Settings.getRestrictionsIgnored
 import stasis.client_android.tracking.DefaultBackupTracker
 import stasis.client_android.tracking.DefaultRecoveryTracker
 import stasis.client_android.tracking.DefaultServerTracker
 import stasis.client_android.tracking.DefaultTrackers
 import stasis.client_android.tracking.TrackerViews
+import stasis.client_android.utils.Permissions.getOperationRestrictions
 import stasis.core.commands.proto.Command
 import java.time.Duration
 import java.util.UUID
@@ -119,6 +121,7 @@ object StasisClientDependencies {
     @Singleton
     @Provides
     fun provideProviderContextFactory(
+        application: Application,
         dispatcher: CoroutineDispatcher,
         trackers: DefaultTrackers,
         trackerViews: TrackerViews,
@@ -243,6 +246,11 @@ object StasisClientDependencies {
                                     clients = clients,
                                     track = trackers.recovery
                                 ),
+                                restrictions = {
+                                    application.getOperationRestrictions(
+                                        ignoreRestrictions = preferences.getRestrictionsIgnored()
+                                    )
+                                },
                                 operationDispatcher = dispatcher
                             )
 

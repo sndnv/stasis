@@ -1,9 +1,5 @@
 package stasis.client_android.lib.ops.scheduling
 
-import stasis.client_android.lib.ops.backup.Backup as BackupOp
-import stasis.client_android.lib.ops.backup.Providers as BackupProviders
-import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
-import stasis.client_android.lib.ops.recovery.Recovery as RecoveryOp
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
@@ -13,18 +9,24 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.tracking.state.OperationState
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import stasis.client_android.lib.ops.backup.Backup as BackupOp
+import stasis.client_android.lib.ops.backup.Providers as BackupProviders
+import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
+import stasis.client_android.lib.ops.recovery.Recovery as RecoveryOp
 
 class DefaultOperationExecutor(
     private val config: Config,
     private val deviceSecret: () -> DeviceSecret,
     private val backupProviders: BackupProviders,
     private val recoveryProviders: RecoveryProviders,
+    private val restrictions: (Operation.Type) -> List<Operation.Restriction>,
     operationDispatcher: CoroutineDispatcher
 ) : OperationExecutor {
     private val operationScope = CoroutineScope(operationDispatcher)
@@ -261,18 +263,26 @@ class DefaultOperationExecutor(
         ofType: Operation.Type,
         callback: (Throwable?) -> Unit,
         f: suspend () -> OperationId
-    ): OperationId = withContext(operationScope.coroutineContext) {
-        when (val operation = active().filterValues { it == ofType }.toList().firstOrNull()?.first) {
-            null -> f() // operation doesn't exist; can proceed
-            else -> {
-                callback(
-                    IllegalArgumentException(
-                        "Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
-                    )
-                )
+    ): OperationId {
+        val operationRestrictions = restrictions(ofType)
+        if (operationRestrictions.isEmpty()) {
+            return withContext(operationScope.coroutineContext) {
+                when (val operation = active().filterValues { it == ofType }.toList().firstOrNull()?.first) {
+                    null -> f() // operation doesn't exist; can proceed
+                    else -> {
+                        callback(
+                            IllegalArgumentException(
+                                "Cannot start [$ofType] operation; [$ofType] with ID [$operation] is already active"
+                            )
+                        )
 
-                operation
+                        operation
+                    }
+                }
             }
+        } else {
+            callback(OperationRestrictedFailure(restrictions = operationRestrictions))
+            return Operation.generateId()
         }
     }
 
@@ -287,6 +297,7 @@ class DefaultOperationExecutor(
             state != null -> callback(
                 IllegalArgumentException("Cannot resume operation with ID [$operation]; operation already completed")
             )
+
             else -> callback(
                 IllegalArgumentException("Cannot resume operation with ID [$operation]; no existing state was found")
             )

@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import okio.Sink
 import okio.Source
 import okio.Throttler
+import org.junit.jupiter.api.fail
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.collection.rules.Rule
@@ -23,6 +24,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Backup
+import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Try
@@ -50,7 +52,8 @@ class DefaultOperationExecutorSpec : WordSpec({
             clients: Clients = Clients(
                 api = MockServerApiEndpointClient(),
                 core = MockServerCoreEndpointClient()
-            )
+            ),
+            restrictions: List<Operation.Restriction> = emptyList()
         ): DefaultOperationExecutor {
             val checksum = Checksum.Companion.MD5
             val staging = MockFileStaging()
@@ -130,6 +133,7 @@ class DefaultOperationExecutorSpec : WordSpec({
                     track = recoveryTracker,
                     compression = compression
                 ),
+                restrictions = { restrictions },
                 operationDispatcher = Dispatchers.IO
             )
         }
@@ -545,7 +549,6 @@ class DefaultOperationExecutorSpec : WordSpec({
         }
 
         "fail to start an operation if one of the same type is already running" {
-
             val executor = createExecutor(slowEncryption = true)
 
             eventually {
@@ -571,6 +574,29 @@ class DefaultOperationExecutorSpec : WordSpec({
                 val e = failure.get()
                 e.message shouldStartWith ("Cannot start [Backup] operation")
                 e.message shouldInclude ("already active")
+            }
+        }
+
+        "fail to start an operation if there are restrictions" {
+            val expectedRestrictions = listOf(Operation.Restriction.LimitedNetwork)
+
+            val executor = createExecutor(restrictions = expectedRestrictions)
+
+            executor.active() shouldBe (emptyMap())
+
+            val failure = AtomicReference<Throwable>(null)
+
+            executor.startBackupWithRules(
+                definition = UUID.randomUUID(),
+                rules = rules,
+                f = { failure.set(it) }
+            )
+
+            eventually {
+                when (val e = failure.get()) {
+                    is OperationRestrictedFailure -> e.restrictions shouldBe (expectedRestrictions)
+                    else -> fail(e)
+                }
             }
         }
 

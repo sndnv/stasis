@@ -12,6 +12,10 @@ object Settings {
         )
     }
 
+    fun SharedPreferences.getRestrictionsIgnored(): Boolean {
+        return getBoolean(Keys.RestrictionsIgnored, Defaults.RestrictionsIgnored)
+    }
+
     fun SharedPreferences.getSchedulingEnabled(): Boolean {
         return getBoolean(Keys.SchedulingEnabled, Defaults.SchedulingEnabled)
     }
@@ -62,6 +66,7 @@ object Settings {
         const val ManageDeviceSecretRemotelyPull: String = "manage_device_secret_remotely_pull"
         const val ManageDeviceSecretLocallyExport: String = "manage_device_secret_locally_export"
         const val ManageDeviceSecretLocallyImport: String = "manage_device_secret_locally_import"
+        const val RestrictionsIgnored: String = "restrictions_ignored"
         const val SchedulingEnabled: String = "scheduling_enabled"
         const val PingInterval: String = "ping_interval"
         const val CommandRefreshInterval: String = "command_refresh_interval"
@@ -71,6 +76,7 @@ object Settings {
 
     object Defaults {
         const val DateTimeFormat: String = "system"
+        const val RestrictionsIgnored: Boolean = false
         const val SchedulingEnabled: Boolean = true
         val PingInterval: Duration = Duration.ofMinutes(3)
         val CommandRefreshInterval: Duration = Duration.ofMinutes(5)

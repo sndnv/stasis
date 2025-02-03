@@ -2,8 +2,10 @@ package stasis.client_android.utils
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -11,6 +13,7 @@ import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import stasis.client_android.BuildConfig
+import stasis.client_android.lib.ops.Operation
 
 object Permissions {
     fun Activity?.needsExtraPermissions(): Boolean =
@@ -32,6 +35,27 @@ object Permissions {
         }
     }
 
+    fun Application.getOperationRestrictions(ignoreRestrictions: Boolean): List<Operation.Restriction> =
+        if (ignoreRestrictions) {
+            emptyList()
+        } else {
+            getSystemService(ConnectivityManager::class.java).getOperationRestrictions()
+        }
+
+    fun ConnectivityManager.getOperationRestrictions(): List<Operation.Restriction> {
+        val networkRestriction = when (this.activeNetwork) {
+            null -> Operation.Restriction.NoConnection
+            else ->
+                if (this.isActiveNetworkMetered) {
+                    Operation.Restriction.LimitedNetwork
+                } else {
+                    null
+                }
+        }
+
+        return listOfNotNull(networkRestriction)
+    }
+
     private fun Activity.needsToReadAndWriteExternalStorage(): Boolean {
         val granted = requiredPermissions.fold(true) { granted, permission ->
             val result = ContextCompat.checkSelfPermission(this, permission)
@@ -48,7 +72,6 @@ object Permissions {
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
-
 
     private const val PermissionsRequestCode: Int = 1
 }

@@ -62,6 +62,15 @@
     <string name="confirmation_dialog_ok_button_title">OK</string>
     <string name="confirmation_dialog_cancel_button_title">Cancel</string>
 
+    <!-- Operation Restrictions -->
+    <string name="active_restrictions_button_hint">Active Restrictions</string>
+    <string name="active_restrictions_dialog_title">Active Restrictions</string>
+    <string name="active_restrictions_dialog_content">One or more restrictions are currently active that impact operations:\n\n%1$s\n\nIf these restrictions can be safely ignored, go to \"Settings\" > \"Advanced\" to override this behaviour.</string>
+    <string name="operation_restriction_no_connection">no network connection</string>
+    <string name="operation_restriction_no_connection_hint">- No network connection - the device is not connected to a network</string>
+    <string name="operation_restriction_limited_network">restricted or metered network</string>
+    <string name="operation_restriction_limited_network_hint">- Restricted or metered network - the device is connected to a network that may incur additional charges for large data transfers</string>
+
     <!-- Debug/Mock Mode -->
     <string name="debug_mode_button_hint">Debug Mode Enabled</string>
     <string name="debug_mode_dialog_title">Debug Mode Enabled</string>
@@ -580,6 +589,7 @@
     <string name="notification_operation_completed_text">%1$s operation completed successfully</string>
     <string name="notification_operation_failed_title">%1$s operation failed</string>
     <string name="notification_operation_failed_text">%1$s</string>
+    <string name="notification_operation_failed_with_restrictions_text">Operation could not be started: %1$s</string>
 
     <!-- Toasts -->
     <string name="toast_dataset_definition_created">Backup definition [%1$s] created</string>
@@ -634,6 +644,7 @@
     <string name="settings_category_date_time">Date/Time</string>
     <string name="settings_category_user_credentials">Manage User Credentials</string>
     <string name="settings_category_device_secret">Manage Device Secret</string>
+    <string name="settings_category_advanced">Advanced</string>
     <string name="settings_category_debug">Debug</string>
     <string name="settings_date_time_format_title">Format</string>
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
@@ -731,6 +742,7 @@
     <string name="settings_manage_device_secret_pull_remote_password_hint">Remote Password (optional)</string>
     <string name="settings_manage_device_secret_pull_remote_password_hint_extra">Password override if the remote secret has a different password.</string>
     <string name="settings_manage_device_secret_pull_show_remote_password_button_title"><u>Use different remote password…</u></string>
+    <string name="settings_restrictions_ignored_title">Ignore operation restrictions</string>
     <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
     <string name="settings_ping_interval_title">Server ping interval</string>
     <string name="settings_command_refresh_interval_title">Server command refresh interval</string>

@@ -14,6 +14,7 @@ import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import stasis.client_android.settings.Settings.getPingInterval
+import stasis.client_android.settings.Settings.getRestrictionsIgnored
 import stasis.client_android.settings.Settings.getSchedulingEnabled
 import stasis.client_android.settings.Settings.toCalendarDay
 import stasis.client_android.settings.Settings.toDayOfWeek
@@ -103,6 +104,34 @@ class SettingsSpec {
             preferences.getDateTimeFormat(),
             equalTo((Settings.parseDateTimeFormat(expectedFormat)))
         )
+    }
+
+    @Test
+    fun supportRetrievingDefaultRestrictionsIgnoredState() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.RestrictionsIgnored,
+                Settings.Defaults.RestrictionsIgnored
+            )
+        } returns false
+
+        val expectedState = Settings.Defaults.RestrictionsIgnored
+        assertThat(preferences.getRestrictionsIgnored(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedRestrictionsIgnoredState() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.RestrictionsIgnored,
+                Settings.Defaults.RestrictionsIgnored
+            )
+        } returns false
+
+        val expectedState = false
+        assertThat(preferences.getRestrictionsIgnored(), equalTo(expectedState))
     }
 
     @Test

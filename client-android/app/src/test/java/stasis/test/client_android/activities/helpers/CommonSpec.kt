@@ -15,6 +15,8 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asChangedString
 import stasis.client_android.activities.helpers.Common.asChronoUnit
 import stasis.client_android.activities.helpers.Common.asQuantityString
+import stasis.client_android.activities.helpers.Common.asRestrictionsHintString
+import stasis.client_android.activities.helpers.Common.asRestrictionsString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.checksum
@@ -128,6 +130,56 @@ class CommonSpec {
             equalTo("Garbage Collection")
         )
         assertThat(null.asString(context), equalTo("Unknown"))
+    }
+
+    @Test
+    fun convertRestrictionsToStrings() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat(
+            listOf(
+                Operation.Restriction.NoConnection,
+                Operation.Restriction.LimitedNetwork,
+            ).asRestrictionsString(context),
+            equalTo("no network connection, restricted or metered network")
+        )
+
+        assertThat(
+            listOf(
+                Operation.Restriction.LimitedNetwork,
+                Operation.Restriction.NoConnection,
+            ).asRestrictionsString(context),
+            equalTo("restricted or metered network, no network connection")
+        )
+    }
+
+    @Test
+    fun convertRestrictionsToHintStrings() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat(
+            listOf(
+                Operation.Restriction.NoConnection,
+                Operation.Restriction.LimitedNetwork,
+            ).asRestrictionsHintString(context),
+            equalTo(
+                "- No network connection - the device is not connected to a network, " +
+                        "- Restricted or metered network - the device is connected to a network that may " +
+                        "incur additional charges for large data transfers"
+            )
+        )
+
+        assertThat(
+            listOf(
+                Operation.Restriction.LimitedNetwork,
+                Operation.Restriction.NoConnection,
+            ).asRestrictionsHintString(context),
+            equalTo(
+                "- Restricted or metered network - the device is connected to a network that may " +
+                        "incur additional charges for large data transfers, " +
+                        "- No network connection - the device is not connected to a network"
+            )
+        )
     }
 
     @Test

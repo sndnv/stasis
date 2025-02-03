@@ -3,6 +3,9 @@ package stasis.client_android.activities
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.map
@@ -15,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.BuildConfig
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
+import stasis.client_android.activities.helpers.Common.asRestrictionsHintString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.operationInProgress
@@ -35,6 +39,7 @@ import stasis.client_android.scheduling.SchedulerService
 import stasis.client_android.tracking.TrackerViews
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.NotificationManagerExtensions.createSchedulingNotificationChannels
+import stasis.client_android.utils.Permissions.getOperationRestrictions
 import stasis.client_android.utils.Permissions.requestMissingPermissions
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -50,6 +55,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var broadcastManager: LocalBroadcastManager
     private lateinit var logoutReceiver: LogoutReceiver
+
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
+
     private lateinit var controller: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,11 +95,20 @@ class MainActivity : AppCompatActivity() {
         logoutReceiver = LogoutReceiver(credentials)
         broadcastManager.registerReceiver(logoutReceiver, logoutReceiver.intentFilter)
 
+        connectivityManager = getSystemService(ConnectivityManager::class.java)
+        networkCallback = OperationRestrictionsNetworkCallback {
+            runOnUiThread {
+                binding.topAppBar.menu.findItem(R.id.active_restrictions).isVisible = it
+            }
+        }
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
+
         startForegroundService(Intent(this, SchedulerService::class.java))
     }
 
     override fun onDestroy() {
         broadcastManager.unregisterReceiver(logoutReceiver)
+        connectivityManager.unregisterNetworkCallback(networkCallback)
 
         super.onDestroy()
     }
@@ -312,6 +330,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                R.id.active_restrictions -> {
+                    val restrictions = application.getOperationRestrictions(
+                        ignoreRestrictions = false
+                    ).asRestrictionsHintString(binding.root.context, separator = "\n\n")
+
+                    InformationDialogFragment()
+                        .withTitle(getString(R.string.active_restrictions_dialog_title))
+                        .withMessage(getString(R.string.active_restrictions_dialog_content, restrictions))
+                        .show(supportFragmentManager)
+                    true
+                }
+
                 R.id.debug_mode -> {
                     InformationDialogFragment()
                         .withTitle(getString(R.string.debug_mode_dialog_title))
@@ -351,6 +381,18 @@ class MainActivity : AppCompatActivity() {
             } else {
                 unreachableServersRef.set(null)
             }
+        }
+    }
+
+    class OperationRestrictionsNetworkCallback(
+        private val f: (Boolean) -> Unit
+    ) : ConnectivityManager.NetworkCallback() {
+        override fun onLost(network: Network) {
+            f(true)
+        }
+
+        override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+            f(!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED))
         }
     }
 }
