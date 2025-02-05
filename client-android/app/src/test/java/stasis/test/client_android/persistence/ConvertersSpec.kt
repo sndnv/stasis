@@ -8,12 +8,18 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.persistence.Converters
 import stasis.client_android.persistence.rules.RuleEntity
 import stasis.client_android.persistence.schedules.ActiveScheduleEntity
+import stasis.client_android.persistence.schedules.LocalScheduleEntity
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
@@ -56,6 +62,40 @@ class ConvertersSpec {
         } catch (e: IllegalArgumentException) {
             assertThat(e.message, equalTo("Unexpected operation provided: [other]"))
         }
+    }
+
+    @Test
+    fun convertLocalDateTimes() {
+        val converters = Converters()
+
+        val timestampString = "2020-01-01T01:02:03"
+        val timestamp = LocalDateTime.parse(timestampString)
+
+        assertThat(converters.localDateTimeToString(timestamp), equalTo(timestampString))
+        assertThat(converters.stringToLocalDateTime(timestampString), equalTo(timestamp))
+    }
+
+    @Test
+    fun convertDurations() {
+        val converters = Converters()
+
+        val durationLong = 12 * 1000L
+        val duration = Duration.ofMillis(durationLong)
+
+        assertThat(converters.durationToLong(duration), equalTo(durationLong))
+        assertThat(converters.longToDuration(durationLong), equalTo(duration))
+    }
+
+    @Test
+    fun convertInstants() {
+        val converters = Converters()
+
+        val instantString = "2020-01-01T01:02:03Z"
+        val instant = Instant.parse(instantString)
+        val instantLong = instant.toEpochMilli()
+
+        assertThat(converters.instantToLong(instant), equalTo(instantLong))
+        assertThat(converters.longToInstant(instantLong), equalTo(instant))
     }
 
     @Test
@@ -163,6 +203,33 @@ class ConvertersSpec {
 
         assertThat(Converters.accessTokenResponseToString(response), equalTo(string))
         assertThat(Converters.stringToAccessTokenResponse(string), equalTo(response))
+    }
+
+
+    @Test
+    fun convertLocalSchedulesToEntities() {
+        val now = Instant.now()
+
+        val schedule = Schedule(
+            id = UUID.randomUUID(),
+            info = "test-info",
+            isPublic = false,
+            start = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
+            interval = Duration.ofSeconds(60),
+            created = now,
+            updated = now,
+        )
+
+        val entity = LocalScheduleEntity(
+            id = schedule.id,
+            info = schedule.info,
+            start = schedule.start,
+            interval = schedule.interval,
+            created = schedule.created
+        )
+
+        assertThat(Converters.localScheduleEntityToSchedule(entity), equalTo(schedule))
+        assertThat(Converters.scheduleToLocalScheduleEntity(schedule), equalTo(entity))
     }
 
     @Test

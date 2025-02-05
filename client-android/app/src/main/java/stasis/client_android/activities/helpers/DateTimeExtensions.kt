@@ -5,12 +5,18 @@ import stasis.client_android.R
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getDateTimeFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
-import java.util.*
+import java.util.Locale
 
 object DateTimeExtensions {
     fun Instant.formatAsTime(context: Context): String =
@@ -84,6 +90,13 @@ object DateTimeExtensions {
             .atZone(ZoneId.systemDefault()).toInstant()
     }
 
+    fun Pair<CharSequence, CharSequence>.parseAsLocalDateTime(context: Context): LocalDateTime {
+        val date = this.first.parseAsLocalDate(context)
+        val time = this.second.parseAsLocalTime(context)
+
+        return LocalDateTime.of(date.year, date.month, date.dayOfMonth, time.hour, time.minute)
+    }
+
     fun Instant.isToday(): Boolean =
         sameDay(this.atZone(ZoneId.systemDefault()), ZonedDateTime.now())
 
@@ -109,6 +122,7 @@ object DateTimeExtensions {
                     IsoChronology.INSTANCE,
                     Locale.getDefault()
                 )
+
                 Settings.DateTimeFormat.Iso -> IsoDateOnlyPattern
             }
         )
@@ -122,6 +136,7 @@ object DateTimeExtensions {
                     IsoChronology.INSTANCE,
                     Locale.getDefault()
                 )
+
                 Settings.DateTimeFormat.Iso -> IsoTimeOnlyPattern
             }
         )
@@ -135,6 +150,7 @@ object DateTimeExtensions {
                     IsoChronology.INSTANCE,
                     Locale.getDefault()
                 )
+
                 Settings.DateTimeFormat.Iso -> IsoDateTimePattern
             }
         )

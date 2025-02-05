@@ -17,6 +17,7 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsDate
 import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsDateTime
 import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsFullDateTime
 import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsLocalDate
+import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsLocalDateTime
 import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsLocalTime
 import stasis.client_android.activities.helpers.DateTimeExtensions.parseAsTime
 import stasis.client_android.settings.Settings
@@ -158,6 +159,14 @@ class DateTimeExtensionsSpec {
         assertThat(
             Pair("Dec 21, 2000", "9:42 PM").parseAsDateTime(context),
             equalTo(instant.truncatedTo(ChronoUnit.MINUTES))
+        )
+    }
+
+    @Test
+    fun parseStringPairAsLocalDateTime() {
+        assertThat(
+            Pair("Dec 21, 2000", "9:42 PM").parseAsLocalDateTime(context),
+            equalTo(localDateTime.truncatedTo(ChronoUnit.MINUTES))
         )
     }
 
