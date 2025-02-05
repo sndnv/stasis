@@ -26,6 +26,7 @@ import stasis.client_android.activities.helpers.Common.fromAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.fromPolicyTypeString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.size
+import stasis.client_android.activities.helpers.Common.toAssignmentTypeKey
 import stasis.client_android.activities.helpers.Common.toAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.toFields
 import stasis.client_android.activities.helpers.Common.toMinimizedString
@@ -303,6 +304,33 @@ class CommonSpec {
         } catch (e: IllegalArgumentException) {
             assertThat(e.message, equalTo("Unexpected assignment type provided: [other]"))
         }
+    }
+
+    @Test
+    fun convertAssignmentsToTypeKeys() {
+        val schedule = UUID.randomUUID()
+        val definition = UUID.randomUUID()
+
+        assertThat(
+            OperationScheduleAssignment.Backup(schedule, definition, emptyList())
+                .toAssignmentTypeKey(),
+            equalTo("backup")
+        )
+
+        assertThat(
+            OperationScheduleAssignment.Expiration(schedule).toAssignmentTypeKey(),
+            equalTo("expiration")
+        )
+
+        assertThat(
+            OperationScheduleAssignment.Validation(schedule).toAssignmentTypeKey(),
+            equalTo("validation")
+        )
+
+        assertThat(
+            OperationScheduleAssignment.KeyRotation(schedule).toAssignmentTypeKey(),
+            equalTo("key-rotation")
+        )
     }
 
     @Test

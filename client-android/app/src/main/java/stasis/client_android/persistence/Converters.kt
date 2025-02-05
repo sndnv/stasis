@@ -5,12 +5,17 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.lib.ops.scheduling.OperationScheduleAssignment
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.persistence.rules.RuleEntity
 import stasis.client_android.persistence.schedules.ActiveScheduleEntity
+import stasis.client_android.persistence.schedules.LocalScheduleEntity
 import java.nio.file.Paths
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
 import java.util.UUID
 
 class Converters {
@@ -37,12 +42,39 @@ class Converters {
             else -> throw IllegalArgumentException("Unexpected operation provided: [$operation]")
         }
 
+    @TypeConverter
+    fun localDateTimeToString(timestamp: LocalDateTime): String =
+        timestamp.toString()
+
+    @TypeConverter
+    fun stringToLocalDateTime(timestamp: String): LocalDateTime =
+        LocalDateTime.parse(timestamp)
+
+    @TypeConverter
+    fun durationToLong(duration: Duration): Long =
+        duration.toMillis()
+
+    @TypeConverter
+    fun longToDuration(duration: Long): Duration =
+        Duration.ofMillis(duration)
+
+    @TypeConverter
+    fun instantToLong(instant: Instant): Long =
+        instant.toEpochMilli()
+
+    @TypeConverter
+    fun longToInstant(instant: Long): Instant =
+        Instant.ofEpochMilli(instant)
+
     companion object {
         fun Rule.asEntity(): RuleEntity = ruleToEntity(this)
         fun RuleEntity.asRule(): Rule = entityToRule(this)
 
         fun ActiveSchedule.asEntity(): ActiveScheduleEntity = activeScheduleToEntity(this)
         fun ActiveScheduleEntity.asActiveSchedule(): ActiveSchedule = entityToActiveSchedule(this)
+
+        fun Schedule.asLocalScheduleEntity(): LocalScheduleEntity = scheduleToLocalScheduleEntity(this)
+        fun LocalScheduleEntity.asSchedule(): Schedule = localScheduleEntityToSchedule(this)
 
         fun AccessTokenResponse.toJson(): String = accessTokenResponseToString(this)
         fun String.toAccessTokenResponse(): AccessTokenResponse = stringToAccessTokenResponse(this)
@@ -115,6 +147,26 @@ class Converters {
 
             return ActiveSchedule(id = entity.id, assignment = assignment)
         }
+
+        fun scheduleToLocalScheduleEntity(schedule: Schedule): LocalScheduleEntity =
+            LocalScheduleEntity(
+                id = schedule.id,
+                info = schedule.info,
+                start = schedule.start,
+                interval = schedule.interval,
+                created = schedule.created
+            )
+
+        fun localScheduleEntityToSchedule(entity: LocalScheduleEntity): Schedule =
+            Schedule(
+                id = entity.id,
+                info = entity.info,
+                isPublic = false,
+                start = entity.start,
+                interval = entity.interval,
+                created = entity.created,
+                updated = entity.created
+            )
 
         fun activeScheduleToString(activeSchedule: ActiveSchedule): String =
             Gson().toJson(activeScheduleToJson(activeSchedule))

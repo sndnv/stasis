@@ -6,6 +6,7 @@
     android:layout_height="wrap_content">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/new_schedule_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -98,4 +99,13 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/new_schedule_assignment_fields" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/new_schedule_no_allowed_assignments"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/schedule_assignments_none_allowed"
+        android:visibility="gone" />
 </RelativeLayout>

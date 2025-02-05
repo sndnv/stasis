@@ -12,16 +12,19 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import stasis.client_android.R
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentSchedulesBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
-import stasis.client_android.lib.model.server.schedules.Schedule
-import stasis.client_android.lib.ops.scheduling.ActiveSchedule
+import stasis.client_android.persistence.schedules.LocalScheduleViewModel
 import stasis.client_android.scheduling.SchedulerService
+import stasis.client_android.scheduling.Schedules
 import stasis.client_android.serialization.Extras.putActiveSchedule
 import stasis.client_android.utils.DynamicArguments
+import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
@@ -31,6 +34,9 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
 
     @Inject
     lateinit var datasets: DatasetsViewModel
+
+    @Inject
+    lateinit var localSchedules: LocalScheduleViewModel
 
     private lateinit var service: SchedulerService
     private var serviceConnected: Boolean = false
@@ -44,10 +50,8 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
             this@SchedulesFragment.service = binder.service
             this@SchedulesFragment.serviceConnected = true
 
-            (binder.service.publicAndConfiguredSchedules and datasets.definitions()).observe(viewLifecycleOwner) {
-                val (public, configured) = it.first
-                val definitions = it.second
-                updateView(public, configured, definitions)
+            (binder.service.schedules and datasets.definitions()).observe(viewLifecycleOwner) { (schedules, definitions) ->
+                updateView(schedules, definitions)
             }
         }
 
@@ -111,20 +115,52 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
                 }
 
                 activity?.startService(intent)
+            },
+            updateSchedule = { schedule ->
+                lifecycleScope.launch {
+                    localSchedules.put(schedule).await()
+                    service.forceScheduleRefresh()
+                }
+            },
+            removeSchedule = { scheduleId ->
+                lifecycleScope.launch {
+                    localSchedules.delete(scheduleId).await()
+                    service.forceScheduleRefresh()
+                }
             }
         )
 
         binding.schedulesList.adapter = adapter
+
+        val argsId = "for-schedule-none"
+
+        providedArguments.put(
+            key = "$argsId-LocalScheduleFormDialogFragment",
+            arguments = LocalScheduleFormDialogFragment.Companion.Arguments(
+                currentSchedule = null,
+                onScheduleActionRequested = { schedule ->
+                    lifecycleScope.launch {
+                        localSchedules.put(schedule).await()
+                        service.forceScheduleRefresh()
+                    }
+                }
+            )
+        )
+
+        binding.scheduleAddButton.setOnClickListener {
+            LocalScheduleFormDialogFragment()
+                .withArgumentsId<LocalScheduleFormDialogFragment>(id = "$argsId-LocalScheduleFormDialogFragment")
+                .show(childFragmentManager, LocalScheduleFormDialogFragment.Tag)
+        }
     }
 
     private fun updateView(
-        public: List<Schedule>,
-        configured: List<ActiveSchedule>,
+        schedules: Schedules,
         definitions: List<DatasetDefinition>
     ) {
-        adapter.setSchedules(public, configured, definitions)
+        adapter.setSchedules(schedules, definitions)
 
-        if (public.isEmpty() && configured.isEmpty()) {
+        if (schedules.public.isEmpty() && schedules.local.isEmpty() && schedules.configured.isEmpty()) {
             binding.schedulesListEmpty.isVisible = true
             binding.schedulesList.isVisible = false
         } else {

@@ -94,9 +94,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
             listOf(
                 defaultSchedule,
                 defaultSchedule.copy(
-                    id =
-                    ScheduleId.randomUUID(),
-                    info = "test-schedule",
+                    id = ScheduleId.randomUUID(),
+                    info = "test-schedule-2",
+                    start = LocalDateTime.now().plusHours(6),
                 )
             )
         )
@@ -190,7 +190,7 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
 
     private val defaultSchedule = Schedule(
         id = ScheduleId.randomUUID(),
-        info = "test-schedule",
+        info = "test-schedule-1",
         isPublic = true,
         start = LocalDateTime.now().plusHours(4),
         interval = Duration.ofHours(12),

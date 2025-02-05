@@ -63,7 +63,6 @@
     <string name="confirmation_dialog_cancel_button_title">Cancel</string>
 
     <!-- Operation Restrictions -->
-    <string name="active_restrictions_button_hint">Active Restrictions</string>
     <string name="active_restrictions_dialog_title">Active Restrictions</string>
     <string name="active_restrictions_dialog_content">One or more restrictions are currently active that impact operations:\n\n%1$s\n\nIf these restrictions can be safely ignored, go to \"Settings\" > \"Advanced\" to override this behaviour.</string>
     <string name="operation_restriction_no_connection">no network connection</string>
@@ -152,9 +151,13 @@
     </string>
     <string name="context_help_schedules">
         Showing and managing client scheduling.\n\n
-        Each item represents a public schedule provided by the server. One or more assignments can be created for each schedule
-        so that the client can execute the specified actions at the appropriate time.\n\n
-        A schedule can be expanded to show all assignments associated with it.
+        Each item represents a schedule provided by the server or a locally defined schedule.
+        One or more assignments can be created for each schedule so that the client can execute
+        the specified actions at the appropriate time.\n\n
+        A schedule can be expanded to show all assignments associated with it.\n\n
+        The list of schedules is ordered by their next execution time, with schedules on top
+        to be run sooner than those below them. If there is no assignment for the next schedule,
+        no action will be taken.
     </string>
 
     <!-- API Failures -->
@@ -448,9 +451,10 @@
     <string name="rule_suggestion_file_exclude_extension_all">Exclude all files with this extension (in all directories)</string>
 
     <!-- Schedules -->
-    <string name="schedule_field_content_info">%1$s</string>
+    <string name="schedule_field_content_info_unknown">%1$s</string>
+    <string name="schedule_field_content_info_public">%1$s (server)</string>
+    <string name="schedule_field_content_info_private">%1$s (local)</string>
     <string name="schedule_field_content_active">Active assignments: %1$s</string>
-    <string name="schedule_field_content_active_none">None</string>
     <string name="schedule_field_content_next">Next run on %1$s at %2$s</string>
     <string name="schedule_field_content_interval">Running every %1$s %2$s</string>
     <string name="schedules_list_empty">No Schedules</string>
@@ -461,7 +465,24 @@
     <string name="schedule_assignment_add_button_hint">Assign</string>
     <string name="schedule_assignment_remove_button_hint">Remove assignment</string>
     <string name="schedule_assignment_remove_confirm_title">Remove schedule assignment for [%1$s]?</string>
-    <string name="schedule_assignments_list_empty">No Assignments</string>
+    <string name="schedule_assignments_list_empty">No Active Assignments</string>
+    <string name="schedule_assignments_none_allowed">No further operations can be assigned to this schedule</string>
+    <string name="schedule_field_title_info">Info</string>
+    <string name="schedule_field_title_start">Start</string>
+    <string name="schedule_field_title_interval">Interval</string>
+    <string name="schedule_add_button_title">Add</string>
+    <string name="schedule_add_button_hint">Add a new local schedule</string>
+    <string name="schedule_update_button_title">Update</string>
+    <string name="schedule_update_button_hint">Make changes to this local schedule</string>
+    <string name="schedule_remove_button_title">Remove</string>
+    <string name="schedule_remove_button_hint">Permanently remove this local schedule</string>
+    <string name="schedule_field_error_info">Schedule info cannot be empty</string>
+    <string name="schedule_field_error_interval">Interval cannot be empty or 0</string>
+    <string name="schedule_field_error_interval_padding"> </string>
+    <string name="schedule_remove_confirm_title">Remove schedule?</string>
+    <string name="schedule_remove_disabled_title">Schedule cannot be removed</string>
+    <string name="schedule_remove_disabled_content">Schedule [%1$s] has active assignments and cannot be removed. Remove the assignments first and then try again.</string>
+    <string name="schedule_next_hint">Schedule to be executed next</string>
 
     <!-- Operations -->
     <string name="operations_list_empty">No Operations</string>
@@ -606,6 +627,9 @@
     <string name="toast_operation_resumed">Operation resumed</string>
     <string name="toast_operation_removed">Operation removed</string>
     <string name="toast_restart_required_for_setting">The application needs to be restarted for this change to take effect</string>
+    <string name="toast_schedule_created">Schedule created</string>
+    <string name="toast_schedule_updated">Schedule updated</string>
+    <string name="toast_schedule_removed">Schedule removed</string>
 
     <!-- Retention -->
     <plurals name="dataset_definition_retention_at_most">
@@ -637,6 +661,7 @@
     <string name="entry_actions_entry_name">%1$s</string>
     <string name="entry_actions_entry_description">%1$s</string>
     <string name="entry_actions_entry_actions_title">Actions</string>
+    <string name="entry_actions_entry_actions_empty">No Actions Available</string>
     <string name="entry_actions_action_name">%1$s</string>
     <string name="entry_actions_action_description">%1$s</string>
 

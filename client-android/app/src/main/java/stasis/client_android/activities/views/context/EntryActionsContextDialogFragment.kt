@@ -6,6 +6,7 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
@@ -36,13 +37,21 @@ class EntryActionsContextDialogFragment(
         binding.entryDescription.text =
             getString(R.string.entry_actions_entry_description, description)
 
-        binding.entryActions.adapter =
-            EntryActionsListItemAdapter(
-                context = requireContext(),
-                actions = actions,
-                onActionComplete = { dialog?.dismiss() },
-                defaultTextColor = binding.entryName.textColors.defaultColor
-            )
+        if (actions.isEmpty()) {
+            binding.entryActions.isVisible = false
+            binding.entryActionsEmpty.isVisible = true
+        } else {
+            binding.entryActions.adapter =
+                EntryActionsListItemAdapter(
+                    context = requireContext(),
+                    actions = actions,
+                    onActionComplete = { dialog?.dismiss() },
+                    defaultTextColor = binding.entryName.textColors.defaultColor
+                )
+
+            binding.entryActions.isVisible = true
+            binding.entryActionsEmpty.isVisible = false
+        }
 
         return binding.root
     }

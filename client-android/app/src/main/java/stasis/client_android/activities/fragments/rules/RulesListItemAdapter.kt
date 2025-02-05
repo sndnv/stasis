@@ -69,7 +69,7 @@ class RulesListItemAdapter(
 
             binding.rulePattern.text = context.getString(R.string.rule_field_content_pattern, rule.pattern)
 
-            val argsId = "for-rule-${rule.id.toString()}"
+            val argsId = "for-rule-${rule.id}"
 
             provider.providedArguments.put(
                 key = "$argsId-RuleFormDialogFragment",

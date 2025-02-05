@@ -168,12 +168,15 @@ object Common {
         else -> throw IllegalArgumentException("Unexpected assignment type provided: [$this]")
     }
 
-    fun OperationScheduleAssignment.toAssignmentTypeString(context: Context): String = when (this) {
+    fun OperationScheduleAssignment.toAssignmentTypeKey(): String = when (this) {
         is OperationScheduleAssignment.Backup -> "backup"
         is OperationScheduleAssignment.Expiration -> "expiration"
         is OperationScheduleAssignment.Validation -> "validation"
         is OperationScheduleAssignment.KeyRotation -> "key-rotation"
-    }.toAssignmentTypeString(context)
+    }
+
+    fun OperationScheduleAssignment.toAssignmentTypeString(context: Context): String =
+        this.toAssignmentTypeKey().toAssignmentTypeString(context)
 
     fun String.toOperationStageString(context: Context): String = when (this) {
         "discovered" -> context.getString(R.string.operation_stage_discovered)
