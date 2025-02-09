@@ -54,7 +54,7 @@ class DefaultResourceOwnerStore(
         active,
         subject,
         created,
-        updated,
+        updated
       ) <> ((ResourceOwner.apply _).tupled, ResourceOwner.unapply)
   }
 
