@@ -6,25 +6,25 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.15"
+ThisBuild / scalaVersion := "2.13.16"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.1.2"
+  val pekko         = "1.1.3"
   val pekkoHttp     = "1.1.0"
   val pekkoHttpCors = "1.1.0"
   val pekkoJson     = "3.0.0"
 
   // persistence
   val slick    = "3.5.2"
-  val postgres = "42.7.4"
+  val postgres = "42.7.5"
   val mariadb  = "3.5.1"
-  val sqlite   = "3.47.1.0"
+  val sqlite   = "3.49.0.0"
   val h2       = "2.3.232"
 
   // telemetry
-  val openTelemetry           = "1.45.0"
-  val openTelemetryPrometheus = "1.45.0-alpha"
+  val openTelemetry           = "1.47.0"
+  val openTelemetryPrometheus = "1.47.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -39,11 +39,11 @@ lazy val versions = new {
   val playJson     = "2.10.6"
   val jose4j       = "0.9.6"
   val hkdf         = "2.0.0"
-  val appdirs      = "1.2.2"
+  val appdirs      = "1.3.0"
   val scopt        = "4.1.0"
-  val logback      = "1.5.15"
+  val logback      = "1.5.16"
   val systemTray   = "4.4"
-  val bouncycastle = "1.79"
+  val bouncycastle = "1.80"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:21-noble"
@@ -285,12 +285,12 @@ Global / concurrentRestrictions += Tags.limit(
 
 addCommandAlias(
   name = "prepare",
-  value = "; clean; compile; test:compile"
+  value = "; clean; compile; Test/compile"
 )
 
 addCommandAlias(
   name = "check",
-  value = "; dependencyUpdates; scalafmtSbtCheck; scalafmtCheck; test:scalafmtCheck"
+  value = "; dependencyUpdates; scalafmtSbtCheck; scalafmtCheck; Test/scalafmtCheck"
 )
 
 addCommandAlias(

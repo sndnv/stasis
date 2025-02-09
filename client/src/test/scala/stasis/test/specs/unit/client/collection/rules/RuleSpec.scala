@@ -100,7 +100,10 @@ class RuleSpec extends UnitSpec {
       "   /etc      *               " -> ("/etc", "*"),
       "/            *               " -> ("/", "*"),
       "\"/home/user/some directory\" *.conf" -> ("/home/user/some directory", "*.conf"),
-      "\"/directory name with whitespace\" pattern with whitespace" -> ("/directory name with whitespace", "pattern with whitespace")
+      "\"/directory name with whitespace\" pattern with whitespace" -> (
+        "/directory name with whitespace",
+        "pattern with whitespace"
+      )
     )
 
     val invalidDirectoryPatternsRules = Seq(

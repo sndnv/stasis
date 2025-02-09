@@ -17,8 +17,14 @@ class FormatsSpec extends UnitSpec {
     val grpcAddress = GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
 
     val addresses = Map(
-      "http" -> (httpAddress, s"""{"address_type":"http","address":{"uri":"${httpAddress.uri}"}}"""),
-      "grpc" -> (grpcAddress, s"""{"address_type":"grpc","address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}}}""")
+      "http" -> (
+        httpAddress,
+        s"""{"address_type":"http","address":{"uri":"${httpAddress.uri}"}}"""
+      ),
+      "grpc" -> (
+        grpcAddress,
+        s"""{"address_type":"grpc","address":{"host":"${grpcAddress.host}","port":${grpcAddress.port},"tls_enabled":${grpcAddress.tlsEnabled}}}"""
+      )
     )
 
     addresses.foreach { case (_, (address, json)) =>

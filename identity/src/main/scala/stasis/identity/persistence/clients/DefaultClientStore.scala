@@ -57,7 +57,7 @@ class DefaultClientStore(
         active,
         subject,
         created,
-        updated,
+        updated
       ) <> ((Client.apply _).tupled, Client.unapply)
   }
 
