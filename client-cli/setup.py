@@ -7,11 +7,11 @@ install_requires = [
     'hurry.filesize==0.9',
     'pyhocon==0.3.61',
     'click==8.1.8',
-    'pyparsing==3.1.4',
-    'psutil==5.9.8',
-    'cryptography==43.0.1',
+    'pyparsing==3.2.1',
+    'psutil==6.1.1',
+    'cryptography==44.0.0',
     'sseclient-py==1.8.0',
-    'tqdm==4.66.5',
+    'tqdm==4.67.1',
 ]
 
 tests_require = []
