@@ -449,6 +449,7 @@ class ConfigRepositorySpec {
         every { editor.remove(Keys.Secrets.EncryptedDeviceSecret) } returns editor
         every { editor.remove(Keys.General.IsFirstRun) } returns editor
         every { editor.remove(Keys.General.SavedUsername) } returns editor
+        every { editor.remove(Keys.General.LastProcessedCommand) } returns editor
         every { editor.commit() } returns true
 
         val repository = ConfigRepository(preferences = preferences)

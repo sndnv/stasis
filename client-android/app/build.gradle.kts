@@ -9,38 +9,38 @@ plugins {
 dependencies {
     implementation(project(":lib"))
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.25")
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
+    implementation("com.google.code.gson:gson:2.12.1")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     implementation("androidx.fragment:fragment-ktx:1.8.5")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.8.5")
-    implementation("androidx.navigation:navigation-ui-ktx:2.8.5")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.8.6")
+    implementation("androidx.navigation:navigation-ui-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.25")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.10")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.15.0")
     implementation("io.github.amrdeveloper:treeview:1.2.0")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
-    implementation("com.google.dagger:hilt-android:2.52")
-    ksp("com.google.dagger:hilt-compiler:2.52")
+    implementation("com.google.dagger:hilt-android:2.55")
+    ksp("com.google.dagger:hilt-compiler:2.55")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    testImplementation("io.mockk:mockk:1.13.14")
-    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("io.mockk:mockk:1.13.16")
+    testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.6.1")
 
@@ -50,7 +50,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("io.mockk:mockk-android:1.13.14")
+    androidTestImplementation("io.mockk:mockk-android:1.13.16")
 
     debugImplementation("androidx.fragment:fragment-testing:1.8.5") {
         exclude(group = "androidx.test", module = "monitor")
@@ -58,11 +58,11 @@ dependencies {
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
 
         applicationId = "stasis.client.android"
         versionCode = 5
@@ -117,9 +117,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions.jvmTarget = "17"
 
     packaging {
         resources {
@@ -131,6 +129,7 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        packaging { jniLibs { useLegacyPackaging = true } }
     }
 
     namespace = "stasis.client_android"

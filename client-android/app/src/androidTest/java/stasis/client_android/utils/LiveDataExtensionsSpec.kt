@@ -1,7 +1,12 @@
 package stasis.client_android.utils
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.map
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
@@ -26,7 +31,6 @@ import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.LiveDataExtensions.optionalLiveData
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.exp
 
 @RunWith(AndroidJUnit4::class)
 class LiveDataExtensionsSpec {

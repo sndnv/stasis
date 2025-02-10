@@ -1,5 +1,6 @@
 package stasis.client_android.lib.ops.backup.stages
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapConcat
@@ -15,6 +16,7 @@ interface EntityCollection {
     val targetDataset: DatasetDefinition
     val providers: Providers
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun entityCollection(
         operation: OperationId,
         flow: Flow<BackupCollector>

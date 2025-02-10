@@ -30,3 +30,4 @@ node_modules/
 libraries/tools/kotlin-test-js-runner/lib/
 local.properties
 *.hprof
+.kotlin/
