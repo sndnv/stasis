@@ -59,8 +59,8 @@ class DynamicArgumentsSpec {
         val e = Try { provider.providedArguments.get<B>("test-1") }.failed().get()
 
         val expectedMessage =
-            "Argument set of type [stasis.client_android.utils.DynamicArguments.ProviderSpec\$B] " +
-                    "requested but [stasis.client_android.utils.DynamicArguments.ProviderSpec\$A] " +
+            "Argument set of type [stasis.client_android.utils.DynamicArgumentsSpec\$B] " +
+                    "requested but [stasis.client_android.utils.DynamicArgumentsSpec\$A] " +
                     "found for key [test-1]"
 
         assertThat(e.message, equalTo(expectedMessage))
