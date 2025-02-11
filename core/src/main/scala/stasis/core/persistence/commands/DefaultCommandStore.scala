@@ -92,6 +92,15 @@ class DefaultCommandStore(
     database.run(store.filter(e => e.sequenceId > lastSequenceId && (e.target.isEmpty || e.target === forEntity)).result)
   }
 
-  override val migrations: Seq[Migration] =
-    Seq.empty
+  override val migrations: Seq[Migration] = Seq(
+    Migration(
+      version = 1,
+      needed = Migration.Action {
+        database.run(slick.jdbc.meta.MTable.getTables(namePattern = name).map(_.headOption.isEmpty))
+      },
+      action = Migration.Action {
+        init()
+      }
+    )
+  )
 }
