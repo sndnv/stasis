@@ -245,21 +245,16 @@ class HomeFragment : Fragment() {
         ).renderAsSpannable(
             StyledString(
                 placeholder = "%1\$s",
-                content = progress.started.formatAsFullDateTime(context),
-                style = StyleSpan(Typeface.BOLD)
-            ),
-            StyledString(
-                placeholder = "%2\$s",
                 content = progress.processed.toString(),
                 style = StyleSpan(Typeface.BOLD)
             ),
             StyledString(
-                placeholder = "%3\$s",
+                placeholder = "%2\$s",
                 content = progress.total.toString(),
                 style = StyleSpan(Typeface.BOLD)
             ),
             StyledString(
-                placeholder = "%4\$s",
+                placeholder = "%3\$s",
                 content = progress.failures.toString(),
                 style = StyleSpan(Typeface.BOLD)
             )
