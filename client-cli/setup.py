@@ -20,7 +20,7 @@ setup(
     name='stasis-client-cli',
     license='Apache-2.0',
     url='https://github.com/sndnv/stasis',
-    version='1.4.1+SNAPSHOT',
+    version='1.4.1',
     install_requires=install_requires,
     tests_require=tests_require,
     packages=find_packages(),
