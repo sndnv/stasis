@@ -69,7 +69,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     for {
       result <- persistence.migrate()
     } yield {
-      result should be(MigrationResult(found = 6, executed = 0))
+      result should be(MigrationResult(found = 7, executed = 1))
     }
   }
 
