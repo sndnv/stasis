@@ -130,7 +130,11 @@ class DefaultRefreshTokenStore(
       version = 2,
       needed = Migration.Action {
         for {
-          table <- database.run(slick.jdbc.meta.MTable.getTables(namePattern = name).map(_.headOption))
+          table <- database.run(
+            slick.jdbc.meta.MTable
+              .getTables(cat = None, schemaPattern = None, namePattern = Some(name), types = None)
+              .map(_.headOption)
+          )
           indices <- table.map(t => database.run(t.getIndexInfo(unique = true))).getOrElse(Future.successful(Seq.empty))
         } yield {
           table.nonEmpty && !indices.flatMap(_.indexName).contains(clientOwnerIndexName)

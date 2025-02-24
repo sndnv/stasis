@@ -40,7 +40,9 @@ class LegacyKeyValueStore(
         import slick.jdbc.meta.MTable
 
         for {
-          table <- database.run(MTable.getTables(namePattern = name).map(_.headOption))
+          table <- database.run(
+            MTable.getTables(cat = None, schemaPattern = None, namePattern = Some(name), types = None).map(_.headOption)
+          )
           columns <- table.map(t => database.run(t.getColumns)).getOrElse(Future.successful(Seq.empty))
         } yield {
           columns.toList.sortBy(_.name) match {
