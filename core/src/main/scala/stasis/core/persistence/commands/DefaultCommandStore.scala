@@ -96,7 +96,9 @@ class DefaultCommandStore(
     Migration(
       version = 1,
       needed = Migration.Action {
-        database.run(slick.jdbc.meta.MTable.getTables(namePattern = name).map(_.headOption.isEmpty))
+        database
+          .run(slick.jdbc.meta.MTable.getTables(cat = None, schemaPattern = None, namePattern = Some(name), types = None))
+          .map(_.headOption.isEmpty)
       },
       action = Migration.Action {
         init()
