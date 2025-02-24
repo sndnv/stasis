@@ -1,5 +1,3 @@
-import 'dart:html' as html;
-
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -18,6 +16,7 @@ import 'package:identity_ui/pages/manage/codes.dart';
 import 'package:identity_ui/pages/manage/owners.dart';
 import 'package:identity_ui/pages/manage/tokens.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 class PageRouter {
   static FluroRouter underlying = FluroRouter.appRouter;
@@ -72,14 +71,14 @@ class PageRouter {
       );
     } else {
       final uri = await OAuth.generateAuthorizationUri(oauthConfig);
-      html.window.location.assign(uri.toString());
+      web.window.location.assign(uri.toString());
       return Future.error(RedirectPending.instance);
     }
   }
 
   static Future<void> _logout() async {
     final _ = await OAuth.discardCredentials();
-    html.window.location.assign(PageRouterDestination.home.route);
+    web.window.location.assign(PageRouterDestination.home.route);
   }
 
   static AppBar _appBar(BuildContext context, PageRouterDestination currentDestination) {

@@ -1,4 +1,3 @@
-import 'dart:html' as html;
 import 'dart:math';
 
 import 'package:fluro/fluro.dart';
@@ -16,8 +15,8 @@ import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/default/home.dart';
 import 'package:server_ui/pages/default/not_found.dart';
 import 'package:server_ui/pages/manage/codes.dart';
-import 'package:server_ui/pages/manage/definitions.dart';
 import 'package:server_ui/pages/manage/commands.dart';
+import 'package:server_ui/pages/manage/definitions.dart';
 import 'package:server_ui/pages/manage/device_keys.dart';
 import 'package:server_ui/pages/manage/devices.dart';
 import 'package:server_ui/pages/manage/nodes.dart';
@@ -26,6 +25,7 @@ import 'package:server_ui/pages/manage/schedules.dart';
 import 'package:server_ui/pages/manage/users.dart';
 import 'package:server_ui/pages/page_destinations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 class PageRouter {
   static FluroRouter underlying = FluroRouter.appRouter;
@@ -75,14 +75,14 @@ class PageRouter {
       );
     } else {
       final uri = await OAuth.generateAuthorizationUri(config);
-      html.window.location.assign(uri.toString());
+      web.window.location.assign(uri.toString());
       return Future.error(RedirectPending.instance);
     }
   }
 
   static Future<void> _logout() async {
     final _ = await OAuth.discardCredentials();
-    html.window.location.assign(PageRouterDestination.home.route);
+    web.window.location.assign(PageRouterDestination.home.route);
   }
 
   static AppBar _appBar(
@@ -186,7 +186,7 @@ class PageRouter {
                     activeColor: Theme.of(buildContext).colorScheme.primary,
                     onChanged: (value) {
                       routerContext.usePrivilegedApis.set(value);
-                      html.window.location.assign(PageRouterDestination.home.route);
+                      web.window.location.assign(PageRouterDestination.home.route);
                     },
                   ),
                 ),
