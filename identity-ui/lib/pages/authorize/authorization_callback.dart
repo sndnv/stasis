@@ -1,13 +1,13 @@
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:identity_ui/api/oauth.dart';
 import 'package:identity_ui/pages/default/components.dart';
 import 'package:identity_ui/pages/page_router.dart';
+import 'package:web/web.dart' as web;
 
 class AuthorizationCallback extends StatelessWidget {
   AuthorizationCallback({super.key, required this.config});
+
   final OAuthConfig config;
 
   final List<String> _requiredParameters = ['code', 'state'];
@@ -44,7 +44,7 @@ class AuthorizationCallback extends StatelessWidget {
         future: OAuth.handleAuthorizationResponse(config, Uri.base.queryParameters),
         builder: (context, snapshot) {
           if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
-            window.location.assign('${Uri.base.origin}/${PageRouterDestination.home.route}');
+            web.window.location.assign('${Uri.base.origin}/${PageRouterDestination.home.route}');
 
             return const ListTile(
               leading: Icon(Icons.error),

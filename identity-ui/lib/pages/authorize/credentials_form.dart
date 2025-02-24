@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:html';
-import 'dart:js' as js;
+import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:identity_ui/api/oauth.dart';
 import 'package:identity_ui/pages/authorize/derived_passwords.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 class CredentialsForm extends StatefulWidget {
   const CredentialsForm({
@@ -189,7 +189,7 @@ class _CredentialsFormState extends State<CredentialsForm> {
       final redirectUri = Uri.parse(redirectUriParameter)
           .replace(queryParameters: {'error': error, 'error_description': errorDescription});
 
-      window.location.assign(redirectUri.toString());
+      web.window.location.assign(redirectUri.toString());
     }
   }
 
@@ -223,7 +223,7 @@ class _CredentialsFormState extends State<CredentialsForm> {
       futureAuthenticationPassword.then(
         (authenticationPassword) {
           final authorization = 'Basic ${base64Encode(utf8.encode('$username:$authenticationPassword'))}';
-          js.context.callMethod('sendAuthorization', [uri.toString(), authorization, js.allowInterop(callback)]);
+          sendAuthorization(uri.toString(), authorization, callback.toJS);
         },
         onError: (e) {
           _showSnackBar(message: 'Failed to generate authentication password: [$e]');
@@ -262,3 +262,6 @@ class _CredentialsFormState extends State<CredentialsForm> {
 class Keys {
   static const String _userSalt = 'stasis.identity_ui.credentials.user_salt';
 }
+
+@JS()
+external void sendAuthorization(String uri, String authorization, JSFunction callback);
