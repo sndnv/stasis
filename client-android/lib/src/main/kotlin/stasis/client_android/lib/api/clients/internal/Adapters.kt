@@ -2,6 +2,9 @@ package stasis.client_android.lib.api.clients.internal
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
+import stasis.client_android.lib.discovery.ServiceApiEndpoint
+import stasis.client_android.lib.discovery.ServiceDiscoveryResult
+import stasis.client_android.lib.model.core.networking.EndpointAddress
 import stasis.client_android.lib.model.server.api.responses.CommandAsJson
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import java.math.BigInteger
@@ -82,6 +85,90 @@ object Adapters {
                 "all" -> DatasetDefinition.Retention.Policy.All
 
                 else -> throw IllegalArgumentException("Unexpected policy type provided: [$policyType]")
+            }
+    }
+
+    object ForEndpointAddress {
+        @ToJson
+        fun toJson(address: EndpointAddress): Map<String, Any> =
+            when (address) {
+                is EndpointAddress.HttpEndpointAddress -> mapOf(
+                    "address_type" to "http",
+                    "address" to mapOf("uri" to address.uri)
+                )
+
+                is EndpointAddress.GrpcEndpointAddress -> mapOf(
+                    "address_type" to "grpc",
+                    "address" to mapOf(
+                        "host" to address.host,
+                        "port" to address.port,
+                        "tls_enabled" to address.tlsEnabled
+                    )
+                )
+            }
+
+        @FromJson
+        fun fromJson(address: Map<String, Any>): EndpointAddress {
+            val actualAddress = address["address"] as? Map<*, *>
+
+            return when (val addressType = address["address_type"]) {
+                "http" -> EndpointAddress.HttpEndpointAddress(
+                    uri = actualAddress?.get("uri") as String
+                )
+
+                "grpc" -> EndpointAddress.GrpcEndpointAddress(
+                    host = actualAddress?.get("host") as String,
+                    port = (actualAddress["port"] as Number).toInt(),
+                    tlsEnabled = actualAddress["tls_enabled"] as Boolean
+                )
+
+                else -> throw IllegalArgumentException("Unexpected address type provided: [$addressType]")
+            }
+        }
+    }
+
+    object ForServiceDiscoveryResult {
+        @ToJson
+        fun toJson(result: ServiceDiscoveryResult): Map<String, Any> =
+            when (result) {
+                is ServiceDiscoveryResult.KeepExisting -> mapOf("result" to "keep-existing")
+                is ServiceDiscoveryResult.SwitchTo -> mapOf(
+                    "endpoints" to mapOf(
+                        "api" to mapOf("uri" to result.endpoints.api.uri),
+                        "core" to mapOf("address" to ForEndpointAddress.toJson(result.endpoints.core.address)),
+                        "discovery" to mapOf("uri" to result.endpoints.discovery.uri)
+                    ),
+                    "recreate_existing" to result.recreateExisting,
+                    "result" to "switch-to",
+                )
+            }
+
+        @FromJson
+        fun fromJson(result: Map<String, Any>): ServiceDiscoveryResult =
+            when (val resultType = result["result"]) {
+                "keep-existing" -> ServiceDiscoveryResult.KeepExisting
+
+                "switch-to" -> {
+                    val endpoints = result["endpoints"] as Map<*, *>
+                    val api = endpoints["api"] as Map<*, *>
+
+                    @Suppress("UNCHECKED_CAST")
+                    val coreAddress = (endpoints["core"] as Map<*, *>)["address"] as Map<String, Any>
+                    val discovery = endpoints["discovery"] as Map<*, *>
+
+                    ServiceDiscoveryResult.SwitchTo(
+                        endpoints = ServiceDiscoveryResult.Endpoints(
+                            api = ServiceApiEndpoint.Api(uri = api["uri"] as String),
+                            core = ServiceApiEndpoint.Core(
+                                address = ForEndpointAddress.fromJson(coreAddress)
+                            ),
+                            discovery = ServiceApiEndpoint.Discovery(uri = discovery["uri"] as String),
+                        ),
+                        recreateExisting = result["recreate_existing"] as Boolean
+                    )
+                }
+
+                else -> throw IllegalArgumentException("Unexpected result type provided: [$resultType]")
             }
     }
 

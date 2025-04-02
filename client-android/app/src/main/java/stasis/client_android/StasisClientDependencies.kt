@@ -16,15 +16,23 @@ import stasis.client_android.api.clients.MockOAuthClient
 import stasis.client_android.api.clients.MockServerApiEndpointClient
 import stasis.client_android.api.clients.MockServerBootstrapEndpointClient
 import stasis.client_android.api.clients.MockServerCoreEndpointClient
+import stasis.client_android.api.clients.MockServiceDiscoveryClient
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.CachedServerApiEndpointClient
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.DefaultServerBootstrapEndpointClient
 import stasis.client_android.lib.api.clients.DefaultServerCoreEndpointClient
+import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerBootstrapEndpointClient
+import stasis.client_android.lib.api.clients.ServerCoreEndpointClient
+import stasis.client_android.lib.api.clients.ServiceApiClientFactory
 import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.compression.Gzip
+import stasis.client_android.lib.discovery.ClientDiscoveryAttributes
+import stasis.client_android.lib.discovery.ServiceDiscoveryClient
+import stasis.client_android.lib.discovery.http.HttpServiceDiscoveryClient
+import stasis.client_android.lib.discovery.providers.client.ServiceDiscoveryProvider
 import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
@@ -57,6 +65,7 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.saved
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.DefaultCredentialsManagementBridge
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
+import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.settings.Settings.getRestrictionsIgnored
 import stasis.client_android.tracking.DefaultBackupTracker
@@ -145,6 +154,10 @@ object StasisClientDependencies {
                         create = { (authenticationConfig, coreConfig, apiConfig) ->
                             val coroutineScope = CoroutineScope(dispatcher)
 
+                            val userId = UUID.fromString(apiConfig.user)
+                            val deviceId = UUID.fromString(apiConfig.device)
+                            val nodeId = UUID.fromString(coreConfig.nodeId)
+
                             val bridge = DefaultCredentialsManagementBridge(
                                 apiConfig = apiConfig,
                                 preferences = preferences
@@ -168,20 +181,23 @@ object StasisClientDependencies {
                                 coroutineScope = coroutineScope
                             )
 
-                            val coreClient = when {
+                            fun createServerCoreEndpointClient(address: String): ServerCoreEndpointClient = when {
                                 mocksEnabled(server = apiConfig.url) -> MockServerCoreEndpointClient()
                                 else -> DefaultServerCoreEndpointClient(
-                                    serverCoreUrl = coreConfig.address,
+                                    serverCoreUrl = address,
                                     credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.core.get().access_token) },
-                                    self = UUID.fromString(coreConfig.nodeId)
+                                    self = nodeId
                                 )
                             }
 
-                            val apiClient = CachedServerApiEndpointClient(
+                            fun createServerApiEndpointClient(
+                                uri: String,
+                                coreClient: ServerCoreEndpointClient
+                            ): ServerApiEndpointClient = CachedServerApiEndpointClient(
                                 underlying = when {
                                     mocksEnabled(server = apiConfig.url) -> MockServerApiEndpointClient()
                                     else -> DefaultServerApiEndpointClient(
-                                        serverApiUrl = apiConfig.url,
+                                        serverApiUrl = uri,
                                         credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
                                         decryption = DefaultServerApiEndpointClient.DecryptionContext.Default(
                                             core = coreClient,
@@ -196,9 +212,24 @@ object StasisClientDependencies {
                                 datasetMetadataCache = datasetMetadataCache
                             )
 
-                            val search = DefaultSearch(
-                                api = apiClient
-                            )
+                            fun createServiceDiscoveryClient(uri: String): ServiceDiscoveryClient = when {
+                                mocksEnabled(server = apiConfig.url) -> MockServiceDiscoveryClient()
+                                else -> HttpServiceDiscoveryClient(
+                                    apiUrl = uri,
+                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
+                                    attributes = ClientDiscoveryAttributes(
+                                        user = userId,
+                                        device = deviceId,
+                                        node = nodeId
+                                    )
+                                )
+                            }
+
+                            val coreClient = createServerCoreEndpointClient(address = coreConfig.address)
+                            val apiClient = createServerApiEndpointClient(uri = apiConfig.url, coreClient = coreClient)
+                            val discoveryClient = createServiceDiscoveryClient(uri = apiConfig.url)
+
+                            val search = DefaultSearch(api = apiClient)
 
                             val encryption = Aes
 
@@ -220,7 +251,25 @@ object StasisClientDependencies {
                                 suffix = "" // no suffix
                             )
 
-                            val clients = Clients(api = apiClient, core = coreClient)
+                            val clients = Clients.discovered()
+
+                            credentials.setOnApiTokenUpdatedHandler(this@StasisClientDependencies) { token ->
+                                if (token.isSuccess) {
+                                    ServiceDiscoveryProvider.create(
+                                        initialDelay = Duration.ofSeconds(7),
+                                        interval = preferences.getDiscoveryInterval(),
+                                        initialClients = listOf(apiClient, coreClient, discoveryClient),
+                                        clientFactory = ServiceApiClientFactory(
+                                            createServerCoreEndpointClient = ::createServerCoreEndpointClient,
+                                            createServerApiEndpointClient = ::createServerApiEndpointClient,
+                                            createServiceDiscoveryClient = ::createServiceDiscoveryClient
+                                        ),
+                                        onCreated = { provider -> clients.withDiscovery(discovery = provider) },
+                                        coroutineScope = coroutineScope
+                                    )
+                                    credentials.removeOnApiTokenUpdatedHandler(this@StasisClientDependencies)
+                                }
+                            }
 
                             val executor = DefaultOperationExecutor(
                                 config = DefaultOperationExecutor.Config(

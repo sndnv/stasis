@@ -53,7 +53,7 @@ interface EntityDiscovery {
                         checksum = providers.checksum,
                         compression = providers.compression
                     ),
-                    api = providers.clients.api
+                    clients = providers.clients
                 )
             }
     }

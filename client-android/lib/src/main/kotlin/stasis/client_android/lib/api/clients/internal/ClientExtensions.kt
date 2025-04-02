@@ -41,6 +41,8 @@ abstract class ClientExtensions {
         .add(Adapters.ForBigInteger)
         .add(Adapters.ForDatasetDefinitionRetentionPolicy)
         .add(Adapters.ForCommandParametersAsJson)
+        .add(Adapters.ForServiceDiscoveryResult)
+        .add(Adapters.ForEndpointAddress)
         .add(KotlinJsonAdapterFactory())
         .build()
 

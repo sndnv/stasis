@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.flow.fold
+import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.collection.DefaultRecoveryCollector
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
@@ -13,6 +14,7 @@ import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.mocks.MockRecoveryMetadataCollector
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
+import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
 import java.nio.file.Paths
 import java.time.Instant
@@ -81,7 +83,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                         file3Metadata.path to file3Metadata
                     )
                 ),
-                api = MockServerApiEndpointClient()
+                clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient())
             )
 
             val targetFiles = collector
@@ -123,7 +125,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
             val actualMetadata = DefaultRecoveryCollector.collectEntityMetadata(
                 targetMetadata = targetMetadata,
                 keep = { _, state -> state == FilesystemMetadata.EntityState.New },
-                api = MockServerApiEndpointClient()
+                clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient())
             )
 
             actualMetadata shouldBe (

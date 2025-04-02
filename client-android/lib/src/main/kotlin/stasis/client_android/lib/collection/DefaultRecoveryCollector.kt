@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
@@ -16,11 +16,11 @@ class DefaultRecoveryCollector(
     private val keep: (Path, FilesystemMetadata.EntityState) -> Boolean,
     private val destination: TargetEntity.Destination,
     private val metadataCollector: RecoveryMetadataCollector,
-    private val api: ServerApiEndpointClient
+    private val clients: Clients
 ) : RecoveryCollector {
     override fun collect(): Flow<TargetEntity> = flow {
         emitAll(
-            collectEntityMetadata(targetMetadata, keep, api).map { entityMetadata ->
+            collectEntityMetadata(targetMetadata, keep, clients).map { entityMetadata ->
                 metadataCollector.collect(
                     entity = entityMetadata.path,
                     destination = destination,
@@ -34,10 +34,10 @@ class DefaultRecoveryCollector(
         suspend fun collectEntityMetadata(
             targetMetadata: DatasetMetadata,
             keep: (Path, FilesystemMetadata.EntityState) -> Boolean,
-            api: ServerApiEndpointClient
+            clients: Clients
         ): List<EntityMetadata> =
             targetMetadata.filesystem.entities.toList()
                 .filter { (entity, state) -> keep(entity, state) }
-                .map { (entity, _) -> targetMetadata.require(entity = entity, api = api) }
+                .map { (entity, _) -> targetMetadata.require(entity = entity, clients = clients) }
     }
 }

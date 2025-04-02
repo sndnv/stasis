@@ -73,6 +73,12 @@
             app:key="command_refresh_interval"
             app:title="@string/settings_command_refresh_interval_title" />
 
+        <DropDownPreference
+            app:entries="@array/settings_discovery_interval_entries"
+            app:entryValues="@array/settings_discovery_interval_values"
+            app:key="discovery_interval"
+            app:title="@string/settings_discovery_interval_title" />
+
         <Preference
             app:key="reset_config"
             app:summary="@string/settings_reset_config_summary"

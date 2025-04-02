@@ -22,7 +22,7 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions")
 class CredentialsProvider(
     private val config: Config,
     private val oAuthClient: OAuthClient,
@@ -292,6 +292,18 @@ class CredentialsProvider(
         f: (Try<AccessTokenResponse>) -> Unit,
     ): CredentialsProvider {
         onApiTokenUpdatedHandlers[observer] = f
+
+        return this
+    }
+
+    fun removeOnCoreTokenUpdatedHandler(observer: Any): CredentialsProvider {
+        onCoreTokenUpdatedHandlers.remove(observer)
+
+        return this
+    }
+
+    fun removeOnApiTokenUpdatedHandler(observer: Any): CredentialsProvider {
+        onApiTokenUpdatedHandlers.remove(observer)
 
         return this
     }

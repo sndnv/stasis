@@ -4,6 +4,9 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import stasis.client_android.lib.api.clients.internal.Adapters
+import stasis.client_android.lib.discovery.ServiceApiEndpoint
+import stasis.client_android.lib.discovery.ServiceDiscoveryResult
+import stasis.client_android.lib.model.core.networking.EndpointAddress
 import stasis.client_android.lib.model.server.api.responses.CommandAsJson
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import java.math.BigInteger
@@ -75,6 +78,78 @@ class AdaptersSpec : WordSpec({
             }
 
             e.message shouldBe ("Unexpected policy type provided: [other]")
+        }
+
+        "convert EndpointAddress to/from JSON" {
+            val httpAddress = EndpointAddress.HttpEndpointAddress(uri = "http://some-address:1234")
+            val grpcAddress = EndpointAddress.GrpcEndpointAddress(host = "some-host", port = 1234, tlsEnabled = false)
+
+            val jsonHttpAddress =
+                """{"address_type":"http","address":{"uri":"${httpAddress.uri}"}}"""
+
+            val jsonGrpcAddress =
+                """{
+                    |"address_type":"grpc",
+                    |"address":{
+                    |"host":"${grpcAddress.host}",
+                    |"port":${grpcAddress.port},
+                    |"tls_enabled":${grpcAddress.tlsEnabled}
+                    |}
+                    |}""".trimMargin().replace("\n", "")
+
+            val moshi = com.squareup.moshi.Moshi.Builder().add(Adapters.ForEndpointAddress).build()
+            val adapter = moshi.adapter(EndpointAddress::class.java)
+
+            adapter.toJson(httpAddress) shouldBe (jsonHttpAddress)
+            adapter.toJson(grpcAddress) shouldBe (jsonGrpcAddress)
+
+            adapter.fromJson(jsonHttpAddress) shouldBe (httpAddress)
+            adapter.fromJson(jsonGrpcAddress) shouldBe (grpcAddress)
+
+            val e = shouldThrow<IllegalArgumentException> {
+                Adapters.ForEndpointAddress.fromJson(mapOf("address_type" to "other"))
+            }
+
+            e.message shouldBe ("Unexpected address type provided: [other]")
+        }
+
+        "convert service discovery results to/from JSON" {
+            val keepExistingResult = ServiceDiscoveryResult.KeepExisting
+            val switchToResult = ServiceDiscoveryResult.SwitchTo(
+                endpoints = ServiceDiscoveryResult.Endpoints(
+                    api = ServiceApiEndpoint.Api(uri = "test-uri"),
+                    core = ServiceApiEndpoint.Core(address = EndpointAddress.HttpEndpointAddress(uri = "test-uri")),
+                    discovery = ServiceApiEndpoint.Discovery(uri = "test-uri")
+                ),
+                recreateExisting = true
+            )
+
+            val jsonKeepExistingResult = """{"result":"keep-existing"}"""
+            val jsonSwitchToResult =
+                """{
+                    |"endpoints":{
+                    |"api":{"uri":"test-uri"},
+                    |"core":{"address":{"address_type":"http","address":{"uri":"test-uri"}}},
+                    |"discovery":{"uri":"test-uri"}
+                    |},
+                    |"recreate_existing":true,
+                    |"result":"switch-to"
+                    |}""".trimMargin().replace("\n", "")
+
+            val moshi = com.squareup.moshi.Moshi.Builder().add(Adapters.ForServiceDiscoveryResult).build()
+            val adapter = moshi.adapter(ServiceDiscoveryResult::class.java)
+
+            adapter.toJson(keepExistingResult) shouldBe (jsonKeepExistingResult)
+            adapter.toJson(switchToResult) shouldBe (jsonSwitchToResult)
+
+            adapter.fromJson(jsonKeepExistingResult) shouldBe (keepExistingResult)
+            adapter.fromJson(jsonSwitchToResult) shouldBe (switchToResult)
+
+            val e = shouldThrow<IllegalArgumentException> {
+                Adapters.ForServiceDiscoveryResult.fromJson(mapOf("result" to "other"))
+            }
+
+            e.message shouldBe ("Unexpected result type provided: [other]")
         }
 
         "convert Command to/from JSON" {
