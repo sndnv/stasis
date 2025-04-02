@@ -22,7 +22,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import stasis.client.api.clients.Clients
-import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.ops.commands.CommandProcessor
@@ -234,10 +233,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = new MockSecrets {
-        override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = {
-          case (api, password, salt) =>
-            val _ = credentialsUpdated.set(true)
-            super.updateUserCredentials(api, password, salt)
+        override def updateUserCredentials: (Clients, Array[Char], String) => Future[Done] = { case (clients, password, salt) =>
+          val _ = credentialsUpdated.set(true)
+          super.updateUserCredentials(clients, password, salt)
         }
       }
     ).map { endpoint =>
@@ -283,9 +281,9 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
         override def commandProcessor: CommandProcessor = MockCommandProcessor()
       },
       secrets = new MockSecrets {
-        override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = { case (api, password) =>
+        override def reEncryptDeviceSecret: (Clients, Array[Char]) => Future[Done] = { case (clients, password) =>
           val _ = secretReEncrypted.set(true)
-          super.reEncryptDeviceSecret(api, password)
+          super.reEncryptDeviceSecret(clients, password)
         }
       }
     ).map { endpoint =>
@@ -411,9 +409,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     override def verifyUserPassword: Array[Char] => Boolean = _ => false
 
-    override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = (_, _, _) =>
-      Future.successful(Done)
+    override def updateUserCredentials: (Clients, Array[Char], String) => Future[Done] = (_, _, _) => Future.successful(Done)
 
-    override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = (_, _) => Future.successful(Done)
+    override def reEncryptDeviceSecret: (Clients, Array[Char]) => Future[Done] = (_, _) => Future.successful(Done)
   }
 }

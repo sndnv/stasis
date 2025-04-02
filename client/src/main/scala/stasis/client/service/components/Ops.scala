@@ -92,7 +92,7 @@ object Ops {
               minDelay = rawConfig.getDuration("ops.scheduling.min-delay").toMillis.millis,
               maxExtraDelay = rawConfig.getDuration("ops.scheduling.max-extra-delay").toMillis.millis
             ),
-            api = clients.api,
+            clients = clients,
             executor = executor
           )
 
@@ -100,18 +100,18 @@ object Ops {
           DefaultServerMonitor(
             initialDelay = rawConfig.getDuration("ops.monitoring.initial-delay").toMillis.millis,
             interval = rawConfig.getDuration("ops.monitoring.interval").toMillis.millis,
-            api = clients.api,
+            clients = clients,
             tracker = trackers.server
           )
 
         override val search: Search =
-          new DefaultSearch(api = clients.api)
+          new DefaultSearch(clients = clients)
 
         override val commandProcessor: CommandProcessor =
           DefaultCommandProcessor(
             initialDelay = rawConfig.getDuration("ops.commands.initial-delay").toMillis.millis,
             interval = rawConfig.getDuration("ops.commands.interval").toMillis.millis,
-            api = clients.api,
+            clients = clients,
             handlers = DefaultCommandProcessorHandlers(
               executeCommand = executeCommand(base, _),
               directory = directory

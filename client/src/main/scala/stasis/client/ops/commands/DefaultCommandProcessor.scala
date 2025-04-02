@@ -20,7 +20,7 @@ import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 import stasis.core.commands.proto.Command
 
 class DefaultCommandProcessor private (
@@ -42,7 +42,7 @@ object DefaultCommandProcessor {
   def apply(
     initialDelay: FiniteDuration,
     interval: FiniteDuration,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     handlers: CommandProcessor.Handlers
   )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultCommandProcessor = {
     import system.executionContext
@@ -52,7 +52,7 @@ object DefaultCommandProcessor {
     val behaviour = processor(
       initialDelay = initialDelay,
       interval = interval,
-      api = api,
+      clients = clients,
       commandHandlers = handlers,
       resultHandlers = new CommandProcessingResultHandlers.Default(log)
     )
@@ -75,7 +75,7 @@ object DefaultCommandProcessor {
   private def processor(
     initialDelay: FiniteDuration,
     interval: FiniteDuration,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     commandHandlers: CommandProcessor.Handlers,
     resultHandlers: CommandProcessingResultHandlers
   )(implicit log: Logger): Behavior[Message] =
@@ -92,6 +92,8 @@ object DefaultCommandProcessor {
             implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
 
             timers.cancel(RetrievalTimerKey)
+
+            val api = clients.api
 
             commandHandlers
               .retrieveLastProcessedCommand()
@@ -134,6 +136,8 @@ object DefaultCommandProcessor {
 
             timers.cancel(RetrievalTimerKey)
 
+            val api = clients.api
+
             commandHandlers
               .retrieveLastProcessedCommand()
               .flatMap(api.commands)
@@ -164,6 +168,8 @@ object DefaultCommandProcessor {
             import ctx.executionContext
 
             implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+
+            val api = clients.api
 
             commandHandlers
               .retrieveLastProcessedCommand()

@@ -5,13 +5,15 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 
 class DefaultSearch(
-  api: ServerApiEndpointClient
+  clients: Clients
 )(implicit ec: ExecutionContext)
     extends Search {
   override def search(query: Search.Query, until: Option[Instant]): Future[Search.Result] = {
+    val api = clients.api
+
     val metadataResult = for {
       definitions <- api.datasetDefinitions()
       entries <-

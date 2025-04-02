@@ -10,6 +10,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
+import stasis.client.api.clients.Clients
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
@@ -25,6 +26,7 @@ import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
 class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
   "A DatasetMetadata" should "retrieve metadata for individual files (new and updated)" in {
     val mockApiClient = MockServerApiEndpointClient()
+    val clients = Clients(api = mockApiClient, core = null)
 
     val metadata = DatasetMetadata(
       contentChanged = Map(
@@ -42,8 +44,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     )
 
     for {
-      fileOneMetadata <- metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients)
+      fileTwoMetadata <- metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -55,6 +57,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   it should "handle missing metadata when collecting data for individual files (new and updated)" in {
     val mockApiClient = MockServerApiEndpointClient()
+    val clients = Clients(api = mockApiClient, core = null)
 
     val metadata = DatasetMetadata(
       contentChanged = Map.empty,
@@ -70,7 +73,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     for {
       _ <-
         metadata
-          .collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+          .collect(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients)
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
@@ -81,7 +84,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
       _ <-
         metadata
-          .collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+          .collect(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients)
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
@@ -136,9 +139,11 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         }
     }
 
+    val clients = Clients(api = mockApiClient, core = null)
+
     for {
-      fileOneMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients)
+      fileTwoMetadata <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(2)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -150,6 +155,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   it should "handle missing metadata when collecting data for individual files (existing)" in {
     val mockApiClient = MockServerApiEndpointClient()
+    val clients = Clients(api = mockApiClient, core = null)
 
     val previousEntry = DatasetEntry.generateId()
 
@@ -165,14 +171,14 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     )
 
     for {
-      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient).failed.map {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
             s"Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
-      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient).failed.map {
+      _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
             s"Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
@@ -187,6 +193,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   it should "retrieve required metadata for individual files" in {
     val mockApiClient = MockServerApiEndpointClient()
+    val clients = Clients(api = mockApiClient, core = null)
 
     val metadata = DatasetMetadata(
       contentChanged = Map(
@@ -204,8 +211,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     )
 
     for {
-      fileOneMetadata <- metadata.require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-      fileTwoMetadata <- metadata.require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+      fileOneMetadata <- metadata.require(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients)
+      fileTwoMetadata <- metadata.require(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients)
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved) should be(0)
@@ -217,13 +224,14 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   it should "fail if required metadata is missing for individual files" in {
     val mockApiClient = MockServerApiEndpointClient()
+    val clients = Clients(api = mockApiClient, core = null)
 
     val metadata = DatasetMetadata.empty
 
     for {
       _ <-
         metadata
-          .require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+          .require(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients)
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }
@@ -234,7 +242,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
       _ <-
         metadata
-          .require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+          .require(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients)
           .map { result =>
             fail(s"Unexpected result received: [$result]")
           }

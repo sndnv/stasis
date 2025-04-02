@@ -53,8 +53,8 @@ object ApiEndpoint {
             ) { Future.successful(base.terminateService()) }
           },
           verifyUserPassword = secrets.verifyUserPassword,
-          updateUserCredentials = secrets.updateUserCredentials(clients.api, _, _),
-          reEncryptDeviceSecret = secrets.reEncryptDeviceSecret(clients.api, _)
+          updateUserCredentials = secrets.updateUserCredentials(clients, _, _),
+          reEncryptDeviceSecret = secrets.reEncryptDeviceSecret(clients, _)
         ),
         commandProcessor = commandProcessor,
         secretsConfig = secrets.config,

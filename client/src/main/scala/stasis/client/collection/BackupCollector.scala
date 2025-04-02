@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.EntityMetadata
 import stasis.client.model.SourceEntity
@@ -23,7 +23,7 @@ object BackupCollector {
     entities: List[Path],
     latestMetadata: Option[DatasetMetadata],
     metadataCollector: BackupMetadataCollector,
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends BackupCollector {
     override def collect(): Source[SourceEntity, NotUsed] =
@@ -31,7 +31,7 @@ object BackupCollector {
         collectEntityMetadata(
           entities = entities,
           latestMetadata = latestMetadata,
-          api = api
+          clients = clients
         ).toList
       ).mapAsyncUnordered(parallelism.entities) { case (entity, entityMetadataFuture) =>
         for {
@@ -46,10 +46,10 @@ object BackupCollector {
   def collectEntityMetadata(
     entities: List[Path],
     latestMetadata: Option[DatasetMetadata],
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext): Seq[(Path, Future[Option[EntityMetadata]])] =
     latestMetadata match {
-      case Some(metadata) => entities.map(entity => (entity, metadata.collect(entity = entity, api = api)))
+      case Some(metadata) => entities.map(entity => (entity, metadata.collect(entity = entity, clients = clients)))
       case None           => entities.map(entity => (entity, Future.successful(None)))
     }
 }

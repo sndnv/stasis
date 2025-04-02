@@ -11,6 +11,7 @@ import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 
+import stasis.client.api.clients.Clients
 import stasis.client.ops.monitoring.DefaultServerMonitor
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.devices.Device
@@ -201,7 +202,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     DefaultServerMonitor(
       initialDelay = initialDelay,
       interval = interval,
-      api = api,
+      clients = Clients(api = api, core = null),
       tracker = tracker
     )
 

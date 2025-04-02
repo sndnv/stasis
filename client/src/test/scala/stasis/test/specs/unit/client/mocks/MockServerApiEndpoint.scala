@@ -23,6 +23,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import stasis.core.commands.proto.Command
+import stasis.core.discovery.ServiceDiscoveryRequest
+import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
@@ -373,6 +375,21 @@ class MockServerApiEndpoint(
       complete(ping)
     }
 
+  private val discovery: Route =
+    path("provide") {
+      post {
+        import stasis.core.api.Formats._
+
+        entity(as[ServiceDiscoveryRequest]) { request =>
+          val result: ServiceDiscoveryResult = ServiceDiscoveryResult.KeepExisting
+
+          log.info("Responding to discovery request [{}] with [{}]", request.id, result.asString)
+
+          complete(result)
+        }
+      }
+    }
+
   private val routes: Route =
     (extractMethod & extractUri & extractRequest) { (method, uri, request) =>
       extractCredentials {
@@ -382,7 +399,8 @@ class MockServerApiEndpoint(
             pathPrefix("users") { users },
             pathPrefix("devices") { devices },
             pathPrefix("schedules") { schedules },
-            pathPrefix("service") { service }
+            pathPrefix("service") { service },
+            pathPrefix("discovery") { discovery }
           )
 
         case _ =>

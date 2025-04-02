@@ -18,7 +18,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import stasis.client.api.clients.Clients
-import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.security.CredentialsProvider
@@ -86,10 +85,10 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers with Eventually {
 
         override def verifyUserPassword: Array[Char] => Boolean = _ => false
 
-        override def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] =
+        override def updateUserCredentials: (Clients, Array[Char], String) => Future[Done] =
           (_, _, _) => Future.successful(Done)
 
-        override def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] =
+        override def reEncryptDeviceSecret: (Clients, Array[Char]) => Future[Done] =
           (_, _) => Future.successful(Done)
       }
     ).map { ops =>

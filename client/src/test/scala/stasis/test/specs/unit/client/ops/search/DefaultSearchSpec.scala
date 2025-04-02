@@ -5,6 +5,7 @@ import java.time.Instant
 
 import scala.concurrent.Future
 
+import stasis.client.api.clients.Clients
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.search.DefaultSearch
@@ -65,7 +66,7 @@ class DefaultSearchSpec extends AsyncUnitSpec {
         }
     }
 
-    val search = new DefaultSearch(api = mockApiClient)
+    val search = new DefaultSearch(clients = Clients(api = mockApiClient, core = null))
 
     search
       .search(
