@@ -2,6 +2,9 @@ package stasis.core.api
 
 import java.time.Instant
 
+import stasis.core.discovery.ServiceApiEndpoint
+import stasis.core.discovery.ServiceDiscoveryRequest
+import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.networking.EndpointAddress
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
@@ -155,4 +158,66 @@ object Formats {
   implicit val crateStorageRequestFormat: Format[CrateStorageRequest] = Json.format[CrateStorageRequest]
 
   implicit val crateStorageReservationFormat: Format[CrateStorageReservation] = Json.format[CrateStorageReservation]
+
+  implicit val serviceApiEndpointApiFormat: Format[ServiceApiEndpoint.Api] =
+    Json.format[ServiceApiEndpoint.Api]
+
+  implicit val serviceApiEndpointCoreFormat: Format[ServiceApiEndpoint.Core] =
+    Json.format[ServiceApiEndpoint.Core]
+
+  implicit val serviceApiEndpointDiscoveryFormat: Format[ServiceApiEndpoint.Discovery] =
+    Json.format[ServiceApiEndpoint.Discovery]
+
+  implicit val serviceApiEndpointFormat: Format[ServiceApiEndpoint] = Format(
+    _.validate[JsObject].flatMap { endpoint =>
+      (endpoint \ "endpoint_type").validate[String].map {
+        case "api"       => endpoint.as[ServiceApiEndpoint.Api]
+        case "core"      => endpoint.as[ServiceApiEndpoint.Core]
+        case "discovery" => endpoint.as[ServiceApiEndpoint.Discovery]
+      }
+    },
+    {
+      case endpoint: ServiceApiEndpoint.Api =>
+        serviceApiEndpointApiFormat.writes(endpoint).as[JsObject] ++ Json.obj(
+          "endpoint_type" -> Json.toJson("api")
+        )
+
+      case endpoint: ServiceApiEndpoint.Core =>
+        serviceApiEndpointCoreFormat.writes(endpoint).as[JsObject] ++ Json.obj(
+          "endpoint_type" -> Json.toJson("core")
+        )
+
+      case endpoint: ServiceApiEndpoint.Discovery =>
+        serviceApiEndpointDiscoveryFormat.writes(endpoint).as[JsObject] ++ Json.obj(
+          "endpoint_type" -> Json.toJson("discovery")
+        )
+    }
+  )
+
+  implicit val serviceDiscoveryRequestFormat: Format[ServiceDiscoveryRequest] =
+    Json.format[ServiceDiscoveryRequest]
+
+  implicit val serviceDiscoveryResultEndpointsFormat: Format[ServiceDiscoveryResult.Endpoints] =
+    Json.format[ServiceDiscoveryResult.Endpoints]
+
+  implicit val serviceDiscoveryResultSwitchToFormat: Format[ServiceDiscoveryResult.SwitchTo] =
+    Json.format[ServiceDiscoveryResult.SwitchTo]
+
+  implicit val serviceDiscoveryResultFormat: Format[ServiceDiscoveryResult] = Format(
+    _.validate[JsObject].flatMap { result =>
+      (result \ "result").validate[String].map {
+        case "keep-existing" => ServiceDiscoveryResult.KeepExisting
+        case "switch-to"     => result.as[ServiceDiscoveryResult.SwitchTo]
+      }
+    },
+    {
+      case ServiceDiscoveryResult.KeepExisting =>
+        Json.obj("result" -> Json.toJson("keep-existing"))
+
+      case result: ServiceDiscoveryResult.SwitchTo =>
+        serviceDiscoveryResultSwitchToFormat.writes(result).as[JsObject] ++ Json.obj(
+          "result" -> Json.toJson("switch-to")
+        )
+    }
+  )
 }

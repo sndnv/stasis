@@ -5,6 +5,8 @@ import java.time.Instant
 import play.api.libs.json.Json
 
 import stasis.core.api.Formats._
+import stasis.core.discovery.ServiceApiEndpoint
+import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
@@ -115,6 +117,59 @@ class FormatsSpec extends UnitSpec {
       nodeReads.reads(Json.parse(json)).asOpt match {
         case Some(createdNode) => createdNode should be(node)
         case None              => fail("Expected result but none was returned")
+      }
+    }
+  }
+
+  they should "convert service API endpoints to/from JSON" in {
+    val endpoints: Seq[(ServiceApiEndpoint, String)] = Seq(
+      ServiceApiEndpoint.Api(
+        uri = "test-uri"
+      ) -> """{"uri":"test-uri","endpoint_type":"api"}""",
+      ServiceApiEndpoint.Core(
+        address = HttpEndpointAddress(uri = "test-uri")
+      ) -> """{"address":{"address_type":"http","address":{"uri":"test-uri"}},"endpoint_type":"core"}""",
+      ServiceApiEndpoint.Discovery(
+        uri = "test-uri"
+      ) -> """{"uri":"test-uri","endpoint_type":"discovery"}"""
+    )
+
+    endpoints.foreach { case (endpoint, json) =>
+      serviceApiEndpointFormat.writes(endpoint).toString should be(json)
+      serviceApiEndpointFormat.reads(Json.parse(json)).asOpt match {
+        case Some(createdEndpoint) => createdEndpoint should be(endpoint)
+        case None                  => fail("Expected result but none was returned")
+      }
+    }
+  }
+
+  they should "convert service discovery results to/from JSON" in {
+    val results: Seq[(ServiceDiscoveryResult, String)] = Seq(
+      ServiceDiscoveryResult.KeepExisting -> """{"result":"keep-existing"}""",
+      ServiceDiscoveryResult.SwitchTo(
+        endpoints = ServiceDiscoveryResult.Endpoints(
+          api = ServiceApiEndpoint.Api(uri = "test-uri"),
+          core = ServiceApiEndpoint.Core(address = HttpEndpointAddress(uri = "test-uri")),
+          discovery = ServiceApiEndpoint.Discovery(uri = "test-uri")
+        ),
+        recreateExisting = true
+      ) ->
+        """{
+          |"endpoints":{
+          |"api":{"uri":"test-uri"},
+          |"core":{"address":{"address_type":"http","address":{"uri":"test-uri"}}},
+          |"discovery":{"uri":"test-uri"}
+          |},
+          |"recreate_existing":true,
+          |"result":"switch-to"
+          |}""".stripMargin.replaceAll("\n", "").trim
+    )
+
+    results.foreach { case (result, json) =>
+      serviceDiscoveryResultFormat.writes(result).toString should be(json)
+      serviceDiscoveryResultFormat.reads(Json.parse(json)).asOpt match {
+        case Some(createdResult) => createdResult should be(result)
+        case None                => fail("Expected result but none was returned")
       }
     }
   }
