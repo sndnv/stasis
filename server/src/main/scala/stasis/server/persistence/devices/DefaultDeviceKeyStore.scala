@@ -80,7 +80,7 @@ class DefaultDeviceKeyStore(
   override val migrations: Seq[Migration] = Seq(
     LegacyKeyValueStore(name, profile, database)
       .asMigration[DeviceKey, SlickStore](withVersion = 1, current = store) { e =>
-        import stasis.shared.api.Formats.byteStringFormat
+        import stasis.layers.api.Formats.byteStringFormat
         DeviceKey(
           value = (e \ "value").as[ByteString],
           owner = (e \ "owner").as[User.Id],

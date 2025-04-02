@@ -14,6 +14,8 @@ import org.apache.pekko.http.scaladsl.server._
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.core.discovery.http.HttpServiceDiscoveryEndpoint
+import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
 import stasis.layers.api.directives.EntityDiscardingDirectives
 import stasis.layers.api.directives.LoggingDirectives
 import stasis.layers.security.tls.EndpointContext
@@ -28,6 +30,7 @@ class ApiEndpoint(
   resourceProvider: ResourceProvider,
   authenticator: UserAuthenticator,
   userCredentialsManager: UserCredentialsManager,
+  serviceDiscoveryProvider: ServiceDiscoveryProvider,
   secretsConfig: SecretsConfig
 )(implicit val system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
     extends LoggingDirectives
@@ -48,6 +51,7 @@ class ApiEndpoint(
   private val reservations = Reservations()
   private val staging = Staging()
   private val service = Service()
+  private val discovery = new HttpServiceDiscoveryEndpoint(provider = serviceDiscoveryProvider)
 
   private val sanitizingExceptionHandler: ExceptionHandler = handlers.Sanitizing.create(log)
   private val rejectionHandler: RejectionHandler = handlers.Rejection.create(log)
@@ -72,7 +76,8 @@ class ApiEndpoint(
                 pathPrefix("manifests") { manifests.routes(currentUser = user) },
                 pathPrefix("reservations") { reservations.routes(currentUser = user) },
                 pathPrefix("staging") { staging.routes(currentUser = user) },
-                pathPrefix("service") { service.routes(currentUser = user) }
+                pathPrefix("service") { service.routes(currentUser = user) },
+                pathPrefix("discovery") { discovery.routes }
               )
 
             case Failure(e) =>
@@ -125,12 +130,14 @@ object ApiEndpoint {
     resourceProvider: ResourceProvider,
     authenticator: UserAuthenticator,
     userCredentialsManager: UserCredentialsManager,
+    serviceDiscoveryProvider: ServiceDiscoveryProvider,
     secretsConfig: SecretsConfig
   )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): ApiEndpoint =
     new ApiEndpoint(
       resourceProvider = resourceProvider,
       authenticator = authenticator,
       userCredentialsManager = userCredentialsManager,
+      serviceDiscoveryProvider = serviceDiscoveryProvider,
       secretsConfig = secretsConfig
     )
 }

@@ -10,6 +10,7 @@ import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.marshalling.Marshal
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -18,6 +19,8 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.libs.json.JsArray
 
+import stasis.core.discovery.ServiceDiscoveryRequest
+import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
@@ -61,8 +64,8 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.Generators
-import stasis.test.specs.unit.core.persistence.manifests.MockManifestStore
 import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
+import stasis.test.specs.unit.core.persistence.manifests.MockManifestStore
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -351,11 +354,25 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
+  it should "provide discovery routes" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    val fixtures = new TestFixtures {}
+
+    val entity = Marshal(ServiceDiscoveryRequest(isInitialRequest = true, attributes = Map.empty)).to[RequestEntity].await
+
+    Post("/discovery/provide").withEntity(entity).addCredentials(testCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
+      status should be(StatusCodes.OK)
+      noException should be thrownBy responseAs[ServiceDiscoveryResult]
+    }
+  }
+
   it should "handle authorization failures reported by routes" in withRetry {
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set.empty),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
+      serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
       secretsConfig = testSecretsConfig
     )
 
@@ -387,6 +404,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
+      serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
       secretsConfig = testSecretsConfig
     )
 
@@ -421,6 +439,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
+      serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
       secretsConfig = testSecretsConfig
     )
 
@@ -510,6 +529,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       resourceProvider = provider,
       authenticator = authenticator,
       userCredentialsManager = MockUserCredentialsManager(),
+      serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
       secretsConfig = testSecretsConfig
     )
   }

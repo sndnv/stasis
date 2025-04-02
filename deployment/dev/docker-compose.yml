@@ -78,6 +78,8 @@ services:
     environment:
       - STASIS_SERVER_SERVICE_BOOTSTRAP_MODE=init-and-start
       - STASIS_SERVER_SERVICE_BOOTSTRAP_CONFIG=/opt/docker/config/server-bootstrap.conf
+      - STASIS_SERVER_SERVICE_DISCOVERY_TYPE=disabled
+      - STASIS_SERVER_SERVICE_DISCOVERY_STATIC_CONFIG=/opt/docker/config/server-discovery.conf
       - STASIS_SERVER_LOGLEVEL=DEBUG
       - STASIS_SERVER_SERVICE_API_INTERFACE=0.0.0.0
       - STASIS_SERVER_SERVICE_API_PORT=20000
@@ -128,6 +130,7 @@ services:
       - PEKKO_HTTP_CORS_ALLOWED_ORIGINS=*
     volumes:
       - ./config/server-bootstrap.conf:/opt/docker/config/server-bootstrap.conf
+      - ./config/server-discovery.conf:/opt/docker/config/server-discovery.conf
       - ./secrets/identity.p12:/opt/docker/certs/identity.p12
       - ./secrets/server.p12:/opt/docker/certs/server.p12
 

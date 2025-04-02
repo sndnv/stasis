@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
+import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
@@ -379,19 +380,19 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
         api = "urn:stasis:identity:audience:server-api",
         core = s"urn:stasis:identity:audience:${Node.generateId().toString}"
       ),
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverApi = DeviceBootstrapParameters.ServerApi(
       url = "http://localhost:5678",
       user = "",
       userSalt = "",
       device = "",
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
       nodeId = "",
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     secrets = testSecretsConfig,
     additionalConfig = Json.obj()
