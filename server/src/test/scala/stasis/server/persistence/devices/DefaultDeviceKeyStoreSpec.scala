@@ -8,10 +8,10 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
 
+import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.layers.UnitSpec
 import stasis.layers.persistence.SlickTestDatabase
 import stasis.layers.telemetry.MockTelemetryContext
-import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.test.specs.unit.shared.model.Generators
 
 class DefaultDeviceKeyStoreSpec extends UnitSpec with SlickTestDatabase {
@@ -47,7 +47,7 @@ class DefaultDeviceKeyStoreSpec extends UnitSpec with SlickTestDatabase {
       withStore { (profile, database) =>
         import play.api.libs.json._
 
-        import stasis.shared.api.Formats._
+        import stasis.layers.api.Formats._
 
         val name = "TEST_DEVICE_KEYS"
         val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)
@@ -99,6 +99,6 @@ class DefaultDeviceKeyStoreSpec extends UnitSpec with SlickTestDatabase {
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(
     guardianBehavior = Behaviors.ignore,
-    "DefaultDeviceKeyStoreSpec"
+    name = "DefaultDeviceKeyStoreSpec"
   )
 }

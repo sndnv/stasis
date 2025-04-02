@@ -19,6 +19,7 @@ import play.api.libs.json.Json
 
 import stasis.core.routing.Node
 import stasis.layers.api.MessageResponse
+import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
 import stasis.server.api.routes.DeviceBootstrap
@@ -222,19 +223,19 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
         api = "urn:stasis:identity:audience:server-api",
         core = s"urn:stasis:identity:audience:${Node.generateId().toString}"
       ),
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverApi = DeviceBootstrapParameters.ServerApi(
       url = "http://localhost:5678",
       user = "",
       userSalt = "",
       device = "",
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
       nodeId = "",
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     secrets = testSecretsConfig,
     additionalConfig = Json.obj()

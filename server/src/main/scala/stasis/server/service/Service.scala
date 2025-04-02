@@ -24,6 +24,7 @@ import play.api.libs.json.Json
 
 import stasis.core
 import stasis.core.api.PoolClient
+import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.grpc.GrpcEndpointClient
 import stasis.core.networking.http.HttpEndpoint
@@ -277,12 +278,15 @@ trait Service {
       nodeProxy = nodeProxy
     )
 
+    val serviceDiscoveryProvider = ServiceDiscoveryProvider(config = rawConfig.getConfig("service.discovery"))
+
     val apiServices = ApiServices(
       persistence = serverPersistence,
       apiEndpoint = ApiEndpoint(
         resourceProvider = resourceProvider,
         authenticator = userAuthenticator,
         userCredentialsManager = userCredentialsManager,
+        serviceDiscoveryProvider = serviceDiscoveryProvider,
         secretsConfig = deviceBootstrapParams.secrets
       ),
       bootstrapEndpoint = bootstrapEndpoint,
@@ -333,6 +337,11 @@ trait Service {
          |    bootstrap:
          |      mode:   ${rawConfig.getString("service.bootstrap.mode")}
          |      config: ${rawConfig.getString("service.bootstrap.config")}
+         |
+         |    discovery:
+         |      type:   ${rawConfig.getString("service.discovery.type")}
+         |      static:
+         |        config: ${rawConfig.getString("service.discovery.static.config")}
          |
          |    telemetry:
          |      metrics:
@@ -734,7 +743,7 @@ object Service {
               api = config.getString("authentication.scopes.api"),
               core = config.getString("authentication.scopes.core")
             ),
-            context = DeviceBootstrapParameters.Context(
+            context = EndpointContext.Encoded(
               config = config.getConfig("authentication.context")
             )
           ),
@@ -743,14 +752,14 @@ object Service {
             user = "", // provided during bootstrap execution
             userSalt = "", // provided during bootstrap execution
             device = "", // provided during bootstrap execution
-            context = DeviceBootstrapParameters.Context(
+            context = EndpointContext.Encoded(
               config = config.getConfig("server-api.context")
             )
           ),
           serverCore = DeviceBootstrapParameters.ServerCore(
             address = config.getString("server-core.address"),
             nodeId = "", // provided during bootstrap execution
-            context = DeviceBootstrapParameters.Context(
+            context = EndpointContext.Encoded(
               config = config.getConfig("server-core.context")
             )
           ),
