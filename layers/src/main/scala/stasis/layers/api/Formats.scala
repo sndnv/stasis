@@ -1,10 +1,14 @@
 package stasis.layers.api
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import scala.concurrent.duration._
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.util.ByteString
+
+import stasis.layers.security.tls.EndpointContext
 
 object Formats {
   import play.api.libs.json._
@@ -32,4 +36,13 @@ object Formats {
     fjs = _.validate[String].map(Uri.apply),
     tjs = uri => Json.toJson(uri.toString)
   )
+
+  implicit val byteStringFormat: Format[ByteString] =
+    Format(
+      fjs = _.validate[String].map(ByteString.fromString(_, StandardCharsets.UTF_8).decodeBase64),
+      tjs = content => Json.toJson(content.encodeBase64.utf8String)
+    )
+
+  implicit val endpointContextFormat: Format[EndpointContext.Encoded] =
+    Json.format[EndpointContext.Encoded]
 }

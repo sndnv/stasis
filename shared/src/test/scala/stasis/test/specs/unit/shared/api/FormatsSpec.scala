@@ -112,14 +112,6 @@ class FormatsSpec extends UnitSpec {
     deviceBootstrapCodeFormat.reads(Json.parse(jsonForNewDevice)).asOpt should be(Some(originalForNewDevice))
   }
 
-  they should "convert ByteStrings to/from JSON" in {
-    val original = ByteString("test-string")
-    val json = "\"dGVzdC1zdHJpbmc=\""
-
-    byteStringFormat.writes(original).toString() should be(json)
-    byteStringFormat.reads(Json.parse(json)).asOpt should be(Some(original))
-  }
-
   they should "convert device keys to/from JSON" in {
     val now = Instant.now()
 
