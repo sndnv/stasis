@@ -14,7 +14,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.util.Timeout
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 import stasis.client.tracking.ServerTracker
 import stasis.shared.api.responses.Ping
 
@@ -30,13 +30,13 @@ object DefaultServerMonitor {
   def apply(
     initialDelay: FiniteDuration,
     interval: FiniteDuration,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     tracker: ServerTracker
   )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultServerMonitor = {
     val behaviour = monitor(
       initialDelay = initialDelay,
       interval = interval,
-      api = api,
+      clients = clients,
       tracker = tracker
     )
 
@@ -55,7 +55,7 @@ object DefaultServerMonitor {
   private def monitor(
     initialDelay: FiniteDuration,
     interval: FiniteDuration,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     tracker: ServerTracker
   ): Behavior[Message] =
     Behaviors.withTimers[Message] { timers =>
@@ -68,6 +68,8 @@ object DefaultServerMonitor {
             val self = ctx.self
 
             implicit val rnd: ThreadLocalRandom = ThreadLocalRandom.current()
+
+            val api = clients.api
 
             api
               .ping()
@@ -86,16 +88,12 @@ object DefaultServerMonitor {
             Behaviors.same
 
           case ScheduleNextPing(after) =>
-            ctx.log.debugN(
-              "Scheduling next ping for server [{}] in [{}] second(s)",
-              api.server,
-              after.toSeconds
-            )
+            ctx.log.debugN("Scheduling next ping in [{}] second(s)", after.toSeconds)
             timers.startSingleTimer(PingTimerKey, PingServer, after)
             Behaviors.same
 
           case Stop(replyTo) =>
-            ctx.log.debugN("Stopping monitor for server [{}]", api.server)
+            ctx.log.debugN("Stopping monitor")
             replyTo ! Done
             Behaviors.stopped
         }

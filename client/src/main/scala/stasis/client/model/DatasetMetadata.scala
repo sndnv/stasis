@@ -12,13 +12,13 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 import stasis.client.compression.Gzip
-import stasis.client.compression.{Encoder => CompressionEncoder}
 import stasis.client.compression.{Decoder => CompressionDecoder}
+import stasis.client.compression.{Encoder => CompressionEncoder}
 import stasis.client.encryption.secrets.DeviceMetadataSecret
-import stasis.client.encryption.{Encoder => EncryptionEncoder}
 import stasis.client.encryption.{Decoder => EncryptionDecoder}
+import stasis.client.encryption.{Encoder => EncryptionEncoder}
 import stasis.core.packaging.Crate
 
 final case class DatasetMetadata(
@@ -28,7 +28,7 @@ final case class DatasetMetadata(
 ) {
   def collect(
     entity: Path,
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext): Future[Option[EntityMetadata]] = {
     val existingMetadata = filesystem.entities.get(entity).map {
       case FilesystemMetadata.EntityState.New | FilesystemMetadata.EntityState.Updated =>
@@ -46,7 +46,7 @@ final case class DatasetMetadata(
 
       case FilesystemMetadata.EntityState.Existing(entry) =>
         for {
-          entryMetadata <- api.datasetMetadata(entry)
+          entryMetadata <- clients.api.datasetMetadata(entry)
           entityMetadata <-
             entryMetadata.contentChanged
               .get(entity)
@@ -75,9 +75,9 @@ final case class DatasetMetadata(
 
   def require(
     entity: Path,
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext): Future[EntityMetadata] =
-    collect(entity = entity, api = api).flatMap {
+    collect(entity = entity, clients = clients).flatMap {
       case Some(metadata) =>
         Future.successful(metadata)
 

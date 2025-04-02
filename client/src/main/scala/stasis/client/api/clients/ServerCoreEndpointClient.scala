@@ -7,11 +7,12 @@ import org.apache.pekko.util.ByteString
 import org.apache.pekko.Done
 import org.apache.pekko.NotUsed
 
+import stasis.core.discovery.ServiceApiClient
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
 
-trait ServerCoreEndpointClient {
+trait ServerCoreEndpointClient extends ServiceApiClient {
   def self: Node.Id
   def server: String
 

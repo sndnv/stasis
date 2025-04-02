@@ -10,10 +10,10 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 
-import stasis.client.collection.rules.Rule
-import stasis.client.collection.rules.Specification
 import stasis.client.collection.BackupCollector
 import stasis.client.collection.BackupMetadataCollector
+import stasis.client.collection.rules.Rule
+import stasis.client.collection.rules.Specification
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Providers
@@ -60,7 +60,7 @@ trait EntityDiscovery {
             checksum = providers.checksum,
             compression = providers.compression
           ),
-          api = providers.clients.api
+          clients = providers.clients
         )(ec, parallelism)
       }
   }

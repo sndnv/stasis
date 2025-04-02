@@ -117,7 +117,7 @@ object Recovery {
         keep = (entity, _) => query.forall(_.matches(entity.toAbsolutePath)),
         destination = destination.toTargetEntityDestination,
         metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
-        api = providers.clients.api
+        clients = providers.clients
       )
   }
 

@@ -20,7 +20,7 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
 import org.apache.pekko.util.Timeout
 
-import stasis.client.api.clients.ServerApiEndpointClient
+import stasis.client.api.clients.Clients
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.client.service.ApplicationConfiguration
@@ -52,11 +52,11 @@ object DefaultOperationScheduler {
 
   def apply(
     config: Config,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     executor: OperationExecutor
   )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultOperationScheduler = {
     implicit val schedulerConfig: Config = config
-    implicit val apiClient: ServerApiEndpointClient = api
+    implicit val implicitClients: Clients = clients
     implicit val operationExecutor: OperationExecutor = executor
 
     val behaviour = Behaviors.withTimers[Message] { timers =>
@@ -93,7 +93,7 @@ object DefaultOperationScheduler {
   )(implicit
     timers: TimerScheduler[DefaultOperationScheduler.Message],
     config: Config,
-    api: ServerApiEndpointClient,
+    clients: Clients,
     executor: OperationExecutor
   ): Behavior[Message] =
     Behaviors.receive { case (ctx, message) =>
@@ -114,7 +114,7 @@ object DefaultOperationScheduler {
             configuredSchedules <- loadSchedules(file = config.schedulesFile)
             loadedSchedules <- Future.sequence(
               configuredSchedules.map { assignment =>
-                api
+                clients.api
                   .publicSchedule(assignment.schedule)
                   .map { schedule =>
                     log.debugN(

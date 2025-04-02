@@ -14,6 +14,7 @@ import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 
+import stasis.client.api.clients.Clients
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.DefaultOperationScheduler
 import stasis.client.ops.scheduling.OperationScheduleAssignment
@@ -640,7 +641,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         minDelay = minDelay,
         maxExtraDelay = maxAdditionalDelay
       ),
-      api = api,
+      clients = Clients(api = api, core = null),
       executor = executor
     )
 

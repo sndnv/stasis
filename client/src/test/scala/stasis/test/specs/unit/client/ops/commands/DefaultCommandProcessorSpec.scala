@@ -15,6 +15,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.slf4j.Logger
 
+import stasis.client.api.clients.Clients
 import stasis.client.ops.commands.CommandProcessor
 import stasis.client.ops.commands.DefaultCommandProcessor
 import stasis.core.commands.proto.Command
@@ -230,7 +231,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = initialDelay,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -291,7 +292,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = 0.millis,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -334,7 +335,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = initialDelay,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -401,7 +402,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = 50.millis,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -459,7 +460,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = initialDelay,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -526,7 +527,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = 50.millis,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = {
           persistLastProcessedCommandCalls.incrementAndGet()
@@ -577,7 +578,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     val processor = DefaultCommandProcessor(
       initialDelay = 50.millis,
       interval = defaultInterval,
-      api = mockApiClient,
+      clients = Clients(api = mockApiClient, core = null),
       handlers = new CommandProcessor.Handlers {
         override def persistLastProcessedCommand(sequenceId: Long): Future[Done] = Future.successful(Done)
         override def retrieveLastProcessedCommand(): Future[Option[Long]] = Future.successful(None)

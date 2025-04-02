@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 import org.apache.pekko.actor.ActorSystem
 
+import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.EntityMetadata
@@ -82,7 +83,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
           file3Metadata.path -> file3Metadata
         )
       ),
-      api = MockServerApiEndpointClient()
+      clients = Clients(api = MockServerApiEndpointClient(), core = null)
     )
 
     collector
@@ -127,7 +128,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
         RecoveryCollector.collectEntityMetadata(
           targetMetadata = targetMetadata,
           keep = (_, state) => state == FilesystemMetadata.EntityState.New,
-          api = MockServerApiEndpointClient()
+          clients = Clients(api = MockServerApiEndpointClient(), core = null)
         )
       )
       .map { actualMetadata =>

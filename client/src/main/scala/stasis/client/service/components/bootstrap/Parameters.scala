@@ -20,6 +20,7 @@ import stasis.client.service.components.bootstrap.internal.SelfSignedCertificate
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.ApplicationTemplates
 import stasis.client.service.components
+import stasis.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
 trait Parameters {
@@ -139,14 +140,14 @@ object Parameters {
     }
 
   def storeContext(
-    context: DeviceBootstrapParameters.Context,
+    context: EndpointContext.Encoded,
     passwordSize: Int,
     parent: Path,
     file: String
   )(implicit log: Logger): Try[(String, String)] =
     if (context.enabled) {
       Try {
-        val store = DeviceBootstrapParameters.Context.decodeKeyStore(
+        val store = EndpointContext.Encoded.decodeKeyStore(
           content = context.storeContent,
           password = context.temporaryStorePassword,
           storeType = context.storeType

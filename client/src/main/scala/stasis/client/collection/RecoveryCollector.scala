@@ -2,13 +2,18 @@ package stasis.client.collection
 
 import java.nio.file.Path
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-import stasis.client.api.clients.ServerApiEndpointClient
-import stasis.client.model.{DatasetMetadata, EntityMetadata, FilesystemMetadata, TargetEntity}
-import stasis.client.ops.ParallelismConfig
 
-import scala.concurrent.{ExecutionContext, Future}
+import stasis.client.api.clients.Clients
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.EntityMetadata
+import stasis.client.model.FilesystemMetadata
+import stasis.client.model.TargetEntity
+import stasis.client.ops.ParallelismConfig
 
 trait RecoveryCollector {
   def collect(): Source[TargetEntity, NotUsed]
@@ -20,7 +25,7 @@ object RecoveryCollector {
     keep: (Path, FilesystemMetadata.EntityState) => Boolean,
     destination: TargetEntity.Destination,
     metadataCollector: RecoveryMetadataCollector,
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends RecoveryCollector {
     override def collect(): Source[TargetEntity, NotUsed] =
@@ -28,7 +33,7 @@ object RecoveryCollector {
         collectEntityMetadata(
           targetMetadata = targetMetadata,
           keep = keep,
-          api = api
+          clients = clients
         ).toList
       ).mapAsync(parallelism.entities) { entityMetadataFuture =>
         for {
@@ -47,10 +52,10 @@ object RecoveryCollector {
   def collectEntityMetadata(
     targetMetadata: DatasetMetadata,
     keep: (Path, FilesystemMetadata.EntityState) => Boolean,
-    api: ServerApiEndpointClient
+    clients: Clients
   )(implicit ec: ExecutionContext): Seq[Future[EntityMetadata]] =
     targetMetadata.filesystem.entities.collect {
       case (entity, state) if keep(entity, state) =>
-        targetMetadata.require(entity = entity, api = api)
+        targetMetadata.require(entity = entity, clients = clients)
     }.toSeq
 }

@@ -141,19 +141,19 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
         api = "urn:stasis:identity:audience:server-api",
         core = s"urn:stasis:identity:audience:${Node.generateId().toString}"
       ),
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverApi = DeviceBootstrapParameters.ServerApi(
       url = "http://localhost:5678",
       user = User.generateId().toString,
       userSalt = "test-salt",
       device = Device.generateId().toString,
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     serverCore = DeviceBootstrapParameters.ServerCore(
       address = "http://localhost:5679",
       nodeId = Node.generateId().toString,
-      context = DeviceBootstrapParameters.Context.disabled()
+      context = EndpointContext.Encoded.disabled()
     ),
     secrets = Fixtures.Secrets.DefaultConfig,
     additionalConfig = Json.obj()

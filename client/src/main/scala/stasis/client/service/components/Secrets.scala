@@ -10,6 +10,7 @@ import scala.util.Try
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
 
+import stasis.client.api.clients.Clients
 import stasis.client.api.clients.ServerApiEndpointClient
 import stasis.client.encryption.Aes
 import stasis.client.encryption.secrets.DeviceSecret
@@ -28,8 +29,8 @@ trait Secrets {
   def credentialsProvider: CredentialsProvider
   def config: SecretsConfig
   def verifyUserPassword: Array[Char] => Boolean
-  def updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done]
-  def reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done]
+  def updateUserCredentials: (Clients, Array[Char], String) => Future[Done]
+  def reEncryptDeviceSecret: (Clients, Array[Char]) => Future[Done]
 }
 
 object Secrets {
@@ -125,8 +126,8 @@ object Secrets {
             )(secretsConfig).toAuthenticationPassword.digested()
           }
 
-        override val updateUserCredentials: (ServerApiEndpointClient, Array[Char], String) => Future[Done] = {
-          case (apiClient, newPassword, newSalt) =>
+        override val updateUserCredentials: (Clients, Array[Char], String) => Future[Done] = {
+          case (clients, newPassword, newSalt) =>
             ConfigOverride.update(directory = directory, path = "stasis.client.server.api.user-salt", value = newSalt)
 
             val newUserPassword = UserPassword(
@@ -144,34 +145,33 @@ object Secrets {
               localEncryptedDeviceSecret <- localEncryptionSecret.encryptDeviceSecret(deviceSecret)
               _ = log.info("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
               _ <- directory.pushFile[ByteString](file = Files.DeviceSecret, content = localEncryptedDeviceSecret)
-              _ <- pushDeviceSecretIfExists(apiClient, keyStoreEncryptionSecret.encryptDeviceSecret(deviceSecret))
+              _ <- pushDeviceSecretIfExists(clients.api, keyStoreEncryptionSecret.encryptDeviceSecret(deviceSecret))
             } yield {
               latestUserCredentialsRef.set((digestedAuthenticationPassword, newSalt))
               Done
             }
         }
 
-        override val reEncryptDeviceSecret: (ServerApiEndpointClient, Array[Char]) => Future[Done] = {
-          case (apiClient, password) =>
-            val (_, latestSalt) = latestUserCredentialsRef.get()
+        override val reEncryptDeviceSecret: (Clients, Array[Char]) => Future[Done] = { case (clients, password) =>
+          val (_, latestSalt) = latestUserCredentialsRef.get()
 
-            val hashedEncryptionPassword = UserPassword(
-              user = user,
-              salt = latestSalt,
-              password = password
-            )(secretsConfig).toHashedEncryptionPassword
+          val hashedEncryptionPassword = UserPassword(
+            user = user,
+            salt = latestSalt,
+            password = password
+          )(secretsConfig).toHashedEncryptionPassword
 
-            val localEncryptionSecret = hashedEncryptionPassword.toLocalEncryptionSecret
-            val keyStoreEncryptionSecret = hashedEncryptionPassword.toKeyStoreEncryptionSecret
+          val localEncryptionSecret = hashedEncryptionPassword.toLocalEncryptionSecret
+          val keyStoreEncryptionSecret = hashedEncryptionPassword.toKeyStoreEncryptionSecret
 
-            for {
-              encryptedDeviceSecret <- localEncryptionSecret.encryptDeviceSecret(deviceSecret)
-              _ = log.info("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
-              _ <- directory.pushFile[ByteString](file = Files.DeviceSecret, content = encryptedDeviceSecret)
-              _ <- pushDeviceSecretIfExists(apiClient, keyStoreEncryptionSecret.encryptDeviceSecret(deviceSecret))
-            } yield {
-              Done
-            }
+          for {
+            encryptedDeviceSecret <- localEncryptionSecret.encryptDeviceSecret(deviceSecret)
+            _ = log.info("Storing encrypted device secret to [{}]...", Files.DeviceSecret)
+            _ <- directory.pushFile[ByteString](file = Files.DeviceSecret, content = encryptedDeviceSecret)
+            _ <- pushDeviceSecretIfExists(clients.api, keyStoreEncryptionSecret.encryptDeviceSecret(deviceSecret))
+          } yield {
+            Done
+          }
         }
 
         private def pushDeviceSecretIfExists(

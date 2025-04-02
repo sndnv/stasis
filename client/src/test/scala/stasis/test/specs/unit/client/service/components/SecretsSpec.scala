@@ -12,6 +12,7 @@ import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.client.api.clients.Clients
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
@@ -91,7 +92,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       newPasswordValidBeforeUpdate = secrets.verifyUserPassword(newPassword)
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       existingSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
-      _ <- secrets.updateUserCredentials(apiClient, newPassword, newSalt)
+      _ <- secrets.updateUserCredentials(Clients(api = apiClient, core = null), newPassword, newSalt)
       updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       updatedSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
       currentPasswordValidAfterUpdate = secrets.verifyUserPassword(password)
@@ -131,7 +132,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       newPasswordValidBeforeUpdate = secrets.verifyUserPassword(newPassword)
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       existingSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
-      _ <- secrets.updateUserCredentials(apiClient, newPassword, newSalt)
+      _ <- secrets.updateUserCredentials(Clients(api = apiClient, core = null), newPassword, newSalt)
       updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
       updatedSalt = ConfigOverride.load(directory).getString(userSaltConfigEntry)
       currentPasswordValidAfterUpdate = secrets.verifyUserPassword(password)
@@ -168,7 +169,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
       secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
-      _ <- secrets.reEncryptDeviceSecret(apiClient, newPassword)
+      _ <- secrets.reEncryptDeviceSecret(Clients(api = apiClient, core = null), newPassword)
       updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
     } yield {
       endpoint.stop()
@@ -195,7 +196,7 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       base <- Base(applicationDirectory = directory, applicationTray = ApplicationTray.NoOp(), terminate = () => ())
       secrets <- Secrets(base = base, init = () => Future.successful((username, password)))
       existingDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
-      _ <- secrets.reEncryptDeviceSecret(apiClient, newPassword)
+      _ <- secrets.reEncryptDeviceSecret(Clients(api = apiClient, core = null), newPassword)
       updatedDeviceSecret <- directory.pullFile[ByteString](Files.DeviceSecret)
     } yield {
       endpoint.stop()

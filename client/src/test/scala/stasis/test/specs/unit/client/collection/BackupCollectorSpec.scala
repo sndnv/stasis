@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.actor.ActorSystem
 
 import stasis.client.analysis.Checksum
+import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
 import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.DatasetMetadata
@@ -29,7 +30,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       entities = List(file1, file2),
       latestMetadata = Some(DatasetMetadata.empty),
       metadataCollector = new BackupMetadataCollector.Default(checksum = Checksum.MD5, compression = MockCompression()),
-      api = mockApiClient
+      clients = Clients(api = mockApiClient, core = null)
     )
 
     collector
@@ -77,7 +78,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
                 filesystem = FilesystemMetadata(entities = Map(file1 -> FilesystemMetadata.EntityState.New))
               )
             ),
-            api = mockApiClient
+            clients = Clients(api = mockApiClient, core = null)
           )
       ) { case (file, metadataFuture) => metadataFuture.map(metadata => (file, metadata)) }
       .map(_.toList)
@@ -106,7 +107,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
           .collectEntityMetadata(
             entities = List(file1, file2),
             latestMetadata = None,
-            api = mockApiClient
+            clients = Clients(api = mockApiClient, core = null)
           )
       ) { case (file, metadataFuture) => metadataFuture.map(metadata => (file, metadata)) }
       .map(_.toList)
