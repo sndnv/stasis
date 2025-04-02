@@ -1,6 +1,5 @@
 package stasis.shared.api
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -42,6 +41,7 @@ object Formats {
   import stasis.core.api.Formats.grpcEndpointAddressFormat
   import stasis.core.api.Formats.httpEndpointAddressFormat
   import stasis.core.api.Formats.jsonConfig
+  import stasis.layers.api.Formats.endpointContextFormat
   import stasis.layers.api.Formats.finiteDurationFormat
 
   implicit val permissionFormat: Format[Permission] = Format(
@@ -133,17 +133,8 @@ object Formats {
     }
   )
 
-  implicit val byteStringFormat: Format[ByteString] =
-    Format(
-      fjs = _.validate[String].map(ByteString.fromString(_, StandardCharsets.UTF_8).decodeBase64),
-      tjs = content => Json.toJson(content.encodeBase64.utf8String)
-    )
-
   implicit val deviceBootstrapConfigScopesFormat: Format[DeviceBootstrapParameters.Scopes] =
     Json.format[DeviceBootstrapParameters.Scopes]
-
-  implicit val deviceBootstrapConfigContextFormat: Format[DeviceBootstrapParameters.Context] =
-    Json.format[DeviceBootstrapParameters.Context]
 
   implicit val deviceBootstrapConfigAuthenticationFormat: Format[DeviceBootstrapParameters.Authentication] =
     Json.format[DeviceBootstrapParameters.Authentication]

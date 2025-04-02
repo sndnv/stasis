@@ -5,6 +5,7 @@ import java.util.UUID
 import scala.concurrent.duration._
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
 
 import stasis.layers.UnitSpec
@@ -55,5 +56,13 @@ class FormatsSpec extends UnitSpec {
 
     uriFormat.writes(uri).toString should be(json)
     uriFormat.reads(Json.parse(json)).asOpt should be(Some(uri))
+  }
+
+  they should "convert ByteStrings to/from JSON" in {
+    val original = ByteString("test-string")
+    val json = "\"dGVzdC1zdHJpbmc=\""
+
+    byteStringFormat.writes(original).toString() should be(json)
+    byteStringFormat.reads(Json.parse(json)).asOpt should be(Some(original))
   }
 }
