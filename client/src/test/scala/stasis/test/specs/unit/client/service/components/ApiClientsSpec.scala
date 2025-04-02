@@ -117,7 +117,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   "An ApiClients ServiceApiClientFactory" should "support creating API clients" in {
     val expectedClient = MockServerApiEndpointClient()
 
-    val factory = new ApiClients.ServiceApiClientFactory(
+    val factory = ApiClients.ServiceApiClientFactory(
       createServerCoreEndpointClient = _ => throw new UnsupportedOperationException(),
       createServerApiEndpointClient = (_, _) => expectedClient,
       createServiceDiscoveryClient = _ => throw new UnsupportedOperationException()
@@ -132,7 +132,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   it should "fail to create API clients if an invalid core client is provided" in {
-    val factory = new ApiClients.ServiceApiClientFactory(
+    val factory = ApiClients.ServiceApiClientFactory(
       createServerCoreEndpointClient = _ => throw new UnsupportedOperationException(),
       createServerApiEndpointClient = (_, _) => MockServerApiEndpointClient(),
       createServiceDiscoveryClient = _ => throw new UnsupportedOperationException()
@@ -151,7 +151,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "support creating core clients" in {
     val expectedClient = MockServerCoreEndpointClient()
 
-    val factory = new ApiClients.ServiceApiClientFactory(
+    val factory = ApiClients.ServiceApiClientFactory(
       createServerCoreEndpointClient = _ => expectedClient,
       createServerApiEndpointClient = (_, _) => throw new UnsupportedOperationException(),
       createServiceDiscoveryClient = _ => throw new UnsupportedOperationException()
@@ -167,7 +167,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "fail to create core clients if an unsupported core address is provided" in {
     val expectedClient = MockServerCoreEndpointClient()
 
-    val factory = new ApiClients.ServiceApiClientFactory(
+    val factory = ApiClients.ServiceApiClientFactory(
       createServerCoreEndpointClient = _ => expectedClient,
       createServerApiEndpointClient = (_, _) => throw new UnsupportedOperationException(),
       createServiceDiscoveryClient = _ => throw new UnsupportedOperationException()
@@ -185,7 +185,7 @@ class ApiClientsSpec extends AsyncUnitSpec with ResourceHelpers {
   it should "support creating discovery clients" in {
     val expectedClient = MockServiceDiscoveryClient()
 
-    val factory = new ApiClients.ServiceApiClientFactory(
+    val factory = ApiClients.ServiceApiClientFactory(
       createServerCoreEndpointClient = _ => throw new UnsupportedOperationException(),
       createServerApiEndpointClient = (_, _) => throw new UnsupportedOperationException(),
       createServiceDiscoveryClient = _ => expectedClient

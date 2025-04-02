@@ -107,7 +107,7 @@ object ApiClients {
             apiUrl = rawConfig.getString("server.api.url")
           )
 
-          val clientFactory = new ServiceApiClientFactory(
+          val clientFactory = ServiceApiClientFactory(
             createServerCoreEndpointClient = createServerCoreEndpointClient,
             createServerApiEndpointClient = createServerApiEndpointClient,
             createServiceDiscoveryClient = createServiceDiscoveryClient
@@ -168,5 +168,17 @@ object ApiClients {
 
     override def create(endpoint: ServiceApiEndpoint.Discovery): ServiceApiClient =
       createServiceDiscoveryClient(endpoint.uri)
+  }
+
+  object ServiceApiClientFactory {
+    def apply(
+      createServerCoreEndpointClient: HttpEndpointAddress => ServerCoreEndpointClient,
+      createServerApiEndpointClient: (String, ServerCoreEndpointClient) => ServerApiEndpointClient,
+      createServiceDiscoveryClient: String => ServiceDiscoveryClient
+    ): ServiceApiClientFactory = new ServiceApiClientFactory(
+      createServerCoreEndpointClient = createServerCoreEndpointClient,
+      createServerApiEndpointClient = createServerApiEndpointClient,
+      createServiceDiscoveryClient = createServiceDiscoveryClient
+    )
   }
 }
