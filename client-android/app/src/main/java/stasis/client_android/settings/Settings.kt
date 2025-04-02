@@ -30,6 +30,11 @@ object Settings {
             ?: Defaults.CommandRefreshInterval
     }
 
+    fun SharedPreferences.getDiscoveryInterval(): Duration {
+        return getString(Keys.DiscoveryInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.DiscoveryInterval
+    }
+
     fun parseDateTimeFormat(format: String): DateTimeFormat =
         when (format) {
             "system" -> DateTimeFormat.System
@@ -70,6 +75,7 @@ object Settings {
         const val SchedulingEnabled: String = "scheduling_enabled"
         const val PingInterval: String = "ping_interval"
         const val CommandRefreshInterval: String = "command_refresh_interval"
+        const val DiscoveryInterval: String = "discovery_interval"
         const val ShowCommands: String = "show_commands"
         const val ResetConfig: String = "reset_config"
     }
@@ -80,10 +86,11 @@ object Settings {
         const val SchedulingEnabled: Boolean = true
         val PingInterval: Duration = Duration.ofMinutes(3)
         val CommandRefreshInterval: Duration = Duration.ofMinutes(5)
+        val DiscoveryInterval: Duration = Duration.ofMinutes(30)
     }
 
     sealed class DateTimeFormat {
-        object System : DateTimeFormat()
-        object Iso : DateTimeFormat()
+        data object System : DateTimeFormat()
+        data object Iso : DateTimeFormat()
     }
 }

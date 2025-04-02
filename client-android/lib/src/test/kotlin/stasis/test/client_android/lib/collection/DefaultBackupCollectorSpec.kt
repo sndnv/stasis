@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.toList
 import stasis.client_android.lib.analysis.Checksum
+import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.collection.BackupMetadataCollector
 import stasis.client_android.lib.collection.DefaultBackupCollector
 import stasis.client_android.lib.model.DatasetMetadata
@@ -16,6 +17,7 @@ import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
+import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 
 class DefaultBackupCollectorSpec : WordSpec({
     "A DefaultBackupCollector" should {
@@ -32,7 +34,7 @@ class DefaultBackupCollectorSpec : WordSpec({
                     checksum = Checksum.Companion.MD5,
                     compression = MockCompression()
                 ),
-                api = mockApiClient
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
             )
 
             val sourceFiles = collector
@@ -74,7 +76,7 @@ class DefaultBackupCollectorSpec : WordSpec({
                     metadataChanged = emptyMap(),
                     filesystem = FilesystemMetadata(entities = mapOf(file1 to FilesystemMetadata.EntityState.New))
                 ),
-                api = mockApiClient
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
             ).toList()
 
             collectedFiles.size shouldBe (2)
@@ -102,7 +104,7 @@ class DefaultBackupCollectorSpec : WordSpec({
                 .collectEntityMetadata(
                     entities = listOf(file1, file2),
                     latestMetadata = null,
-                    api = mockApiClient
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
                 ).toList()
 
             collectedFiles.size shouldBe (2)

@@ -1,11 +1,12 @@
 package stasis.client_android.lib.api.clients
 
 import okio.Source
+import stasis.client_android.lib.discovery.ServiceApiClient
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.core.Manifest
 import stasis.client_android.lib.model.core.NodeId
 
-interface ServerCoreEndpointClient {
+interface ServerCoreEndpointClient : ServiceApiClient {
     val self: NodeId
     val server: String
 

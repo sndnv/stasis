@@ -6,7 +6,7 @@ import okio.Buffer
 import okio.ByteString
 import okio.Source
 import okio.buffer
-import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.compression.Compressor
 import stasis.client_android.lib.compression.Gzip
 import stasis.client_android.lib.encryption.Decoder
@@ -39,7 +39,7 @@ data class DatasetMetadata(
 
     suspend fun collect(
         entity: Path,
-        api: ServerApiEndpointClient
+        clients: Clients
     ): EntityMetadata? =
         filesystem.entities[entity]?.let { state ->
             when (state) {
@@ -48,18 +48,20 @@ data class DatasetMetadata(
                         null -> throw IllegalArgumentException(
                             "Metadata for entity [${entity.toAbsolutePath()}] not found"
                         )
+
                         else -> metadata
                     }
                 }
 
                 is FilesystemMetadata.EntityState.Existing -> {
-                    val entryMetadata = api.datasetMetadata(state.entry).get()
+                    val entryMetadata = clients.api.datasetMetadata(state.entry).get()
                     when (val metadata = entryMetadata.contentChanged[entity]
                         ?: entryMetadata.metadataChanged[entity]) {
                         null -> throw IllegalArgumentException(
                             "Expected metadata for entity [${entity.toAbsolutePath()}] " +
                                     "but none was found in metadata for entry [${state.entry}]"
                         )
+
                         else -> metadata
                     }
                 }
@@ -68,9 +70,9 @@ data class DatasetMetadata(
 
     suspend fun require(
         entity: Path,
-        api: ServerApiEndpointClient
+        clients: Clients
     ): EntityMetadata =
-        when (val metadata = collect(entity, api)) {
+        when (val metadata = collect(entity, clients)) {
             null -> throw IllegalArgumentException("Required metadata for entity [${entity.toAbsolutePath()}] not found")
             else -> metadata
         }

@@ -1,6 +1,7 @@
 package stasis.client_android.lib.api.clients
 
 import okio.ByteString
+import stasis.client_android.lib.discovery.ServiceApiClient
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
@@ -24,7 +25,7 @@ import stasis.core.commands.proto.Command
 import java.time.Instant
 
 @Suppress("TooManyFunctions")
-interface ServerApiEndpointClient {
+interface ServerApiEndpointClient : ServiceApiClient {
     val self: DeviceId
     val server: String
 

@@ -42,6 +42,7 @@ import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
+import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
@@ -459,6 +460,24 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             true
         }
 
+        val discoveryInterval = findPreference<DropDownPreference>(Settings.Keys.DiscoveryInterval)
+        val currentDiscoveryInterval = preferenceManager.sharedPreferences?.getDiscoveryInterval()
+        discoveryInterval?.summary = renderDiscoveryInterval(currentDiscoveryInterval, context)
+        discoveryInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedDiscoveryInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedDiscoveryInterval?.seconds != currentDiscoveryInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            discoveryInterval.summary = renderDiscoveryInterval(updatedDiscoveryInterval, context)
+            true
+        }
+
         findPreference<Preference>(Settings.Keys.ShowCommands)?.setOnPreferenceClickListener {
             CommandsDialogFragment()
                 .withArgumentsId<CommandsDialogFragment>(id = "CommandsDialogFragment")
@@ -515,6 +534,16 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                 StyledString(
                     placeholder = "%1\$s",
                     content = (interval ?: Settings.Defaults.CommandRefreshInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderDiscoveryInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_discovery_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.DiscoveryInterval).asString(context),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )

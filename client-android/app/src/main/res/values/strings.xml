@@ -675,6 +675,7 @@
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
     <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
     <string name="settings_command_refresh_interval_hint">The client will query the server for new commands every %1$s</string>
+    <string name="settings_discovery_interval_hint">The client will query the server for new API endpoints every %1$s</string>
     <string name="settings_manage_user_credentials_update_password_title">Update password</string>
     <string name="settings_manage_user_credentials_update_password_summary">Allows updating the password for the current user</string>
     <string name="settings_manage_user_credentials_update_salt_title">Update salt value</string>
@@ -778,6 +779,7 @@
     <string name="settings_commands_error">Command retrieval failed with: %1$s</string>
     <string name="settings_command_parameters_title">[%1$s] %2$s</string>
     <string name="settings_command_parameters_info">%1$s</string>
+    <string name="settings_discovery_interval_title">Server discovery interval</string>
     <string name="settings_reset_config_title">Reset configuration</string>
     <string name="settings_reset_config_summary">Clears the client\'s configuration and device secret</string>
     <string name="settings_reset_config_confirm_title">Clear all configuration and log out?</string>

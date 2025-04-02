@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
 import okio.ByteString.Companion.toByteString
+import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.encryption.Aes
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.Secret
@@ -19,6 +20,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
+import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.io.IOException
 import java.util.UUID
 
@@ -141,8 +143,14 @@ class DatasetMetadataSpec : WordSpec({
                 )
             )
 
-            val fileOneMetadata = metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-            val fileTwoMetadata = metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+            val fileOneMetadata = metadata.collect(
+                entity = Fixtures.Metadata.FileOneMetadata.path,
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+            )
+            val fileTwoMetadata = metadata.collect(
+                entity = Fixtures.Metadata.FileTwoMetadata.path,
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+            )
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -168,14 +176,20 @@ class DatasetMetadataSpec : WordSpec({
             )
 
             val fileOneFailure = shouldThrow<IllegalArgumentException> {
-                metadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+                metadata.collect(
+                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileOneFailure
                 .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] not found")
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
-                metadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+                metadata.collect(
+                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileTwoFailure
@@ -226,9 +240,15 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             val fileOneMetadata =
-                currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+                currentMetadata.collect(
+                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             val fileTwoMetadata =
-                currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+                currentMetadata.collect(
+                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (2)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -254,7 +274,10 @@ class DatasetMetadataSpec : WordSpec({
             )
 
             val fileOneFailure = shouldThrow<IllegalArgumentException> {
-                currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+                currentMetadata.collect(
+                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileOneFailure.message shouldBe (
@@ -263,7 +286,10 @@ class DatasetMetadataSpec : WordSpec({
                     )
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
-                currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+                currentMetadata.collect(
+                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileTwoFailure.message shouldBe (
@@ -293,8 +319,14 @@ class DatasetMetadataSpec : WordSpec({
                 )
             )
 
-            val fileOneMetadata = metadata.require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
-            val fileTwoMetadata = metadata.require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+            val fileOneMetadata = metadata.require(
+                entity = Fixtures.Metadata.FileOneMetadata.path,
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+            )
+            val fileTwoMetadata = metadata.require(
+                entity = Fixtures.Metadata.FileTwoMetadata.path,
+                clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+            )
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -309,7 +341,10 @@ class DatasetMetadataSpec : WordSpec({
             val metadata = DatasetMetadata.empty()
 
             val fileOneFailure = shouldThrow<IllegalArgumentException> {
-                metadata.require(entity = Fixtures.Metadata.FileOneMetadata.path, api = mockApiClient)
+                metadata.require(
+                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileOneFailure.message shouldBe (
@@ -317,7 +352,10 @@ class DatasetMetadataSpec : WordSpec({
                     )
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
-                metadata.require(entity = Fixtures.Metadata.FileTwoMetadata.path, api = mockApiClient)
+                metadata.require(
+                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
+                )
             }
 
             fileTwoFailure.message shouldBe (

@@ -101,7 +101,7 @@ class Recovery(
                 keep = { entity, _ -> query?.matches(entity.toAbsolutePath()) ?: true },
                 destination = destination.toTargetEntityDestination(),
                 metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
-                api = providers.clients.api
+                clients = providers.clients
             )
 
         sealed class Collector {
@@ -132,6 +132,7 @@ class Recovery(
                                 )
                             )
                     }
+
                     is Collector.WithEntry -> providers.clients.api.datasetEntry(collector.entry)
                 }
 

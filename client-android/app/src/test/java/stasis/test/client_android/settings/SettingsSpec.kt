@@ -13,6 +13,7 @@ import org.robolectric.annotation.Config
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDateTimeFormat
+import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.settings.Settings.getRestrictionsIgnored
 import stasis.client_android.settings.Settings.getSchedulingEnabled
@@ -191,6 +192,20 @@ class SettingsSpec {
     }
 
     @Test
+    fun supportRetrievingDefaultDiscoveryInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.DiscoveryInterval,
+                null
+            )
+        } returns "1800"
+
+        val expectedState = Settings.Defaults.DiscoveryInterval
+        assertThat(preferences.getDiscoveryInterval(), equalTo(expectedState))
+    }
+
+    @Test
     fun supportRetrievingUserDefinedPingInterval() {
         val preferences = mockk<SharedPreferences>()
         every {
@@ -216,5 +231,19 @@ class SettingsSpec {
 
         val expectedState = Duration.ofSeconds(10)
         assertThat(preferences.getCommandRefreshInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedDiscoveryInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.DiscoveryInterval,
+                null
+            )
+        } returns "1234"
+
+        val expectedState = Duration.ofSeconds(1234)
+        assertThat(preferences.getDiscoveryInterval(), equalTo(expectedState))
     }
 }
