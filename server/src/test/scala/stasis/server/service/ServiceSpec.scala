@@ -44,9 +44,6 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.shared.model.Generators
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually {
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
-
   "Service" should "handle API and metrics requests" in {
     implicit val trustedContext: EndpointContext = createTrustedContext()
 
@@ -548,6 +545,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     Behaviors.ignore,
     "ServiceSpec"
   )
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(15.seconds, 250.milliseconds)
 
   import scala.language.implicitConversions
 

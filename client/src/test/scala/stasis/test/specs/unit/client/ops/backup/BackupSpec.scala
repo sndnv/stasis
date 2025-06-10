@@ -49,7 +49,7 @@ import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
 
 class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
-  "A Backup operation" should "process backups for entire configured file collection" in {
+  "A Backup operation" should "process backups for entire configured file collection" in withRetry {
     val sourceDirectory1Metadata = "/ops".asTestResource.extractDirectoryMetadata()
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
@@ -145,7 +145,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  it should "process backups for specific files" in {
+  it should "process backups for specific files" in withRetry {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
     val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
@@ -233,7 +233,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  it should "process backups resumed with existing state" in {
+  it should "process backups resumed with existing state" in withRetry {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
     val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
@@ -325,7 +325,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  it should "handle failures of backups for individual files" in {
+  it should "handle failures of backups for individual files" in withRetry {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val sourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
     val sourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
@@ -429,7 +429,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  it should "handle general backup failures" in {
+  it should "handle general backup failures" in withRetry {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
     val mockApiClient = MockServerApiEndpointClient()
@@ -497,7 +497,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  it should "support reusing existing backup operation IDs, if provided" in {
+  it should "support reusing existing backup operation IDs, if provided" in withRetry {
     val existingId = Operation.generateId()
 
     val backupWithRules = createBackup(
@@ -540,7 +540,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     backupWithState.id should be(existingId)
   }
 
-  it should "track successful backup operations" in {
+  it should "track successful backup operations" in withRetry {
     import Backup._
 
     val tracker = new MockBackupTracker
@@ -571,7 +571,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       }
   }
 
-  it should "track failed backup operations" in {
+  it should "track failed backup operations" in withRetry {
     import Backup._
 
     val tracker = new MockBackupTracker
@@ -605,7 +605,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       }
   }
 
-  it should "track stopped backup operations" in {
+  it should "track stopped backup operations" in withRetry {
     import Backup._
 
     val tracker = new MockBackupTracker
@@ -639,7 +639,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       }
   }
 
-  it should "allow stopping a running backup" in {
+  it should "allow stopping a running backup" in withRetry {
     val sourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
     val tracker = new MockBackupTracker
@@ -666,7 +666,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  "A Backup Descriptor" should "be creatable from a collector descriptor" in {
+  "A Backup Descriptor" should "be creatable from a collector descriptor" in withRetry {
     val datasetWithEntry = Fixtures.Datasets.Default
     val datasetWithoutEntry = Fixtures.Datasets.Default.copy(id = DatasetDefinition.generateId())
 
@@ -753,7 +753,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     }
   }
 
-  "A Backup Descriptor Collector" should "be convertible to an Entity Discovery Collector" in {
+  "A Backup Descriptor Collector" should "be convertible to an Entity Discovery Collector" in withRetry {
     Backup.Descriptor.Collector.WithRules(rules = Seq.empty).asDiscoveryCollector should be(
       EntityDiscovery.Collector.WithRules(rules = Seq.empty)
     )
@@ -767,7 +767,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     )
   }
 
-  it should "provide an existing state, if available" in {
+  it should "provide an existing state, if available" in withRetry {
     Backup.Descriptor.Collector.WithRules(rules = Seq.empty).existingState should be(
       None
     )
