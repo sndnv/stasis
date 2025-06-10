@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:server_ui/api/api_client.dart';
+import 'package:server_ui/model/analytics/analytics_entry_summary.dart';
+import 'package:server_ui/model/analytics/stored_analytics_entry.dart';
 import 'package:server_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:server_ui/model/api/requests/create_device_own.dart';
 import 'package:server_ui/model/api/requests/create_device_privileged.dart';
@@ -44,7 +46,8 @@ class DefaultApiClient extends ApiClient
         NodesApiClient,
         ManifestsApiClient,
         ReservationsApiClient,
-        ServiceApiClient {
+        ServiceApiClient,
+        AnalyticsApiClient {
   DefaultApiClient({
     required super.server,
     required super.underlying,
@@ -360,5 +363,25 @@ class DefaultApiClient extends ApiClient
   Future<Ping> ping() async {
     const path = '/v1/service/ping';
     return underlying.get(Uri.parse('$server$path')).andProcessResponseWith((r) => Ping.fromJson(jsonDecode(r.body)));
+  }
+
+  @override
+  Future<List<AnalyticsEntrySummary>> getAnalyticsEntries() async {
+    const path = '/v1/analytics';
+    return await get(from: path, fromJson: AnalyticsEntrySummary.fromJson);
+  }
+
+  @override
+  Future<StoredAnalyticsEntry> getAnalyticsEntry({required String entry}) async {
+    final path = '/v1/analytics/$entry';
+    return underlying
+        .get(Uri.parse('$server$path'))
+        .andProcessResponseWith((r) => StoredAnalyticsEntry.fromJson(jsonDecode(r.body)));
+  }
+
+  @override
+  Future<void> deleteAnalyticsEntry({required String entry}) async {
+    final path = '/v1/analytics/$entry';
+    return await delete(from: path);
   }
 }

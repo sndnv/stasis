@@ -18,6 +18,7 @@ abstract class PageRouterDestination {
   static PageRouterDestination nodes = PageRouterDestinationNodes();
   static PageRouterDestination reservations = PageRouterDestinationReservations();
   static PageRouterDestination codes = PageRouterDestinationBootstrapCodes();
+  static PageRouterDestination analytics = PageRouterDestinationAnalytics();
 }
 
 class PageRouterDestinationHome extends PageRouterDestination {
@@ -113,9 +114,19 @@ class PageRouterDestinationReservations extends PageRouterDestination {
 class PageRouterDestinationBootstrapCodes extends PageRouterDestination {
   PageRouterDestinationBootstrapCodes()
       : super(
-          key: 'codes',
-          title: 'Bootstrap Codes',
-          route: '/manage/codes',
-          icon: Icons.qr_code,
-        );
+    key: 'codes',
+    title: 'Bootstrap Codes',
+    route: '/manage/codes',
+    icon: Icons.qr_code,
+  );
+}
+
+class PageRouterDestinationAnalytics extends PageRouterDestination {
+  PageRouterDestinationAnalytics()
+      : super(
+    key: 'analytics',
+    title: 'Analytics',
+    route: '/manage/analytics',
+    icon: Icons.analytics,
+  );
 }
