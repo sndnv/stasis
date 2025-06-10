@@ -21,6 +21,7 @@ import stasis.shared.api.requests.UpdateNode.UpdateRemoteGrpcNode
 import stasis.shared.api.requests.UpdateNode.UpdateRemoteHttpNode
 import stasis.shared.api.requests._
 import stasis.shared.api.responses._
+import stasis.shared.model.analytics.StoredAnalyticsEntry
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -40,9 +41,7 @@ object Formats {
   import stasis.core.api.Formats.crateStoreDescriptorWrites
   import stasis.core.api.Formats.grpcEndpointAddressFormat
   import stasis.core.api.Formats.httpEndpointAddressFormat
-  import stasis.core.api.Formats.jsonConfig
-  import stasis.layers.api.Formats.endpointContextFormat
-  import stasis.layers.api.Formats.finiteDurationFormat
+  import stasis.layers.api.Formats._
 
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),
@@ -246,6 +245,9 @@ object Formats {
   implicit val datasetEntryFormat: Format[DatasetEntry] =
     Json.format[DatasetEntry]
 
+  implicit val storedAnalyticsEntryFormat: Format[StoredAnalyticsEntry] =
+    Json.format[StoredAnalyticsEntry]
+
   implicit val createUserRequestFormat: Format[CreateUser] =
     Json.format[CreateUser]
 
@@ -300,6 +302,9 @@ object Formats {
   implicit val createDatasetEntryRequestFormat: Format[CreateDatasetEntry] =
     Json.format[CreateDatasetEntry]
 
+  implicit val createAnalyticsEntryRequestFormat: Format[CreateAnalyticsEntry] =
+    Json.format[CreateAnalyticsEntry]
+
   implicit val pingResponseFormat: Format[Ping] =
     Json.format[Ping]
 
@@ -344,6 +349,12 @@ object Formats {
 
   implicit val deletedCommandFormat: Format[DeletedCommand] =
     Json.format[DeletedCommand]
+
+  implicit val createdAnalyticsEntryFormat: Format[CreatedAnalyticsEntry] =
+    Json.format[CreatedAnalyticsEntry]
+
+  implicit val deletedAnalyticsEntryFormat: Format[DeletedAnalyticsEntry] =
+    Json.format[DeletedAnalyticsEntry]
 
   implicit val createNodeFormat: Format[CreateNode] = Format(
     fjs = _.validate[JsObject].flatMap { node =>
