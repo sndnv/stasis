@@ -1,5 +1,7 @@
 package stasis.layers.api
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 import scala.concurrent.duration._
@@ -9,6 +11,8 @@ import org.apache.pekko.util.ByteString
 import play.api.libs.json.Json
 
 import stasis.layers.UnitSpec
+import stasis.layers.telemetry.ApplicationInformation
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 
 class FormatsSpec extends UnitSpec {
   import Formats._
@@ -64,5 +68,35 @@ class FormatsSpec extends UnitSpec {
 
     byteStringFormat.writes(original).toString() should be(json)
     byteStringFormat.reads(Json.parse(json)).asOpt should be(Some(original))
+  }
+
+  they should "support converting analytics entries to/from JSON" in {
+    val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+
+    val original = AnalyticsEntry
+      .collected(app = ApplicationInformation.none)
+      .withEvent(name = "test-event", attributes = Map("a" -> "b", "c" -> "d"))
+      .withFailure(message = "Test failure")
+
+    val entry: AnalyticsEntry = original
+      .copy(
+        created = now,
+        updated = now,
+        failures = original.failures.map(_.copy(timestamp = now))
+      )
+
+    val json =
+      s"""
+         |{
+         |"runtime":{"id":"${entry.runtime.id}","app":"none;none;0","jre":"${entry.runtime.jre}","os":"${entry.runtime.os}"},
+         |"events":[{"id":0,"event":"test-event{a='b',c='d'}"}],
+         |"failures":[{"message":"Test failure","timestamp":"$now"}],
+         |"created":"$now",
+         |"updated":"$now",
+         |"entry_type":"collected"
+         |}""".stripMargin.replaceAll("\n", "").trim
+
+    analyticsEntryFormat.writes(entry).toString should be(json)
+    analyticsEntryFormat.reads(Json.parse(json)).asEither should be(Right(entry))
   }
 }

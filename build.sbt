@@ -74,6 +74,7 @@ lazy val server = (project in file("./server"))
 lazy val client = (project in file("./client"))
   .settings(commonSettings)
   .settings(dockerSettings)
+  .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
       "at.favre.lib"      % "hkdf"                              % versions.hkdf,
@@ -87,16 +88,17 @@ lazy val client = (project in file("./client"))
       "org.bouncycastle"  % "bcprov-jdk18on"                    % versions.bouncycastle,
       "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle
     ),
-    dockerBaseImage          := jdkDockerImage,
-    dockerLabels             := Map(
+    dockerBaseImage                    := jdkDockerImage,
+    dockerLabels                       := Map(
       "org.opencontainers.image.description" -> "Linux and macOS client for the 'stasis/server' backup management and storage service"
     ),
-    Compile / PB.targets     := Seq(
+    Compile / PB.targets               := Seq(
       scalapb.gen(singleLineToProtoString = true) -> (Compile / sourceManaged).value
     ),
-    coverageExcludedPackages := "stasis.client.model.proto.*"
+    Compile / PB.deleteTargetDirectory := false,
+    coverageExcludedPackages           := "stasis.client.model.proto.*"
   )
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
   .dependsOn(shared % "compile->compile;test->test")
 
 lazy val identity = (project in file("./identity"))
@@ -270,9 +272,10 @@ lazy val buildInfoSettings = Seq(
   buildInfoKeys    := Seq[BuildInfoKey](
     name,
     version,
-    BuildInfoKey.action("time") { System.currentTimeMillis }
+    BuildInfoKey.action("buildTime") { System.currentTimeMillis }
   ),
-  buildInfoPackage := s"stasis.${name.value}"
+  buildInfoPackage := s"stasis.${name.value}",
+  buildInfoOptions += BuildInfoOption.Traits("stasis.layers.telemetry.ApplicationInformation")
 )
 
 Global / concurrentRestrictions += Tags.limit(

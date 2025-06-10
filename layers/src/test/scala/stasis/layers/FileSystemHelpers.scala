@@ -19,6 +19,8 @@ trait FileSystemHelpers {
   }
 
   implicit class PathWithIO(resourcePath: Path) {
+    def exists: Boolean = Files.exists(resourcePath)
+
     def write(content: String)(implicit mat: Materializer): Future[Done] = {
       require(!Files.isDirectory(resourcePath), s"Expected [$resourcePath] to be a file")
 

@@ -9,6 +9,7 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.util.ByteString
 
 import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 
 object Formats {
   import play.api.libs.json._
@@ -45,4 +46,28 @@ object Formats {
 
   implicit val endpointContextFormat: Format[EndpointContext.Encoded] =
     Json.format[EndpointContext.Encoded]
+
+  implicit val analyticsEntryRuntimeInformationFormat: Format[AnalyticsEntry.RuntimeInformation] =
+    Json.format[AnalyticsEntry.RuntimeInformation]
+
+  implicit val analyticsEntryEventFormat: Format[AnalyticsEntry.Event] =
+    Json.format[AnalyticsEntry.Event]
+
+  implicit val analyticsEntryFailureFormat: Format[AnalyticsEntry.Failure] =
+    Json.format[AnalyticsEntry.Failure]
+
+  implicit val collectedAnalyticsEntryFormat: Format[AnalyticsEntry.Collected] =
+    Json.format[AnalyticsEntry.Collected]
+
+  implicit val analyticsEntryFormat: Format[AnalyticsEntry] =
+    Format(
+      fjs = _.validate[JsObject].flatMap { entry =>
+        (entry \ "entry_type").validate[String].map { case "collected" =>
+          entry.as[AnalyticsEntry.Collected]
+        }
+      },
+      tjs = { case entry: AnalyticsEntry.Collected =>
+        collectedAnalyticsEntryFormat.writes(entry).as[JsObject] ++ Json.obj("entry_type" -> Json.toJson("collected"))
+      }
+    )
 }
