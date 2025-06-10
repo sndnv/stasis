@@ -45,7 +45,7 @@ import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
 
 class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
-  "A Recovery operation" should "process recovery of files" in {
+  "A Recovery operation" should "process recovery of files" in withRetry {
     val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
     val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
@@ -109,7 +109,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  it should "support recovering to a different destination" in {
+  it should "support recovering to a different destination" in withRetry {
     val targetDirectory = "/ops/recovery".asTestResource
     targetDirectory.clear().await
 
@@ -191,7 +191,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  it should "handle failures of specific files" in {
+  it should "handle failures of specific files" in withRetry {
     val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val currentSourceFile2Metadata = "/ops/source-file-2".asTestResource.extractFileMetadata(checksum)
     val currentSourceFile3Metadata = "/ops/source-file-3".asTestResource.extractFileMetadata(checksum)
@@ -251,7 +251,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  it should "handle general recovery failures" in {
+  it should "handle general recovery failures" in withRetry {
     val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
     val originalSourceFile1Metadata = currentSourceFile1Metadata.copy(checksum = BigInt(0))
 
@@ -299,7 +299,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  it should "track successful recovery operations" in {
+  it should "track successful recovery operations" in withRetry {
     import Recovery._
 
     val mockTracker = new MockRecoveryTracker
@@ -325,7 +325,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       }
   }
 
-  it should "track failed recovery operations" in {
+  it should "track failed recovery operations" in withRetry {
     import Recovery._
 
     val mockTracker = new MockRecoveryTracker
@@ -354,7 +354,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       }
   }
 
-  it should "track stopped recovery operations" in {
+  it should "track stopped recovery operations" in withRetry {
     import Recovery._
 
     val mockTracker = new MockRecoveryTracker
@@ -383,7 +383,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       }
   }
 
-  it should "allow stopping a running recovery" in {
+  it should "allow stopping a running recovery" in withRetry {
     val currentSourceFile1Metadata = "/ops/source-file-1".asTestResource.extractFileMetadata(checksum)
 
     // metadata represents file state during previous backup
@@ -418,7 +418,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  "A Recovery Descriptor" should "be creatable from a collector descriptor" in {
+  "A Recovery Descriptor" should "be creatable from a collector descriptor" in withRetry {
     val dataset = Fixtures.Datasets.Default
     val entry = Fixtures.Entries.Default.copy(definition = dataset.id)
     val metadata = DatasetMetadata.empty
@@ -490,7 +490,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     }
   }
 
-  it should "handle missing entries when creating from collector descriptor" in {
+  it should "handle missing entries when creating from collector descriptor" in withRetry {
     val dataset = Fixtures.Datasets.Default
 
     implicit val providers: Providers = Providers(
@@ -534,7 +534,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       }
   }
 
-  it should "be convertible to a recovery collector" in {
+  it should "be convertible to a recovery collector" in withRetry {
     implicit val providers: Providers = Providers(
       checksum = checksum,
       staging = new DefaultFileStaging(
@@ -562,7 +562,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     descriptor.toRecoveryCollector() shouldBe a[RecoveryCollector.Default]
   }
 
-  "Recovery path queries" should "support checking for matches in paths" in {
+  "Recovery path queries" should "support checking for matches in withRetry paths" in withRetry {
     matchingPathRegexes.foreach { regex =>
       val query = PathQuery.ForAbsolutePath(query = new Regex(regex))
       withClue(s"Matching path [$matchingPath] with [$regex]:") {
@@ -573,17 +573,17 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     succeed
   }
 
-  they should "support checking for matches in file names" in {
+  they should "support checking for matches in withRetry file names" in withRetry {
     matchingFileNameRegexes.foreach { regex =>
       val query = PathQuery.ForFileName(query = new Regex(regex))
-      withClue(s"Matching file name in path [$matchingPath] with [$regex]:") {
+      withClue(s"Matching file name in withRetry path [$matchingPath] with [$regex]:") {
         query.matches(matchingPath) should be(true)
       }
     }
 
     nonMatchingPathRegexes.foreach { regex =>
       val query = PathQuery.ForFileName(query = new Regex(regex))
-      withClue(s"Matching file name in path [$matchingPath] with [$regex]:") {
+      withClue(s"Matching file name in withRetry path [$matchingPath] with [$regex]:") {
         query.matches(matchingPath) should be(false)
       }
     }
@@ -591,12 +591,12 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     succeed
   }
 
-  they should "create path queries from regex strings" in {
+  they should "create path queries from regex strings" in withRetry {
     PathQuery("/tmp/some-file.txt") shouldBe a[PathQuery.ForAbsolutePath]
     PathQuery("some-file.txt") shouldBe a[PathQuery.ForFileName]
   }
 
-  "A Recovery destination" should "be convertible to TargetEntity destination" in {
+  "A Recovery destination" should "be convertible to TargetEntity destination" in withRetry {
     import Recovery._
     import stasis.client.model.TargetEntity
 

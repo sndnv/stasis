@@ -39,6 +39,7 @@ import stasis.layers.security.tls.EndpointContext
 import stasis.layers.service.BootstrapProvider
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.metrics.MetricsExporter
 
 trait Service {
@@ -80,7 +81,8 @@ trait Service {
         layers.security.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
         layers.api.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
         layers.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
-      ).flatten
+      ).flatten,
+      analyticsCollector = AnalyticsCollector.NoOp
     )
 
     val persistence: Persistence = Persistence(
@@ -163,7 +165,7 @@ trait Service {
          |Build(
          |  name:    ${BuildInfo.name}
          |  version: ${BuildInfo.version}
-         |  time:    ${Instant.ofEpochMilli(BuildInfo.time).toString}
+         |  time:    ${Instant.ofEpochMilli(BuildInfo.buildTime).toString}
          |)""".stripMargin
     )
 
