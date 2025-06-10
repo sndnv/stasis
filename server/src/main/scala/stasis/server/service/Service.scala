@@ -47,6 +47,7 @@ import stasis.layers.security.tls.EndpointContext
 import stasis.layers.service.BootstrapProvider
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.metrics.MetricsExporter
 import stasis.server.BuildInfo
 import stasis.server.api.ApiEndpoint
@@ -103,7 +104,8 @@ trait Service {
         layers.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
         core.persistence.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation),
         core.routing.Metrics.default(meter = exporter.meter, namespace = Telemetry.Instrumentation)
-      ).flatten
+      ).flatten,
+      analyticsCollector = AnalyticsCollector.NoOp
     )
 
     val oauthClient = DefaultOAuthClient(
@@ -308,7 +310,7 @@ trait Service {
          |Build(
          |  name:    ${BuildInfo.name}
          |  version: ${BuildInfo.version}
-         |  time:    ${Instant.ofEpochMilli(BuildInfo.time).toString}
+         |  time:    ${Instant.ofEpochMilli(BuildInfo.buildTime).toString}
          |)""".stripMargin
     )
 

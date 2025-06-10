@@ -121,7 +121,7 @@ class IdentityUserCredentialsManager(
 }
 
 object IdentityUserCredentialsManager {
-  import stasis.core.api.Formats.jsonConfig
+  import stasis.layers.api.Formats.jsonConfig
 
   private implicit val createOwnerFormat: Format[CreateOwner] =
     Json.format[CreateOwner]

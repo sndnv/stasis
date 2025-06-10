@@ -97,6 +97,6 @@ class DefaultDatasetDefinitionStoreSpec extends UnitSpec with SlickTestDatabase 
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(
     guardianBehavior = Behaviors.ignore,
-    "DefaultDatasetDefinitionStoreSpec"
+    name = "DefaultDatasetDefinitionStoreSpec"
   )
 }

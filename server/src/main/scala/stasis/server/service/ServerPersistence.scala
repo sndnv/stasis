@@ -16,6 +16,8 @@ import stasis.layers.persistence.migration.MigrationExecutor
 import stasis.layers.persistence.migration.MigrationResult
 import stasis.layers.service.PersistenceProvider
 import stasis.layers.telemetry.TelemetryContext
+import stasis.server.persistence.analytics.AnalyticsEntryStore
+import stasis.server.persistence.analytics.DefaultAnalyticsEntryStore
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.server.persistence.datasets.DatasetEntryStore
 import stasis.server.persistence.datasets.DefaultDatasetDefinitionStore
@@ -111,6 +113,12 @@ class ServerPersistence(
     database = database
   )
 
+  val analytics: AnalyticsEntryStore = new DefaultAnalyticsEntryStore(
+    name = "ANALYTICS_ENTRIES",
+    profile = profile,
+    database = database
+  )
+
   override def migrate(): Future[MigrationResult] =
     for {
       definitionsMigration <- migrationExecutor.execute(forStore = datasetDefinitions)
@@ -121,6 +129,7 @@ class ServerPersistence(
       commandsMigration <- migrationExecutor.execute(forStore = deviceCommands)
       schedulesMigration <- migrationExecutor.execute(forStore = schedules)
       usersMigration <- migrationExecutor.execute(forStore = users)
+      analyticsMigration <- migrationExecutor.execute(forStore = analytics)
     } yield {
       (definitionsMigration
         + entriesMigration
@@ -129,7 +138,8 @@ class ServerPersistence(
         + deviceKeysMigration
         + schedulesMigration
         + usersMigration
-        + commandsMigration)
+        + commandsMigration
+        + analyticsMigration)
     }
 
   override def init(): Future[Done] =
@@ -142,6 +152,7 @@ class ServerPersistence(
       _ <- deviceCommands.init()
       _ <- schedules.init()
       _ <- users.init()
+      _ <- analytics.init()
     } yield {
       Done
     }
@@ -156,6 +167,7 @@ class ServerPersistence(
       _ <- deviceCommands.drop()
       _ <- schedules.drop()
       _ <- users.drop()
+      _ <- analytics.drop()
     } yield {
       Done
     }
@@ -192,7 +204,10 @@ class ServerPersistence(
       users.manage(),
       users.manageSelf(),
       users.view(),
-      users.viewSelf()
+      users.viewSelf(),
+      analytics.manage(),
+      analytics.manageSelf(),
+      analytics.view()
     )
 
   private object backends {

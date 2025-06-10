@@ -1,10 +1,12 @@
 package stasis.test.specs.unit.core.telemetry
 
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.metrics.MetricsProvider
 import stasis.test.specs.unit.core.persistence.MockPersistenceMetrics
 import stasis.test.specs.unit.core.routing.mocks.MockRoutingMetrics
 
-class MockTelemetryContext extends stasis.layers.telemetry.MockTelemetryContext {
+class MockTelemetryContext(collector: Option[AnalyticsCollector])
+    extends stasis.layers.telemetry.MockTelemetryContext(collector) {
   override protected def providers(): Set[MetricsProvider] =
     super.providers() ++ Set(
       core.persistence.streaming,
@@ -31,5 +33,9 @@ class MockTelemetryContext extends stasis.layers.telemetry.MockTelemetryContext 
 }
 
 object MockTelemetryContext {
-  def apply(): MockTelemetryContext = new MockTelemetryContext()
+  def apply(): MockTelemetryContext =
+    new MockTelemetryContext(collector = None)
+
+  def apply(collector: AnalyticsCollector): MockTelemetryContext =
+    new MockTelemetryContext(collector = Some(collector))
 }

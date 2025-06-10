@@ -51,6 +51,7 @@ class ApiEndpoint(
   private val reservations = Reservations()
   private val staging = Staging()
   private val service = Service()
+  private val analytics = Analytics()
   private val discovery = new HttpServiceDiscoveryEndpoint(provider = serviceDiscoveryProvider)
 
   private val sanitizingExceptionHandler: ExceptionHandler = handlers.Sanitizing.create(log)
@@ -77,6 +78,7 @@ class ApiEndpoint(
                 pathPrefix("reservations") { reservations.routes(currentUser = user) },
                 pathPrefix("staging") { staging.routes(currentUser = user) },
                 pathPrefix("service") { service.routes(currentUser = user) },
+                pathPrefix("analytics") { analytics.routes(currentUser = user) },
                 pathPrefix("discovery") { discovery.routes }
               )
 
