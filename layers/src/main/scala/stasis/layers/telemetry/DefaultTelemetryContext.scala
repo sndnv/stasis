@@ -2,10 +2,12 @@ package stasis.layers.telemetry
 
 import scala.reflect.ClassTag
 
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.metrics.MetricsProvider
 
 class DefaultTelemetryContext(
-  metricsProviders: Set[MetricsProvider]
+  metricsProviders: Set[MetricsProvider],
+  analyticsCollector: AnalyticsCollector
 ) extends TelemetryContext {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def metrics[M <: MetricsProvider](implicit tag: ClassTag[M]): M =
@@ -18,9 +20,17 @@ class DefaultTelemetryContext(
           s"Metrics provider [${tag.toString()}] requested but could not be found"
         )
     }
+
+  override def analytics: AnalyticsCollector =
+    analyticsCollector
 }
 
 object DefaultTelemetryContext {
-  def apply(metricsProviders: Set[MetricsProvider]): DefaultTelemetryContext =
-    new DefaultTelemetryContext(metricsProviders = metricsProviders)
+  def apply(
+    metricsProviders: Set[MetricsProvider],
+    analyticsCollector: AnalyticsCollector
+  ): DefaultTelemetryContext = new DefaultTelemetryContext(
+    metricsProviders = metricsProviders,
+    analyticsCollector = analyticsCollector
+  )
 }
