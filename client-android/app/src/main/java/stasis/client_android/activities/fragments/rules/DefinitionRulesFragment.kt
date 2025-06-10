@@ -101,7 +101,7 @@ class DefinitionRulesFragment : Fragment(), DynamicArguments.Provider, DynamicAr
                     .withTitle(context.getString(R.string.rules_reset_confirm_title))
                     .withMessage(context.getString(R.string.rules_reset_confirm_content))
                     .withConfirmationHandler {
-                        arguments.resetRule()
+                        arguments.resetRules()
                     }
                     .show(childFragmentManager)
             }
@@ -118,7 +118,7 @@ class DefinitionRulesFragment : Fragment(), DynamicArguments.Provider, DynamicAr
             val createRule: (Rule) -> Unit,
             val updateRule: (Rule) -> Unit,
             val deleteRule: (Long) -> Unit,
-            val resetRule: () -> Unit,
+            val resetRules: () -> Unit,
         ) : DynamicArguments.ArgumentSet
 
         private const val ArgumentsKey: String =

@@ -4,24 +4,16 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import stasis.client_android.lib.ops.scheduling.ActiveSchedule
 import stasis.client_android.serialization.Extras.putActiveScheduleId
 import java.time.Instant
 
 object AlarmManagerExtensions {
-    private const val TAG: String = "AlarmManagerExtensions"
-
     fun AlarmManager.putScheduleAlarm(
         context: Context,
         schedule: ActiveSchedule,
         instant: Instant
     ) {
-        Log.v(
-            TAG,
-            "Scheduling next alarm for schedule [type=${schedule.assignment.javaClass.simpleName},id=${schedule.id}] at [$instant]"
-        )
-
         set(
             AlarmManager.RTC,
             instant.toEpochMilli(),
@@ -30,11 +22,6 @@ object AlarmManagerExtensions {
     }
 
     fun AlarmManager.deleteScheduleAlarm(context: Context, schedule: ActiveSchedule) {
-        Log.v(
-            TAG,
-            "Removing alarm for schedule [type=${schedule.assignment.javaClass.simpleName},id=${schedule.id}]"
-        )
-
         cancel(context.getAlarmIntent(schedule))
     }
 

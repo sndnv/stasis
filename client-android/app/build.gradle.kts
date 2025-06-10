@@ -69,6 +69,8 @@ android {
         versionName = "1.4.3-SNAPSHOT"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
     }
 
     signingConfigs {

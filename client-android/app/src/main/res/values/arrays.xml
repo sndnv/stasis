@@ -51,4 +51,28 @@
         <item>10800</item>
         <item>21600</item>
     </string-array>
+
+    <string-array name="settings_analytics_persistence_interval_entries">
+        <item>5 minutes</item>
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+    </string-array>
+    <string-array name="settings_analytics_persistence_interval_values">
+        <item>300</item>
+        <item>900</item>
+        <item>1800</item>
+        <item>3600</item>
+    </string-array>
+
+    <string-array name="settings_analytics_transmission_interval_entries">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+    </string-array>
+    <string-array name="settings_analytics_transmission_interval_values">
+        <item>900</item>
+        <item>1800</item>
+        <item>3600</item>
+    </string-array>
 </resources>

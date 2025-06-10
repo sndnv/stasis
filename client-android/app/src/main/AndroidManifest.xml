@@ -49,6 +49,13 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.StasisClient" />
 
+        <activity
+            android:name=".activities.CrashReportActivity"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:process=":crash_report"
+            android:theme="@style/Theme.StasisClient" />
+
         <receiver
             android:name=".activities.receivers.SystemConfigurationChangedReceiver"
             android:exported="false">

@@ -21,12 +21,14 @@ import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository.Companion.Keys
 import stasis.client_android.persistence.config.ConfigRepository.Companion.firstRunComplete
+import stasis.client_android.persistence.config.ConfigRepository.Companion.getAnalyticsCachedEntry
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getAuthenticationConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerCoreConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.isFirstRun
+import stasis.client_android.persistence.config.ConfigRepository.Companion.putAnalyticsCachedEntry
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.saveLastProcessedCommand
 import stasis.client_android.persistence.config.ConfigRepository.Companion.saveUsername
@@ -450,6 +452,7 @@ class ConfigRepositorySpec {
         every { editor.remove(Keys.General.IsFirstRun) } returns editor
         every { editor.remove(Keys.General.SavedUsername) } returns editor
         every { editor.remove(Keys.General.LastProcessedCommand) } returns editor
+        every { editor.remove(Keys.Analytics.EntryCache) } returns editor
         every { editor.commit() } returns true
 
         val repository = ConfigRepository(preferences = preferences)
@@ -599,6 +602,30 @@ class ConfigRepositorySpec {
         preferences.saveLastProcessedCommand(sequenceId = 42L)
 
         verify(exactly = 1) { editor.commit() }
+    }
+
+    @Test
+    fun storeAnalyticsEntries() {
+        val preferences = mockk<SharedPreferences>()
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+
+        every { preferences.edit() } returns editor
+
+        every { editor.putString(Keys.Analytics.EntryCache, "abc") } returns editor
+        every { editor.commit() } returns true
+
+        preferences.putAnalyticsCachedEntry(entry = "abc")
+
+        verify(exactly = 1) { editor.commit() }
+    }
+
+    @Test
+    fun retrieveAnalyticsEntries() {
+        val preferences = mockk<SharedPreferences>()
+
+        every { preferences.getString(Keys.Analytics.EntryCache, null) } returns "abc"
+
+        assertThat(preferences.getAnalyticsCachedEntry(), equalTo("abc"))
     }
 
     @get:Rule

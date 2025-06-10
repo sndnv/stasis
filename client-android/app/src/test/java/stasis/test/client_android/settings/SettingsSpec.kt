@@ -11,6 +11,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import stasis.client_android.settings.Settings
+import stasis.client_android.settings.Settings.getAnalyticsEnabled
+import stasis.client_android.settings.Settings.getAnalyticsKeepEvents
+import stasis.client_android.settings.Settings.getAnalyticsKeepFailures
+import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
+import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import stasis.client_android.settings.Settings.getDiscoveryInterval
@@ -245,5 +250,142 @@ class SettingsSpec {
 
         val expectedState = Duration.ofSeconds(1234)
         assertThat(preferences.getDiscoveryInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingDefaultAnalyticsEnabled() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsEnabled,
+                Settings.Defaults.AnalyticsEnabled
+            )
+        } returns Settings.Defaults.AnalyticsEnabled
+
+        val expectedState = Settings.Defaults.AnalyticsEnabled
+        assertThat(preferences.getAnalyticsEnabled(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedAnalyticsEnabled() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsEnabled,
+                Settings.Defaults.AnalyticsEnabled
+            )
+        } returns false
+
+        assertThat(preferences.getAnalyticsEnabled(), equalTo(false))
+    }
+
+    @Test
+    fun supportRetrievingDefaultAnalyticsKeepEvents() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsKeepEvents,
+                Settings.Defaults.AnalyticsKeepEvents
+            )
+        } returns Settings.Defaults.AnalyticsKeepEvents
+
+        val expectedState = Settings.Defaults.AnalyticsKeepEvents
+        assertThat(preferences.getAnalyticsKeepEvents(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedAnalyticsKeepEvents() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsKeepEvents,
+                Settings.Defaults.AnalyticsKeepEvents
+            )
+        } returns false
+
+        assertThat(preferences.getAnalyticsKeepEvents(), equalTo(false))
+    }
+
+    @Test
+    fun supportRetrievingDefaultAnalyticsKeepFailures() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsKeepFailures,
+                Settings.Defaults.AnalyticsKeepFailures
+            )
+        } returns Settings.Defaults.AnalyticsKeepFailures
+
+        val expectedState = Settings.Defaults.AnalyticsKeepFailures
+        assertThat(preferences.getAnalyticsKeepFailures(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedAnalyticsKeepFailures() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getBoolean(
+                Settings.Keys.AnalyticsKeepFailures,
+                Settings.Defaults.AnalyticsKeepFailures
+            )
+        } returns false
+
+        assertThat(preferences.getAnalyticsKeepFailures(), equalTo(false))
+    }
+
+    @Test
+    fun supportRetrievingDefaultAnalyticsPersistenceInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.AnalyticsPersistenceInterval,
+                null
+            )
+        } returns "300"
+
+        val expectedState = Settings.Defaults.AnalyticsPersistenceInterval
+        assertThat(preferences.getAnalyticsPersistenceInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedAnalyticsPersistenceInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.AnalyticsPersistenceInterval,
+                null
+            )
+        } returns "1234"
+
+        val expectedState = Duration.ofSeconds(1234)
+        assertThat(preferences.getAnalyticsPersistenceInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingDefaultAnalyticsTransmissionInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.AnalyticsTransmissionInterval,
+                null
+            )
+        } returns "1800"
+
+        val expectedState = Settings.Defaults.AnalyticsTransmissionInterval
+        assertThat(preferences.getAnalyticsTransmissionInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedAnalyticsTransmissionInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.AnalyticsTransmissionInterval,
+                null
+            )
+        } returns "1234"
+
+        val expectedState = Duration.ofSeconds(1234)
+        assertThat(preferences.getAnalyticsTransmissionInterval(), equalTo(expectedState))
     }
 }

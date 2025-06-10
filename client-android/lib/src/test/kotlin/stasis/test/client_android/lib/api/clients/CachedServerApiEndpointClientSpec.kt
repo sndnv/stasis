@@ -14,6 +14,8 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
+import stasis.client_android.lib.telemetry.ApplicationInformation
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Cache
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import java.time.Duration
@@ -65,6 +67,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetDefinitions()
             client.datasetDefinitions()
@@ -102,6 +105,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and cache individual dataset definitions" {
@@ -137,6 +141,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetDefinition(definition = definition1)
             client.datasetDefinition(definition = definition1)
@@ -166,6 +171,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetDefinition(definition = definition2)
             client.datasetDefinition(definition = definition2)
@@ -194,6 +200,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "create dataset definitions and invalidate existing cache" {
@@ -234,6 +241,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.createDatasetDefinition(
                 request = CreateDatasetDefinition(
@@ -282,6 +290,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "update dataset definitions and invalidate existing cache" {
@@ -322,6 +331,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.updateDatasetDefinition(
                 definition = definition,
@@ -370,6 +380,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "delete dataset definitions and invalidate existing cache" {
@@ -410,6 +421,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.deleteDatasetDefinition(definition = definition)
 
@@ -444,6 +456,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve dataset entries for a dataset definition (without caching)" {
@@ -480,6 +493,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and cache individual dataset entries" {
@@ -514,6 +528,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetEntry(entry = entry)
             client.datasetEntry(entry = entry)
@@ -544,6 +559,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and cache latest dataset entry for a dataset definition (when `until` not provided)" {
@@ -578,6 +594,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
@@ -608,6 +625,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and not cache latest dataset entry for dataset definition (when `until` is provided)" {
@@ -647,6 +665,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "create dataset entries and invalidate existing cache" {
@@ -683,6 +702,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.createDatasetEntry(
                 request = CreateDatasetEntry(
@@ -720,6 +740,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "delete dataset entries and invalidate existing cache" {
@@ -756,6 +777,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.deleteDatasetEntry(entry = latest.get()!!.id)
 
@@ -786,6 +808,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve public schedules (without caching)" {
@@ -822,6 +845,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve individual public schedules (without caching)" {
@@ -860,6 +884,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and cache dataset metadata (with entry ID)" {
@@ -894,6 +919,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetMetadata(entry = entry)
             client.datasetMetadata(entry = entry)
@@ -924,6 +950,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve and cache dataset metadata (with entry)" {
@@ -965,6 +992,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             client.datasetMetadata(entry = entry)
             client.datasetMetadata(entry = entry)
@@ -995,6 +1023,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve current user (without caching)" {
@@ -1031,6 +1060,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "reset the current user's salt (without caching)" {
@@ -1065,6 +1095,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "update the current user's password (without caching)" {
@@ -1101,6 +1132,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve current device (without caching)" {
@@ -1137,6 +1169,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "push current device key (without caching)" {
@@ -1173,6 +1206,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "pull current device key (without caching)" {
@@ -1207,6 +1241,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "check if a device key exists (without caching)" {
@@ -1241,6 +1276,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (3)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "make ping requests (without caching)" {
@@ -1277,6 +1313,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (5)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
         "retrieve commands (without caching)" {
@@ -1311,6 +1348,42 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (3)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
+        }
+
+        "send analytics entries (without caching)" {
+            val underlying = MockServerApiEndpointClient()
+
+            val client = createClient(underlying = underlying)
+
+            client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none()))
+            client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none()))
+            client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none()))
+
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserSaltReset] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (3)
         }
     }
 })

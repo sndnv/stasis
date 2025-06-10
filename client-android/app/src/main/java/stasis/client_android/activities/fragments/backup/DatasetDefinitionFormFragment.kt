@@ -1,6 +1,7 @@
 package stasis.client_android.activities.fragments.backup
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -31,6 +32,8 @@ import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefiniti
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.devices.DeviceId
+import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -40,6 +43,9 @@ import javax.inject.Inject
 class DatasetDefinitionFormFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
+
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,11 +63,17 @@ class DatasetDefinitionFormFragment : Fragment() {
 
         val args: DatasetDefinitionFormFragmentArgs by navArgs()
 
+        val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
         fun actionHandler(fields: Fields, definition: DatasetDefinition?) {
             if (fields.validate()) {
                 when (definition) {
                     null -> datasets.createDefinition(request = fields.toCreateRequest(forDevice = datasets.self)) {
-                        it.getOrRenderFailure(withContext = requireContext())
+                        providerContext.analytics.recordEvent(name = "create_dataset_definition", result = it)
+
+                        it.getOrRenderFailure(withContext = context)
                             ?.let {
                                 Toast.makeText(
                                     binding.root.context,
@@ -77,7 +89,9 @@ class DatasetDefinitionFormFragment : Fragment() {
                         definition = definition.id,
                         request = fields.toUpdateRequest()
                     ) {
-                        it.getOrRenderFailure(withContext = requireContext())
+                        providerContext.analytics.recordEvent(name = "update_dataset_definition", result = it)
+
+                        it.getOrRenderFailure(withContext = context)
                             ?.let {
                                 Toast.makeText(
                                     binding.root.context,

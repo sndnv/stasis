@@ -138,6 +138,7 @@ class RecoverFragment : Fragment() {
                             )
 
                             lifecycleScope.launch {
+                                providerContext.analytics.recordEvent(name = "start_recovery")
                                 recoveryConfig.startRecovery(withExecutor = providerContext.executor) { e ->
                                     if (BuildConfig.DEBUG) {
                                         e?.printStackTrace()

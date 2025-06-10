@@ -25,6 +25,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
@@ -144,6 +145,9 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
                 .map { it.value.copy(sequenceId = it.index.toLong() + 1) }
                 .filter { it.sequenceId > (lastSequenceId ?: 0) }
         )
+
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> =
+        Success(Unit)
 
     private val defaultDefinition = DatasetDefinition(
         id = DatasetDefinitionId.randomUUID(),

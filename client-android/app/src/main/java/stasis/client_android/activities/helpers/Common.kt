@@ -33,7 +33,10 @@ import java.util.UUID
 
 object Common {
     fun UUID.toMinimizedString(): String =
-        this.toString().split("-").last()
+        this.toString().toMinimizedString()
+
+    fun String.toMinimizedString(): String =
+        this.split("-").last()
 
     fun Duration.toFields(): Pair<Int, ChronoUnit> {
         return if (seconds > 0 && seconds % 60 == 0L) {

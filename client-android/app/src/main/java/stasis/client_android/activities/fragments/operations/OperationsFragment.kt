@@ -78,11 +78,15 @@ class OperationsFragment : Fragment() {
                 )
             },
             onOperationStopRequested = { operation ->
+                providerContext.analytics.recordEvent(name = "stop_operation")
+
                 lifecycleScope.launch {
                     providerContext.executor.stop(operation)
                 }
             },
             onOperationResumeRequested = { operation ->
+                providerContext.analytics.recordEvent(name = "resume_operation")
+
                 lifecycleScope.launch {
                     providerContext.executor.resumeBackup(operation) { e ->
                         val backupId = -2
@@ -97,6 +101,8 @@ class OperationsFragment : Fragment() {
                 }
             },
             onOperationRemoveRequested = { type, operation ->
+                providerContext.analytics.recordEvent(name = "remove_operation")
+
                 when (type) {
                     is Operation.Type.Backup -> providerContext.trackers.backup.remove(operation)
                     is Operation.Type.Recovery -> providerContext.trackers.recovery.remove(operation)
@@ -113,6 +119,7 @@ class OperationsFragment : Fragment() {
                     and liveData { providerContext.executor.active() })
                 .minimize(interval = Duration.ofMillis(1500), lifecycleScope)
                 .observe(viewLifecycleOwner) { (state, active) ->
+                    providerContext.analytics.recordEvent(name = "get_operations")
                     val (backups, recoveries) = state
                     val operations = (backups + recoveries).map { (k, v) ->
                         k to (v to (active[k] != null))

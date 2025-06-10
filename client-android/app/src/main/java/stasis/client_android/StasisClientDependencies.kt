@@ -52,6 +52,7 @@ import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.security.DefaultOAuthClient
 import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.staging.DefaultFileStaging
+import stasis.client_android.lib.telemetry.ApplicationInformation
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.persistence.cache.DatasetEntryCacheFileSerdes
@@ -64,10 +65,14 @@ import stasis.client_android.persistence.config.ConfigRepository.Companion.saveL
 import stasis.client_android.persistence.config.ConfigRepository.Companion.savedLastProcessedCommand
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.DefaultCredentialsManagementBridge
+import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
+import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
 import stasis.client_android.settings.Settings.getRestrictionsIgnored
+import stasis.client_android.telemetry.analytics.DefaultAnalyticsCollector
+import stasis.client_android.telemetry.analytics.DefaultAnalyticsPersistence
 import stasis.client_android.tracking.DefaultBackupTracker
 import stasis.client_android.tracking.DefaultRecoveryTracker
 import stasis.client_android.tracking.DefaultServerTracker
@@ -339,6 +344,18 @@ object StasisClientDependencies {
                                 scope = coroutineScope
                             )
 
+                            val analyticsPersistence = DefaultAnalyticsPersistence(
+                                preferences = preferences,
+                                clients = clients
+                            )
+
+                            val analyticsCollector = DefaultAnalyticsCollector(
+                                app = ClientAppInfo,
+                                persistenceInterval = preferences.getAnalyticsPersistenceInterval(),
+                                transmissionInterval = preferences.getAnalyticsTransmissionInterval(),
+                                persistence = analyticsPersistence
+                            )
+
                             ProviderContext(
                                 core = coreClient,
                                 api = apiClient,
@@ -348,7 +365,8 @@ object StasisClientDependencies {
                                 credentials = credentials,
                                 monitor = monitor,
                                 commandProcessor = commandProcessor,
-                                secretsConfig = preferences.getSecretsConfig()
+                                secretsConfig = preferences.getSecretsConfig(),
+                                analytics = analyticsCollector
                             )
                         },
                         destroy = { context -> context?.credentials?.logout() }
@@ -430,5 +448,11 @@ object StasisClientDependencies {
         val SchedulesRefreshInterval: Duration = Duration.ofMinutes(5)
 
         val CredentialsExpirationTolerance: Duration = Duration.ofSeconds(120)
+    }
+
+    object ClientAppInfo : ApplicationInformation {
+        override val name: String = BuildConfig.APPLICATION_ID
+        override val version: String = BuildConfig.VERSION_NAME
+        override val buildTime: Long = BuildConfig.BUILD_TIME
     }
 }

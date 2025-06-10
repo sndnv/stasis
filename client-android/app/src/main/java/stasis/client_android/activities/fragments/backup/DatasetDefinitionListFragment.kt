@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.backup
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,12 +19,17 @@ import stasis.client_android.activities.helpers.Transitions.configureSourceTrans
 import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionListBinding
+import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.providers.ProviderContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class DatasetDefinitionListFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
+
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
 
     private lateinit var binding: FragmentDatasetDefinitionListBinding
 
@@ -48,6 +54,10 @@ class DatasetDefinitionListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
+        val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
         val adapter = DatasetDefinitionListItemAdapter(
             onDefinitionDetailsRequested = { itemView, definition, isDefault ->
                 findNavController().navigate(
@@ -68,7 +78,9 @@ class DatasetDefinitionListFragment : Fragment() {
             },
             onDefinitionDeleteRequested = { definition ->
                 datasets.deleteDefinition(definition) {
-                    it.getOrRenderFailure(withContext = requireContext())
+                    providerContext.analytics.recordEvent(name = "delete_dataset_definition", result = it)
+
+                    it.getOrRenderFailure(withContext = context)
                         ?.let {
                             Toast.makeText(
                                 binding.root.context,
@@ -83,6 +95,7 @@ class DatasetDefinitionListFragment : Fragment() {
         binding.datasetDefinitionsList.adapter = adapter
 
         datasets.definitions().observe(viewLifecycleOwner) { definitions ->
+            providerContext.analytics.recordEvent(name = "get_dataset_definitions")
             adapter.setDefinitions(definitions)
 
             if (definitions.isEmpty()) {

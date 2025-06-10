@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.backup
 
+import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.style.StyleSpan
@@ -24,6 +25,8 @@ import stasis.client_android.activities.helpers.Transitions.operationComplete
 import stasis.client_android.activities.helpers.Transitions.setTargetTransitionName
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetEntryDetailsBinding
+import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
 import javax.inject.Inject
 
@@ -31,6 +34,9 @@ import javax.inject.Inject
 class DatasetEntryDetailsFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
+
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,6 +46,8 @@ class DatasetEntryDetailsFragment : Fragment() {
         postponeEnterTransition()
 
         val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
         val args: DatasetEntryDetailsFragmentArgs by navArgs()
         val entryId = args.entry
@@ -52,6 +60,7 @@ class DatasetEntryDetailsFragment : Fragment() {
         )
 
         (datasets.entry(entryId) and { datasets.metadata(it) }).observe(viewLifecycleOwner) { (entry, metadata) ->
+            providerContext.analytics.recordEvent(name = "get_dataset_metadata")
             val (creationDate, creationTime) = entry.created.formatAsDateTime(context)
 
             binding.datasetEntryDetailsTitle.text =

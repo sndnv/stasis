@@ -72,6 +72,19 @@ class MainActivity : AppCompatActivity() {
         controller = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment)
             .navController
 
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            startActivity(
+                Intent(this, CrashReportActivity::class.java)
+                    .putExtra(
+                        CrashReportActivity.ExceptionMessageExtra,
+                        "${e.javaClass.simpleName} - ${e.message}"
+                    )
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+            )
+
+            finish()
+        }
+
         initNavigation(
             binding = binding,
             controller = controller

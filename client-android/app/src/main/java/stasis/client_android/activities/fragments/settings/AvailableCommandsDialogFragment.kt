@@ -20,7 +20,7 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
-import stasis.client_android.databinding.DialogCommandsBinding
+import stasis.client_android.databinding.DialogAvailableCommandsBinding
 import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.name
 import stasis.client_android.lib.model.server.api.responses.CommandAsJson.Companion.parametersAsString
 import stasis.client_android.lib.utils.Try
@@ -31,7 +31,7 @@ import stasis.client_android.utils.DynamicArguments.pullArguments
 import stasis.core.commands.proto.Command
 import java.time.Instant
 
-class CommandsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
+class AvailableCommandsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
     override val argumentsKey: String = ArgumentsKey
 
     override val receiver: Fragment = this
@@ -41,7 +41,7 @@ class CommandsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val binding = DialogCommandsBinding.inflate(inflater)
+        val binding = DialogAvailableCommandsBinding.inflate(inflater)
 
         pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
             arguments.retrieveCommands {
@@ -121,10 +121,10 @@ class CommandsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
         ) : DynamicArguments.ArgumentSet
 
         private const val ArgumentsKey: String =
-            "stasis.client_android.activities.fragments.settings.CommandsFragment.arguments.key"
+            "stasis.client_android.activities.fragments.settings.AvailableCommandsDialogFragment.arguments.key"
 
         const val DialogTag: String =
-            "stasis.client_android.activities.fragments.settings.CommandsFragment"
+            "stasis.client_android.activities.fragments.settings.AvailableCommandsDialogFragment"
     }
 
     class CommandsListItemAdapter(

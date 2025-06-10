@@ -20,12 +20,13 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.telemetry.analytics.AnalyticsClient
 import stasis.client_android.lib.utils.Try
 import stasis.core.commands.proto.Command
 import java.time.Instant
 
 @Suppress("TooManyFunctions")
-interface ServerApiEndpointClient : ServiceApiClient {
+interface ServerApiEndpointClient : ServiceApiClient, AnalyticsClient {
     val self: DeviceId
     val server: String
 

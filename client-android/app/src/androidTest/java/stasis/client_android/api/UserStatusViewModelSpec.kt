@@ -19,6 +19,7 @@ import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
+import stasis.client_android.mocks.MockAnalyticsCollector
 import stasis.client_android.mocks.MockBackupTracker
 import stasis.client_android.mocks.MockCommandProcessor
 import stasis.client_android.mocks.MockCredentialsManagementBridge
@@ -76,7 +77,8 @@ class UserStatusViewModelSpec {
                             ),
                             monitor = MockServerMonitor(),
                             commandProcessor = MockCommandProcessor(),
-                            secretsConfig = Fixtures.Secrets.DefaultConfig
+                            secretsConfig = Fixtures.Secrets.DefaultConfig,
+                            analytics = MockAnalyticsCollector()
                         )
                     },
                     destroy = {}
