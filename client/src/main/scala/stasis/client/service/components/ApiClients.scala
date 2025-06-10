@@ -16,6 +16,7 @@ import stasis.core.discovery.providers.client.ServiceDiscoveryProvider
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.routing.Node
 import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.analytics.AnalyticsClient
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 
@@ -122,8 +123,14 @@ object ApiClients {
       )
       .flatten
       .map { provider =>
+        val discoveredClients = Clients(provider)
+
+        telemetry.analytics.persistence.foreach { persistence =>
+          persistence.withClientProvider(AnalyticsClient.Provider(() => discoveredClients.api))
+        }
+
         new ApiClients {
-          override val clients: Clients = Clients(provider)
+          override val clients: Clients = discoveredClients
         }
       }
   }

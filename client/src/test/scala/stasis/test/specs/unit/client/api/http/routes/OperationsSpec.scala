@@ -31,6 +31,7 @@ import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.RecoveryState
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
@@ -974,6 +975,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

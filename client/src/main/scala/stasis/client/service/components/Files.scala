@@ -5,6 +5,7 @@ object Files {
   final val DeviceSecret: String = "device-secret"
   final val ApiToken: String = "api-token"
   final val CommandState: String = "command-state"
+  final val AnalyticsCache: String = "analytics-cache.json"
 
   object Templates {
     final val ConfigOverride: String = "client.conf.template"

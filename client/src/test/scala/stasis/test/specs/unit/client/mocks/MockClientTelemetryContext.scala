@@ -1,8 +1,11 @@
 package stasis.test.specs.unit.client.mocks
 
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.metrics.MetricsProvider
 
-class MockClientTelemetryContext extends stasis.test.specs.unit.core.telemetry.MockTelemetryContext {
+class MockClientTelemetryContext(
+  collector: Option[AnalyticsCollector]
+) extends stasis.test.specs.unit.core.telemetry.MockTelemetryContext(collector) {
   override protected def providers(): Set[MetricsProvider] =
     super.providers() ++ Set(
       client.ops.backup,
@@ -18,5 +21,9 @@ class MockClientTelemetryContext extends stasis.test.specs.unit.core.telemetry.M
 }
 
 object MockClientTelemetryContext {
-  def apply(): MockClientTelemetryContext = new MockClientTelemetryContext()
+  def apply(): MockClientTelemetryContext =
+    new MockClientTelemetryContext(collector = None)
+
+  def apply(collector: AnalyticsCollector): MockClientTelemetryContext =
+    new MockClientTelemetryContext(collector = Some(collector))
 }

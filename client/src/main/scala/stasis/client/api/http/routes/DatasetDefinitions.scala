@@ -20,6 +20,8 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
           get {
             onSuccess(context.api.datasetDefinitions()) { definitions =>
               log.debug("API successfully retrieved [{}] definitions", definitions.size)
+              context.analytics.recordEvent(name = "get_dataset_definitions")
+
               consumeEntity & complete(definitions)
             }
           },
@@ -27,6 +29,8 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
             entity(as[CreateDatasetDefinition]) { request =>
               onSuccess(context.api.createDatasetDefinition(request)) { response =>
                 log.debug("API successfully created definition [{}]", response.definition)
+                context.analytics.recordEvent(name = "create_dataset_definition")
+
                 complete(response)
               }
             }
@@ -38,6 +42,8 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
           get {
             onSuccess(context.api.datasetDefinition(definitionId)) { definition =>
               log.debug("API successfully retrieved definition [{}]", definitionId)
+              context.analytics.recordEvent(name = "get_dataset_definition")
+
               consumeEntity & complete(definition)
             }
           },
@@ -45,6 +51,8 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
             entity(as[UpdateDatasetDefinition]) { request =>
               onSuccess(context.api.updateDatasetDefinition(definitionId, request)) { _ =>
                 log.debug("API successfully updated definition [{}]", definitionId)
+                context.analytics.recordEvent(name = "update_dataset_definition")
+
                 complete(StatusCodes.OK)
               }
             }
@@ -52,6 +60,8 @@ class DatasetDefinitions()(implicit context: Context) extends ApiRoutes {
           delete {
             onSuccess(context.api.deleteDatasetDefinition(definitionId)) { _ =>
               log.debug("API successfully removed definition [{}]", definitionId)
+              context.analytics.recordEvent(name = "delete_dataset_definition")
+
               complete(StatusCodes.OK)
             }
           }

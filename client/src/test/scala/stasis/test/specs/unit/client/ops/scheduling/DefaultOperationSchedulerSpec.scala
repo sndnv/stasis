@@ -26,6 +26,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor
 import stasis.test.specs.unit.client.mocks.MockServerApiEndpointClient
+import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with BeforeAndAfterAll {
   "A DefaultOperationScheduler" should "support loading schedule assignments from a file" in {
@@ -120,6 +121,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       }
 
@@ -148,6 +150,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       }
     }
@@ -656,6 +659,8 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     Behaviors.ignore,
     "DefaultOperationSchedulerSpec"
   )
+
+  private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   override protected def afterAll(): Unit =
     typedSystem.terminate()

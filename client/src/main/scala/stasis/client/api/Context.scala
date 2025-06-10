@@ -11,6 +11,7 @@ import stasis.client.ops.scheduling.OperationExecutor
 import stasis.client.ops.scheduling.OperationScheduler
 import stasis.client.ops.search.Search
 import stasis.client.tracking.TrackerViews
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.shared.secrets.SecretsConfig
 
 final case class Context(
@@ -22,6 +23,7 @@ final case class Context(
   handlers: Context.Handlers,
   commandProcessor: CommandProcessor,
   secretsConfig: SecretsConfig,
+  analytics: AnalyticsCollector,
   log: Logger
 )
 

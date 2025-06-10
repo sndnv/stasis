@@ -58,6 +58,7 @@ object ApiEndpoint {
         ),
         commandProcessor = commandProcessor,
         secretsConfig = secrets.config,
+        analytics = telemetry.analytics,
         log = LoggerFactory.getLogger(this.getClass.getName)
       )
 

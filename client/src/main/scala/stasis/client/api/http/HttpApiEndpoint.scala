@@ -45,6 +45,8 @@ class HttpApiEndpoint(
   private val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case e: ServerApiFailure =>
+        context.analytics.recordFailure(e)
+
         context.log.error(e.message)
 
         discardEntity & complete(
@@ -54,6 +56,8 @@ class HttpApiEndpoint(
 
       case NonFatal(e) =>
         extractRequest { request =>
+          context.analytics.recordFailure(e)
+
           val failureReference = java.util.UUID.randomUUID()
 
           log.errorN(

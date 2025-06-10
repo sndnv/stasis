@@ -28,6 +28,8 @@ import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
 import stasis.layers.security.tls.EndpointContext
+import stasis.layers.telemetry.ApplicationInformation
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -620,6 +622,18 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     val apiClient = createClient(apiPort)
 
     noException should be thrownBy apiClient.ping().await
+  }
+
+  it should "send analytics entries" in {
+    val apiPort = ports.dequeue()
+    val api = new MockServerApiEndpoint(expectedCredentials = apiCredentials)
+    api.start(port = apiPort)
+
+    val apiClient = createClient(apiPort)
+
+    noException should be thrownBy apiClient
+      .sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none))
+      .await
   }
 
   it should "retrieve all commands" in {

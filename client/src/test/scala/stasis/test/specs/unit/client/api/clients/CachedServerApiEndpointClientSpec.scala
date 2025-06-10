@@ -10,6 +10,8 @@ import org.apache.pekko.util.ByteString
 
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
+import stasis.layers.telemetry.ApplicationInformation
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -378,6 +380,19 @@ class CachedServerApiEndpointClientSpec extends AsyncUnitSpec {
       _ <- client.ping()
     } yield {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(3)
+    }
+  }
+
+  it should "send analytics entries, without caching" in {
+    val mockApiClient = MockServerApiEndpointClient()
+    val client = createClient(underlying = mockApiClient)
+
+    for {
+      _ <- client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none))
+      _ <- client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none))
+      _ <- client.sendAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none))
+    } yield {
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(3)
     }
   }
 

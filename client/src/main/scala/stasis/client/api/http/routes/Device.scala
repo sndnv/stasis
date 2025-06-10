@@ -23,6 +23,8 @@ class Device()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.api.device()) { device =>
             log.debugN("API successfully retrieved device [{}] for user [{}]", device.id, device.owner)
+            context.analytics.recordEvent(name = "get_device")
+
             consumeEntity & complete(device)
           }
         }
@@ -31,6 +33,8 @@ class Device()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.trackers.server.state) { state =>
             log.debugN("API successfully retrieved connection state for [{}] servers", state.size)
+            context.analytics.recordEvent(name = "get_device_connections")
+
             consumeEntity & complete(state)
           }
         }
@@ -41,6 +45,8 @@ class Device()(implicit context: Context) extends ApiRoutes {
             entity(as[ReEncryptDeviceSecret]) { request =>
               onSuccess(context.handlers.reEncryptDeviceSecret(request.userPassword.toCharArray)) { _ =>
                 log.debug("API successfully re-encrypted device secret")
+                context.analytics.recordEvent(name = "reencrypt_device_key")
+
                 complete(StatusCodes.OK)
               }
             }
@@ -59,6 +65,8 @@ class Device()(implicit context: Context) extends ApiRoutes {
 
             onSuccess(result) { commands =>
               log.debugN("API successfully retrieved [{}] command(s)", commands.size)
+              context.analytics.recordEvent(name = "get_device_commands")
+
               consumeEntity & complete(commands)
             }
           }
