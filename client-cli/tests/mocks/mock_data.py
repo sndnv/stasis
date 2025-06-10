@@ -4,6 +4,23 @@ PING = {
     'id': str(uuid4())
 }
 
+ANALYTICS = {
+    'entry': {
+        'runtime': {
+            'id': 'test-id',
+            'app': 'a;b;42',
+            'jre': 'a;b',
+            'os': 'a;b;c',
+        },
+        'events': [{'id': 0, 'event': 'test-event-1'}, {'id': 1, 'event': 'test-event-2'}, ],
+        'failures': [{'message': 'Test failure', 'timestamp': '2020-10-01T01:02:00'}],
+        'created': '2020-10-01T01:02:00',
+        'updated': '2020-10-01T01:02:01',
+    },
+    'last_cached': '2020-10-01T01:02:04',
+    'last_transmitted': '2020-10-01T01:02:03'
+}
+
 METADATA = {
     'content_changed': {
         '/some/path/01': {

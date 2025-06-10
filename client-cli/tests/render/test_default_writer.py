@@ -123,3 +123,8 @@ class DefaultWriterSpec(unittest.TestCase):
         self.assertTrue(
             DefaultWriter().render_user(user=mock_data.USER)
         )
+
+    def test_should_render_analytics_state(self):
+        self.assertTrue(
+            DefaultWriter().render_analytics_state(state=mock_data.ANALYTICS)
+        )

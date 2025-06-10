@@ -115,6 +115,12 @@ def status_device(ctx):
     """Show current device details."""
     click.echo(ctx.obj.rendering.render_device(ctx.obj.api.device()))
 
+@click.command(name='analytics')
+@click.pass_context
+def status_analytics(ctx):
+    """Show latest analytics collection state."""
+    click.echo(ctx.obj.rendering.render_analytics_state(ctx.obj.api.analytics_state()))
+
 
 @click.group()
 def status():
@@ -125,6 +131,7 @@ status.add_command(status_connection)
 status.add_command(status_commands)
 status.add_command(status_user)
 status.add_command(status_device)
+status.add_command(status_analytics)
 
 
 @click.command(name="password")

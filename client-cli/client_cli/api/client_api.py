@@ -322,3 +322,11 @@ class ClientApi(ABC):
 
         :return: dict with result of action
         """
+
+    @abstractmethod
+    def analytics_state(self):
+        """
+        Retrieves the latest analytics collection state.
+
+        :return: requested analytics state
+        """

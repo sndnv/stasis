@@ -145,6 +145,9 @@ class DefaultClientApi(ClientApi):
     def schedules_configured_refresh(self):
         return self.put(url='/schedules/configured/refresh')
 
+    def analytics_state(self):
+        return self.get(url='/service/analytics')
+
     def get(self, url, params=None):
         """
         Executes a `GET` request for the specified URL with the provided query parameters.
