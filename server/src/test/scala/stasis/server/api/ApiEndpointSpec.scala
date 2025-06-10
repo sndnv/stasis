@@ -33,8 +33,12 @@ import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
 import stasis.layers.api.MessageResponse
+import stasis.layers.telemetry.ApplicationInformation
 import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 import stasis.server.Secrets
+import stasis.server.persistence.analytics.AnalyticsEntryStore
+import stasis.server.persistence.analytics.MockAnalyticsEntryStore
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.server.persistence.datasets.DatasetEntryStore
 import stasis.server.persistence.datasets.MockDatasetDefinitionStore
@@ -54,6 +58,8 @@ import stasis.server.security.authenticators.UserAuthenticator
 import stasis.server.security.mocks.MockResourceProvider
 import stasis.server.security.mocks.MockUserAuthenticator
 import stasis.server.security.mocks.MockUserCredentialsManager
+import stasis.shared.api.requests.CreateAnalyticsEntry
+import stasis.shared.api.responses.CreatedAnalyticsEntry
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -354,6 +360,23 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     }
   }
 
+  it should "provide analytics routes" in withRetry {
+    import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+    import stasis.shared.api.Formats.createAnalyticsEntryRequestFormat
+
+    val fixtures = new TestFixtures {}
+
+    val entity = Marshal(
+      CreateAnalyticsEntry(entry = AnalyticsEntry.collected(app = ApplicationInformation.none))
+    ).to[RequestEntity].await
+
+    Post("/analytics").withEntity(entity).addCredentials(testCredentials) ~> fixtures.endpoint.endpointRoutes ~> check {
+      status should be(StatusCodes.OK)
+      noException should be thrownBy responseAs[CreatedAnalyticsEntry]
+    }
+  }
+
   it should "provide discovery routes" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
@@ -484,6 +507,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     lazy val serverManifestStore: ServerManifestStore = ServerManifestStore(manifestStore)
     lazy val serverReservationStore: ServerReservationStore = ServerReservationStore(reservationStore)
     lazy val serverStagingStore: ServerStagingStore = ServerStagingStore(stagingStore)
+    lazy val analyticsStore: AnalyticsEntryStore = MockAnalyticsEntryStore()
 
     lazy val nodeStore: NodeStore = MockNodeStore()
     lazy val manifestStore: ManifestStore = MockManifestStore()
@@ -519,7 +543,10 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
         serverManifestStore.view(),
         serverReservationStore.view(),
         serverStagingStore.manage(),
-        serverStagingStore.view()
+        serverStagingStore.view(),
+        analyticsStore.manage(),
+        analyticsStore.manageSelf(),
+        analyticsStore.view()
       )
     )
 

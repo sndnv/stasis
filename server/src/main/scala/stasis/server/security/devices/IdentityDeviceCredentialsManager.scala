@@ -165,7 +165,7 @@ class IdentityDeviceCredentialsManager(
 }
 
 object IdentityDeviceCredentialsManager {
-  import stasis.core.api.Formats.jsonConfig
+  import stasis.layers.api.Formats.jsonConfig
 
   private implicit val clientFormat: Format[Client] =
     Json.format[Client]

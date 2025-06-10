@@ -222,8 +222,8 @@ class DatasetDefinitionStoreSpec extends AsyncUnitSpec {
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DatasetDefinitionStoreSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DatasetDefinitionStoreSpec"
   )
 
   private val ownDevices = Seq(Device.generateId(), Device.generateId())

@@ -69,7 +69,7 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     for {
       result <- persistence.migrate()
     } yield {
-      result should be(MigrationResult(found = 7, executed = 1))
+      result should be(MigrationResult(found = 8, executed = 2))
     }
   }
 
@@ -86,15 +86,18 @@ class ServerPersistenceSpec extends AsyncUnitSpec {
     val deviceCommands = 4 // manage + manage-self + view + view-self
     val schedules = 3 // manage + view + view-public
     val users = 4 // manage + manage-self + view + view-self
+    val analytics = 3 // manage + manage-self + view
 
     persistence.resources.size should be(
-      datasetDefinitions + datasetEntries + deviceInitCodes + devices + deviceKeys + deviceCommands + schedules + users
+      datasetDefinitions + datasetEntries
+        + deviceInitCodes + devices + deviceKeys + deviceCommands
+        + schedules + users + analytics
     )
   }
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "ServerPersistenceSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "ServerPersistenceSpec"
   )
 
   private implicit val telemetry: TelemetryContext = MockTelemetryContext()

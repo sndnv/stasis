@@ -38,6 +38,7 @@ class DefaultDatasetDefinitionStore(
       retention => Json.toJson(retention).toString(),
       retention => Json.parse(retention).as[DatasetDefinition.Retention]
     )
+
   private class SlickStore(tag: Tag) extends Table[DatasetDefinition](tag, name) {
     def id: Rep[DatasetDefinition.Id] = column[DatasetDefinition.Id]("ID", O.PrimaryKey)
     def info: Rep[String] = column[String]("INFO")
