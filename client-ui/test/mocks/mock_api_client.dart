@@ -1,5 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:stasis_client_ui/api/api_client.dart';
+import 'package:stasis_client_ui/model/analytics/analytics_entry.dart';
+import 'package:stasis_client_ui/model/analytics/analytics_state.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
@@ -756,5 +758,32 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
   @override
   Future<void> refreshConfiguredSchedules() {
     return Future.value();
+  }
+
+  @override
+  Future<AnalyticsState> getAnalyticsState() {
+    final state = AnalyticsState(
+      entry: AnalyticsEntry(
+        runtime: RuntimeInformation(
+          id: 'test-id',
+          app: 'a;b;42',
+          jre: 'a;b',
+          os: 'a;b;c',
+        ),
+        events: [
+          Event(id: 0, event: 'test-event-1'),
+          Event(id: 0, event: 'test-event-2'),
+        ],
+        failures: [
+          Failure(timestamp: DateTime.now(), message: 'Test failure'),
+        ],
+        created: DateTime.now(),
+        updated: DateTime.now(),
+      ),
+      lastCached: DateTime.now(),
+      lastTransmitted: DateTime.now(),
+    );
+
+    return Future.value(state);
   }
 }
