@@ -5,7 +5,6 @@ import android.media.MediaScannerConnection
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
@@ -168,8 +167,6 @@ class DefaultRecoveryTracker(
         }
 
         override fun handleMessage(msg: Message) {
-            Log.v(TAG, "Received recovery tracking event [${msg.obj}]")
-
             when (val event = msg.obj) {
                 is RecoveryEvent -> {
                     val existing = if (event is RecoveryEvent.Started) {
@@ -365,7 +362,6 @@ class DefaultRecoveryTracker(
     }
 
     companion object {
-        private const val TAG: String = "DefaultRecoveryTracker"
         private val MaxRetention: Duration = Duration.ofDays(30)
         private const val PersistAfterEvents: Int = 1000
         private val PersistAfterPeriod: Duration = Duration.ofSeconds(30)

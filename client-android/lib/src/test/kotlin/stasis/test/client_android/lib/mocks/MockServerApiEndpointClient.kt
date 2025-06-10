@@ -22,6 +22,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.core.commands.proto.Command
@@ -59,6 +60,7 @@ open class MockServerApiEndpointClient(
         Statistic.DeviceKeyExists to AtomicInteger(0),
         Statistic.Ping to AtomicInteger(0),
         Statistic.Commands to AtomicInteger(0),
+        Statistic.AnalyticsEntriesSent to AtomicInteger(0),
     )
 
     override val server: String = "mock-api-server"
@@ -225,6 +227,11 @@ open class MockServerApiEndpointClient(
         return Success(commands.filter { it.sequenceId > (lastSequenceId ?: 0) })
     }
 
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> {
+        stats[Statistic.AnalyticsEntriesSent]?.getAndIncrement()
+        return Success(Unit)
+    }
+
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
 
@@ -252,6 +259,7 @@ open class MockServerApiEndpointClient(
         object DeviceKeyExists : Statistic()
         object Ping : Statistic()
         object Commands : Statistic()
+        object AnalyticsEntriesSent : Statistic()
     }
 
     companion object {

@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
@@ -201,8 +200,6 @@ class DefaultBackupTracker(
         }
 
         override fun handleMessage(msg: Message) {
-            Log.v(TAG, "Received backup tracking event [${msg.obj}]")
-
             when (val event = msg.obj) {
                 is BackupEvent -> {
                     val existing = if (event is BackupEvent.Started) {
@@ -313,10 +310,10 @@ class DefaultBackupTracker(
     }
 
     private sealed class TrackerEvent {
-        object RestoreState : TrackerEvent()
-        object PersistState : TrackerEvent()
+        data object RestoreState : TrackerEvent()
+        data object PersistState : TrackerEvent()
         data class RemoveOperation(val operation: OperationId) : TrackerEvent()
-        object ClearOperations : TrackerEvent()
+        data object ClearOperations : TrackerEvent()
     }
 
     private sealed class BackupEvent {
@@ -394,7 +391,6 @@ class DefaultBackupTracker(
     }
 
     companion object {
-        private const val TAG: String = "DefaultBackupTracker"
         private val MaxRetention: Duration = Duration.ofDays(30)
         private const val PersistAfterEvents: Int = 1000
         private val PersistAfterPeriod: Duration = Duration.ofSeconds(30)

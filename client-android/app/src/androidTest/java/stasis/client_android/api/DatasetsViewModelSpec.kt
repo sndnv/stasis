@@ -26,6 +26,7 @@ import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.mocks.Generators
+import stasis.client_android.mocks.MockAnalyticsCollector
 import stasis.client_android.mocks.MockBackupTracker
 import stasis.client_android.mocks.MockCommandProcessor
 import stasis.client_android.mocks.MockCredentialsManagementBridge
@@ -379,7 +380,8 @@ class DatasetsViewModelSpec {
                             ),
                             monitor = MockServerMonitor(),
                             commandProcessor = MockCommandProcessor(),
-                            secretsConfig = Fixtures.Secrets.DefaultConfig
+                            secretsConfig = Fixtures.Secrets.DefaultConfig,
+                            analytics = MockAnalyticsCollector()
                         )
                     },
                     destroy = {}

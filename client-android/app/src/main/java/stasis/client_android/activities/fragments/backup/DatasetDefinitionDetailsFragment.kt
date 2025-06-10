@@ -83,6 +83,8 @@ class DatasetDefinitionDetailsFragment : Fragment() {
         configureSourceTransition()
 
         datasets.definition(definitionId).observe(viewLifecycleOwner) { definition ->
+            providerContext.analytics.recordEvent(name = "get_dataset_definition")
+
             binding.datasetDefinitionDetailsInfo.text =
                 getString(
                     if (args.isDefault) R.string.dataset_definition_field_content_info_default
@@ -198,6 +200,8 @@ class DatasetDefinitionDetailsFragment : Fragment() {
 
             datasets.metadata(forDefinition = definition.id)
                 .observe(viewLifecycleOwner) { entries ->
+                    providerContext.analytics.recordEvent(name = "get_dataset_entries", "type" to "for-definition")
+
                     if (entries.isNotEmpty()) {
                         binding.entriesList.isVisible = true
                         binding.entriesListEmpty.isVisible = false
@@ -221,6 +225,8 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                         },
                         onEntryDeleteRequested = { entry ->
                             datasets.deleteEntry(entry) {
+                                providerContext.analytics.recordEvent(name = "delete_dataset_entry", result = it)
+
                                 it.getOrRenderFailure(withContext = requireContext())
                                     ?.let {
                                         Toast.makeText(

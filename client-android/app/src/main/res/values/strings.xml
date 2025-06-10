@@ -255,6 +255,13 @@
     <!-- Welcome -->
     <string name="welcome_message">Welcome</string>
 
+    <!-- Crash Report -->
+    <string name="crash_report_message">The application encountered a problem and will now stop</string>
+    <string name="crash_report_description">Unrecoverable error</string>
+    <string name="crash_report_more_info"><u>More information</u></string>
+    <string name="crash_report_more_info_dialog_title">Unrecoverable error</string>
+    <string name="crash_report_more_info_dialog_content">%1$s</string>
+
     <!-- Home -->
     <string name="home_last_backup_label">Last Backup</string>
     <string name="home_last_operation_label">Last Operation</string>
@@ -667,9 +674,11 @@
 
     <!-- Settings -->
     <string name="settings_category_date_time">Date/Time</string>
-    <string name="settings_category_user_credentials">Manage User Credentials</string>
-    <string name="settings_category_device_secret">Manage Device Secret</string>
+    <string name="settings_category_user_credentials">User Credentials</string>
+    <string name="settings_category_device_secret">Device Secret</string>
     <string name="settings_category_advanced">Advanced</string>
+    <string name="settings_category_analytics">Device Analytics</string>
+    <string name="settings_category_commands">Device Commands</string>
     <string name="settings_category_debug">Debug</string>
     <string name="settings_date_time_format_title">Format</string>
     <string name="settings_date_time_format_hint">Show dates as %1$s and time as %2$s</string>
@@ -769,11 +778,29 @@
     <string name="settings_manage_device_secret_pull_remote_password_hint_extra">Password override if the remote secret has a different password.</string>
     <string name="settings_manage_device_secret_pull_show_remote_password_button_title"><u>Use different remote password…</u></string>
     <string name="settings_restrictions_ignored_title">Ignore operation restrictions</string>
+    <string name="settings_analytics_title">Device analytics</string>
+    <string name="settings_analytics_enabled_title">Enable analytics</string>
+    <string name="settings_analytics_enabled_hint">Collection of analytics data is %1$s</string>
+    <string name="settings_analytics_enabled_hint_active">active</string>
+    <string name="settings_analytics_enabled_hint_inactive">inactive</string>
+    <string name="settings_analytics_keep_events_title">Keep Events</string>
+    <string name="settings_analytics_keep_events_summary">Include events when sending data remotely</string>
+    <string name="settings_analytics_keep_failures_title">Keep Failures</string>
+    <string name="settings_analytics_keep_failures_summary">Include failures when sending data remotely</string>
+    <string name="settings_analytics_persistence_interval_title">Local persistence interval</string>
+    <string name="settings_analytics_persistence_interval_hint">(Advanced) Data will be cached on the device every %1$s</string>
+    <string name="settings_analytics_transmission_interval_title">Remote transmission interval</string>
+    <string name="settings_analytics_transmission_interval_hint">(Advanced) Data will be sent to the server every %1$s</string>
+    <string name="settings_analytics_show_collected_title">Show collected data</string>
+    <string name="settings_analytics_show_collected_summary">Shows the data currently cached on the device</string>
+    <string name="settings_analytics_error">Analytics retrieval failed with: %1$s</string>
     <string name="settings_scheduling_enabled_title">Enable operation scheduling</string>
     <string name="settings_ping_interval_title">Server ping interval</string>
     <string name="settings_command_refresh_interval_title">Server command refresh interval</string>
-    <string name="settings_commands_title">Server commands</string>
-    <string name="settings_commands_summary">Shows the available server commands</string>
+    <string name="settings_available_commands_title">Available commands</string>
+    <string name="settings_available_commands_summary">Shows the available server commands</string>
+    <string name="settings_supported_commands_title">Supported commands</string>
+    <string name="settings_supported_commands_summary">Shows the commands supported by this device</string>
     <string name="settings_commands_empty_without_processed">No available commands</string>
     <string name="settings_commands_empty_with_processed">No available commands\n\n\nID of last processed command was [%1$s]</string>
     <string name="settings_commands_error">Command retrieval failed with: %1$s</string>
@@ -793,6 +820,40 @@
     <string name="command_field_content_source_user">User</string>
     <string name="command_field_content_source_service">Service</string>
     <string name="command_field_content_source_unknown">Unknown</string>
+    <string name="command_field_content_supported_command_name">[%1$s] %2$s</string>
+    <string name="command_field_content_supported_command_details">%1$s</string>
+    <string name="command_field_content_supported_command_details_logout_user">Forces the device to logout and ask the user to re-authenticate</string>
+    <string name="command_field_content_supported_command_details_unrecognized">Any command that is not supported or recognized will be shown but not executed</string>
+
+    <!-- Analytics -->
+    <string name="analytics_field_content_info">%1$s (%2$s)</string>
+    <string name="analytics_field_content_info_entry">Entry</string>
+    <string name="analytics_field_content_created">Created: %1$s</string>
+    <string name="analytics_field_content_updated">Updated: %1$s</string>
+    <string name="analytics_field_title_runtime">Runtime</string>
+    <string name="analytics_field_title_runtime_app">Application</string>
+    <string name="analytics_field_content_runtime_app_name">Name: %1$s</string>
+    <string name="analytics_field_content_runtime_app_version">Version: %1$s</string>
+    <string name="analytics_field_content_runtime_app_build_time">Build Time: %1$s</string>
+    <string name="analytics_field_title_runtime_jre">Java Runtime Environment</string>
+    <string name="analytics_field_title_runtime_os">Operating System</string>
+    <string name="analytics_field_content_runtime_jre_version">Version: %1$s</string>
+    <string name="analytics_field_content_runtime_jre_vendor">Vendor: %1$s</string>
+    <string name="analytics_field_content_runtime_os_arch">Architecture: %1$s</string>
+    <string name="analytics_field_content_runtime_os_name">Name: %1$s</string>
+    <string name="analytics_field_content_runtime_os_version">Version: %1$s</string>
+    <string name="analytics_field_title_events">Events (%1$s)</string>
+    <string name="analytics_field_title_events_dropped">Events (%1$s collected, 0 kept)</string>
+    <string name="analytics_field_content_event_info">(%1$s) %2$s</string>
+    <string name="analytics_field_title_failures">Failures (%1$s)</string>
+    <string name="analytics_field_title_failures_dropped">Failures (%1$s collected, 0 kept)</string>
+    <string name="analytics_field_content_failure_info">(%1$s) %2$s</string>
+    <string name="analytics_events_list_empty">No Events</string>
+    <string name="analytics_failures_list_empty">No Failures</string>
+    <string name="analytics_event_title">Event [%1$s]</string>
+    <string name="analytics_event_message">%1$s</string>
+    <string name="analytics_failure_title">Failure [%1$s]</string>
+    <string name="analytics_failure_message">%1$s</string>
 
     <!-- Transitions -->
     <string name="dataset_definition_summary_transition_name">dataset_definition_%1$s</string>

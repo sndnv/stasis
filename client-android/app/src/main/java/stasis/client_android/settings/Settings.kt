@@ -35,6 +35,28 @@ object Settings {
             ?: Defaults.DiscoveryInterval
     }
 
+    fun SharedPreferences.getAnalyticsEnabled(): Boolean {
+        return getBoolean(Keys.AnalyticsEnabled, Defaults.AnalyticsEnabled)
+    }
+
+    fun SharedPreferences.getAnalyticsKeepEvents(): Boolean {
+        return getBoolean(Keys.AnalyticsKeepEvents, Defaults.AnalyticsKeepEvents)
+    }
+
+    fun SharedPreferences.getAnalyticsKeepFailures(): Boolean {
+        return getBoolean(Keys.AnalyticsKeepFailures, Defaults.AnalyticsKeepFailures)
+    }
+
+    fun SharedPreferences.getAnalyticsPersistenceInterval(): Duration {
+        return getString(Keys.AnalyticsPersistenceInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.AnalyticsPersistenceInterval
+    }
+
+    fun SharedPreferences.getAnalyticsTransmissionInterval(): Duration {
+        return getString(Keys.AnalyticsTransmissionInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.AnalyticsTransmissionInterval
+    }
+
     fun parseDateTimeFormat(format: String): DateTimeFormat =
         when (format) {
             "system" -> DateTimeFormat.System
@@ -75,8 +97,15 @@ object Settings {
         const val SchedulingEnabled: String = "scheduling_enabled"
         const val PingInterval: String = "ping_interval"
         const val CommandRefreshInterval: String = "command_refresh_interval"
+        const val ShowAvailableCommands: String = "show_available_commands"
+        const val ShowSupportedCommands: String = "show_supported_commands"
         const val DiscoveryInterval: String = "discovery_interval"
-        const val ShowCommands: String = "show_commands"
+        const val AnalyticsEnabled: String = "analytics_enabled"
+        const val AnalyticsKeepEvents: String = "analytics_keep_events"
+        const val AnalyticsKeepFailures: String = "analytics_keep_failures"
+        const val AnalyticsPersistenceInterval: String = "analytics_persistence_interval"
+        const val AnalyticsTransmissionInterval: String = "analytics_transmission_interval"
+        const val AnalyticsShowCollected: String = "analytics_show_collected"
         const val ResetConfig: String = "reset_config"
     }
 
@@ -87,6 +116,11 @@ object Settings {
         val PingInterval: Duration = Duration.ofMinutes(3)
         val CommandRefreshInterval: Duration = Duration.ofMinutes(5)
         val DiscoveryInterval: Duration = Duration.ofMinutes(30)
+        val AnalyticsEnabled: Boolean = true
+        val AnalyticsKeepEvents: Boolean = true
+        val AnalyticsKeepFailures: Boolean = true
+        val AnalyticsPersistenceInterval: Duration = Duration.ofMinutes(5)
+        val AnalyticsTransmissionInterval: Duration = Duration.ofMinutes(30)
     }
 
     sealed class DateTimeFormat {

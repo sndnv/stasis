@@ -65,7 +65,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
         val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
         val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
-        binding.operationInfo.text = context.getString(R.string.operation_field_content_info)
+        binding.operationInfo.text = getString(R.string.operation_field_content_info)
             .renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
@@ -88,7 +88,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
         updates?.observe(viewLifecycleOwner) { state ->
             val progress = state.asProgress()
 
-            binding.operationStart.text = context.getString(
+            binding.operationStart.text = getString(
                 R.string.operation_field_content_started
             )
                 .renderAsSpannable(
@@ -99,7 +99,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
                     )
                 )
 
-            binding.operationDetails.text = context.getString(
+            binding.operationDetails.text = getString(
                 if (progress.failures == 0) R.string.operation_field_content_details
                 else R.string.operation_field_content_details_with_failures
             )
@@ -128,7 +128,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
                     val progressPct = actualSteps / expectedSteps.toDouble() * 100
 
                     binding.operationCompleted.text =
-                        context.getString(R.string.operation_field_content_completed_progress)
+                        getString(R.string.operation_field_content_completed_progress)
                             .renderAsSpannable(
                                 StyledString(
                                     placeholder = "%1\$s",
@@ -140,7 +140,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
 
                 else -> {
                     binding.operationCompleted.text =
-                        context.getString(R.string.operation_field_content_completed)
+                        getString(R.string.operation_field_content_completed)
                             .renderAsSpannable(
                                 StyledString(
                                     placeholder = "%1\$s",
@@ -156,10 +156,10 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
                     if (state.metadataCollected != null || state.metadataPushed != null) {
                         binding.operationMetadata.isVisible = true
 
-                        val empty = context.getString(R.string.empty_value)
+                        val empty = getString(R.string.empty_value)
 
                         binding.operationMetadataCollected.text =
-                            context.getString(R.string.operation_metadata_collected_message)
+                            getString(R.string.operation_metadata_collected_message)
                                 .renderAsSpannable(
                                     StyledString(
                                         placeholder = "%1\$s",
@@ -169,7 +169,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
                                 )
 
                         binding.operationMetadataPushed.text =
-                            context.getString(R.string.operation_metadata_pushed_message)
+                            getString(R.string.operation_metadata_pushed_message)
                                 .renderAsSpannable(
                                     StyledString(
                                         placeholder = "%1\$s",

@@ -1,8 +1,5 @@
 package stasis.client_android.activities.fragments.settings
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -35,25 +32,15 @@ class ExportDialogFragment : DialogFragment(), DynamicArguments.Receiver {
             }
 
             binding.copyDeviceSecret.setOnClickListener {
-                val context = requireContext()
+                arguments.exportSecret(arguments.secret) {
+                    dialog?.dismiss()
 
-                val clipboard =
-                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                clipboard.setPrimaryClip(
-                    ClipData.newPlainText(
-                        getString(R.string.settings_manage_device_secret_export_clip_label),
-                        binding.exportDeviceSecret.editText?.text
-                    )
-                )
-
-                dialog?.dismiss()
-
-                Toast.makeText(
-                    context,
-                    getString(R.string.settings_manage_device_secret_export_clip_created),
-                    Toast.LENGTH_SHORT
-                ).show()
+                    Toast.makeText(
+                        context,
+                        getString(R.string.settings_manage_device_secret_export_clip_created),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
 
@@ -69,7 +56,10 @@ class ExportDialogFragment : DialogFragment(), DynamicArguments.Receiver {
     }
 
     companion object {
-        data class Arguments(val secret: String) : DynamicArguments.ArgumentSet
+        data class Arguments(
+            val secret: String,
+            val exportSecret: (String, f: (Unit) -> Unit) -> Unit
+        ) : DynamicArguments.ArgumentSet
 
         private const val ArgumentsKey: String =
             "stasis.client_android.activities.fragments.settings.ExportDialogFragment.arguments.key"

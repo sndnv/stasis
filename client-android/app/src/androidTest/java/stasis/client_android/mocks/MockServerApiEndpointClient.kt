@@ -21,6 +21,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Success
 import stasis.core.commands.proto.Command
@@ -54,7 +55,8 @@ open class MockServerApiEndpointClient(
         Statistic.DeviceKeyPulled to AtomicInteger(0),
         Statistic.DeviceKeyExists to AtomicInteger(0),
         Statistic.Ping to AtomicInteger(0),
-        Statistic.Commands to AtomicInteger(0)
+        Statistic.Commands to AtomicInteger(0),
+        Statistic.AnalyticsEntriesSent to AtomicInteger(0),
     )
 
     override val server: String = "mock-api-server"
@@ -198,33 +200,39 @@ open class MockServerApiEndpointClient(
         return Success(emptyList())
     }
 
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> {
+        stats[Statistic.AnalyticsEntriesSent]?.getAndIncrement()
+        return Success(Unit)
+    }
+
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
 
     sealed class Statistic {
-        object DatasetEntryCreated : Statistic()
-        object DatasetEntryDeleted : Statistic()
-        object DatasetEntryRetrieved : Statistic()
-        object DatasetEntryRetrievedLatest : Statistic()
-        object DatasetEntriesRetrieved : Statistic()
-        object DatasetDefinitionCreated : Statistic()
-        object DatasetDefinitionUpdated : Statistic()
-        object DatasetDefinitionDeleted : Statistic()
-        object DatasetDefinitionRetrieved : Statistic()
-        object DatasetDefinitionsRetrieved : Statistic()
-        object PublicSchedulesRetrieved : Statistic()
-        object PublicScheduleRetrieved : Statistic()
-        object DatasetMetadataWithEntryIdRetrieved : Statistic()
-        object DatasetMetadataWithEntryRetrieved : Statistic()
-        object UserRetrieved : Statistic()
-        object UserSaltReset : Statistic()
-        object UserPasswordUpdated : Statistic()
-        object DeviceRetrieved : Statistic()
-        object DeviceKeyPushed : Statistic()
-        object DeviceKeyPulled : Statistic()
-        object DeviceKeyExists : Statistic()
-        object Ping : Statistic()
-        object Commands : Statistic()
+        data object DatasetEntryCreated : Statistic()
+        data object DatasetEntryDeleted : Statistic()
+        data object DatasetEntryRetrieved : Statistic()
+        data object DatasetEntryRetrievedLatest : Statistic()
+        data object DatasetEntriesRetrieved : Statistic()
+        data object DatasetDefinitionCreated : Statistic()
+        data object DatasetDefinitionUpdated : Statistic()
+        data object DatasetDefinitionDeleted : Statistic()
+        data object DatasetDefinitionRetrieved : Statistic()
+        data object DatasetDefinitionsRetrieved : Statistic()
+        data object PublicSchedulesRetrieved : Statistic()
+        data object PublicScheduleRetrieved : Statistic()
+        data object DatasetMetadataWithEntryIdRetrieved : Statistic()
+        data object DatasetMetadataWithEntryRetrieved : Statistic()
+        data object UserRetrieved : Statistic()
+        data object UserSaltReset : Statistic()
+        data object UserPasswordUpdated : Statistic()
+        data object DeviceRetrieved : Statistic()
+        data object DeviceKeyPushed : Statistic()
+        data object DeviceKeyPulled : Statistic()
+        data object DeviceKeyExists : Statistic()
+        data object Ping : Statistic()
+        data object Commands : Statistic()
+        data object AnalyticsEntriesSent: Statistic()
     }
 
     companion object {

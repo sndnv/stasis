@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:drawablePadding="4dp"
         android:padding="16dp"
-        android:text="@string/settings_commands_title"
+        android:text="@string/settings_available_commands_title"
         android:textAppearance="?attr/textAppearanceTitleMedium"
         app:drawableStartCompat="@drawable/ic_commands"
         app:layout_constraintBottom_toTopOf="@id/commands_container"

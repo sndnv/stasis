@@ -62,6 +62,7 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (1)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
                 mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (1)
                 mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)
@@ -91,6 +92,7 @@ class DefaultServerMonitorSpec : WordSpec({
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (2)
                 mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
                 mockTracker.statistics[MockServerTracker.Statistic.ServerReachable] shouldBe (2)
                 mockTracker.statistics[MockServerTracker.Statistic.ServerUnreachable] shouldBe (0)

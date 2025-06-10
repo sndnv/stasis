@@ -20,6 +20,7 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
@@ -174,6 +175,9 @@ class CachedServerApiEndpointClient(
 
     override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> =
         underlying.commands(lastSequenceId)
+
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> =
+        underlying.sendAnalyticsEntry(entry)
 
     private suspend fun loadDefinitions(): Try<List<DatasetDefinition>> =
         if (allDefinitionsCached.get()) {

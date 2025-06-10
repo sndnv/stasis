@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.search
 
+import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.style.StyleSpan
@@ -26,6 +27,7 @@ import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentSearchBinding
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.providers.ProviderContext
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import java.time.Instant
@@ -38,6 +40,9 @@ class SearchFragment : Fragment() {
     @Inject
     lateinit var datasets: DatasetsViewModel
 
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
+
     private lateinit var binding: FragmentSearchBinding
 
     override fun onCreateView(
@@ -46,6 +51,8 @@ class SearchFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_search, container, false)
 
@@ -67,6 +74,8 @@ class SearchFragment : Fragment() {
         }
 
         binding.runSearch.setOnClickListener {
+            providerContext.analytics.recordEvent(name = "search_dataset_metadata")
+
             searchResultAdapter.setResult(result = null)
 
             val isInvalid = binding.searchQuery.editText?.text.toString().isBlank()

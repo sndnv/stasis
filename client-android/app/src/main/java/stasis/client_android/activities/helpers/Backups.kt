@@ -36,6 +36,7 @@ object Backups {
                             onOperationStarted(backupId)
 
                             lifecycleScope.launch {
+                                providerContext.analytics.recordEvent(name = "start_backup")
                                 providerContext.executor.startBackupWithRules(
                                     definition = definitionId,
                                     rules = rules.getOrElse(definitionId) { rules.getOrElse(null) { emptyList() } }

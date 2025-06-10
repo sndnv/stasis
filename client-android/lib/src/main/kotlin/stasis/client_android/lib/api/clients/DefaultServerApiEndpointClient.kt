@@ -8,11 +8,13 @@ import stasis.client_android.lib.api.clients.internal.ClientExtensions
 import stasis.client_android.lib.encryption.Decoder
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.DatasetMetadata
+import stasis.client_android.lib.model.server.api.requests.CreateAnalyticsEntry
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CommandAsJson
+import stasis.client_android.lib.model.server.api.responses.CreatedAnalyticsEntry
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetDefinition
 import stasis.client_android.lib.model.server.api.responses.CreatedDatasetEntry
 import stasis.client_android.lib.model.server.api.responses.Ping
@@ -27,6 +29,7 @@ import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.schedules.ScheduleId
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.AsyncOps
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
@@ -281,6 +284,13 @@ class DefaultServerApiEndpointClient(
                     }
                 )
         }.map { it.map { e -> e.toModel() } }
+
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> =
+        jsonRequest<CreatedAnalyticsEntry> { builder ->
+            builder
+                .url("$server/v1/analytics")
+                .post(CreateAnalyticsEntry(entry.asJson()).toBody())
+        }.map { }
 
     sealed class DecryptionContext {
         data class Default(

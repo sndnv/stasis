@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.IBinder
 import android.view.LayoutInflater
@@ -19,7 +20,9 @@ import stasis.client_android.R
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentSchedulesBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
+import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.schedules.LocalScheduleViewModel
+import stasis.client_android.providers.ProviderContext
 import stasis.client_android.scheduling.SchedulerService
 import stasis.client_android.scheduling.Schedules
 import stasis.client_android.serialization.Extras.putActiveSchedule
@@ -37,6 +40,9 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
 
     @Inject
     lateinit var localSchedules: LocalScheduleViewModel
+
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
 
     private lateinit var service: SchedulerService
     private var serviceConnected: Boolean = false
@@ -91,10 +97,16 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
         adapter = ScheduleListItemAdapter(
             fragmentManager = childFragmentManager,
             provider = this,
             onAssignmentCreationRequested = { activeSchedule ->
+                providerContext.analytics.recordEvent(name = "assign_schedule")
+
                 val intent = Intent(context, SchedulerService::class.java).apply {
                     action = SchedulerService.ActionAddSchedule
                     putActiveSchedule(
@@ -106,6 +118,8 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
                 activity?.startService(intent)
             },
             onAssignmentRemovalRequested = { activeSchedule ->
+                providerContext.analytics.recordEvent(name = "unassign_schedule")
+
                 val intent = Intent(context, SchedulerService::class.java).apply {
                     action = SchedulerService.ActionRemoveSchedule
                     putActiveSchedule(
@@ -117,12 +131,16 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
                 activity?.startService(intent)
             },
             updateSchedule = { schedule ->
+                providerContext.analytics.recordEvent(name = "put_schedule", "type" to "local")
+
                 lifecycleScope.launch {
                     localSchedules.put(schedule).await()
                     service.forceScheduleRefresh()
                 }
             },
             removeSchedule = { scheduleId ->
+                providerContext.analytics.recordEvent(name = "delete_schedule", "type" to "local")
+
                 lifecycleScope.launch {
                     localSchedules.delete(scheduleId).await()
                     service.forceScheduleRefresh()

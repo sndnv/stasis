@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/settings_category_date_time">
+    <PreferenceCategory
+        app:icon="@drawable/ic_schedules"
+        app:title="@string/settings_category_date_time">
+
         <DropDownPreference
             app:entries="@array/settings_date_time_format_entries"
             app:entryValues="@array/settings_date_time_format_values"
@@ -9,7 +12,10 @@
             app:title="@string/settings_date_time_format_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/settings_category_user_credentials">
+    <PreferenceCategory
+        app:icon="@drawable/ic_update_password"
+        app:title="@string/settings_category_user_credentials">
+
         <Preference
             app:key="manage_user_credentials_update_password"
             app:summary="@string/settings_manage_user_credentials_update_password_summary"
@@ -21,7 +27,10 @@
             app:title="@string/settings_manage_user_credentials_update_salt_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/settings_category_device_secret">
+    <PreferenceCategory
+        app:icon="@drawable/ic_update_salt"
+        app:title="@string/settings_category_device_secret">
+
         <Preference
             app:key="manage_device_secret_remotely_push"
             app:summary="@string/settings_manage_device_secret_remotely_push_summary"
@@ -43,35 +52,90 @@
             app:title="@string/settings_manage_device_secret_locally_import_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/settings_category_advanced">
-        <SwitchPreference
-            app:defaultValue="false"
-            app:key="restrictions_ignored"
-            app:title="@string/settings_restrictions_ignored_title" />
+    <PreferenceCategory
+        app:icon="@drawable/ic_analytics"
+        app:title="@string/settings_category_analytics">
 
-        <Preference
-            app:key="show_commands"
-            app:summary="@string/settings_commands_summary"
-            app:title="@string/settings_commands_title" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/settings_category_debug">
         <SwitchPreference
             app:defaultValue="true"
-            app:key="scheduling_enabled"
-            app:title="@string/settings_scheduling_enabled_title" />
+            app:key="analytics_enabled"
+            app:title="@string/settings_analytics_enabled_title" />
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="analytics_keep_events"
+            app:summary="@string/settings_analytics_keep_events_summary"
+            app:title="@string/settings_analytics_keep_events_title" />
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="analytics_keep_failures"
+            app:summary="@string/settings_analytics_keep_failures_summary"
+            app:title="@string/settings_analytics_keep_failures_title" />
 
         <DropDownPreference
-            app:entries="@array/settings_ping_interval_entries"
-            app:entryValues="@array/settings_ping_interval_values"
-            app:key="ping_interval"
-            app:title="@string/settings_ping_interval_title" />
+            app:entries="@array/settings_analytics_persistence_interval_entries"
+            app:entryValues="@array/settings_analytics_persistence_interval_values"
+            app:key="analytics_persistence_interval"
+            app:title="@string/settings_analytics_persistence_interval_title" />
+
+        <DropDownPreference
+            app:entries="@array/settings_analytics_transmission_interval_entries"
+            app:entryValues="@array/settings_analytics_transmission_interval_values"
+            app:key="analytics_transmission_interval"
+            app:title="@string/settings_analytics_transmission_interval_title" />
+
+        <Preference
+            app:key="analytics_show_collected"
+            app:summary="@string/settings_analytics_show_collected_summary"
+            app:title="@string/settings_analytics_show_collected_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/ic_commands"
+        app:title="@string/settings_category_commands">
+
+        <Preference
+            app:key="show_available_commands"
+            app:summary="@string/settings_available_commands_summary"
+            app:title="@string/settings_available_commands_title" />
+
+        <Preference
+            app:key="show_supported_commands"
+            app:summary="@string/settings_supported_commands_summary"
+            app:title="@string/settings_supported_commands_title" />
 
         <DropDownPreference
             app:entries="@array/settings_command_refresh_interval_entries"
             app:entryValues="@array/settings_command_refresh_interval_values"
             app:key="command_refresh_interval"
             app:title="@string/settings_command_refresh_interval_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/ic_warning"
+        app:title="@string/settings_category_advanced">
+
+        <SwitchPreference
+            app:defaultValue="false"
+            app:key="restrictions_ignored"
+            app:title="@string/settings_restrictions_ignored_title" />
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="scheduling_enabled"
+            app:title="@string/settings_scheduling_enabled_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/ic_debug"
+        app:title="@string/settings_category_debug">
+
+        <DropDownPreference
+            app:entries="@array/settings_ping_interval_entries"
+            app:entryValues="@array/settings_ping_interval_values"
+            app:key="ping_interval"
+            app:title="@string/settings_ping_interval_title" />
 
         <DropDownPreference
             app:entries="@array/settings_discovery_interval_entries"

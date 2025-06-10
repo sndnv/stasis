@@ -16,6 +16,7 @@ import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.DatasetMetadata.Companion.toByteString
 import stasis.client_android.lib.model.core.CrateId
+import stasis.client_android.lib.model.server.api.requests.CreateAnalyticsEntry
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.api.requests.ResetUserPassword
@@ -32,6 +33,8 @@ import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.schedules.Schedule
 import stasis.client_android.lib.model.server.users.User
 import stasis.client_android.lib.security.HttpCredentials
+import stasis.client_android.lib.telemetry.ApplicationInformation
+import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.utils.Try.Success
 import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
@@ -866,6 +869,31 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
             val actualRequest = api.takeRequest()
             actualRequest.method shouldBe ("GET")
             actualRequest.path shouldBe ("/v1/devices/own/${apiClient.self}/commands?last_sequence_id=42")
+
+            api.shutdown()
+        }
+
+        "send analytics entries" {
+            val expectedEntry = UUID.randomUUID()
+
+            val api = createServer(withResponse = MockResponse().setBody("""{"entry":"$expectedEntry"}"""))
+
+            val apiClient = createClient(api.url("/").toString())
+
+            val expectedRequest = AnalyticsEntry.collected(app = ApplicationInformation.none())
+
+            val result = apiClient.sendAnalyticsEntry(entry = expectedRequest)
+
+            result shouldBe (Success(Unit))
+
+            val actualRequest = api.takeRequest()
+            actualRequest.method shouldBe ("POST")
+            actualRequest.path shouldBe ("/v1/analytics")
+
+            val actualRequestContent = apiClient.moshi.adapter(CreateAnalyticsEntry::class.java)
+                .fromJson(actualRequest.body)
+
+            actualRequestContent?.entry?.asCollected() shouldBe(expectedRequest)
 
             api.shutdown()
         }

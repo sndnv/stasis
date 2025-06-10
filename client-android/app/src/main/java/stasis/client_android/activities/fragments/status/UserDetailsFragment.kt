@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.status
 
+import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.style.StyleSpan
@@ -20,12 +21,17 @@ import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.api.UserStatusViewModel
 import stasis.client_android.databinding.FragmentUserDetailsBinding
+import stasis.client_android.persistence.config.ConfigRepository
+import stasis.client_android.providers.ProviderContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class UserDetailsFragment : Fragment() {
     @Inject
     lateinit var status: UserStatusViewModel
+
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val binding: FragmentUserDetailsBinding = DataBindingUtil.inflate(
@@ -35,8 +41,12 @@ class UserDetailsFragment : Fragment() {
             false
         )
 
+        val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
         status.user.observe(viewLifecycleOwner) { user ->
-            val context = requireContext()
+            providerContext.analytics.recordEvent(name = "get_user")
 
             binding.userInfo.text = context.getString(
                 if (user.active) R.string.user_field_content_info_active

@@ -3,7 +3,6 @@ package stasis.client_android.tracking
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
@@ -48,8 +47,6 @@ class DefaultServerTracker(
         private var _state: Map<String, ServerTracker.ServerState> = emptyMap()
 
         override fun handleMessage(msg: Message) {
-            Log.v(TAG, "Received tracking event [${msg.obj}]")
-
             _state = when (val message = msg.obj) {
                 is TrackingEvent.ServerReachable -> _state + (message.server to ServerTracker.ServerState(
                     reachable = true,
@@ -71,9 +68,5 @@ class DefaultServerTracker(
     private sealed class TrackingEvent {
         data class ServerReachable(val server: String) : TrackingEvent()
         data class ServerUnreachable(val server: String) : TrackingEvent()
-    }
-
-    companion object {
-        private const val TAG: String = "DefaultServerTracker"
     }
 }

@@ -1,5 +1,6 @@
 package stasis.client_android.activities.fragments.rules
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +21,9 @@ import stasis.client_android.databinding.FragmentRulesBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
+import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.rules.RuleViewModel
+import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import stasis.client_android.utils.LiveDataExtensions.and
@@ -37,6 +40,9 @@ class RulesFragment : Fragment(), DynamicArguments.Provider {
     @Inject
     lateinit var definitions: DatasetsViewModel
 
+    @Inject
+    lateinit var providerContextFactory: ProviderContext.Factory
+
     private var selectedDefinition: DatasetDefinitionId? = null
 
     override fun onCreateView(
@@ -51,9 +57,15 @@ class RulesFragment : Fragment(), DynamicArguments.Provider {
             false
         )
 
+        val context = requireContext()
+        val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
+        val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
         selectedDefinition = savedInstanceState?.getString(StateSelectedDefinitionIdKey)?.let { UUID.fromString(it) }
 
         (definitions.definitions() and rules.rules).observe(viewLifecycleOwner) { (definitionsList, rulesList) ->
+            providerContext.analytics.recordEvent(name = "get_rules")
+
             val groupedRules = rulesList.groupBy { it.definition }.toList().sortedBy { it.first }
 
             groupedRules.forEach { (currentDefinition, currentRules) ->
@@ -68,17 +80,28 @@ class RulesFragment : Fragment(), DynamicArguments.Provider {
                         },
                         existingDefinitions = definitionsList,
                         rules = currentRules,
-                        createRule = { rule -> lifecycleScope.launch { rules.put(rule).await() } },
-                        updateRule = { rule -> lifecycleScope.launch { rules.put(rule).await() } },
-                        deleteRule = { id -> rules.delete(id) },
-                        resetRule = {
+                        createRule = { rule ->
+                            providerContext.analytics.recordEvent(name = "create_rule")
+                            lifecycleScope.launch { rules.put(rule).await() }
+                        },
+                        updateRule = { rule ->
+                            providerContext.analytics.recordEvent(name = "update_rule")
+                            lifecycleScope.launch { rules.put(rule).await() }
+                        },
+                        deleteRule = { id ->
+                            providerContext.analytics.recordEvent(name = "delete_rule")
+                            rules.delete(id)
+                        },
+                        resetRules = {
+                            providerContext.analytics.recordEvent(name = "reset_rules")
+
                             lifecycleScope.launch {
                                 rules.clear().await()
                                 rules.bootstrap().await()
 
                                 Toast.makeText(
                                     context,
-                                    context?.getString(R.string.toast_rules_reset),
+                                    context.getString(R.string.toast_rules_reset),
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }

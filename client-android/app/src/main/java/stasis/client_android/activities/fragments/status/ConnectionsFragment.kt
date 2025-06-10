@@ -41,6 +41,7 @@ class ConnectionsFragment : Fragment() {
 
         providerContext.trackers.server.state
             .observe(viewLifecycleOwner) { servers ->
+                providerContext.analytics.recordEvent(name = "get_device_connections")
                 adapter.setServers(servers)
 
                 if (servers.isEmpty()) {

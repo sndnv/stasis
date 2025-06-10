@@ -8,6 +8,7 @@ import stasis.client_android.lib.encryption.secrets.Secret
 import stasis.client_android.lib.model.server.devices.DeviceBootstrapParameters
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
+import androidx.core.content.edit
 
 class ConfigRepository(
     private val preferences: SharedPreferences,
@@ -21,90 +22,73 @@ class ConfigRepository(
 
     fun bootstrap(params: DeviceBootstrapParameters) {
         preferences
-            .edit()
-            .putString(Keys.Authentication.TokenEndpoint, params.authentication.tokenEndpoint)
-            .putString(Keys.Authentication.ClientId, params.authentication.clientId)
-            .putString(Keys.Authentication.ClientSecret, params.authentication.clientSecret)
-            .putString(Keys.Authentication.ScopeApi, params.authentication.scopes.api)
-            .putString(Keys.Authentication.ScopeCore, params.authentication.scopes.core)
-            .putString(Keys.ServerApi.Url, params.serverApi.url)
-            .putString(Keys.ServerApi.User, params.serverApi.user)
-            .putString(Keys.ServerApi.UserSalt, params.serverApi.userSalt)
-            .putString(Keys.ServerApi.Device, params.serverApi.device)
-            .putString(Keys.ServerCore.Address, params.serverCore.address)
-            .putString(Keys.ServerCore.NodeId, params.serverCore.nodeId)
-            .putInt(
-                Keys.Secrets.DerivationEncryptionSecretSize,
-                params.secrets.derivation.encryption.secretSize
-            )
-            .putInt(
-                Keys.Secrets.DerivationEncryptionIterations,
-                params.secrets.derivation.encryption.iterations
-            )
-            .putString(
-                Keys.Secrets.DerivationEncryptionSaltPrefix,
-                params.secrets.derivation.encryption.saltPrefix
-            )
-            .putBoolean(
-                Keys.Secrets.DerivationAuthenticationEnabled,
-                params.secrets.derivation.authentication.enabled
-            )
-            .putInt(
-                Keys.Secrets.DerivationAuthenticationSecretSize,
-                params.secrets.derivation.authentication.secretSize
-            )
-            .putInt(
-                Keys.Secrets.DerivationAuthenticationIterations,
-                params.secrets.derivation.authentication.iterations
-            )
-            .putString(
-                Keys.Secrets.DerivationAuthenticationSaltPrefix,
-                params.secrets.derivation.authentication.saltPrefix
-            )
-            .putInt(
-                Keys.Secrets.EncryptionFileKeySize,
-                params.secrets.encryption.file.keySize
-            )
-            .putInt(
-                Keys.Secrets.EncryptionMetadataKeySize,
-                params.secrets.encryption.metadata.keySize
-            )
-            .putInt(
-                Keys.Secrets.EncryptionDeviceSecretKeySize,
-                params.secrets.encryption.deviceSecret.keySize
-            )
-            .commit()
+            .edit(commit = true) {
+                putString(Keys.Authentication.TokenEndpoint, params.authentication.tokenEndpoint)
+                putString(Keys.Authentication.ClientId, params.authentication.clientId)
+                putString(Keys.Authentication.ClientSecret, params.authentication.clientSecret)
+                putString(Keys.Authentication.ScopeApi, params.authentication.scopes.api)
+                putString(Keys.Authentication.ScopeCore, params.authentication.scopes.core)
+                putString(Keys.ServerApi.Url, params.serverApi.url)
+                putString(Keys.ServerApi.User, params.serverApi.user)
+                putString(Keys.ServerApi.UserSalt, params.serverApi.userSalt)
+                putString(Keys.ServerApi.Device, params.serverApi.device)
+                putString(Keys.ServerCore.Address, params.serverCore.address)
+                putString(Keys.ServerCore.NodeId, params.serverCore.nodeId)
+                putInt(Keys.Secrets.DerivationEncryptionSecretSize, params.secrets.derivation.encryption.secretSize)
+                putInt(Keys.Secrets.DerivationEncryptionIterations, params.secrets.derivation.encryption.iterations)
+                putString(Keys.Secrets.DerivationEncryptionSaltPrefix, params.secrets.derivation.encryption.saltPrefix)
+                putBoolean(
+                    Keys.Secrets.DerivationAuthenticationEnabled,
+                    params.secrets.derivation.authentication.enabled
+                )
+                putInt(
+                    Keys.Secrets.DerivationAuthenticationSecretSize,
+                    params.secrets.derivation.authentication.secretSize
+                )
+                putInt(
+                    Keys.Secrets.DerivationAuthenticationIterations,
+                    params.secrets.derivation.authentication.iterations
+                )
+                putString(
+                    Keys.Secrets.DerivationAuthenticationSaltPrefix,
+                    params.secrets.derivation.authentication.saltPrefix
+                )
+                putInt(Keys.Secrets.EncryptionFileKeySize, params.secrets.encryption.file.keySize)
+                putInt(Keys.Secrets.EncryptionMetadataKeySize, params.secrets.encryption.metadata.keySize)
+                putInt(Keys.Secrets.EncryptionDeviceSecretKeySize, params.secrets.encryption.deviceSecret.keySize)
+            }
     }
 
     fun reset() {
         preferences
-            .edit()
-            .remove(Keys.Authentication.TokenEndpoint)
-            .remove(Keys.Authentication.ClientId)
-            .remove(Keys.Authentication.ClientSecret)
-            .remove(Keys.Authentication.ScopeApi)
-            .remove(Keys.Authentication.ScopeCore)
-            .remove(Keys.ServerApi.Url)
-            .remove(Keys.ServerApi.User)
-            .remove(Keys.ServerApi.UserSalt)
-            .remove(Keys.ServerApi.Device)
-            .remove(Keys.ServerCore.Address)
-            .remove(Keys.ServerCore.NodeId)
-            .remove(Keys.Secrets.DerivationEncryptionSecretSize)
-            .remove(Keys.Secrets.DerivationEncryptionIterations)
-            .remove(Keys.Secrets.DerivationEncryptionSaltPrefix)
-            .remove(Keys.Secrets.DerivationAuthenticationEnabled)
-            .remove(Keys.Secrets.DerivationAuthenticationSecretSize)
-            .remove(Keys.Secrets.DerivationAuthenticationIterations)
-            .remove(Keys.Secrets.DerivationAuthenticationSaltPrefix)
-            .remove(Keys.Secrets.EncryptionFileKeySize)
-            .remove(Keys.Secrets.EncryptionMetadataKeySize)
-            .remove(Keys.Secrets.EncryptionDeviceSecretKeySize)
-            .remove(Keys.Secrets.EncryptedDeviceSecret)
-            .remove(Keys.General.IsFirstRun)
-            .remove(Keys.General.SavedUsername)
-            .remove(Keys.General.LastProcessedCommand)
-            .commit()
+            .edit(commit = true) {
+                remove(Keys.Authentication.TokenEndpoint)
+                    .remove(Keys.Authentication.ClientId)
+                    .remove(Keys.Authentication.ClientSecret)
+                    .remove(Keys.Authentication.ScopeApi)
+                    .remove(Keys.Authentication.ScopeCore)
+                    .remove(Keys.ServerApi.Url)
+                    .remove(Keys.ServerApi.User)
+                    .remove(Keys.ServerApi.UserSalt)
+                    .remove(Keys.ServerApi.Device)
+                    .remove(Keys.ServerCore.Address)
+                    .remove(Keys.ServerCore.NodeId)
+                    .remove(Keys.Secrets.DerivationEncryptionSecretSize)
+                    .remove(Keys.Secrets.DerivationEncryptionIterations)
+                    .remove(Keys.Secrets.DerivationEncryptionSaltPrefix)
+                    .remove(Keys.Secrets.DerivationAuthenticationEnabled)
+                    .remove(Keys.Secrets.DerivationAuthenticationSecretSize)
+                    .remove(Keys.Secrets.DerivationAuthenticationIterations)
+                    .remove(Keys.Secrets.DerivationAuthenticationSaltPrefix)
+                    .remove(Keys.Secrets.EncryptionFileKeySize)
+                    .remove(Keys.Secrets.EncryptionMetadataKeySize)
+                    .remove(Keys.Secrets.EncryptionDeviceSecretKeySize)
+                    .remove(Keys.Secrets.EncryptedDeviceSecret)
+                    .remove(Keys.General.IsFirstRun)
+                    .remove(Keys.General.SavedUsername)
+                    .remove(Keys.General.LastProcessedCommand)
+                    .remove(Keys.Analytics.EntryCache)
+            }
     }
 
     companion object {
@@ -188,6 +172,10 @@ class ConfigRepository(
                 const val IsFirstRun: String = "general_is_first_run"
                 const val SavedUsername: String = "general_saved_username"
                 const val LastProcessedCommand: String = "last_processed_command"
+            }
+
+            object Analytics {
+                const val EntryCache: String = "analytics_entry_cache"
             }
         }
 
@@ -357,9 +345,9 @@ class ConfigRepository(
         )
 
         fun SharedPreferences.putEncryptedDeviceSecret(secret: ByteString) {
-            this.edit()
-                .putString(Keys.Secrets.EncryptedDeviceSecret, secret.encodeAsBase64())
-                .commit()
+            this.edit(commit = true) {
+                putString(Keys.Secrets.EncryptedDeviceSecret, secret.encodeAsBase64())
+            }
         }
 
         fun SharedPreferences.getEncryptedDeviceSecret(): ByteString {
@@ -378,27 +366,36 @@ class ConfigRepository(
             this.getBoolean(Keys.General.IsFirstRun, Defaults.General.IsFirstRun)
 
         fun SharedPreferences.firstRunComplete() {
-            this.edit()
-                .putBoolean(Keys.General.IsFirstRun, false)
-                .commit()
+            this.edit(commit = true) {
+                putBoolean(Keys.General.IsFirstRun, false)
+            }
         }
 
         fun SharedPreferences.savedUsername(): String? =
             this.getString(Keys.General.SavedUsername, null)
 
         fun SharedPreferences.saveUsername(username: String?) {
-            this.edit()
-                .putString(Keys.General.SavedUsername, username)
-                .commit()
+            this.edit(commit = true) {
+                putString(Keys.General.SavedUsername, username)
+            }
         }
 
         fun SharedPreferences.savedLastProcessedCommand(): Long =
             this.getLong(Keys.General.LastProcessedCommand, 0L)
 
         fun SharedPreferences.saveLastProcessedCommand(sequenceId: Long) {
-            this.edit()
-                .putLong(Keys.General.LastProcessedCommand, sequenceId)
-                .commit()
+            this.edit(commit = true) {
+                putLong(Keys.General.LastProcessedCommand, sequenceId)
+            }
+        }
+
+        fun SharedPreferences.getAnalyticsCachedEntry(): String? =
+            this.getString(Keys.Analytics.EntryCache, null)
+
+        fun SharedPreferences.putAnalyticsCachedEntry(entry: String) {
+            this.edit(commit = true) {
+                putString(Keys.Analytics.EntryCache, entry)
+            }
         }
 
         fun getPreferences(context: Context): SharedPreferences =

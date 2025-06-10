@@ -217,6 +217,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (4)
@@ -313,6 +314,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (2)
@@ -413,6 +415,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (2)
@@ -525,6 +528,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (2)
@@ -599,6 +603,7 @@ class BackupSpec : WordSpec({
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            mockApiClient.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
             mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (1)

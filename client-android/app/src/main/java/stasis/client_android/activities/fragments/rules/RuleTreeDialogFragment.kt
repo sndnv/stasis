@@ -3,7 +3,6 @@ package stasis.client_android.activities.fragments.rules
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -271,7 +270,6 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
 
             override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
                 val failure = exc?.let { "${it.javaClass.simpleName} - ${it.message}" }
-                Log.v("RuleTreeDialogFragment", "Failure encountered when visiting [$file]: [$failure]")
                 failure?.let { failures.add(failure) }
                 return FileVisitResult.CONTINUE
             }

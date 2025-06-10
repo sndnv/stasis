@@ -1,5 +1,7 @@
 package stasis.client_android.activities.fragments
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
@@ -10,14 +12,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreference
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
-import stasis.client_android.activities.fragments.settings.CommandsDialogFragment
+import stasis.client_android.activities.fragments.settings.AnalyticsDialogFragment
+import stasis.client_android.activities.fragments.settings.AvailableCommandsDialogFragment
 import stasis.client_android.activities.fragments.settings.ExportDialogFragment
 import stasis.client_android.activities.fragments.settings.ImportDialogFragment
 import stasis.client_android.activities.fragments.settings.PullDialogFragment
 import stasis.client_android.activities.fragments.settings.PushDialogFragment
+import stasis.client_android.activities.fragments.settings.SupportedCommandsDialogFragment
 import stasis.client_android.activities.fragments.settings.UpdatePasswordFragment
 import stasis.client_android.activities.fragments.settings.UpdateSaltFragment
 import stasis.client_android.activities.helpers.Common.StyledString
@@ -41,6 +46,9 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
 import stasis.client_android.settings.Settings
+import stasis.client_android.settings.Settings.getAnalyticsEnabled
+import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
+import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
@@ -113,6 +121,8 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                             ) { result ->
                                 f(result)
 
+                                providerContext.analytics.recordEvent(name = "update_user_password", result = result)
+
                                 lifecycleScope.launch {
                                     Toast.makeText(
                                         context,
@@ -155,6 +165,8 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                                 newPassword = currentPassword,
                                 newSalt = newSalt
                             ) { result ->
+                                providerContext.analytics.recordEvent(name = "update_user_salt", result = result)
+
                                 lifecycleScope.launch {
                                     f(result)
 
@@ -187,7 +199,25 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
         providedArguments.put(
             key = "ExportDialogFragment",
             arguments = ExportDialogFragment.Companion.Arguments(
-                secret = currentPreferences.getPlaintextDeviceSecret()?.encodeAsBase64().orEmpty()
+                secret = currentPreferences.getPlaintextDeviceSecret()?.encodeAsBase64().orEmpty(),
+                exportSecret = { secret, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+                    val clipboard =
+                        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                    clipboard.setPrimaryClip(
+                        ClipData.newPlainText(
+                            getString(R.string.settings_manage_device_secret_export_clip_label),
+                            secret
+                        )
+                    )
+
+                    providerContext.analytics.recordEvent(name = "export_device_secret")
+
+                    f(Unit)
+                }
             )
         )
 
@@ -195,12 +225,17 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             key = "ImportDialogFragment",
             arguments = ImportDialogFragment.Companion.Arguments(
                 importSecret = { secret, password, f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
                     credentials.verifyUserPassword(password = password) { isValid ->
                         if (isValid) {
                             credentials.updateDeviceSecret(
                                 password = password,
                                 secret = secret.decodeFromBase64()
                             ) { result ->
+                                providerContext.analytics.recordEvent(name = "import_device_secret", result = result)
+
                                 lifecycleScope.launch {
                                     f(result)
 
@@ -245,6 +280,8 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                                 password = password,
                                 remotePassword = remotePassword
                             ) { result ->
+                                providerContext.analytics.recordEvent(name = "push_device_secret", result = result)
+
                                 lifecycleScope.launch {
                                     f(result)
 
@@ -314,6 +351,8 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                                 password = password,
                                 remotePassword = remotePassword
                             ) { result ->
+                                providerContext.analytics.recordEvent(name = "pull_device_secret", result = result)
+
                                 lifecycleScope.launch {
                                     f(result)
 
@@ -348,13 +387,29 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
         )
 
         providedArguments.put(
-            key = "CommandsDialogFragment",
-            arguments = CommandsDialogFragment.Companion.Arguments(
+            key = "AvailableCommandsDialogFragment",
+            arguments = AvailableCommandsDialogFragment.Companion.Arguments(
                 retrieveCommands = { f ->
                     val preferences = CredentialsRepository.getEncryptedPreferences(context)
                     val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
                     liveData { providerContext.commandProcessor.all() }
+                        .observeOnce(viewLifecycleOwner) {
+                            providerContext.analytics.recordEvent(name = "get_device_commands", result = it)
+                            f(it)
+                        }
+                }
+            )
+        )
+
+        providedArguments.put(
+            key = "AnalyticsDialogFragment",
+            arguments = AnalyticsDialogFragment.Companion.Arguments(
+                retrieveAnalytics = { f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+                    liveData { providerContext.analytics.state() }
                         .observeOnce(viewLifecycleOwner) {
                             f(it)
                         }
@@ -460,6 +515,21 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             true
         }
 
+        findPreference<Preference>(Settings.Keys.ShowAvailableCommands)?.setOnPreferenceClickListener {
+            AvailableCommandsDialogFragment()
+                .withArgumentsId<AvailableCommandsDialogFragment>(id = "AvailableCommandsDialogFragment")
+                .show(childFragmentManager, AvailableCommandsDialogFragment.DialogTag)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ShowSupportedCommands)?.setOnPreferenceClickListener {
+            SupportedCommandsDialogFragment()
+                .show(childFragmentManager, SupportedCommandsDialogFragment.DialogTag)
+
+            true
+        }
+
         val discoveryInterval = findPreference<DropDownPreference>(Settings.Keys.DiscoveryInterval)
         val currentDiscoveryInterval = preferenceManager.sharedPreferences?.getDiscoveryInterval()
         discoveryInterval?.summary = renderDiscoveryInterval(currentDiscoveryInterval, context)
@@ -478,10 +548,101 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             true
         }
 
-        findPreference<Preference>(Settings.Keys.ShowCommands)?.setOnPreferenceClickListener {
-            CommandsDialogFragment()
-                .withArgumentsId<CommandsDialogFragment>(id = "CommandsDialogFragment")
-                .show(childFragmentManager, CommandsDialogFragment.DialogTag)
+        val analyticsPersistenceInterval =
+            findPreference<DropDownPreference>(Settings.Keys.AnalyticsPersistenceInterval)
+        val currentAnalyticsPersistenceInterval = preferenceManager.sharedPreferences?.getAnalyticsPersistenceInterval()
+        analyticsPersistenceInterval?.summary =
+            renderAnalyticsPersistenceInterval(currentAnalyticsPersistenceInterval, context)
+        analyticsPersistenceInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedAnalyticsPersistenceInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedAnalyticsPersistenceInterval?.seconds != currentAnalyticsPersistenceInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            analyticsPersistenceInterval.summary =
+                renderAnalyticsPersistenceInterval(updatedAnalyticsPersistenceInterval, context)
+            true
+        }
+
+        val analyticsTransmissionInterval =
+            findPreference<DropDownPreference>(Settings.Keys.AnalyticsTransmissionInterval)
+        val currentAnalyticsTransmissionInterval =
+            preferenceManager.sharedPreferences?.getAnalyticsTransmissionInterval()
+        analyticsTransmissionInterval?.summary =
+            renderAnalyticsTransmissionInterval(currentAnalyticsTransmissionInterval, context)
+        analyticsTransmissionInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedAnalyticsTransmissionInterval =
+                newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedAnalyticsTransmissionInterval?.seconds != currentAnalyticsTransmissionInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            analyticsTransmissionInterval.summary =
+                renderAnalyticsTransmissionInterval(updatedAnalyticsTransmissionInterval, context)
+            true
+        }
+
+        val analyticsEnabled = findPreference<SwitchPreference>(Settings.Keys.AnalyticsEnabled)
+        val analyticsKeepEvents = findPreference<SwitchPreference>(Settings.Keys.AnalyticsKeepEvents)
+        val analyticsKeepFailures = findPreference<SwitchPreference>(Settings.Keys.AnalyticsKeepFailures)
+        val analyticsShowCollected = findPreference<Preference>(Settings.Keys.AnalyticsShowCollected)
+
+        fun resetAnalyticsSettingsState(enabled: Boolean) {
+            analyticsEnabled?.summary = getString(R.string.settings_analytics_enabled_hint)
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = getString(
+                            if (enabled) R.string.settings_analytics_enabled_hint_active
+                            else R.string.settings_analytics_enabled_hint_inactive
+                        ),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
+            analyticsKeepEvents?.isVisible = enabled
+            analyticsKeepFailures?.isVisible = enabled
+            analyticsPersistenceInterval?.isVisible = enabled
+            analyticsTransmissionInterval?.isVisible = enabled
+            analyticsShowCollected?.isVisible = enabled
+        }
+
+        val currentAnalyticsEnabled =
+            preferenceManager.sharedPreferences?.getAnalyticsEnabled() ?: Settings.Defaults.AnalyticsEnabled
+
+        resetAnalyticsSettingsState(enabled = currentAnalyticsEnabled)
+
+        analyticsEnabled?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedAnalyticsEnabled =
+                newValue.toString().toBooleanStrictOrNull() ?: Settings.Defaults.AnalyticsEnabled
+
+            if (updatedAnalyticsEnabled != currentAnalyticsEnabled) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            resetAnalyticsSettingsState(enabled = updatedAnalyticsEnabled)
+
+            true
+        }
+
+        analyticsShowCollected?.setOnPreferenceClickListener {
+            AnalyticsDialogFragment()
+                .withArgumentsId<AnalyticsDialogFragment>(id = "AnalyticsDialogFragment")
+                .show(childFragmentManager, AnalyticsDialogFragment.DialogTag)
 
             true
         }
@@ -544,6 +705,26 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                 StyledString(
                     placeholder = "%1\$s",
                     content = (interval ?: Settings.Defaults.DiscoveryInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderAnalyticsPersistenceInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_analytics_persistence_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.AnalyticsPersistenceInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderAnalyticsTransmissionInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_analytics_transmission_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.AnalyticsTransmissionInterval).asString(context),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )

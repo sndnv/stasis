@@ -12,7 +12,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Process
-import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -91,8 +90,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
         override fun handleMessage(msg: Message) {
             when (val message = msg.obj) {
                 is SchedulerMessage.RefreshSchedules -> {
-                    Log.v(TAG, "Refreshing schedules with [schedulingEnabled=$schedulingEnabled]")
-
                     val schedulerMessage = runBlocking {
                         val public = getPublicSchedules()
                         val local = getLocalSchedules()
@@ -113,21 +110,12 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                 }
 
                 is SchedulerMessage.CancelSchedules -> {
-                    Log.v(TAG, "Cancelling schedules with [schedulingEnabled=$schedulingEnabled]")
-
                     configuredSchedules.map { activeSchedule ->
                         alarmManager.deleteScheduleAlarm(this@SchedulerService, activeSchedule)
                     }
                 }
 
                 is SchedulerMessage.UpdateSchedules -> {
-                    Log.v(
-                        TAG,
-                        "Updating schedules with [schedulingEnabled=$schedulingEnabled]; " +
-                                "existing [configured=${configuredSchedules.size}]; " +
-                                "updated [public=${message.public.size},local=${message.local.size},configured=${message.configured.size}]; "
-                    )
-
                     configuredSchedules.map { activeSchedule ->
                         alarmManager.deleteScheduleAlarm(this@SchedulerService, activeSchedule)
                     }
@@ -164,12 +152,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                 }
 
                 is SchedulerMessage.AddSchedule -> {
-                    Log.v(
-                        TAG,
-                        "Adding schedule [type=${message.schedule.assignment.javaClass.simpleName},id=${message.schedule.id}] " +
-                                "with [schedulingEnabled=$schedulingEnabled]"
-                    )
-
                     runBlocking {
                         val public = getPublicSchedules()
                         val local = getLocalSchedules()
@@ -209,12 +191,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                 }
 
                 is SchedulerMessage.RemoveSchedule -> {
-                    Log.v(
-                        TAG,
-                        "Removing schedule [type=${message.schedule.assignment.javaClass.simpleName},id=${message.schedule.id}] " +
-                                "with [schedulingEnabled=$schedulingEnabled]"
-                    )
-
                     runBlocking {
                         alarmManager.deleteScheduleAlarm(this@SchedulerService, message.schedule)
                         configuredSchedules = configuredSchedules - message.schedule
@@ -231,11 +207,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
                 }
 
                 is SchedulerMessage.ExecuteSchedule -> {
-                    Log.v(
-                        TAG,
-                        "Executing schedule [id=${message.activeScheduleId}] with [schedulingEnabled=$schedulingEnabled]"
-                    )
-
                     runBlocking {
                         when (val activeSchedule =
                             configuredSchedules.find { it.id == message.activeScheduleId }) {
@@ -431,8 +402,6 @@ class SchedulerService : LifecycleService(), SharedPreferences.OnSharedPreferenc
     }
 
     companion object {
-        private const val TAG: String = "SchedulerService"
-
         object Defaults {
             val MinimumExecutionDelay: Duration = Duration.ofSeconds(5)
         }
