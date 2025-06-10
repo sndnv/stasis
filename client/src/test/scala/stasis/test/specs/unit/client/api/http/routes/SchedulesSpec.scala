@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Schedules
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -52,6 +53,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -86,6 +88,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -136,6 +139,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

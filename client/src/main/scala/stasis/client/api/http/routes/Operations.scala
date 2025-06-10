@@ -66,6 +66,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 
               onSuccess(result) { operations =>
                 log.debugN("API successfully retrieved progress of [{}] operations", operations.size)
+                context.analytics.recordEvent(name = "get_operations")
+
                 consumeEntity & complete(operations)
               }
             }
@@ -81,6 +83,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                   onSuccess(context.executor.rules) { rules =>
                     val result = rules.definitions.map { case (k, v) => k.map(_.toString).getOrElse("default") -> v }
                     log.debugN("API successfully retrieved all backup rules")
+                    context.analytics.recordEvent(name = "get_backup_rules", "type" -> "all")
+
                     consumeEntity & complete(result)
                   }
                 }
@@ -92,6 +96,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       onSuccess(context.executor.rules) { rules =>
                         val result = rules.default()
                         log.debugN("API successfully retrieved default backup rules")
+                        context.analytics.recordEvent(name = "get_backup_rules", "type" -> "default")
+
                         consumeEntity & complete(result)
                       }
                     }
@@ -108,6 +114,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 
                         onSuccess(result) { spec =>
                           log.debugN("API successfully retrieved default backup rules specification")
+                          context.analytics.recordEvent(name = "get_backup_specification", "type" -> "default")
+
                           consumeEntity & complete(SpecificationRules(spec))
                         }
                       }
@@ -122,6 +130,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       onSuccess(context.executor.rules) { rules =>
                         val result = rules.forDefinitionOrDefault(definition)
                         log.debugN("API successfully retrieved backup rules for definition [{}]", definition)
+                        context.analytics.recordEvent(name = "get_backup_rules", "type" -> "for-definition")
+
                         consumeEntity & complete(result)
                       }
                     }
@@ -138,6 +148,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
 
                         onSuccess(result) { spec =>
                           log.debugN("API successfully retrieved backup rules specification for definition [{}]", definition)
+                          context.analytics.recordEvent(name = "get_backup_specification", "type" -> "for-definition")
+
                           consumeEntity & complete(SpecificationRules(spec))
                         }
                       }
@@ -151,6 +163,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             put {
               onSuccess(context.executor.startBackupWithRules(definition)) { operation =>
                 log.debugN("API started backup operation [{}]", operation)
+                context.analytics.recordEvent(name = "start_backup")
+
                 consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
               }
             }
@@ -176,6 +190,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       operation,
                       definition
                     )
+                    context.analytics.recordEvent(name = "start_recovery", "target" -> "latest")
+
                     consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
 
@@ -195,6 +211,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       definition,
                       until
                     )
+                    context.analytics.recordEvent(name = "start_recovery", "target" -> "until")
+
                     consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
 
@@ -213,6 +231,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       definition,
                       entry
                     )
+                    context.analytics.recordEvent(name = "start_recovery", "target" -> "entry")
+
                     consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
                   }
                 }
@@ -228,11 +248,15 @@ class Operations()(implicit context: Context) extends ApiRoutes {
               onSuccess(context.executor.active) { active =>
                 if (active.contains(operation)) {
                   log.debugN("API could not remove operation [{}]; operation is active", operation)
+                  context.analytics.recordEvent(name = "remove_operation", "result" -> "failure")
+
                   consumeEntity & complete(StatusCodes.Conflict)
                 } else {
                   log.debugN("API removed operation [{}]", operation)
                   context.trackers.backup.remove(operation)
                   context.trackers.recovery.remove(operation)
+                  context.analytics.recordEvent(name = "remove_operation", "result" -> "success")
+
                   consumeEntity & complete(StatusCodes.Accepted)
                 }
               }
@@ -251,14 +275,20 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                 onSuccess(result) {
                   case Some(backup: BackupState) =>
                     log.debugN("API successfully retrieved progress of backup operation [{}]", operation)
+                    context.analytics.recordEvent(name = "get_operation", "type" -> "backup")
+
                     consumeEntity & complete(backup)
 
                   case Some(recovery: RecoveryState) =>
                     log.debugN("API successfully retrieved progress of recovery operation [{}]", operation)
+                    context.analytics.recordEvent(name = "get_operation", "type" -> "recovery")
+
                     consumeEntity & complete(recovery)
 
                   case _ =>
                     log.debugN("API could not retrieve progress of operation [{}]; unexpected or missing operation", operation)
+                    context.analytics.recordEvent(name = "get_operation", "type" -> "unknown")
+
                     consumeEntity & complete(StatusCodes.NotFound)
                 }
               }
@@ -284,6 +314,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                     isBackup <- context.trackers.backup.exists(operation) if isBackup
                   } yield {
                     log.debugN("API successfully retrieved progress stream for backup operation [{}]", operation)
+                    context.analytics.recordEvent(name = "follow_operation", "type" -> "backup")
+
                     sseSource(context.trackers.backup.updates(operation))
                   }
 
@@ -291,6 +323,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                     isRecovery <- context.trackers.recovery.exists(operation) if isRecovery
                   } yield {
                     log.debugN("API successfully retrieved progress stream for recovery operation [{}]", operation)
+                    context.analytics.recordEvent(name = "follow_operation", "type" -> "recovery")
+
                     sseSource(context.trackers.recovery.updates(operation))
                   }
 
@@ -317,10 +351,14 @@ class Operations()(implicit context: Context) extends ApiRoutes {
               onSuccess(context.executor.stop(operation)) {
                 case Some(_) =>
                   log.debugN("API stopped operation [{}]", operation)
+                  context.analytics.recordEvent(name = "stop_operation", "result" -> "success")
+
                   consumeEntity & complete(StatusCodes.NoContent)
 
                 case None =>
                   log.debugN("API failed to stop operation [{}]; operation not found", operation)
+                  context.analytics.recordEvent(name = "stop_operation", "result" -> "failure")
+
                   consumeEntity & complete(StatusCodes.NotFound)
               }
             }
@@ -329,6 +367,8 @@ class Operations()(implicit context: Context) extends ApiRoutes {
             put {
               onSuccess(context.executor.resumeBackup(operation)) { _ =>
                 log.debugN("API resumed backup operation [{}]", operation)
+                context.analytics.recordEvent(name = "resume_operation")
+
                 consumeEntity & complete(StatusCodes.Accepted, OperationStarted(operation))
               }
             }

@@ -18,6 +18,7 @@ import stasis.client.api.http.routes.Device
 import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.tracking.ServerTracker
 import stasis.core.commands.proto.Command
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -61,6 +62,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -153,6 +155,7 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       ),
       commandProcessor = MockCommandProcessor(commands = commands, lastProcessed = commands.headOption.map(_.sequenceId)),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

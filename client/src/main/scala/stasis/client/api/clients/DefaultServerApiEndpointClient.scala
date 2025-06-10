@@ -25,10 +25,13 @@ import stasis.core.commands.proto.Command
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.streaming.Operators.ExtendedSource
+import stasis.layers.telemetry.analytics.AnalyticsEntry
+import stasis.shared.api.requests.CreateAnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
 import stasis.shared.api.requests.UpdateDatasetDefinition
+import stasis.shared.api.responses.CreatedAnalyticsEntry
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
@@ -407,6 +410,22 @@ class DefaultServerApiEndpointClient(
       ping <- response.to[Ping]
     } yield {
       ping
+    }
+
+  override def sendAnalyticsEntry(entry: AnalyticsEntry): Future[Done] =
+    for {
+      entity <- CreateAnalyticsEntry(entry).toEntity
+      credentials <- credentials
+      response <- offer(
+        request = HttpRequest(
+          method = HttpMethods.POST,
+          uri = s"$apiUrl/v1/analytics",
+          entity = entity
+        ).addCredentials(credentials = credentials)
+      ).transformClientFailures()
+      _ <- response.to[CreatedAnalyticsEntry]
+    } yield {
+      Done
     }
 
   override def commands(lastSequenceId: Option[Long]): Future[Seq[Command]] = {

@@ -10,6 +10,7 @@ import org.apache.pekko.util.ByteString
 import stasis.client.model.DatasetMetadata
 import stasis.core.commands.proto.Command
 import stasis.core.discovery.ServiceApiClient
+import stasis.layers.telemetry.analytics.AnalyticsClient
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -24,7 +25,7 @@ import stasis.shared.model.devices.Device
 import stasis.shared.model.schedules.Schedule
 import stasis.shared.model.users.User
 
-trait ServerApiEndpointClient extends ServiceApiClient {
+trait ServerApiEndpointClient extends ServiceApiClient with AnalyticsClient {
   def self: Device.Id
   def server: String
 

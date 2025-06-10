@@ -1,6 +1,7 @@
 package stasis.test.specs.unit.client.service.components
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -10,6 +11,7 @@ import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -22,6 +24,8 @@ import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
 import stasis.core
 import stasis.layers
+import stasis.layers.telemetry.analytics.AnalyticsCollector
+import stasis.layers.telemetry.analytics.DefaultAnalyticsCollector
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
@@ -43,7 +47,39 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
     }
   }
 
-  "A Base component telemetry" should "support providing metrics (no-op)" in {
+  "A Base component telemetry" should "support providing an analytics collector (disabled)" in {
+    implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+      guardianBehavior = Behaviors.ignore,
+      name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+    )
+
+    implicit val timeout: Timeout = 3.seconds
+
+    val collector = Base.Telemetry.loadAnalyticsCollector(
+      analyticsConfig = typedSystem.settings.config.getConfig("stasis.test.client.service.telemetry.analytics-disabled"),
+      directory = createApplicationDirectory(init = _ => ())
+    )
+
+    collector should be(a[AnalyticsCollector.NoOp.type])
+  }
+
+  it should "support providing an analytics collector (enabled)" in {
+    implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
+      guardianBehavior = Behaviors.ignore,
+      name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"
+    )
+
+    implicit val timeout: Timeout = 3.seconds
+
+    val collector = Base.Telemetry.loadAnalyticsCollector(
+      analyticsConfig = typedSystem.settings.config.getConfig("stasis.test.client.service.telemetry.analytics-enabled"),
+      directory = createApplicationDirectory(init = _ => ())
+    )
+
+    collector should be(a[DefaultAnalyticsCollector])
+  }
+
+  it should "support providing metrics (no-op)" in {
     implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
       guardianBehavior = Behaviors.ignore,
       name = s"BaseSpec_${java.util.UUID.randomUUID().toString}"

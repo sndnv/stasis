@@ -20,6 +20,7 @@ import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
 import stasis.layers.api.MessageResponse
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -225,6 +226,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

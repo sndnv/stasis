@@ -109,6 +109,7 @@ class DefaultSearchSpec extends AsyncUnitSpec {
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPushed) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+        mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
         mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       }
   }

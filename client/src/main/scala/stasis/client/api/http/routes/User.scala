@@ -23,6 +23,8 @@ class User()(implicit context: Context) extends ApiRoutes {
         get {
           onSuccess(context.api.user()) { user =>
             log.debug("API successfully retrieved user [{}]", user.id)
+            context.analytics.recordEvent(name = "get_user")
+
             consumeEntity & complete(user)
           }
         }
@@ -51,10 +53,14 @@ class User()(implicit context: Context) extends ApiRoutes {
                 }
 
                 onSuccess(result) { _ =>
+                  context.analytics.recordEvent(name = "update_user_password", "result" -> "success")
+
                   complete(StatusCodes.OK)
                 }
               } else {
                 log.warn("API failed to update password; invalid current password provided")
+                context.analytics.recordEvent(name = "update_user_password", "result" -> "failure")
+
                 complete(StatusCodes.Conflict)
               }
             }
@@ -75,10 +81,14 @@ class User()(implicit context: Context) extends ApiRoutes {
                 }
 
                 onSuccess(result) { _ =>
+                  context.analytics.recordEvent(name = "update_user_salt", "result" -> "success")
+
                   complete(StatusCodes.OK)
                 }
               } else {
                 log.warn("API failed to update salt; invalid current password provided")
+                context.analytics.recordEvent(name = "update_user_salt", "result" -> "failure")
+
                 complete(StatusCodes.Conflict)
               }
             }

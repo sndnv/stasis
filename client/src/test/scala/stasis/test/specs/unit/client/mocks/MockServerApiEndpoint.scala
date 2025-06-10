@@ -28,13 +28,16 @@ import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.layers.persistence.memory.MemoryStore
 import stasis.layers.security.tls.EndpointContext
 import stasis.layers.telemetry.TelemetryContext
+import stasis.shared.api.requests.CreateAnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.UpdateDatasetDefinition
+import stasis.shared.api.responses.CreatedAnalyticsEntry
 import stasis.shared.api.responses.CreatedDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetEntry
 import stasis.shared.api.responses.Ping
 import stasis.shared.api.responses.UpdatedUserSalt
+import stasis.shared.model.analytics.StoredAnalyticsEntry
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -71,6 +74,11 @@ class MockServerApiEndpoint(
   private val keyStore: MemoryStore[Device.Id, DeviceKey] =
     MemoryStore[Device.Id, DeviceKey](
       s"mock-server-api-device-key-store-${java.util.UUID.randomUUID()}"
+    )
+
+  private val analyticsStore: MemoryStore[StoredAnalyticsEntry.Id, StoredAnalyticsEntry] =
+    MemoryStore[StoredAnalyticsEntry.Id, StoredAnalyticsEntry](
+      s"mock-server-api-analytics-store-${java.util.UUID.randomUUID()}"
     )
 
   private val definitions: Route =
@@ -375,6 +383,29 @@ class MockServerApiEndpoint(
       complete(ping)
     }
 
+  private val analytics: Route =
+    pathEndOrSingleSlash {
+      post {
+        entity(as[CreateAnalyticsEntry]) { request =>
+          val entry = request.toStoredAnalyticsEntry
+          onComplete(analyticsStore.put(entry.id, entry)) {
+            case Success(_) =>
+              log.infoN("Successfully created analytics entry [{}]", entry.id)
+              complete(CreatedAnalyticsEntry(entry.id))
+
+            case Failure(e) =>
+              log.errorN(
+                "Failed to create analytics entry [{}]: [{} - {}]",
+                entry.id,
+                e.getClass.getSimpleName,
+                e.getMessage
+              )
+              complete(StatusCodes.InternalServerError)
+          }
+        }
+      }
+    }
+
   private val discovery: Route =
     path("provide") {
       post {
@@ -400,6 +431,7 @@ class MockServerApiEndpoint(
             pathPrefix("devices") { devices },
             pathPrefix("schedules") { schedules },
             pathPrefix("service") { service },
+            pathPrefix("analytics") { analytics },
             pathPrefix("discovery") { discovery }
           )
 

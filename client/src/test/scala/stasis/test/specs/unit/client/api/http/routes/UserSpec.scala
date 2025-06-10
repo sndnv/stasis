@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.User
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.api.requests.UpdateUserPasswordOwn
 import stasis.shared.api.requests.UpdateUserSaltOwn
 import stasis.shared.model
@@ -57,6 +58,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -106,6 +108,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -158,6 +161,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -209,6 +213,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -261,6 +266,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyPulled) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DeviceKeyExists) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Ping) should be(0)
+      mockApiClient.statistics(MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
     }
   }
@@ -286,6 +292,7 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

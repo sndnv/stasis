@@ -20,6 +20,7 @@ import stasis.core
 import stasis.layers
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 
 trait Base extends FutureOps {
   implicit def system: ActorSystem[Nothing]
@@ -68,7 +69,8 @@ object Base {
               layers.persistence.Metrics.noop(),
               core.persistence.Metrics.noop(),
               ops.Metrics.noop()
-            ).flatten
+            ).flatten,
+            analyticsCollector = AnalyticsCollector.NoOp
           )
 
           override implicit val timeout: Timeout =

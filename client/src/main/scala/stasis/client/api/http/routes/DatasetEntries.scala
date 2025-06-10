@@ -30,6 +30,8 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
 
             onSuccess(result) { entries =>
               log.debugN("API successfully retrieved [{}] entries for all definitions", entries.size)
+              context.analytics.recordEvent(name = "get_dataset_entries", "type" -> "all")
+
               consumeEntity & complete(entries)
             }
           }
@@ -41,6 +43,8 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
             get {
               onSuccess(context.api.datasetEntries(definition)) { entries =>
                 log.debugN("API successfully retrieved [{}] entries", entries.size)
+                context.analytics.recordEvent(name = "get_dataset_entries", "type" -> "for-definition")
+
                 consumeEntity & complete(entries)
               }
             }
@@ -55,6 +59,8 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
                       entry.id,
                       definition
                     )
+                    context.analytics.recordEvent(name = "get_dataset_entry", "type" -> "latest", "result" -> "existing")
+
                     consumeEntity & complete(entry)
 
                   case None =>
@@ -62,6 +68,8 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
                       "API could not retrieve latest entry for definition [{}]; no entry found",
                       definition
                     )
+                    context.analytics.recordEvent(name = "get_dataset_entry", "type" -> "latest", "result" -> "missing")
+
                     consumeEntity & complete(StatusCodes.NotFound)
                 }
               }
@@ -73,6 +81,7 @@ class DatasetEntries()(implicit context: Context) extends ApiRoutes {
         delete {
           onSuccess(context.api.deleteDatasetEntry(entryId)) { _ =>
             log.debugN("API successfully removed entry [{}]", entryId)
+
             consumeEntity & complete(StatusCodes.OK)
           }
         }

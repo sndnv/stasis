@@ -14,6 +14,7 @@ import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.CommandSource
 import stasis.core.commands.proto.LogoutUser
+import stasis.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -56,6 +57,7 @@ class MockServerApiEndpointClient(
     Statistic.DeviceKeyPulled -> new AtomicInteger(0),
     Statistic.DeviceKeyExists -> new AtomicInteger(0),
     Statistic.Ping -> new AtomicInteger(0),
+    Statistic.AnalyticsEntriesSent -> new AtomicInteger(0),
     Statistic.Commands -> new AtomicInteger(0)
   )
 
@@ -194,6 +196,11 @@ class MockServerApiEndpointClient(
     Future.successful(Ping())
   }
 
+  override def sendAnalyticsEntry(entry: AnalyticsEntry): Future[Done] = {
+    stats(Statistic.AnalyticsEntriesSent).getAndIncrement()
+    Future.successful(Done)
+  }
+
   override def commands(lastSequenceId: Option[Long]): Future[Seq[Command]] = {
     stats(Statistic.Commands).getAndIncrement()
     val commands = Seq(
@@ -253,6 +260,7 @@ object MockServerApiEndpointClient {
     case object DeviceKeyPulled extends Statistic
     case object DeviceKeyExists extends Statistic
     case object Ping extends Statistic
+    case object AnalyticsEntriesSent extends Statistic
     case object Commands extends Statistic
   }
 }

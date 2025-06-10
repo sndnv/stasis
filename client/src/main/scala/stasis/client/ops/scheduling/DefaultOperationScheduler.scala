@@ -24,6 +24,8 @@ import stasis.client.api.clients.Clients
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.client.service.ApplicationConfiguration
+import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 
 class DefaultOperationScheduler private (
   schedulerRef: ActorRef[DefaultOperationScheduler.Message]
@@ -54,10 +56,11 @@ object DefaultOperationScheduler {
     config: Config,
     clients: Clients,
     executor: OperationExecutor
-  )(implicit system: ActorSystem[Nothing], timeout: Timeout): DefaultOperationScheduler = {
+  )(implicit system: ActorSystem[Nothing], timeout: Timeout, telemetry: TelemetryContext): DefaultOperationScheduler = {
     implicit val schedulerConfig: Config = config
     implicit val implicitClients: Clients = clients
     implicit val operationExecutor: OperationExecutor = executor
+    implicit val analyticsCollector: AnalyticsCollector = telemetry.analytics
 
     val behaviour = Behaviors.withTimers[Message] { timers =>
       implicit val pekkoTimers: TimerScheduler[Message] = timers
@@ -94,7 +97,8 @@ object DefaultOperationScheduler {
     timers: TimerScheduler[DefaultOperationScheduler.Message],
     config: Config,
     clients: Clients,
-    executor: OperationExecutor
+    executor: OperationExecutor,
+    analytics: AnalyticsCollector
   ): Behavior[Message] =
     Behaviors.receive { case (ctx, message) =>
       message match {
@@ -125,6 +129,8 @@ object DefaultOperationScheduler {
                     ActiveSchedule(assignment = assignment, schedule = Right(schedule))
                   }
                   .recover { case NonFatal(e) =>
+                    analytics.recordFailure(e)
+
                     val operation = assignment.getClass.getSimpleName
                     val schedule = assignment.schedule.toString
                     val message =
@@ -186,6 +192,7 @@ object DefaultOperationScheduler {
             assignment.getClass.getSimpleName,
             assignment.schedule
           )
+          analytics.recordEvent(name = "execute_schedule", "result" -> "skipped")
           Behaviors.same
 
         case ExecuteSchedule(assignment) =>
@@ -199,6 +206,8 @@ object DefaultOperationScheduler {
             assignment.getClass.getSimpleName,
             assignment.schedule
           )
+
+          analytics.recordEvent(name = "execute_schedule", "result" -> "started")
 
           val result = assignment match {
             case OperationScheduleAssignment.Backup(_, definition, entities) if entities.nonEmpty =>
@@ -228,6 +237,8 @@ object DefaultOperationScheduler {
               self ! ScheduleExecuted(assignment)
 
             case Failure(e) =>
+              analytics.recordFailure(e)
+
               log.errorN(
                 "[{}] operation with schedule [{}] failed: [{} - {}]",
                 assignment.getClass.getSimpleName,

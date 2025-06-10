@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Service
+import stasis.layers.telemetry.ApplicationInformation
+import stasis.layers.telemetry.analytics.AnalyticsEntry
+import stasis.layers.telemetry.analytics.MockAnalyticsCollector
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -31,6 +34,21 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     Get("/ping") ~> routes ~> check {
       status should be(StatusCodes.OK)
       noException should be thrownBy responseAs[Ping]
+    }
+  }
+
+  they should "provide analytics state" in withRetry {
+    val routes = createRoutes()
+
+    Get("/analytics") ~> routes ~> check {
+      status should be(StatusCodes.OK)
+      val state = responseAs[Service.AnalyticsState]
+
+      state.entry.runtime should be(AnalyticsEntry.RuntimeInformation(app = ApplicationInformation.none))
+      state.entry.events should be(empty)
+      state.entry.failures should be(empty)
+      state.lastCached should not be empty
+      state.lastTransmitted should not be empty
     }
   }
 
@@ -63,6 +81,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
+      analytics = new MockAnalyticsCollector,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

@@ -29,6 +29,9 @@ import stasis.core
 import stasis.layers
 import stasis.layers.telemetry.DefaultTelemetryContext
 import stasis.layers.telemetry.TelemetryContext
+import stasis.layers.telemetry.analytics.AnalyticsCollector
+import stasis.layers.telemetry.analytics.DefaultAnalyticsCollector
+import stasis.layers.telemetry.analytics.DefaultAnalyticsPersistence
 import stasis.layers.telemetry.metrics.MetricsExporter
 import stasis.layers.telemetry.metrics.MetricsProvider
 
@@ -83,12 +86,6 @@ object Base {
           override val rawConfig: typesafe.Config =
             configOverride.withFallback(system.settings.config).getConfig("stasis.client").resolve()
 
-          override implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
-            metricsProviders = Telemetry.loadMetricsProviders(
-              metricsConfig = rawConfig.getConfig("service.telemetry.metrics")
-            )(typedSystem)
-          )
-
           override implicit val timeout: Timeout =
             rawConfig.getDuration("service.internal-query-timeout").toMillis.millis
 
@@ -114,6 +111,16 @@ object Base {
               suffix = rawConfig.getString("staging.files.suffix")
             )
 
+          override implicit val telemetry: TelemetryContext = DefaultTelemetryContext(
+            metricsProviders = Telemetry.loadMetricsProviders(
+              metricsConfig = rawConfig.getConfig("service.telemetry.metrics")
+            )(typedSystem),
+            analyticsCollector = Telemetry.loadAnalyticsCollector(
+              analyticsConfig = rawConfig.getConfig("service.telemetry.analytics"),
+              directory = directory
+            )(typedSystem, timeout)
+          )
+
           override val terminateService: () => Unit = terminate
         }
       }
@@ -121,6 +128,30 @@ object Base {
 
   object Telemetry {
     final val Instrumentation: String = "stasis_client"
+
+    def loadAnalyticsCollector(
+      analyticsConfig: typesafe.Config,
+      directory: ApplicationDirectory
+    )(implicit system: ActorSystem[Nothing], timeout: Timeout): AnalyticsCollector =
+      if (analyticsConfig.getBoolean("enabled")) {
+        DefaultAnalyticsCollector(
+          name = "analytics-collector",
+          config = DefaultAnalyticsCollector.Config(
+            persistenceInterval = analyticsConfig.getDuration("collector.persistence-interval").toMillis.millis,
+            transmissionInterval = analyticsConfig.getDuration("collector.transmission-interval").toMillis.millis
+          ),
+          persistence = DefaultAnalyticsPersistence(
+            config = DefaultAnalyticsPersistence.Config(
+              localCache = directory.appDirectory.resolve(Files.AnalyticsCache),
+              keepEvents = analyticsConfig.getBoolean("persistence.keep-events"),
+              keepFailures = analyticsConfig.getBoolean("persistence.keep-failures")
+            )
+          ),
+          app = stasis.client.BuildInfo
+        )
+      } else {
+        AnalyticsCollector.NoOp
+      }
 
     def loadMetricsProviders(
       metricsConfig: typesafe.Config
