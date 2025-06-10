@@ -103,3 +103,8 @@ class JsonWriterSpec(unittest.TestCase):
         self.assertTrue(
             JsonWriter().render_user(user=mock_data.USER)
         )
+
+    def test_should_render_analytics_state(self):
+        self.assertTrue(
+            JsonWriter().render_analytics_state(state=mock_data.ANALYTICS)
+        )

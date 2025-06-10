@@ -126,3 +126,6 @@ class InactiveClientApiSpec(unittest.TestCase):
 
         with self.assertRaises(Abort):
             api.schedules_configured_refresh()
+
+        with self.assertRaises(Abort):
+            api.analytics_state()

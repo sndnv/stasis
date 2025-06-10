@@ -42,6 +42,7 @@ class MockClientApi(ClientApi):
             'schedules_public': 0,
             'schedules_configured': 0,
             'schedules_configured_refresh': 0,
+            'analytics_state': 0,
         }
 
     def is_active(self):
@@ -183,3 +184,7 @@ class MockClientApi(ClientApi):
     def schedules_configured_refresh(self):
         self.stats['schedules_configured_refresh'] += 1
         return {'successful': True}
+
+    def analytics_state(self):
+        self.stats['analytics_state'] += 1
+        return mock_data.ANALYTICS

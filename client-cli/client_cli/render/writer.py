@@ -168,3 +168,12 @@ class Writer(ABC):
         :param user: user to render
         :return: render result, as a string
         """
+
+    @abstractmethod
+    def render_analytics_state(self, state) -> str:
+        """
+        Renders the provided analytics state.
+
+        :param state: analytics state to render
+        :return: render result, as a string
+        """

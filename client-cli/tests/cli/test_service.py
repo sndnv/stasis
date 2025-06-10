@@ -471,6 +471,17 @@ class ServiceSpec(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIn('Aborted!', result.output)
 
+    def test_should_show_current_analytics_state(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['status', 'analytics'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['analytics_state'], 1)
 
 class MockProcess:
     def __init__(self):

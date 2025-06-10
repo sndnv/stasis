@@ -1,6 +1,7 @@
 """Table-based :class:`Writer`."""
 
 from client_cli.render.default import (
+    analytics,
     backup_rules,
     dataset_definitions,
     dataset_entries,
@@ -69,3 +70,6 @@ class DefaultWriter(Writer):
 
     def render_user(self, user) -> str:
         return users.render(user)
+
+    def render_analytics_state(self, state) -> str:
+        return analytics.render(state)

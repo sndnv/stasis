@@ -61,3 +61,6 @@ class JsonWriter(Writer):
 
     def render_user(self, user) -> str:
         return json.dumps(user, indent=4)
+
+    def render_analytics_state(self, state) -> str:
+        return json.dumps(state, indent=4)
