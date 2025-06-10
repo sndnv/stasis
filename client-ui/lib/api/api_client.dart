@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:stasis_client_ui/model/analytics/analytics_state.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
@@ -230,6 +231,8 @@ abstract class ClientApi {
   Future<List<ActiveSchedule>> getConfiguredSchedules();
 
   Future<void> refreshConfiguredSchedules();
+
+  Future<AnalyticsState> getAnalyticsState();
 }
 
 class AuthenticationFailure implements Exception {

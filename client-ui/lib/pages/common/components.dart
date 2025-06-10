@@ -114,26 +114,27 @@ void confirmationDialog(
   Widget? content,
 }) {
   showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: content,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                onConfirm();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      });
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: content,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onConfirm();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 void showFileContentDialog(
@@ -143,53 +144,73 @@ void showFileContentDialog(
   required Widget content,
 }) {
   showDialog(
-      context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
+    context: context,
+    builder: (context) {
+      final theme = Theme.of(context);
 
-        return SimpleDialog(
-          title: SelectionArea(
+      return SimpleDialog(
+        title: SelectionArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Tooltip(
+                message: 'Config file name',
+                child: Text(name),
+              ),
+              Tooltip(
+                message: 'Config file parent directory',
+                child: Text(parentDirectory, style: theme.textTheme.bodySmall),
+              ),
+            ],
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Tooltip(
-                  message: 'Config file name',
-                  child: Text(name),
-                ),
-                Tooltip(
-                  message: 'Config file parent directory',
-                  child: Text(parentDirectory, style: theme.textTheme.bodySmall),
-                ),
-              ],
-            ),
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SelectionArea(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(color: theme.canvasColor),
-                          child: content,
-                        ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectionArea(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: theme.canvasColor),
+                        child: content,
                       ),
                     ),
                   ),
-                ],
-              ),
-            )
-          ],
-        );
-      });
+                ),
+              ],
+            ),
+          )
+        ],
+      );
+    },
+  );
+}
+
+Widget infoSection({
+  required Widget content,
+  required Color color,
+  EdgeInsetsGeometry? padding,
+}) {
+  return Padding(
+    padding: padding ?? const EdgeInsets.all(8.0),
+    child: Container(
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: color, width: 3.0)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8.0, top: 4.0, bottom: 4.0),
+        child: content,
+      ),
+    ),
+  );
 }
 
 Widget boxed(BuildContext context, {required Widget child}) {

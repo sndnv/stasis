@@ -5,6 +5,7 @@ import 'package:http/io_client.dart' as io_client;
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/endpoint_context.dart';
 import 'package:stasis_client_ui/config/config.dart';
+import 'package:stasis_client_ui/model/analytics/analytics_state.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
@@ -99,7 +100,8 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     required DateTime? until,
   }) async {
     final searchPath = '/datasets/metadata/search?query=$searchQuery';
-    final fullPath = until == null ? searchPath : '$searchPath&until=${until.toUtc().toIso8601String().split('.').first}Z';
+    final fullPath =
+        until == null ? searchPath : '$searchPath&until=${until.toUtc().toIso8601String().split('.').first}Z';
     return await getOne(from: fullPath, fromJson: DatasetMetadataSearchResult.fromJson);
   }
 
@@ -321,5 +323,11 @@ class DefaultClientApi extends ApiClient implements ClientApi {
   Future<void> refreshConfiguredSchedules() async {
     const path = '/schedules/configured/refresh';
     return await put(data: {}, to: path);
+  }
+
+  @override
+  Future<AnalyticsState> getAnalyticsState() async {
+    const path = '/service/analytics';
+    return await getOne(from: path, fromJson: AnalyticsState.fromJson);
   }
 }

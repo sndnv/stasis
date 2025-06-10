@@ -6,6 +6,8 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:stasis_client_ui/api/default_client_api.dart';
 import 'package:stasis_client_ui/config/config.dart';
+import 'package:stasis_client_ui/model/analytics/analytics_entry.dart';
+import 'package:stasis_client_ui/model/analytics/analytics_state.dart';
 import 'package:stasis_client_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_dataset_definition.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
@@ -252,11 +254,11 @@ void main() {
       final until = DateTime(2020, 2, 2, 2, 2, 2);
 
       when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=$searchQuery&until=2020-02-02T01:02:02Z'),
-          headers: authorization))
+              headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(result), 200));
 
       when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=$searchQuery&until=2020-02-02T02:02:02Z'),
-          headers: authorization))
+              headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(result), 200));
 
       expect(await client.searchDatasetMetadata(searchQuery: searchQuery, until: until), result);
@@ -1102,6 +1104,38 @@ void main() {
           .thenAnswer((_) async => http.Response('', 200));
 
       expect(() async => await client.refreshConfiguredSchedules(), returnsNormally);
+    });
+
+    test('get latest analytics state', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      final state = AnalyticsState(
+        entry: AnalyticsEntry(
+          runtime: RuntimeInformation(
+            id: 'test-id',
+            app: 'a;b;42',
+            jre: 'a;b',
+            os: 'a;b;c',
+          ),
+          events: [
+            Event(id: 0, event: 'test-event-1'),
+            Event(id: 0, event: 'test-event-2'),
+          ],
+          failures: [
+            Failure(timestamp: DateTime.now(), message: 'Test failure'),
+          ],
+          created: DateTime.now(),
+          updated: DateTime.now(),
+        ),
+        lastCached: DateTime.now(),
+        lastTransmitted: DateTime.now(),
+      );
+
+      when(underlying.get(Uri.parse('$server/service/analytics'), headers: authorization))
+          .thenAnswer((_) async => http.Response(jsonEncode(state), 200));
+
+      expect(await client.getAnalyticsState(), state);
     });
   });
 }
