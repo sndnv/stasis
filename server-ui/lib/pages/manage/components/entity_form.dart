@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:server_ui/model/datasets/dataset_definition.dart';
 import 'package:server_ui/model/devices/device.dart';
+import 'package:server_ui/model/users/permission.dart';
 import 'package:server_ui/model/users/user.dart';
 import 'package:server_ui/pages/manage/components/forms/boolean_field.dart';
 import 'package:server_ui/pages/manage/components/forms/date_time_field.dart';
-import 'package:server_ui/pages/manage/components/forms/duration_field.dart';
 import 'package:server_ui/pages/manage/components/forms/device_limits_field.dart';
+import 'package:server_ui/pages/manage/components/forms/duration_field.dart';
 import 'package:server_ui/pages/manage/components/forms/password_field.dart';
-import 'package:server_ui/pages/manage/components/forms/user_permissions_field.dart';
 import 'package:server_ui/pages/manage/components/forms/policy_field.dart';
 import 'package:server_ui/pages/manage/components/forms/retention_field.dart';
 import 'package:server_ui/pages/manage/components/forms/state_field.dart';
 import 'package:server_ui/pages/manage/components/forms/user_limits_field.dart';
+import 'package:server_ui/pages/manage/components/forms/user_permissions_field.dart';
 import 'package:server_ui/utils/pair.dart';
-import 'package:server_ui/model/users/permission.dart';
 
 class EntityForm extends StatefulWidget {
   const EntityForm({
@@ -65,8 +65,9 @@ class _EntityFormState extends State<EntityForm> {
       child: SizedBox(
         width: 480,
         child: Column(
-          children:
-              (widget.fields + [buttons]).map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)).toList(),
+          children: (widget.fields.map<Widget>((e) => SelectionArea(child: e)).toList() + [buttons])
+              .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e))
+              .toList(),
         ),
       ),
     );

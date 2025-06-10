@@ -5,6 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:server_ui/api/default_api_client.dart';
+import 'package:server_ui/model/analytics/analytics_entry_event.dart';
+import 'package:server_ui/model/analytics/analytics_entry_failure.dart';
+import 'package:server_ui/model/analytics/analytics_entry_runtime_information.dart';
+import 'package:server_ui/model/analytics/analytics_entry_summary.dart';
+import 'package:server_ui/model/analytics/stored_analytics_entry.dart';
 import 'package:server_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:server_ui/model/api/requests/create_device_own.dart';
 import 'package:server_ui/model/api/requests/create_device_privileged.dart';
@@ -887,7 +892,8 @@ void main() {
       final underlying = MockClient();
       final client = DefaultApiClient(server: server, underlying: underlying);
 
-      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+      const request =
+          CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
 
       when(underlying.post(Uri.parse('$server/v1/devices/commands'),
               headers: applicationJson, body: jsonEncode(request)))
@@ -988,7 +994,8 @@ void main() {
 
       const device = 'test-device';
 
-      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+      const request =
+          CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
 
       when(underlying.post(Uri.parse('$server/v1/devices/$device/commands'),
               headers: applicationJson, body: jsonEncode(request)))
@@ -1006,7 +1013,8 @@ void main() {
 
       const device = 'test-device';
 
-      const request = CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
+      const request =
+          CommandParameters(commandType: 'logout_user', logoutUser: LogoutUserCommand(reason: 'Test reason'));
 
       when(underlying.post(Uri.parse('$server/v1/devices/own/$device/commands'),
               headers: applicationJson, body: jsonEncode(request)))
@@ -1307,6 +1315,73 @@ void main() {
           .thenAnswer((_) async => http.Response('{"id":"test-id"}', 200));
 
       expect(await client.ping(), const Ping(id: 'test-id'));
+    });
+  });
+
+  group('A DefaultApiClient for analytics calls should', () {
+    test('retrieve all analytics entries', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      final entries = [
+        AnalyticsEntrySummary(
+          id: 'test-id-1',
+          runtime: AnalyticsEntryRuntimeInformation(id: 'test-id', app: 'test-app', jre: 'test-jre', os: 'test-os'),
+          events: 1,
+          failures: 2,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          received: DateTime.now(),
+        ),
+        AnalyticsEntrySummary(
+          id: 'test-id-2',
+          runtime: AnalyticsEntryRuntimeInformation(id: 'test-id', app: 'test-app', jre: 'test-jre', os: 'test-os'),
+          events: 3,
+          failures: 4,
+          created: DateTime.now(),
+          updated: DateTime.now(),
+          received: DateTime.now(),
+        ),
+      ];
+
+      final response = jsonEncode(entries);
+
+      when(underlying.get(Uri.parse('$server/v1/analytics'))).thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getAnalyticsEntries(), entries);
+    });
+
+    test('retrieve individual analytics entries', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      final entry = StoredAnalyticsEntry(
+        id: 'test-id-1',
+        runtime: AnalyticsEntryRuntimeInformation(id: 'test-id', app: 'test-app', jre: 'test-jre', os: 'test-os'),
+        events: [AnalyticsEntryEvent(id: 1, event: 'test-event-1'), AnalyticsEntryEvent(id: 2, event: 'test-event-2')],
+        failures: [AnalyticsEntryFailure(message: 'Test failure', timestamp: DateTime.now())],
+        created: DateTime.now(),
+        updated: DateTime.now(),
+        received: DateTime.now(),
+      );
+
+      final response = jsonEncode(entry);
+
+      when(underlying.get(Uri.parse('$server/v1/analytics/${entry.id}')))
+          .thenAnswer((_) async => http.Response(response, 200));
+
+      expect(await client.getAnalyticsEntry(entry: entry.id), entry);
+    });
+
+    test('delete analytics entries', () async {
+      final underlying = MockClient();
+      final client = DefaultApiClient(server: server, underlying: underlying);
+
+      const entry = 'test-id';
+
+      when(underlying.delete(Uri.parse('$server/v1/analytics/$entry'))).thenAnswer((_) async => http.Response('', 200));
+
+      expect(() async => await client.deleteAnalyticsEntry(entry: entry), returnsNormally);
     });
   });
 }

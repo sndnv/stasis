@@ -14,6 +14,7 @@ import 'package:server_ui/pages/authorize/authorization_callback.dart';
 import 'package:server_ui/pages/default/components.dart';
 import 'package:server_ui/pages/default/home.dart';
 import 'package:server_ui/pages/default/not_found.dart';
+import 'package:server_ui/pages/manage/analytics.dart';
 import 'package:server_ui/pages/manage/codes.dart';
 import 'package:server_ui/pages/manage/commands.dart';
 import 'package:server_ui/pages/manage/definitions.dart';
@@ -65,7 +66,10 @@ class PageRouter {
 
       final currentUser = await apiClient.getSelf();
 
-      final usePrivilegedApis = UsePrivilegedApis(prefs: await SharedPreferences.getInstance());
+      final usePrivilegedApis = UsePrivilegedApis(
+        prefs: await SharedPreferences.getInstance(),
+        currentUser: currentUser,
+      );
 
       return RouterContext(
         apiClient: apiClient,
@@ -172,6 +176,7 @@ class PageRouter {
             destination(PageRouterDestination.nodes),
             destination(PageRouterDestination.reservations),
             destination(PageRouterDestination.deviceCommands),
+            destination(PageRouterDestination.analytics),
           ]
         : [];
 
@@ -247,6 +252,7 @@ class PageRouter {
             PageRouterDestination.nodes,
             PageRouterDestination.reservations,
             PageRouterDestination.deviceCommands,
+            PageRouterDestination.analytics,
           ]
         : [];
 
@@ -399,6 +405,11 @@ class PageRouter {
     ),
   );
 
+  static final Handler _analyticsHandler = _pageHandler(
+    PageRouterDestination.analytics,
+    (_, routerContext) => Analytics(client: routerContext.apiClient),
+  );
+
   static final Handler _loginCallbackHandler = Handler(
     handlerFunc: (_, __) => AuthorizationCallback(config: config),
   );
@@ -418,6 +429,7 @@ class PageRouter {
     underlying.define(PageRouterDestination.nodes.route, handler: _nodesHandler);
     underlying.define(PageRouterDestination.reservations.route, handler: _reservationsHandler);
     underlying.define(PageRouterDestination.codes.route, handler: _codesHandler);
+    underlying.define(PageRouterDestination.analytics.route, handler: _analyticsHandler);
     underlying.define('login/callback', handler: _loginCallbackHandler);
     underlying.notFoundHandler = _notFoundHandler;
   }
@@ -452,12 +464,17 @@ class RedirectPending {
 }
 
 class UsePrivilegedApis {
-  UsePrivilegedApis({required this.prefs});
+  UsePrivilegedApis({required this.prefs, required this.currentUser});
 
   SharedPreferences prefs;
+  User currentUser;
+
+  bool _userHasPrivilegedPermissions() {
+    return currentUser.viewPrivilegedAllowed() || currentUser.viewServiceAllowed();
+  }
 
   bool enabled() {
-    return prefs.getBool(Keys._usePrivilegedApis) ?? false;
+    return _userHasPrivilegedPermissions() && (prefs.getBool(Keys._usePrivilegedApis) ?? false);
   }
 
   void set(bool value) {

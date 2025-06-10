@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:oauth2/oauth2.dart' as oauth2;
+import 'package:server_ui/model/analytics/analytics_entry_summary.dart';
+import 'package:server_ui/model/analytics/stored_analytics_entry.dart';
 import 'package:server_ui/model/api/requests/create_dataset_definition.dart';
 import 'package:server_ui/model/api/requests/create_device_own.dart';
 import 'package:server_ui/model/api/requests/create_device_privileged.dart';
@@ -152,6 +154,7 @@ abstract class DevicesApiClient {
   Future<void> deleteCommand({required int sequenceId});
 
   Future<void> truncateCommands({required DateTime olderThan});
+
   Future<List<Command>> getDeviceCommands({required bool privileged, required String forDevice});
 
   Future<void> createDeviceCommand({
@@ -205,6 +208,14 @@ abstract class DeviceBootstrapCodesApiClient {
 
 abstract class ServiceApiClient {
   Future<Ping> ping();
+}
+
+abstract class AnalyticsApiClient {
+  Future<List<AnalyticsEntrySummary>> getAnalyticsEntries();
+
+  Future<StoredAnalyticsEntry> getAnalyticsEntry({required String entry});
+
+  Future<void> deleteAnalyticsEntry({required String entry});
 }
 
 class AuthenticationFailure implements Exception {
