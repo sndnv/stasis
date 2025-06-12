@@ -7,7 +7,7 @@ import 'dart:io';
 ///   - a minimum number of features are supported, only for the purposes of this codebase
 ///   - durations, memory sizes and lists are NOT supported
 class Config {
-  Config({required config}) {
+  Config({required Map<String, dynamic> config}) {
     _raw = config;
   }
 

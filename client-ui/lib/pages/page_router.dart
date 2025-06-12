@@ -167,7 +167,7 @@ class PageRouter {
     );
   }
 
-  navigateTo(BuildContext context, {required PageRouterDestination destination}) {
+  void navigateTo(BuildContext context, {required PageRouterDestination destination}) {
     underlying.navigateTo(context, destination.route);
   }
 }
