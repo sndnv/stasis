@@ -2,19 +2,14 @@ package stasis.client_android.persistence.credentials
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import okio.ByteString
-import stasis.client_android.lib.api.clients.DefaultServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
-import stasis.client_android.lib.encryption.Aes
-import stasis.client_android.lib.encryption.secrets.UserPassword
 import stasis.client_android.lib.security.AccessTokenResponse
 import stasis.client_android.lib.security.CredentialsProvider
-import stasis.client_android.lib.security.HttpCredentials
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.foreach
@@ -24,7 +19,6 @@ import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.Converters.Companion.toAccessTokenResponse
 import stasis.client_android.persistence.Converters.Companion.toJson
 import stasis.client_android.persistence.config.ConfigRepository
-import stasis.client_android.persistence.config.ConfigRepository.Companion.getServerApiConfig
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.serialization.ByteStrings.decodeFromBase64
 import stasis.client_android.serialization.ByteStrings.encodeAsBase64
@@ -100,12 +94,12 @@ class CredentialsRepository(
                 provider.logout()
 
                 credentialsPreferences
-                    .edit()
-                    .remove(Keys.UserToken)
-                    .remove(Keys.DeviceToken)
-                    .remove(Keys.PlaintextDeviceSecret)
-                    .remove(Keys.DigestedUserPassword)
-                    .commit()
+                    .edit(commit = true) {
+                        remove(Keys.UserToken)
+                            .remove(Keys.DeviceToken)
+                            .remove(Keys.PlaintextDeviceSecret)
+                            .remove(Keys.DigestedUserPassword)
+                    }
 
                 f()
             }
@@ -265,7 +259,7 @@ class CredentialsRepository(
     }
 
     private fun SharedPreferences.putToken(key: String, token: AccessTokenResponse) =
-        this.edit().putString(key, token.toJson()).apply()
+        this.edit { putString(key, token.toJson()) }
 
 
     private fun SharedPreferences.getTokens(): Pair<AccessTokenResponse, AccessTokenResponse>? =
@@ -282,7 +276,7 @@ class CredentialsRepository(
         this.getString(Keys.DeviceToken, null)?.toAccessTokenResponse()
 
     private fun SharedPreferences.remove(key: String) =
-        this.edit().putString(key, null).apply()
+        this.edit { putString(key, null) }
 
     private fun AccessTokenResponse?.claims(): Try<AccessTokenResponse.Claims> =
         this?.claims ?: Failure(RuntimeException("No access token found"))
@@ -319,22 +313,23 @@ class CredentialsRepository(
                 contextFactory = contextFactory
             )
 
-        fun getEncryptedPreferences(context: Context): SharedPreferences =
-            EncryptedSharedPreferences.create(
+        fun getEncryptedPreferences(context: Context): SharedPreferences {
+            return androidx.security.crypto.EncryptedSharedPreferences.create(
                 context,
                 EncryptedPreferencesFileName,
-                MasterKey.Builder(context)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                androidx.security.crypto.MasterKey.Builder(context)
+                    .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
                     .build(),
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
+        }
 
         fun SharedPreferences.putPlaintextDeviceSecret(secret: ByteString) {
             this
-                .edit()
-                .putString(Keys.PlaintextDeviceSecret, secret.encodeAsBase64())
-                .commit()
+                .edit(commit = true) {
+                    putString(Keys.PlaintextDeviceSecret, secret.encodeAsBase64())
+                }
         }
 
         fun SharedPreferences.getPlaintextDeviceSecret(): ByteString? =
@@ -342,9 +337,9 @@ class CredentialsRepository(
 
         fun SharedPreferences.putDigestedUserPassword(password: String) {
             this
-                .edit()
-                .putString(Keys.DigestedUserPassword, password)
-                .commit()
+                .edit(commit = true) {
+                    putString(Keys.DigestedUserPassword, password)
+                }
         }
 
         fun SharedPreferences.getDigestedUserPassword(): String? =
