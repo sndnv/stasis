@@ -45,8 +45,9 @@ class _EntityFormState extends State<EntityForm> {
       child: SizedBox(
         width: 480,
         child: Column(
-          children:
-              (widget.fields + [buttons]).map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)).toList(),
+          children: (widget.fields.map<Widget>((e) => SelectionArea(child: e)).toList() + [buttons])
+              .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e))
+              .toList(),
         ),
       ),
     );
