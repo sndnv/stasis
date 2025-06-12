@@ -14,6 +14,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import stasis.client_android.BuildConfig
 import stasis.client_android.lib.ops.Operation
+import androidx.core.net.toUri
 
 object Permissions {
     fun Activity?.needsExtraPermissions(): Boolean =
@@ -29,7 +30,7 @@ object Permissions {
         }
 
         if (needsToBeExternalStorageManager()) {
-            val uri = Uri.parse("package:${BuildConfig.APPLICATION_ID}")
+            val uri = "package:${BuildConfig.APPLICATION_ID}".toUri()
             val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
             startActivity(intent)
         }
