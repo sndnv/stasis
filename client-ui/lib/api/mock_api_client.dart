@@ -326,6 +326,11 @@ class MockApiClient extends ApiClient implements ClientApi {
     return Future.value(state);
   }
 
+  @override
+  Future<void> sendAnalyticsState() {
+    return Future.value();
+  }
+
   static final defaultDefinition = DatasetDefinition(
     id: const Uuid().v4(),
     info: 'test-definition',

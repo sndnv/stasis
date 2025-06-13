@@ -148,6 +148,9 @@ class DefaultClientApi(ClientApi):
     def analytics_state(self):
         return self.get(url='/service/analytics')
 
+    def analytics_state_send(self):
+        return self.put(url='/service/analytics/send')
+
     def get(self, url, params=None):
         """
         Executes a `GET` request for the specified URL with the provided query parameters.

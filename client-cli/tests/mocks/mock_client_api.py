@@ -43,6 +43,7 @@ class MockClientApi(ClientApi):
             'schedules_configured': 0,
             'schedules_configured_refresh': 0,
             'analytics_state': 0,
+            'analytics_state_send': 0,
         }
 
     def is_active(self):
@@ -188,3 +189,7 @@ class MockClientApi(ClientApi):
     def analytics_state(self):
         self.stats['analytics_state'] += 1
         return mock_data.ANALYTICS
+
+    def analytics_state_send(self):
+        self.stats['analytics_state_send'] += 1
+        return {'successful': True}

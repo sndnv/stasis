@@ -122,6 +122,9 @@ class InactiveClientApi(ClientApi):
     def analytics_state(self):
         InactiveClientApi._abort()
 
+    def analytics_state_send(self):
+        InactiveClientApi._abort()
+
     @staticmethod
     def _abort():
         logging.error('Client API is required but is not available; ensure background service is running')

@@ -330,4 +330,10 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     const path = '/service/analytics';
     return await getOne(from: path, fromJson: AnalyticsState.fromJson);
   }
+
+  @override
+  Future<void> sendAnalyticsState() async {
+    const path = '/service/analytics/send';
+    return await put(data: {}, to: path);
+  }
 }

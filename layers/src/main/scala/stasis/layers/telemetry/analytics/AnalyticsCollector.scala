@@ -19,6 +19,8 @@ trait AnalyticsCollector {
 
   def state: Future[AnalyticsEntry]
 
+  def send(): Unit
+
   def persistence: Option[AnalyticsPersistence]
 }
 
@@ -27,6 +29,7 @@ object AnalyticsCollector {
     override def recordEvent(name: String, attributes: Map[String, String]): Unit = ()
     override def recordFailure(message: String): Unit = ()
     override def state: Future[AnalyticsEntry] = Future.successful(AnalyticsEntry.collected(app = ApplicationInformation.none))
+    override def send(): Unit = ()
     override def persistence: Option[AnalyticsPersistence] = None
   }
 }

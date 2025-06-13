@@ -16,8 +16,10 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Service
 import stasis.layers.telemetry.ApplicationInformation
+import stasis.layers.telemetry.analytics.AnalyticsCollector
 import stasis.layers.telemetry.analytics.AnalyticsEntry
 import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import stasis.layers.telemetry.analytics.MockAnalyticsPersistence
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -52,6 +54,30 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     }
   }
 
+  they should "support sending analytics state remotely" in withRetry {
+    val collector = new MockAnalyticsCollector
+
+    val persistence = collector.persistence match {
+      case Some(persistence: MockAnalyticsPersistence) =>
+        persistence
+
+      case other =>
+        fail(s"Unexpected analytics persistence object provided: [$other]")
+    }
+
+    val routes = createRoutes(analytics = collector)
+
+    persistence.transmitted should be(empty)
+
+    Put("/analytics/send") ~> routes ~> check {
+      status should be(StatusCodes.Accepted)
+
+      eventually {
+        persistence.transmitted should not be empty
+      }
+    }
+  }
+
   they should "support stopping the service" in withRetry {
     val terminationCounter = new AtomicInteger(0)
     val routes = createRoutes(terminate = () => { val _ = terminationCounter.incrementAndGet() })
@@ -66,7 +92,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(5.seconds, 250.milliseconds)
 
-  def createRoutes(terminate: () => Unit = () => ()): Route = {
+  def createRoutes(terminate: () => Unit = () => (), analytics: AnalyticsCollector = new MockAnalyticsCollector): Route = {
     implicit val context: Context = Context(
       api = MockServerApiEndpointClient(),
       executor = MockOperationExecutor(),
@@ -81,7 +107,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       ),
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
-      analytics = new MockAnalyticsCollector,
+      analytics = analytics,
       log = LoggerFactory.getLogger(this.getClass.getName)
     )
 

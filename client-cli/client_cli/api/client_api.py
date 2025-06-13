@@ -330,3 +330,11 @@ class ClientApi(ABC):
 
         :return: requested analytics state
         """
+
+    @abstractmethod
+    def analytics_state_send(self):
+        """
+        Sends the latest analytics state remotely.
+
+        :return: dict with result of action
+        """

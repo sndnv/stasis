@@ -866,6 +866,24 @@ class DefaultClientApiSpec(unittest.TestCase):
         )
 
     @patch('requests.request')
+    def test_should_send_analytics_state(self, mock_request):
+        client = DefaultClientApi(
+            api_url=self.url,
+            api_token=self.token,
+            context=DefaultHttpsContext(verify=False),
+            timeout=10
+        )
+        mock_request.return_value = MockResponse.success(mock_data.ANALYTICS)
+
+        self.assertEqual(client.analytics_state_send(), {'successful': True, 'operation': None})
+
+        self.assert_valid_request(
+            mock=mock_request,
+            expected_method='put',
+            expected_url='/service/analytics/send'
+        )
+
+    @patch('requests.request')
     def test_should_handle_request_failures(self, mock_request):
         client = DefaultClientApi(
             api_url=self.url,

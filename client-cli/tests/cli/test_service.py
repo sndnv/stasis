@@ -477,11 +477,23 @@ class ServiceSpec(unittest.TestCase):
         context.rendering = JsonWriter()
 
         runner = Runner(cli)
-        result = runner.invoke(args=['status', 'analytics'], obj=context)
+        result = runner.invoke(args=['analytics', 'show'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['analytics_state'], 1)
+
+    def test_should_send_current_analytics_state(self):
+        context = Context()
+        context.api = MockClientApi()
+        context.rendering = JsonWriter()
+
+        runner = Runner(cli)
+        result = runner.invoke(args=['analytics', 'send'], obj=context)
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(json.loads(result.output))
+        self.assertEqual(context.api.stats['analytics_state_send'], 1)
 
 class MockProcess:
     def __init__(self):

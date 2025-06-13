@@ -129,3 +129,6 @@ class InactiveClientApiSpec(unittest.TestCase):
 
         with self.assertRaises(Abort):
             api.analytics_state()
+
+        with self.assertRaises(Abort):
+            api.analytics_state_send()
