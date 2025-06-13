@@ -24,22 +24,34 @@ class Service()(implicit context: Context) extends ApiRoutes {
           consumeEntity & complete(response)
         }
       },
-      path("analytics") {
-        onSuccess(context.analytics.state) { entry =>
-          val result = Service.AnalyticsState(
-            entry = entry,
-            lastCached = context.analytics.persistence.map(_.lastCached),
-            lastTransmitted = context.analytics.persistence.map(_.lastTransmitted)
-          )
+      pathPrefix("analytics") {
+        concat(
+          pathEndOrSingleSlash {
+            get {
+              onSuccess(context.analytics.state) { entry =>
+                val result = Service.AnalyticsState(
+                  entry = entry,
+                  lastCached = context.analytics.persistence.map(_.lastCached),
+                  lastTransmitted = context.analytics.persistence.map(_.lastTransmitted)
+                )
 
-          log.debug(
-            "Received analytics state request; responding with [{}] event(s) and [{}] failure(s)",
-            entry.events,
-            entry.failures
-          )
+                log.debug(
+                  "Received analytics state request; responding with [{}] event(s) and [{}] failure(s)",
+                  entry.events,
+                  entry.failures
+                )
 
-          consumeEntity & complete(result)
-        }
+                consumeEntity & complete(result)
+              }
+            }
+          },
+          path("send") {
+            put {
+              context.analytics.send()
+              consumeEntity & complete(StatusCodes.Accepted)
+            }
+          }
+        )
       },
       path("stop") {
         put {

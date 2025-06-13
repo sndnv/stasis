@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_json_view/flutter_json_view.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/config/app_files.dart';
@@ -10,6 +11,7 @@ import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/update_user_credentials_form.dart';
+import 'package:stasis_client_ui/utils/debouncer.dart';
 
 class Settings extends StatelessWidget {
   const Settings({
@@ -237,6 +239,8 @@ class Settings extends StatelessWidget {
 
         final analyticsEnabled = data.entry.runtime.app != 'none;none;0';
 
+        final encodedData = json.encode(data);
+
         final info = Column(
           children: [
             infoSection(
@@ -262,27 +266,70 @@ class Settings extends StatelessWidget {
           ],
         );
 
+        final sendDebouncer = Debouncer(timeout: Duration(milliseconds: 500));
+
+        final sendButton = IconButton(
+          splashRadius: 16.0,
+          iconSize: 16.0,
+          tooltip: 'Send analytics data to the server',
+          onPressed: () {
+            sendDebouncer.run(() {
+              final messenger = ScaffoldMessenger.of(context);
+              client.sendAnalyticsState().then((_) {
+                messenger.showSnackBar(const SnackBar(content: Text('Request sent...')));
+              }).onError((e, stackTrace) {
+                messenger.showSnackBar(SnackBar(content: Text('Failed to send analytics data: [$e]')));
+              });
+            });
+          },
+          icon: const Icon(Icons.upload),
+        );
+
+        final copyButton = IconButton(
+          splashRadius: 16.0,
+          iconSize: 16.0,
+          tooltip: 'Copy analytics data',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: encodedData));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Analytics data copied to clipboard...')));
+          },
+          icon: const Icon(Icons.copy),
+        );
+
         return Card(
           child: Column(
             children: [
               ExpansionTile(
                 enabled: analyticsEnabled,
-                title: Column(
+                title: Row(
                   mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.analytics),
-                        Padding(padding: EdgeInsets.only(right: 4.0)),
-                        Text('Analytics'),
+                        Row(
+                          children: [
+                            Icon(Icons.analytics),
+                            Padding(padding: EdgeInsets.only(right: 4.0)),
+                            Text('Analytics')
+                          ],
+                        ),
+                        Text(
+                          analyticsEnabled ? 'Show collected analytics data' : 'Analytics collection is disabled',
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ],
                     ),
-                    Text(
-                      analyticsEnabled ? 'Show collected analytics data' : 'Analytics collection is disabled',
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    Row(
+                      children: [
+                        copyButton,
+                        sendButton,
+                      ],
+                    )
                   ],
                 ),
                 children: analyticsEnabled
@@ -290,7 +337,7 @@ class Settings extends StatelessWidget {
                         info,
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 8.0),
-                          child: _renderAnalyticsState(context, data),
+                          child: _renderAnalyticsState(context, encodedData),
                         ),
                       ]
                     : [],
@@ -302,12 +349,12 @@ class Settings extends StatelessWidget {
     );
   }
 
-  Widget _renderAnalyticsState(BuildContext context, AnalyticsState state) {
+  Widget _renderAnalyticsState(BuildContext context, String data) {
     final theme = Theme.of(context);
     final mainStyle = theme.textTheme.bodyMedium!;
 
     return JsonView.string(
-      json.encode(state),
+      data,
       theme: JsonViewTheme(
         backgroundColor: theme.canvasColor,
         defaultTextStyle: mainStyle,

@@ -233,6 +233,8 @@ abstract class ClientApi {
   Future<void> refreshConfiguredSchedules();
 
   Future<AnalyticsState> getAnalyticsState();
+
+  Future<void> sendAnalyticsState();
 }
 
 class AuthenticationFailure implements Exception {

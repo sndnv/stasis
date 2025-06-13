@@ -33,6 +33,9 @@ class DefaultAnalyticsCollector private (
   override def state: Future[AnalyticsEntry] =
     storeRef ? ((ref: ActorRef[AnalyticsEntry]) => DefaultAnalyticsCollector.GetState(ref))
 
+  override def send(): Unit =
+    storeRef ! DefaultAnalyticsCollector.Send
+
   def stop(): Unit =
     storeRef ! DefaultAnalyticsCollector.Stop
 }
@@ -113,19 +116,21 @@ object DefaultAnalyticsCollector {
       .receivePartial[Message] {
         case (_, RecordEvent(name, attributes)) =>
           if (!scheduler.isTimerActive(PersistStateTimerKey)) {
-            scheduler.startSingleTimer(PersistStateTimerKey, PersistState, config.persistenceInterval)
+            scheduler.startSingleTimer(PersistStateTimerKey, PersistState(forceTransmit = false), config.persistenceInterval)
           }
 
           collecting(entry = entry.withEvent(name = name, attributes = attributes))
 
         case (ctx, RecordFailure(message)) =>
           scheduler.cancel(PersistStateTimerKey)
-          ctx.self ! PersistState
+          ctx.self ! PersistState(forceTransmit = false)
 
           collecting(entry = entry.withFailure(message = message))
 
-        case (ctx, PersistState) =>
-          if (persistence.lastTransmitted.plusMillis(config.transmissionInterval.toMillis).isBefore(Instant.now())) {
+        case (ctx, PersistState(forceTransmit)) =>
+          if (
+            forceTransmit || persistence.lastTransmitted.plusMillis(config.transmissionInterval.toMillis).isBefore(Instant.now())
+          ) {
             ctx.pipeToSelf(persistence.transmit(entry)) {
               case Success(_) =>
                 ctx.log.debug(
@@ -157,9 +162,12 @@ object DefaultAnalyticsCollector {
           replyTo.tell(entry)
           Behaviors.same
 
+        case (ctx, Send) =>
+          ctx.self ! PersistState(forceTransmit = true)
+          Behaviors.same
+
         case (_, Stop) =>
           Behaviors.stopped
-
       }
       .receiveSignal { case (_, PostStop) =>
         scheduler.cancel(PersistStateTimerKey)
@@ -196,7 +204,8 @@ object DefaultAnalyticsCollector {
   private final case class RecordEvent(name: String, attributes: Map[String, String]) extends Message
   private final case class RecordFailure(message: String) extends Message
   private final case class GetState(replyTo: ActorRef[AnalyticsEntry]) extends Message
-  private final case object PersistState extends Message
+  private final case object Send extends Message
+  private final case class PersistState(forceTransmit: Boolean) extends Message
   private final case object LoadState extends Message
   private final case class StateLoaded(entry: AnalyticsEntry.Collected) extends Message
   private final case class StateTransmitted(successful: Boolean) extends Message

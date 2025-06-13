@@ -16,7 +16,7 @@ import stasis.layers.UnitSpec
 import stasis.layers.telemetry.ApplicationInformation
 
 class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
-  "A DefaultAnalyticsCollector" should "record events" in {
+  "A DefaultAnalyticsCollector" should "record events" in withRetry {
     val persistence = MockAnalyticsPersistence()
 
     val collector = DefaultAnalyticsCollector(
@@ -54,7 +54,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "record failures" in {
+  it should "record failures" in withRetry {
     val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
       override def lastTransmitted: Instant = Instant.now() // prevents transmission
     }
@@ -83,7 +83,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "support loading cache state" in {
+  it should "support loading cache state" in withRetry {
     val persistence = MockAnalyticsPersistence(
       existing = AnalyticsEntry
         .collected(app = ApplicationInformation.none)
@@ -120,7 +120,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "handle failures when loading cached state" in {
+  it should "handle failures when loading cached state" in withRetry {
     val persistence = MockAnalyticsPersistence(existing = new RuntimeException("Test failure"))
 
     val collector = DefaultAnalyticsCollector(
@@ -139,7 +139,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "support caching state locally" in {
+  it should "support caching state locally" in withRetry {
     val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
       override def lastTransmitted: Instant = Instant.now() // prevents transmission
     }
@@ -201,7 +201,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "support transmitting state remotely" in {
+  it should "support transmitting state remotely" in withRetry {
     val persistence = MockAnalyticsPersistence()
 
     val collector = DefaultAnalyticsCollector(
@@ -240,7 +240,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "cache messages while transmitting" in {
+  it should "cache messages while transmitting" in withRetry {
     val transmissionStarted: AtomicBoolean = new AtomicBoolean(false)
 
     val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
@@ -298,7 +298,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "handle transmission failures" in {
+  it should "handle transmission failures" in withRetry {
     val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
       override def transmit(entry: AnalyticsEntry): Future[Done] =
         Future.failed(new RuntimeException("Test failure"))
@@ -341,7 +341,7 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     }
   }
 
-  it should "cache state during termination" in {
+  it should "cache state during termination" in withRetry {
     val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
       override def lastTransmitted: Instant = Instant.now() // prevents transmission
     }
@@ -363,6 +363,61 @@ class DefaultAnalyticsCollectorSpec extends UnitSpec with Eventually {
     eventually {
       persistence.cached.size should be(1)
       persistence.transmitted should be(empty)
+    }
+  }
+
+  it should "support transmitting state remotely on demand" in withRetry {
+    val persistence = new MockAnalyticsPersistence(existing = Success(None)) {
+      override def lastTransmitted: Instant = Instant.now() // prevents transmission
+    }
+
+    val collector = DefaultAnalyticsCollector(
+      name = "test-analytics-collector",
+      config = config.copy(persistenceInterval = 100.millis),
+      persistence = persistence,
+      app = ApplicationInformation.none
+    )
+
+    collector.recordFailure(message = "Test failure")
+
+    val state = collector.state.await
+    state.events should be(empty)
+    state.failures.map(_.message) should be(Seq("Test failure"))
+
+    persistence.cached.toList match {
+      case failureCached :: Nil =>
+        failureCached.events should be(empty)
+        failureCached.failures.map(_.message) should be(Seq("Test failure"))
+
+      case other =>
+        fail(s"Unexpected result received: [$other]")
+    }
+
+    persistence.transmitted should be(empty)
+
+    collector.send()
+
+    eventually {
+      persistence.cached.toList match {
+        case failureCached :: emptyCached :: Nil =>
+          failureCached.events should be(empty)
+          failureCached.failures.map(_.message) should be(Seq("Test failure"))
+
+          emptyCached.events should be(empty)
+          emptyCached.failures should be(empty)
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
+
+      persistence.transmitted.toList match {
+        case sent :: Nil =>
+          sent.events should be(empty)
+          sent.failures.map(_.message) should be(Seq("Test failure"))
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 

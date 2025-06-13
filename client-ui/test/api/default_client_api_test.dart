@@ -1137,5 +1137,15 @@ void main() {
 
       expect(await client.getAnalyticsState(), state);
     });
+
+    test('send latest analytics state', () async {
+      final underlying = MockClient();
+      final client = DefaultClientApi(server: server, underlying: underlying, apiToken: apiToken);
+
+      when(underlying.put(Uri.parse('$server/service/analytics/send'), headers: authorization))
+          .thenAnswer((_) async => http.Response('', 201));
+
+      expect(() async => await client.sendAnalyticsState(), returnsNormally);
+    });
   });
 }

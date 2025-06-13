@@ -115,12 +115,6 @@ def status_device(ctx):
     """Show current device details."""
     click.echo(ctx.obj.rendering.render_device(ctx.obj.api.device()))
 
-@click.command(name='analytics')
-@click.pass_context
-def status_analytics(ctx):
-    """Show latest analytics collection state."""
-    click.echo(ctx.obj.rendering.render_analytics_state(ctx.obj.api.analytics_state()))
-
 
 @click.group()
 def status():
@@ -131,7 +125,6 @@ status.add_command(status_connection)
 status.add_command(status_commands)
 status.add_command(status_user)
 status.add_command(status_device)
-status.add_command(status_analytics)
 
 
 @click.command(name="password")
@@ -232,6 +225,30 @@ update.add_command(update_user)
 update.add_command(update_device)
 
 
+@click.command(name='show')
+@click.pass_context
+def analytics_show(ctx):
+    """Show latest analytics collection state."""
+    click.echo(ctx.obj.rendering.render_analytics_state(ctx.obj.api.analytics_state()))
+
+
+@click.command(name='send')
+@click.pass_context
+def analytics_send(ctx):
+    """Send latest analytics state to the server."""
+    response = ctx.obj.api.analytics_state_send()
+    click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+@click.group()
+def analytics():
+    """Show and manage device analytics information."""
+
+
+analytics.add_command(analytics_show)
+analytics.add_command(analytics_send)
+
+
 @click.group(name='service')
 def cli():
     """Showing and managing the client's state."""
@@ -241,6 +258,7 @@ cli.add_command(start)
 cli.add_command(stop)
 cli.add_command(status)
 cli.add_command(update)
+cli.add_command(analytics)
 
 
 def _stop_background_service(api, confirmed):

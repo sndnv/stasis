@@ -19,6 +19,7 @@ class AnalyticsCollectorSpec extends UnitSpec {
     for {
       state <- collector.state
     } yield {
+      noException should be thrownBy collector.send()
       state.events should be(empty)
       state.failures should be(empty)
     }

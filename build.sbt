@@ -17,7 +17,7 @@ lazy val versions = new {
 
   // persistence
   val slick    = "3.6.1"
-  val postgres = "42.7.6"
+  val postgres = "42.7.7"
   val mariadb  = "3.5.3"
   val sqlite   = "3.50.1.0"
   val h2       = "2.3.232"

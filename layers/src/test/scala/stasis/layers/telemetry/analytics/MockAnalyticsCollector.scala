@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import stasis.layers.telemetry.ApplicationInformation
 
 class MockAnalyticsCollector extends AnalyticsCollector {
+  private val mockPersistence = MockAnalyticsPersistence()
   private val entryRef: AtomicReference[AnalyticsEntry.Collected] =
     new AtomicReference(AnalyticsEntry.collected(app = ApplicationInformation.none))
 
@@ -21,6 +22,10 @@ class MockAnalyticsCollector extends AnalyticsCollector {
   override def state: Future[AnalyticsEntry] =
     Future.successful(entryRef.get())
 
+  override def send(): Unit = {
+    val _ = mockPersistence.transmit(entryRef.get())
+  }
+
   override def persistence: Option[AnalyticsPersistence] =
-    Some(MockAnalyticsPersistence())
+    Some(mockPersistence)
 }

@@ -786,4 +786,9 @@ class MockApiClient extends ApiClient implements InitApi, ClientApi {
 
     return Future.value(state);
   }
+
+  @override
+  Future<void> sendAnalyticsState() {
+    return Future.value();
+  }
 }
