@@ -1,6 +1,7 @@
 package stasis.client_android.telemetry.analytics
 
 import android.content.SharedPreferences
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
@@ -28,10 +29,6 @@ class DefaultAnalyticsPersistence(
 ) : AnalyticsPersistence {
     private val lastCachedRef: AtomicReference<Instant> = AtomicReference(Instant.EPOCH)
     private val lastTransmittedRef: AtomicReference<Instant> = AtomicReference(Instant.EPOCH)
-
-    private val gson = GsonBuilder()
-        .registerTypeAdapter(Instant::class.java, instantConverter)
-        .create()
 
     override fun cache(entry: AnalyticsEntry) {
         preferences.putAnalyticsCachedEntry(entry = serialize(entry))
@@ -105,6 +102,10 @@ class DefaultAnalyticsPersistence(
             ): Instant =
                 json?.asLong?.let { Instant.ofEpochMilli(it) } ?: Instant.EPOCH
         }
+
+        val gson: Gson = GsonBuilder()
+            .registerTypeAdapter(Instant::class.java, instantConverter)
+            .create()
 
         fun Instant.min(other: Instant): Instant =
             if (this.isBefore(other)) this

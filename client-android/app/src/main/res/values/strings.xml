@@ -854,6 +854,11 @@
     <string name="analytics_event_message">%1$s</string>
     <string name="analytics_failure_title">Failure [%1$s]</string>
     <string name="analytics_failure_message">%1$s</string>
+    <string name="analytics_copy_button_hint">Copy analytics data</string>
+    <string name="analytics_send_button_hint">Send analytics data to the server</string>
+    <string name="analytics_copy_clip_label">Analytics data</string>
+    <string name="analytics_copy_clip_created">Analytics data copied to clipboard</string>
+    <string name="analytics_request_sent">Request sent…</string>
 
     <!-- Transitions -->
     <string name="dataset_definition_summary_transition_name">dataset_definition_%1$s</string>

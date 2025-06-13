@@ -22,6 +22,8 @@ class MockAnalyticsCollector : AnalyticsCollector {
     override fun state(): Try<AnalyticsEntry> =
         Try.Success(entryRef.get())
 
+    override fun send() = Unit
+
     override val persistence: AnalyticsPersistence? =
         null
 }

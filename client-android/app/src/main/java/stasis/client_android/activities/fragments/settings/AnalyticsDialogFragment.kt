@@ -1,5 +1,7 @@
 package stasis.client_android.activities.fragments.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
@@ -11,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -27,6 +30,7 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.settings.Settings.getAnalyticsKeepEvents
 import stasis.client_android.settings.Settings.getAnalyticsKeepFailures
+import stasis.client_android.telemetry.analytics.DefaultAnalyticsPersistence
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.pullArguments
 import java.time.Instant
@@ -247,6 +251,34 @@ class AnalyticsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                                 failures = entry.failures.sortedBy { f -> f.timestamp }
                             )
                         }
+
+                        binding.analyticsCopyButton.setOnClickListener {
+                            val clipboard =
+                                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                            clipboard.setPrimaryClip(
+                                ClipData.newPlainText(
+                                    getString(R.string.analytics_copy_clip_label),
+                                    DefaultAnalyticsPersistence.gson.toJson(entry)
+                                )
+                            )
+
+                            Toast.makeText(
+                                context,
+                                getString(R.string.analytics_copy_clip_created),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        binding.analyticsSendButton.setOnClickListener {
+                            arguments.sendAnalytics {
+                                Toast.makeText(
+                                    context,
+                                    getString(R.string.analytics_request_sent),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     }
 
                     is Try.Failure -> {
@@ -281,6 +313,7 @@ class AnalyticsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
     companion object {
         data class Arguments(
             val retrieveAnalytics: (f: (Try<AnalyticsEntry>) -> Unit) -> Unit,
+            val sendAnalytics: (f: () -> Unit) -> Unit,
         ) : DynamicArguments.ArgumentSet
 
         private const val ArgumentsKey: String =

@@ -413,6 +413,14 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                         .observeOnce(viewLifecycleOwner) {
                             f(it)
                         }
+                },
+                sendAnalytics = { f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+                    providerContext.analytics.send()
+
+                    f()
                 }
             )
         )
