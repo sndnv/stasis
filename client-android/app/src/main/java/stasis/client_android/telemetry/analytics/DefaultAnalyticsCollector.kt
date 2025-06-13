@@ -38,6 +38,10 @@ class DefaultAnalyticsCollector(
     override fun state(): Try<AnalyticsEntry> =
         Try.Success(latest.get())
 
+    override fun send() {
+        send(CollectorMessage.PersistState(forceTransmit = true))
+    }
+
     private fun send(event: CollectorMessage) {
         handler.obtainMessage().let { msg ->
             msg.obj = event
@@ -69,7 +73,7 @@ class DefaultAnalyticsCollector(
                     cancelScheduledPersist()
 
                     obtainMessage().let { m ->
-                        m.obj = CollectorMessage.PersistState
+                        m.obj = CollectorMessage.PersistState(forceTransmit = false)
                         sendMessage(m)
                     }
                 }
@@ -79,7 +83,7 @@ class DefaultAnalyticsCollector(
 
                     val entry = latest.get()
 
-                    if (persistence.lastTransmitted.plusMillis(transmissionInterval.toMillis())
+                    if (message.forceTransmit || persistence.lastTransmitted.plusMillis(transmissionInterval.toMillis())
                             .isBefore(Instant.now())
                     ) {
                         when (runBlocking { persistence.transmit(entry) }) {
@@ -115,7 +119,7 @@ class DefaultAnalyticsCollector(
             if (!isPersistScheduled) {
                 postDelayed({
                     obtainMessage().let { m ->
-                        m.obj = CollectorMessage.PersistState
+                        m.obj = CollectorMessage.PersistState(forceTransmit = false)
                         sendMessage(m)
                     }
                 }, PersistStateTimerKey, persistenceInterval.toMillis())
@@ -130,7 +134,7 @@ class DefaultAnalyticsCollector(
     }
 
     private sealed class CollectorMessage {
-        data object PersistState : CollectorMessage()
+        data class PersistState(val forceTransmit: Boolean) : CollectorMessage()
         data object LoadState : CollectorMessage()
         data class RecordEvent(val name: String, val attributes: Map<String, String>) : CollectorMessage()
         data class RecordFailure(val message: String) : CollectorMessage()

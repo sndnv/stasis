@@ -1,5 +1,6 @@
 package stasis.client_android.lib.telemetry.analytics
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import stasis.client_android.lib.telemetry.ApplicationInformation
 import java.time.Instant
@@ -24,6 +25,7 @@ interface AnalyticsEntry {
 
     @JsonClass(generateAdapter = true)
     data class AsJson(
+        @Json(name = "entry_type")
         val entryType: String,
         override val runtime: RuntimeInformation,
         override val events: List<Event>,

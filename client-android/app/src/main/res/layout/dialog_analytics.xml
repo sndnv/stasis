@@ -1,274 +1,308 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <TextView
-        android:id="@+id/show_analytics_title"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:drawablePadding="4dp"
-        android:padding="16dp"
-        android:text="@string/settings_analytics_title"
-        android:textAppearance="?attr/textAppearanceTitleMedium"
-        app:drawableStartCompat="@drawable/ic_analytics"
-        app:layout_constraintBottom_toTopOf="@id/analytics_container"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent">
 
-    <ScrollView
-        android:id="@+id/analytics_container"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:fadeScrollbars="false"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/show_analytics_title">
-
-        <RelativeLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:gravity="center">
-
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:id="@+id/analytics_in_progress"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_margin="16dp"
-                android:indeterminate="true" />
+            android:layout_height="match_parent">
 
             <TextView
-                android:id="@+id/analytics_error"
+                android:id="@+id/show_analytics_title"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:visibility="gone" />
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:padding="16dp"
+                android:text="@string/settings_analytics_title"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                app:drawableStartCompat="@drawable/ic_analytics"
+                app:layout_constraintBottom_toTopOf="@id/analytics_container"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <LinearLayout
-                android:id="@+id/analytics_content"
+            <ScrollView
+                android:id="@+id/analytics_container"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:paddingHorizontal="16dp"
-                android:visibility="gone">
+                android:layout_height="0dp"
+                android:fadeScrollbars="false"
+                android:fillViewport="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/show_analytics_title">
 
-                <TextView
-                    android:id="@+id/analytics_info"
+                <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:maxLines="2"
-                    android:textAppearance="?attr/textAppearanceSubtitle1" />
+                    android:layout_height="0dp"
+                    android:gravity="center">
 
-                <TextView
-                    android:id="@+id/analytics_created"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:paddingHorizontal="4dp"
-                    android:textAppearance="?attr/textAppearanceBody2" />
-
-                <TextView
-                    android:id="@+id/analytics_updated"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:paddingHorizontal="4dp"
-                    android:textAppearance="?attr/textAppearanceBody2" />
-
-                <LinearLayout
-                    android:id="@+id/analytics_runtime"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="12dp">
-
-                    <TextView
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/analytics_in_progress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/analytics_field_title_runtime"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textStyle="bold" />
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:indeterminate="true" />
 
                     <TextView
+                        android:id="@+id/analytics_error"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="4dp"
-                        android:text="@string/analytics_field_title_runtime_app"
-                        android:textAppearance="?attr/textAppearanceSubtitle2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_app_name"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_app_version"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_app_build_time"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="4dp"
-                        android:paddingTop="8dp"
-                        android:text="@string/analytics_field_title_runtime_jre"
-                        android:textAppearance="?attr/textAppearanceSubtitle2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_jre_version"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_jre_vendor"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="4dp"
-                        android:paddingTop="8dp"
-                        android:text="@string/analytics_field_title_runtime_os"
-                        android:textAppearance="?attr/textAppearanceSubtitle2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_os_name"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_os_version"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/analytics_runtime_os_arch"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:paddingHorizontal="8dp"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/analytics_events"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/analytics_events_title"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:paddingVertical="4dp"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@drawable/ic_status_expand" />
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:visibility="gone" />
 
                     <LinearLayout
-                        android:id="@+id/analytics_events_container"
+                        android:id="@+id/analytics_content"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp"
+                        android:paddingHorizontal="16dp"
                         android:visibility="gone">
 
                         <TextView
-                            android:id="@+id/analytics_events_list_empty"
+                            android:id="@+id/analytics_info"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:text="@string/analytics_events_list_empty"
-                            android:visibility="gone" />
-
-                        <stasis.client_android.activities.views.ExpandingListView
-                            android:id="@+id/analytics_events_list"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/analytics_failures"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/analytics_failures_title"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:paddingVertical="4dp"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@drawable/ic_status_expand" />
-
-                    <LinearLayout
-                        android:id="@+id/analytics_failures_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp"
-                        android:visibility="gone">
+                            android:layout_height="wrap_content"
+                            android:maxLines="2"
+                            android:textAppearance="?attr/textAppearanceSubtitle1" />
 
                         <TextView
-                            android:id="@+id/analytics_failures_list_empty"
+                            android:id="@+id/analytics_created"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:text="@string/analytics_failures_list_empty"
-                            android:visibility="gone" />
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:paddingHorizontal="4dp"
+                            android:textAppearance="?attr/textAppearanceBody2" />
 
-                        <stasis.client_android.activities.views.ExpandingListView
-                            android:id="@+id/analytics_failures_list"
+                        <TextView
+                            android:id="@+id/analytics_updated"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:paddingHorizontal="4dp"
+                            android:textAppearance="?attr/textAppearanceBody2" />
+
+                        <LinearLayout
+                            android:id="@+id/analytics_runtime"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/analytics_field_title_runtime"
+                                android:textAppearance="?attr/textAppearanceSubtitle1"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="4dp"
+                                android:text="@string/analytics_field_title_runtime_app"
+                                android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_app_name"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_app_version"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_app_build_time"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="4dp"
+                                android:paddingTop="8dp"
+                                android:text="@string/analytics_field_title_runtime_jre"
+                                android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_jre_version"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_jre_vendor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="4dp"
+                                android:paddingTop="8dp"
+                                android:text="@string/analytics_field_title_runtime_os"
+                                android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_os_name"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_os_version"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+
+                            <TextView
+                                android:id="@+id/analytics_runtime_os_arch"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxLines="2"
+                                android:paddingHorizontal="8dp"
+                                android:textAppearance="?attr/textAppearanceBody2" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/analytics_events"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/analytics_events_title"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="?attr/selectableItemBackground"
+                                android:paddingVertical="4dp"
+                                android:textAppearance="?attr/textAppearanceSubtitle1"
+                                android:textStyle="bold"
+                                app:drawableEndCompat="@drawable/ic_status_expand" />
+
+                            <LinearLayout
+                                android:id="@+id/analytics_events_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="4dp"
+                                android:visibility="gone">
+
+                                <TextView
+                                    android:id="@+id/analytics_events_list_empty"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:gravity="center"
+                                    android:text="@string/analytics_events_list_empty"
+                                    android:visibility="gone" />
+
+                                <stasis.client_android.activities.views.ExpandingListView
+                                    android:id="@+id/analytics_events_list"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/analytics_failures"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/analytics_failures_title"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="?attr/selectableItemBackground"
+                                android:paddingVertical="4dp"
+                                android:textAppearance="?attr/textAppearanceSubtitle1"
+                                android:textStyle="bold"
+                                app:drawableEndCompat="@drawable/ic_status_expand" />
+
+                            <LinearLayout
+                                android:id="@+id/analytics_failures_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="4dp"
+                                android:visibility="gone">
+
+                                <TextView
+                                    android:id="@+id/analytics_failures_list_empty"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:gravity="center"
+                                    android:text="@string/analytics_failures_list_empty"
+                                    android:visibility="gone" />
+
+                                <stasis.client_android.activities.views.ExpandingListView
+                                    android:id="@+id/analytics_failures_list"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
 
-        </RelativeLayout>
-    </ScrollView>
+                </RelativeLayout>
+            </ScrollView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/analytics_copy_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="78dp"
+            android:contentDescription="@string/analytics_copy_button_hint"
+            android:tooltipText="@string/analytics_copy_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="40dp"
+            app:layout_anchor="@id/analytics_send_button"
+            app:layout_anchorGravity="top|center"
+            app:srcCompat="@drawable/ic_copy"
+            app:useCompatPadding="true" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/analytics_send_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/analytics_send_button_hint"
+            android:tooltipText="@string/analytics_send_button_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="56dp"
+            app:srcCompat="@drawable/ic_backup"
+            app:useCompatPadding="true" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

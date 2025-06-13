@@ -21,6 +21,8 @@ interface AnalyticsCollector {
 
     fun state(): Try<AnalyticsEntry>
 
+    fun send()
+
     val persistence: AnalyticsPersistence?
 
     object NoOp : AnalyticsCollector {
@@ -30,6 +32,8 @@ interface AnalyticsCollector {
 
         override fun state(): Try<AnalyticsEntry> =
             Try.Success(AnalyticsEntry.collected(app = ApplicationInformation.none()))
+
+        override fun send() = Unit
 
         override val persistence: AnalyticsPersistence? = null
     }

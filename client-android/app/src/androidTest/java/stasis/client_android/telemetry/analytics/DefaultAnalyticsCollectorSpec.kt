@@ -258,4 +258,48 @@ class DefaultAnalyticsCollectorSpec {
             }
         }
     }
+
+    @Test
+    fun supportTransmittingStateRemotelyOnDemand() {
+        val persistence = object : MockAnalyticsPersistence(existing = Try.Success(null)) {
+            override val lastTransmitted: Instant
+                get() = Instant.now() // prevents transmission
+        }
+
+        val collector = DefaultAnalyticsCollector(
+            app = ApplicationInformation.none(),
+            persistenceInterval = Duration.ofSeconds(60),
+            transmissionInterval = Duration.ofSeconds(60),
+            persistence = persistence,
+        )
+
+        collector.recordFailure("Test failure")
+
+        runBlocking {
+            eventually {
+                val state = collector.state().get()
+
+                assertThat(state.events.size, equalTo(0))
+                assertThat(state.failures.size, equalTo(1))
+
+                assertThat(persistence.cached.size, equalTo(1))
+
+                assertThat(persistence.cached[0].events.size, equalTo(0))
+                assertThat(persistence.cached[0].failures.size, equalTo(1))
+            }
+        }
+
+        assertThat(persistence.transmitted.size, equalTo(0))
+
+        collector.send()
+
+        runBlocking {
+            eventually {
+                assertThat(persistence.transmitted.size, equalTo(1))
+
+                assertThat(persistence.transmitted[0].events.size, equalTo(0))
+                assertThat(persistence.transmitted[0].failures.size, equalTo(1))
+            }
+        }
+    }
 }

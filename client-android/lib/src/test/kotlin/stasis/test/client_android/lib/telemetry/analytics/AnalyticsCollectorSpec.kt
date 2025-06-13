@@ -19,6 +19,8 @@ class AnalyticsCollectorSpec : WordSpec({
             collector.recordFailure(RuntimeException("Test failure"))
             collector.recordFailure("Other failure")
 
+            collector.send()
+
             collector.persistence shouldBe (null)
 
             val state = collector.state().get()
