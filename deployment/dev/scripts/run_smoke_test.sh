@@ -229,7 +229,7 @@ else
 fi
 
 echo -n "[$(now)] (PRIMARY) Starting client service..."
-CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD}"
+CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD} -no-version-check"
 CLIENT_SERVICE_START_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
 CLIENT_SERVICE_START_FAILURE="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq -r '.failure')"
@@ -589,7 +589,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Executing device bootstrap..."
-DEVICE_BOOTSTRAP_COMMAND="stasis-client bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
+DEVICE_BOOTSTRAP_COMMAND="stasis-client -no-version-check bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
 DEVICE_BOOTSTRAP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_BOOTSTRAP_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
@@ -600,7 +600,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Starting client service..."
-CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD}"
+CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD} -no-version-check"
 CLIENT_SERVICE_START_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
 CLIENT_SERVICE_START_FAILURE="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq -r '.failure')"
@@ -648,7 +648,7 @@ else
 fi
 
 echo -n "[$(now)] (SECONDARY) Pushing device key..."
-DEVICE_KEY_PUSH_COMMAND="stasis-client maintenance secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
+DEVICE_KEY_PUSH_COMMAND="stasis-client -no-version-check maintenance secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
 DEVICE_KEY_PUSH_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
 if [ $? = 0 ]
 then
