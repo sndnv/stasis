@@ -12,11 +12,14 @@ from client_cli.render.flatten.init_state import flatten_primary_init_state, fla
 from client_cli.render.json_writer import JsonWriter
 
 
-@click.command()
+@click.command(
+    context_settings={'ignore_unknown_options': True}
+)
 @click.pass_context
 @click.option('-u', '--username', prompt=True, help='Client owner')
 @click.option('-p', '--password', prompt=True, hide_input=True, help='Client owner password')
-def start(ctx, username, password):
+@click.argument('service_arguments', nargs=-1, type=click.UNPROCESSED)
+def start(ctx, username, password, service_arguments):
     """Start background client service."""
     service = ctx.obj.service_binary
 
@@ -42,7 +45,8 @@ def start(ctx, username, password):
                     disable=isinstance(ctx.obj.rendering, JsonWriter)
             ) as progress:
                 # pylint: disable=consider-using-with
-                Popen([service], stdout=DEVNULL, stdin=DEVNULL, stderr=DEVNULL, start_new_session=True)
+                Popen([service] + list(service_arguments or []), stdout=DEVNULL, stdin=DEVNULL, stderr=DEVNULL,
+                      start_new_session=True)
                 progress.update()
 
                 init_state_before_auth = ctx.obj.init.state()
