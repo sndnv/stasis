@@ -16,10 +16,10 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.api.directives.EntityDiscardingDirectives
-import stasis.layers.api.directives.LoggingDirectives
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.api.routes.RoutesContext
 import stasis.server.security.ResourceProvider

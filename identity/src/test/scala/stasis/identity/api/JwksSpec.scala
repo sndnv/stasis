@@ -5,9 +5,9 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
 import stasis.identity.RouteTest
-import stasis.layers
-import stasis.layers.Generators
-import stasis.layers.security.mocks.MockJwksGenerators
+import io.github.sndnv.layers
+import io.github.sndnv.layers.testing.Generators
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
 
 class JwksSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -17,8 +17,8 @@ class JwksSpec extends RouteTest {
       Generators.generateSeq(
         min = 1,
         max = 3,
-        g = MockJwksGenerators.generateRandomRsaKey(
-          keyId = Some(layers.Generators.generateString(withSize = 16))
+        g = MockJwksGenerator.generateRandomRsaKey(
+          keyId = Some(layers.testing.Generators.generateString(withSize = 16))
         )
       )
 

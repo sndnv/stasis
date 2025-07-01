@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory
 import stasis.core.commands.proto.Command
 import stasis.core.discovery.ServiceDiscoveryRequest
 import stasis.core.discovery.ServiceDiscoveryResult
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.api.requests.CreateAnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry

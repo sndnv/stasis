@@ -10,13 +10,13 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.core.persistence.nodes.DefaultNodeStore
 import stasis.core.routing.Node
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.persistence.memory.MemoryStore
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
-class DefaultNodeStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultNodeStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultNodeStore" should "add, retrieve and delete nodes" in withRetry {
     withStore { (profile, database) =>
       implicit val telemetry: MockTelemetryContext = MockTelemetryContext()

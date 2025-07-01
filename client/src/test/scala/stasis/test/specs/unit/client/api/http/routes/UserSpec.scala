@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.User
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.api.requests.UpdateUserPasswordOwn
 import stasis.shared.api.requests.UpdateUserSaltOwn
 import stasis.shared.model

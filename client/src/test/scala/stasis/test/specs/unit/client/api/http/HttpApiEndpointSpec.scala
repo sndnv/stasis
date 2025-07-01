@@ -19,8 +19,8 @@ import stasis.client.api.Context
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
-import stasis.layers.api.MessageResponse
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry

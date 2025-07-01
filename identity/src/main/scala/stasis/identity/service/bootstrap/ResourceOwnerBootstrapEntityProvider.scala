@@ -10,7 +10,7 @@ import org.apache.pekko.Done
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.owners.ResourceOwnerStore
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 
 class ResourceOwnerBootstrapEntityProvider(store: ResourceOwnerStore)(implicit secretConfig: Secret.ResourceOwnerConfig)
     extends BootstrapEntityProvider[ResourceOwner] {

@@ -17,8 +17,8 @@ import stasis.core.routing.Node
 object Formats {
   import play.api.libs.json._
 
-  import stasis.layers.api.Formats.jsonConfig
-  import stasis.layers.api.Formats.uriFormat
+  import io.github.sndnv.layers.api.Formats.jsonConfig
+  import io.github.sndnv.layers.api.Formats.uriFormat
 
   implicit val httpEndpointAddressFormat: Format[HttpEndpointAddress] =
     Json.format[HttpEndpointAddress]

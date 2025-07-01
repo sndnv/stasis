@@ -10,10 +10,10 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import stasis.identity.model.Generators
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.MockTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultAuthorizationCodeStoreSpec extends UnitSpec {
   "A DefaultAuthorizationCodeStore" should "add, retrieve and delete authorization codes" in withRetry {
@@ -61,7 +61,7 @@ class DefaultAuthorizationCodeStoreSpec extends UnitSpec {
       _ <- store.put(StoredAuthorizationCode(expectedCode, client, owner, scope = None))
       actualCode <- store.get(expectedCode)
       someCodes <- store.all
-      _ <- after(expiration * 2, using = system)(Future.successful(Done))
+      _ <- after(expiration * 2)(Future.successful(Done))
       missingCode <- store.get(expectedCode)
       noCodes <- store.all
     } yield {

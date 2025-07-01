@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 
 import org.apache.pekko.util.Timeout
 
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

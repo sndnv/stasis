@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.persistence.migration.MigrationResult
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.service.CorePersistence
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.Generators

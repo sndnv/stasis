@@ -3,7 +3,7 @@ package stasis.test.specs.unit.core.discovery
 import stasis.core.discovery.ServiceApiEndpoint
 import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ServiceDiscoveryResultSpec extends UnitSpec {
   "A ServiceDiscoveryResult" should "support rendering as a string" in {

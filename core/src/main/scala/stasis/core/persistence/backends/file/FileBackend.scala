@@ -19,7 +19,7 @@ import org.apache.pekko.util.ByteString
 
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class FileBackend(
   val parentDirectory: String

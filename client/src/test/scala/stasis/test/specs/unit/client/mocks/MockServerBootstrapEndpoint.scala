@@ -14,7 +14,7 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
 class MockServerBootstrapEndpoint(

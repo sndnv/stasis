@@ -26,14 +26,14 @@ import stasis.client.service.components.internal.FutureOps
 import stasis.client.staging.DefaultFileStaging
 import stasis.client.staging.FileStaging
 import stasis.core
-import stasis.layers
-import stasis.layers.telemetry.DefaultTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsCollector
-import stasis.layers.telemetry.analytics.DefaultAnalyticsCollector
-import stasis.layers.telemetry.analytics.DefaultAnalyticsPersistence
-import stasis.layers.telemetry.metrics.MetricsExporter
-import stasis.layers.telemetry.metrics.MetricsProvider
+import io.github.sndnv.layers
+import io.github.sndnv.layers.telemetry.DefaultTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.analytics.DefaultAnalyticsCollector
+import io.github.sndnv.layers.telemetry.analytics.DefaultAnalyticsPersistence
+import io.github.sndnv.layers.telemetry.metrics.MetricsExporter
+import io.github.sndnv.layers.telemetry.metrics.MetricsProvider
 
 trait Base extends FutureOps {
   implicit def system: ActorSystem[Nothing]

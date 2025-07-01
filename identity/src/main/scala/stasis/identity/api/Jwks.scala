@@ -8,7 +8,7 @@ import org.jose4j.jwk.JsonWebKey
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Jwks(keys: Seq[JsonWebKey]) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

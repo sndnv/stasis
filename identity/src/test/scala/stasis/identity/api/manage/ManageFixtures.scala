@@ -12,13 +12,13 @@ import stasis.identity.persistence.mocks.MockAuthorizationCodeStore
 import stasis.identity.persistence.mocks.MockClientStore
 import stasis.identity.persistence.mocks.MockRefreshTokenStore
 import stasis.identity.persistence.mocks.MockResourceOwnerStore
-import stasis.layers
+import io.github.sndnv.layers
 
 trait ManageFixtures { _: RouteTest =>
   def createManageProviders(
-    withOwnerScopes: Seq[String] = layers.Generators.generateSeq(
+    withOwnerScopes: Seq[String] = layers.testing.Generators.generateSeq(
       min = 1,
-      g = layers.Generators.generateString(withSize = 10)
+      g = layers.testing.Generators.generateString(withSize = 10)
     )
   ): Providers =
     Providers(

@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.identity.model.apis.Api
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait ApiStore extends Store { store =>
   def put(api: Api): Future[Done]

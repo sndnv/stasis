@@ -103,14 +103,14 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
       val expectedUpdates = 3
       val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-      await(100.millis, withSystem = system)
+      await(100.millis)
 
       tracker.started(definition = DatasetDefinition.generateId())
 
       tracker.entityDiscovered(entity)
-      await(100.millis, withSystem = system)
+      await(100.millis)
       tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
-      await(100.millis, withSystem = system)
+      await(100.millis)
 
       updates.await.toList match {
         case first :: second :: third :: Nil =>
@@ -172,7 +172,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
       tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
     }
 
-    await(250.millis, withSystem = system)
+    await(250.millis)
 
     val operation3 = Operation.generateId()
     tracker.started(definition = DatasetDefinition.generateId())(operation3)
@@ -198,10 +198,10 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
       tracker.started(definition = DatasetDefinition.generateId())
       tracker.entityDiscovered(entity)
       tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
-      await(100.millis, withSystem = system)
+      await(100.millis)
 
       val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-      await(100.millis, withSystem = system)
+      await(100.millis)
 
       updates.await.toList match {
         case update :: Nil =>

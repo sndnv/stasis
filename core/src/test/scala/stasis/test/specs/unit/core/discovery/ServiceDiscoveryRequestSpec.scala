@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.discovery
 
 import stasis.core.discovery.ServiceDiscoveryRequest
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ServiceDiscoveryRequestSpec extends UnitSpec {
   "A ServiceDiscoveryRequest" should "support converting its attributes to a request ID" in {

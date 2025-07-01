@@ -9,13 +9,13 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultUserStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultUserStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultUserStore" should "add, retrieve and delete users" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultUserStore(name = "TEST_USERS", userSaltSize = 8, profile = profile, database = database)

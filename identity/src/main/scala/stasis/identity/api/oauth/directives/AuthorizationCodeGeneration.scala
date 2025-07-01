@@ -21,7 +21,7 @@ import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.persistence.codes.AuthorizationCodeStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait AuthorizationCodeGeneration extends EntityDiscardingDirectives {
 

@@ -12,9 +12,9 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import stasis.identity.model.Generators
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.tokens.StoredRefreshToken
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.migration.MigrationResult
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
 class PersistenceSpec extends UnitSpec {
   "Persistence" should "setup service data stores based on config" in withRetry {

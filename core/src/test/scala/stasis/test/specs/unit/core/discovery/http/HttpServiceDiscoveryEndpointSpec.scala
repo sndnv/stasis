@@ -11,7 +11,7 @@ import stasis.core.discovery.ServiceDiscoveryRequest
 import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.discovery.http.HttpServiceDiscoveryEndpoint
 import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class HttpServiceDiscoveryEndpointSpec extends UnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

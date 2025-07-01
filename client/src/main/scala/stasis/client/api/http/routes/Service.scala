@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
 import stasis.client.api.Context
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.responses.Ping
 
 class Service()(implicit context: Context) extends ApiRoutes {
@@ -75,7 +75,7 @@ object Service {
 
   import play.api.libs.json._
 
-  import stasis.layers.api.Formats._
+  import io.github.sndnv.layers.api.Formats._
 
   implicit val operationStartedFormat: Format[AnalyticsState] =
     Json.format[AnalyticsState]

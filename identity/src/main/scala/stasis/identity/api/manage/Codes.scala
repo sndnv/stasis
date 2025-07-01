@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.persistence.codes.AuthorizationCodeStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Codes(store: AuthorizationCodeStore) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

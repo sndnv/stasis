@@ -11,11 +11,11 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.identity.model.Generators
 import stasis.identity.persistence.internal.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
-class DefaultClientStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultClientStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultClientStore" should "add, retrieve and delete clients" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultClientStore(name = "TEST_CLIENTS", profile = profile, database = database)

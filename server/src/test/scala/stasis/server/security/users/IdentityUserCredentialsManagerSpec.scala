@@ -12,7 +12,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
 import stasis.core.api.PoolClient
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.server.security.users.IdentityUserCredentialsManager
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.model.users.User

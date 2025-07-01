@@ -32,15 +32,15 @@ import stasis.identity.model.tokens.generators.RandomRefreshTokenGenerator
 import stasis.identity.service.bootstrap.ApiBootstrapEntityProvider
 import stasis.identity.service.bootstrap.ClientBootstrapEntityProvider
 import stasis.identity.service.bootstrap.ResourceOwnerBootstrapEntityProvider
-import stasis.layers
-import stasis.layers.security.jwt.DefaultJwtAuthenticator
-import stasis.layers.security.keys.LocalKeyProvider
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.service.BootstrapProvider
-import stasis.layers.telemetry.DefaultTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsCollector
-import stasis.layers.telemetry.metrics.MetricsExporter
+import io.github.sndnv.layers
+import io.github.sndnv.layers.security.jwt.DefaultJwtAuthenticator
+import io.github.sndnv.layers.security.keys.LocalKeyProvider
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.service.BootstrapProvider
+import io.github.sndnv.layers.telemetry.DefaultTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.metrics.MetricsExporter
 
 trait Service {
   import Service._

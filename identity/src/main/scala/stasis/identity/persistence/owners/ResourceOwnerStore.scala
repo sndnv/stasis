@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.identity.model.owners.ResourceOwner
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait ResourceOwnerStore extends Store { store =>
   def put(owner: ResourceOwner): Future[Done]

@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
 
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 import stasis.server.security.Resource
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.shared.model.devices.Device

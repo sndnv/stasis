@@ -254,7 +254,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
 
-        await(delay = defaultMinDelay * 2, withSystem = typedSystem)
+        await(delay = defaultMinDelay * 2)
 
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
         mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -287,7 +287,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         scheduler.schedules.await should not be empty
       }
 
-      await(delay = defaultMinDelay / 2, withSystem = typedSystem)
+      await(delay = defaultMinDelay / 2)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -301,7 +301,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       mockExecutor.statistics(MockOperationExecutor.Statistic.StartKeyRotation) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.Stop) should be(0)
 
-      await(delay = defaultMinDelay, withSystem = typedSystem)
+      await(delay = defaultMinDelay)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -340,7 +340,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
         scheduler.schedules.await should not be empty
       }
 
-      await(delay = maxDelay * 2 + maxDelay / 2, withSystem = typedSystem)
+      await(delay = maxDelay * 2 + maxDelay / 2)
 
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetActiveOperations) should be(0)
       mockExecutor.statistics(MockOperationExecutor.Statistic.GetCompletedOperations) should be(0)
@@ -359,10 +359,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
   it should "not execute an operation if it is already active" in {
     val mockExecutor = new MockOperationExecutor() {
       override def startBackupWithRules(definition: DatasetDefinition.Id): Future[Operation.Id] =
-        after(
-          delay = 1.second,
-          using = typedSystem
-        )(super.startBackupWithRules(definition))
+        after(delay = 1.second)(super.startBackupWithRules(definition))
     }
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
@@ -397,7 +394,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
       }
 
       val _ = scheduler.refresh().await
-      await(delay = defaultMinDelay, withSystem = typedSystem)
+      await(delay = defaultMinDelay)
 
       eventually[Assertion] {
         scheduler.schedules.await should not be empty
@@ -444,7 +441,7 @@ class DefaultOperationSchedulerSpec extends AsyncUnitSpec with ResourceHelpers w
     )
 
     managedScheduler(scheduler) {
-      await(delay = maxDelay * 2, withSystem = typedSystem)
+      await(delay = maxDelay * 2)
 
       eventually[Assertion] {
         scheduler.schedules.await should not be empty

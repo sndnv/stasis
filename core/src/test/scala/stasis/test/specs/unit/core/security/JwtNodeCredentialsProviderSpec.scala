@@ -14,7 +14,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeCredentialsProvider
-import stasis.layers.security.exceptions.ProviderFailure
+import io.github.sndnv.layers.security.exceptions.ProviderFailure
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 

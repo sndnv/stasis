@@ -21,9 +21,9 @@ import stasis.client.service.ApplicationArguments
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.api.PoolClient
-import stasis.layers.security.oauth.DefaultOAuthClient
-import stasis.layers.security.oauth.OAuthClient
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.oauth.DefaultOAuthClient
+import io.github.sndnv.layers.security.oauth.OAuthClient
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.secrets.SecretsConfig
 
 trait Secrets {

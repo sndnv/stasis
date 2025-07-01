@@ -32,7 +32,7 @@ import stasis.client.service.Service
 import stasis.client.service.components.Files
 import stasis.client.service.components.exceptions.ServiceStartupFailure
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User
@@ -122,7 +122,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     stopResponse.status should be(StatusCodes.NoContent)
     val _ = serverApiEndpoint.flatMap(_.terminate(100.millis))
-    await(delay = apiTerminationDelay * 3, withSystem = typedSystem)
+    await(delay = apiTerminationDelay * 3)
 
     Http()
       .singleRequest(
@@ -431,7 +431,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
       var rawArgs: Array[String] = null
 
-      after(delay = delay, using = typedSystem) {
+      after(delay = delay) {
         rawArgs = Array("service")
         Future.successful(Done)
       }

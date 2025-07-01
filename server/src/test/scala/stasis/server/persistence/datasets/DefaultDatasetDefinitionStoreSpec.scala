@@ -7,13 +7,13 @@ import scala.concurrent.Future
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultDatasetDefinitionStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultDatasetDefinitionStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultDatasetDefinitionStore" should "add, retrieve and delete dataset definitions" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultDatasetDefinitionStore(name = "TEST_DEFINITIONS", profile = profile, database = database)

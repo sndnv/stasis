@@ -15,7 +15,7 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.layers.Generators._
+import io.github.sndnv.layers.testing.Generators._
 
 object Generators {
   def generateCommand(implicit rnd: ThreadLocalRandom = ThreadLocalRandom.current()): Command =

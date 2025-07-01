@@ -10,7 +10,7 @@ import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.clients.ClientStore
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 
 class ClientBootstrapEntityProvider(store: ClientStore)(implicit secretConfig: Secret.ClientConfig)
     extends BootstrapEntityProvider[Client] {

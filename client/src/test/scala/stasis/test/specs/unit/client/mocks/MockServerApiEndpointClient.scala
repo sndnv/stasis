@@ -14,7 +14,7 @@ import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.CommandSource
 import stasis.core.commands.proto.LogoutUser
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword

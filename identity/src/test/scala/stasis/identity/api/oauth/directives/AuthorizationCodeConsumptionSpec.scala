@@ -18,7 +18,7 @@ import stasis.identity.model.Generators
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.persistence.codes.AuthorizationCodeStore
-import stasis.layers
+import io.github.sndnv.layers
 
 class AuthorizationCodeConsumptionSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -61,7 +61,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = None
     )
 
@@ -101,7 +101,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = layers.Generators.generateString(withSize = 128)
+    val verifier = layers.testing.Generators.generateString(withSize = 128)
     val challenge = StoredAuthorizationCode.Challenge(value = verifier, method = Some(ChallengeMethod.Plain))
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
@@ -143,7 +143,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = layers.Generators.generateString(withSize = 128)
+    val verifier = layers.testing.Generators.generateString(withSize = 128)
 
     val encodedVerifier =
       Base64.getUrlEncoder
@@ -196,14 +196,14 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = None
     )
 
     val routes = directive.consumeAuthorizationCode(
       client = client,
       providedCode = code,
-      layers.Generators.generateString(withSize = 128)
+      layers.testing.Generators.generateString(withSize = 128)
     ) { case (extractedOwner, extractedScope) =>
       Directives.complete(
         StatusCodes.OK,
@@ -240,7 +240,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val code = Generators.generateAuthorizationCode
     val scope = "some-scope"
-    val verifier = layers.Generators.generateString(withSize = 128)
+    val verifier = layers.testing.Generators.generateString(withSize = 128)
 
     val routes = directive.consumeAuthorizationCode(client, code, verifier) { case (extractedOwner, extractedScope) =>
       Directives.complete(

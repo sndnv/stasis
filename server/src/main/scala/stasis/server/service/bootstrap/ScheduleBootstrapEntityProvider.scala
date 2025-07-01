@@ -11,7 +11,7 @@ import scala.util.Try
 import com.typesafe.config.Config
 import org.apache.pekko.Done
 
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import stasis.server.persistence.schedules.ScheduleStore
 import stasis.shared.model.schedules.Schedule
 

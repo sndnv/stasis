@@ -4,8 +4,8 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.layers.FileSystemHelpers
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 
 class StateStoreSpec extends AsyncUnitSpec with FileSystemHelpers with StateStoreBehaviour {
   private implicit val system: ActorSystem[Nothing] = ActorSystem(

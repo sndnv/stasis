@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Service
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsCollector
-import stasis.layers.telemetry.analytics.AnalyticsEntry
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
-import stasis.layers.telemetry.analytics.MockAnalyticsPersistence
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsPersistence
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures

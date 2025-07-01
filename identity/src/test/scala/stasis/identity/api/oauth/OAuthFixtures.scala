@@ -20,8 +20,8 @@ import stasis.identity.persistence.clients.ClientStore
 import stasis.identity.persistence.codes.AuthorizationCodeStore
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.Generators
-import stasis.layers.security.mocks.MockJwksGenerators
+import io.github.sndnv.layers.testing.Generators
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
 
 trait OAuthFixtures { _: RouteTest =>
   def createOAuthFixtures(
@@ -32,7 +32,7 @@ trait OAuthFixtures { _: RouteTest =>
       codes = createCodeStore(),
       owners = createOwnerStore()
     ),
-    jwk: JsonWebKey = MockJwksGenerators.generateRandomRsaKey(
+    jwk: JsonWebKey = MockJwksGenerator.generateRandomRsaKey(
       keyId = Some(Generators.generateString(withSize = 16))
     ),
     testSecretConfig: TestSecretConfig = TestSecretConfig(),

@@ -16,9 +16,9 @@ import org.scalatest.concurrent.Eventually
 
 import stasis.core.persistence.backends.file.EventLogFileBackend
 import stasis.core.persistence.backends.file.state.StateStore
-import stasis.layers.FileSystemHelpers
-import stasis.layers.FileSystemHelpers.FileSystemSetup
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.testing.FileSystemHelpers
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -156,15 +156,15 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     for {
       stateBefore <- backend.getState
       _ <- backend.storeEventAndUpdateState(event = testEvent, update = (event, state) => state :+ event)
-      _ <- after(delay = delay, using = system)(Future.successful(Done))
+      _ <- after(delay = delay)(Future.successful(Done))
       _ <- backend.storeEventAndUpdateState(event = testEvent, update = (event, state) => state :+ event)
-      _ <- after(delay = delay, using = system)(Future.successful(Done))
+      _ <- after(delay = delay)(Future.successful(Done))
       _ <- backend.storeEventAndUpdateState(event = testEvent, update = (event, state) => state :+ event)
-      _ <- after(delay = delay, using = system)(Future.successful(Done))
+      _ <- after(delay = delay)(Future.successful(Done))
       _ <- backend.storeEventAndUpdateState(event = testEvent, update = (event, state) => state :+ event)
-      _ <- after(delay = delay, using = system)(Future.successful(Done))
+      _ <- after(delay = delay)(Future.successful(Done))
       _ <- backend.storeEventAndUpdateState(event = testEvent, update = (event, state) => state :+ event)
-      _ <- after(delay = delay, using = system)(Future.successful(Done))
+      _ <- after(delay = delay)(Future.successful(Done))
       stateAfter <- backend.getState
     } yield {
       stateBefore should be(empty)

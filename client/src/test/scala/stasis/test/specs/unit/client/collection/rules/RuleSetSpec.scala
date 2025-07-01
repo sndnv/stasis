@@ -9,7 +9,7 @@ import com.google.common.jimfs.Jimfs
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.RuleSet
 import stasis.client.service.ApplicationDirectory
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.test.specs.unit.client.ResourceHelpers
 

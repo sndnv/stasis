@@ -15,7 +15,7 @@ import stasis.identity.model.codes.generators.AuthorizationCodeGenerator
 import stasis.identity.model.codes.generators.DefaultAuthorizationCodeGenerator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.persistence.codes.AuthorizationCodeStore
-import stasis.layers
+import io.github.sndnv.layers
 
 class AuthorizationCodeGenerationSpec extends RouteTest {
   "An AuthorizationCodeGeneration directive" should "generate authorization codes without associated challenges" in withRetry {
@@ -62,7 +62,7 @@ class AuthorizationCodeGenerationSpec extends RouteTest {
     val owner = Generators.generateResourceOwner
     val scope = "some-scope"
     val expectedChallenge = StoredAuthorizationCode.Challenge(
-      layers.Generators.generateString(withSize = 128),
+      layers.testing.Generators.generateString(withSize = 128),
       Some(ChallengeMethod.S256)
     )
 

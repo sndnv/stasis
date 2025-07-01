@@ -5,7 +5,7 @@ import java.util.UUID
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.secrets.SecretsConfig
 import stasis.test.specs.unit.UnitSpec

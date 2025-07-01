@@ -20,7 +20,7 @@ import play.api.libs.json.Format
 
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.client.api.clients.internal.InsecureX509TrustManager
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
 class DefaultServerBootstrapEndpointClient(

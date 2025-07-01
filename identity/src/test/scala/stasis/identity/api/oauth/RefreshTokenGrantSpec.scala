@@ -14,7 +14,7 @@ import stasis.identity.model.GrantType
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.TokenType
-import stasis.layers
+import io.github.sndnv.layers
 
 class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -39,7 +39,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -88,7 +88,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -139,7 +139,7 @@ class RefreshTokenGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt

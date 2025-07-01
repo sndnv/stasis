@@ -24,7 +24,7 @@ import stasis.core.commands.proto.CommandSource
 import stasis.core.commands.proto.LogoutUser
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore

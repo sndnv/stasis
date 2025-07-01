@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.grpc.proto
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 private[grpc] class Client(
   address: GrpcEndpointAddress,

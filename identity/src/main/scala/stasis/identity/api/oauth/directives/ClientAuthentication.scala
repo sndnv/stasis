@@ -17,7 +17,7 @@ import stasis.identity.api.Formats._
 import stasis.identity.authentication.oauth.ClientAuthenticator
 import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait ClientAuthentication extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

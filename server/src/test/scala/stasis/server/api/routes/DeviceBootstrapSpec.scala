@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore

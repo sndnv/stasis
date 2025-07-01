@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.collection.rules.internal
 
 import stasis.client.collection.rules.internal.FilesWalker
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

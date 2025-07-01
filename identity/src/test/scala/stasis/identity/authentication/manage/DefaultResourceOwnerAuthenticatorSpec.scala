@@ -14,12 +14,12 @@ import org.jose4j.jws.AlgorithmIdentifiers
 import stasis.identity.model.Generators
 import stasis.identity.model.tokens.generators.JwtBearerAccessTokenGenerator
 import stasis.identity.persistence.mocks.MockResourceOwnerStore
-import stasis.layers.UnitSpec
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.security.jwt.DefaultJwtAuthenticator
-import stasis.layers.security.keys.KeyProvider
-import stasis.layers.security.mocks.MockJwksGenerators
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.jwt.DefaultJwtAuthenticator
+import io.github.sndnv.layers.security.keys.KeyProvider
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
 class DefaultResourceOwnerAuthenticatorSpec extends UnitSpec { test =>
   "A DefaultResourceOwnerAuthenticator" should "authenticate resource owners with valid JWTs" in {
@@ -144,7 +144,7 @@ class DefaultResourceOwnerAuthenticatorSpec extends UnitSpec { test =>
 
   private val issuer = "some-issuer"
 
-  private val jwk = MockJwksGenerators.generateRandomRsaKey(Some("some-key"))
+  private val jwk = MockJwksGenerator.generateRandomRsaKey(Some("some-key"))
 
   private val provider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)

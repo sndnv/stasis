@@ -17,7 +17,7 @@ import stasis.identity.api.manage.responses.CreatedClient
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.clients.ClientStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Clients(
   store: ClientStore,

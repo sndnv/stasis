@@ -2,7 +2,7 @@ package stasis.test.specs.unit.core.discovery
 
 import stasis.core.discovery.ServiceDiscoveryClient
 import stasis.core.discovery.ServiceDiscoveryRequest
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ServiceDiscoveryClientSpec extends UnitSpec {
   import ServiceDiscoveryClientSpec.TestAttributes

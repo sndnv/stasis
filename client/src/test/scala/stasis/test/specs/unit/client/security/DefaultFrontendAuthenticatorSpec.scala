@@ -6,7 +6,7 @@ import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
 import stasis.client.security.DefaultFrontendAuthenticator
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class DefaultFrontendAuthenticatorSpec extends AsyncUnitSpec { test =>

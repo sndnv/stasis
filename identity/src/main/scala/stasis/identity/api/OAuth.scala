@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import stasis.identity.api.oauth._
 import stasis.identity.api.oauth.setup.Config
 import stasis.identity.api.oauth.setup.Providers
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class OAuth(
   config: Config,

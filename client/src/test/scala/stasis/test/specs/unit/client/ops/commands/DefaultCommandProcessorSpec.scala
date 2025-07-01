@@ -252,7 +252,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     )
 
     managedProcessor(processor) {
-      await(initialDelay / 2, withSystem = typedSystem)
+      await(initialDelay / 2)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       persistLastProcessedCommandCalls.get() should be(0)
@@ -260,7 +260,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(0)
       lastProcessedSequenceId.get() should be(0)
 
-      await(initialDelay, withSystem = typedSystem)
+      await(initialDelay)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(1)
       persistLastProcessedCommandCalls.get() should be(1)
@@ -268,7 +268,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(1)
       lastProcessedSequenceId.get() should be(3)
 
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be >= 2
       persistLastProcessedCommandCalls.get() should be(1) // no new commands since last retrieval
@@ -313,7 +313,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
     )
 
     managedProcessor(processor) {
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       persistLastProcessedCommandCalls.get() should be >= 0L
       retrieveLastProcessedCommandCalls.get() should be >= 3L
@@ -378,7 +378,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(1) // no new commands since last retrieval
       lastProcessedSequenceId.get() should be(3) // no new commands since last retrieval
 
-      await(defaultInterval + (defaultInterval / 2), withSystem = typedSystem)
+      await(defaultInterval + (defaultInterval / 2))
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(3)
       persistLastProcessedCommandCalls.get() should be(1) // no new commands since last retrieval
@@ -437,7 +437,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(0)
       lastProcessedSequenceId.get() should be(0)
 
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       persistLastProcessedCommandCalls.get() should be(0)
@@ -503,7 +503,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(1) // no new commands since last retrieval
       lastProcessedSequenceId.get() should be(3) // no new commands since last retrieval
 
-      await(defaultInterval + (defaultInterval / 2), withSystem = typedSystem)
+      await(defaultInterval + (defaultInterval / 2))
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(3)
       persistLastProcessedCommandCalls.get() should be(1) // no new commands since last retrieval
@@ -562,7 +562,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
       executeCommandsCalls.get() should be(0)
       lastProcessedSequenceId.get() should be(0)
 
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(0)
       persistLastProcessedCommandCalls.get() should be(0)
@@ -592,7 +592,7 @@ class DefaultCommandProcessorSpec extends AsyncUnitSpec with Eventually with Bef
 
     val _ = processor.stop().await
 
-    await(defaultInterval, withSystem = typedSystem)
+    await(defaultInterval)
 
     mockApiClient.statistics(MockServerApiEndpointClient.Statistic.Commands) should be(1)
   }

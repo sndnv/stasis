@@ -4,7 +4,7 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
 
 import stasis.core.commands.proto.Command
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 object MockDeviceCommandStore {
   def apply()(implicit

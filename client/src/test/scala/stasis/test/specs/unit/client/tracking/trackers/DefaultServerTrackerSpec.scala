@@ -26,11 +26,11 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
     initialState should be(empty)
 
     tracker.reachable(server1)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.reachable(server2)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.unreachable(server1)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     eventually[Assertion] {
       val state = tracker.state.await
@@ -50,12 +50,12 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
     val expectedUpdates = 3
     val updates = tracker.updates(server).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     tracker.reachable(server)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.reachable(server)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.unreachable(server)
 
     updates.await.toList match {
@@ -82,10 +82,10 @@ class DefaultServerTrackerSpec extends AsyncUnitSpec with Eventually with Before
     tracker.reachable(server)
     tracker.reachable(server)
     tracker.unreachable(server)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     val updates = tracker.updates(server).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     updates.await.toList match {
       case update :: Nil =>

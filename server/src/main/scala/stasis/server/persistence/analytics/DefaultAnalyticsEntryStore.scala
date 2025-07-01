@@ -12,10 +12,10 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.JdbcType
 import slick.lifted.ProvenShape
 
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.model.analytics.StoredAnalyticsEntry
 
 class DefaultAnalyticsEntryStore(
@@ -26,8 +26,8 @@ class DefaultAnalyticsEntryStore(
     extends AnalyticsEntryStore {
   import profile.api._
 
-  import stasis.layers.api.Formats.analyticsEntryEventFormat
-  import stasis.layers.api.Formats.analyticsEntryFailureFormat
+  import io.github.sndnv.layers.api.Formats.analyticsEntryEventFormat
+  import io.github.sndnv.layers.api.Formats.analyticsEntryFailureFormat
 
   override protected implicit val ec: ExecutionContext = system.executionContext
 

@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.shared.model.datasets
 
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.test.specs.unit.shared.model.Generators
 

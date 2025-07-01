@@ -9,8 +9,8 @@ import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import stasis.core.networking.EndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.layers.security.exceptions.ProviderFailure
-import stasis.layers.security.jwt.JwtProvider
+import io.github.sndnv.layers.security.exceptions.ProviderFailure
+import io.github.sndnv.layers.security.jwt.JwtProvider
 
 class JwtNodeCredentialsProvider[A <: EndpointAddress](
   nodeStore: NodeStore.View,

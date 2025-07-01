@@ -12,12 +12,12 @@ import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jws.AlgorithmIdentifiers
 
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.security.jwt.DefaultJwtAuthenticator
-import stasis.layers.security.keys.KeyProvider
-import stasis.layers.security.mocks.MockJwksGenerators
-import stasis.layers.security.mocks.MockJwtGenerators
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.jwt.DefaultJwtAuthenticator
+import io.github.sndnv.layers.security.keys.KeyProvider
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
+import io.github.sndnv.layers.security.mocks.MockJwtGenerator
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.users.UserStore
 import stasis.server.security.authenticators.DefaultUserAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -219,7 +219,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   private val issuer = "some-issuer"
   private val audience = "some-audience"
 
-  private val jwk = MockJwksGenerators.generateRandomRsaKey(keyId = Some("some-key"))
+  private val jwk = MockJwksGenerator.generateRandomRsaKey(keyId = Some("some-key"))
 
   private val provider = new KeyProvider {
     override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
@@ -233,7 +233,7 @@ class DefaultUserAuthenticatorSpec extends AsyncUnitSpec { test =>
   }
 
   private def generateToken(subject: String): String =
-    MockJwtGenerators.generateJwt(
+    MockJwtGenerator.generateJwt(
       issuer = issuer,
       audience = audience,
       subject = subject,

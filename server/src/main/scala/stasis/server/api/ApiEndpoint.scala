@@ -16,10 +16,10 @@ import org.slf4j.LoggerFactory
 
 import stasis.core.discovery.http.HttpServiceDiscoveryEndpoint
 import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
-import stasis.layers.api.directives.EntityDiscardingDirectives
-import stasis.layers.api.directives.LoggingDirectives
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.UserAuthenticator

@@ -18,11 +18,11 @@ import stasis.identity.api.manage.setup.{Config => ManageConfig}
 import stasis.identity.api.manage.setup.{Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig}
 import stasis.identity.api.oauth.setup.{Providers => OAuthProviders}
-import stasis.layers.api.MessageResponse
-import stasis.layers.api.directives.EntityDiscardingDirectives
-import stasis.layers.api.directives.LoggingDirectives
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class IdentityEndpoint(
   keys: Seq[JsonWebKey],

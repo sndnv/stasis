@@ -25,8 +25,8 @@ import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.security.NodeCredentialsProvider
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedByteStringSource
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedByteStringSource
 
 class GrpcEndpointClient(
   override protected val credentials: NodeCredentialsProvider[GrpcEndpointAddress, HttpCredentials],

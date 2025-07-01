@@ -21,7 +21,7 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient

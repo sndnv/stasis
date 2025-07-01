@@ -20,7 +20,7 @@ import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait RefreshTokenConsumption extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

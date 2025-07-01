@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import stasis.client.api.clients.DefaultServerBootstrapEndpointClient
 import stasis.client.api.clients.exceptions.ServerBootstrapFailure
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User

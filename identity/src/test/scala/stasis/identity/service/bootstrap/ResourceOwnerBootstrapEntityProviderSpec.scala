@@ -10,7 +10,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import stasis.identity.model.Generators
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.mocks.MockResourceOwnerStore
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ResourceOwnerBootstrapEntityProviderSpec extends UnitSpec {
   "An ResourceOwnerBootstrapEntityProvider" should "provide its name and default entities" in {

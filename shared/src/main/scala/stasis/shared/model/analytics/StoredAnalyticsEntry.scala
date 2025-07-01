@@ -2,7 +2,7 @@ package stasis.shared.model.analytics
 
 import java.time.Instant
 
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 
 final case class StoredAnalyticsEntry(
   id: StoredAnalyticsEntry.Id,

@@ -14,8 +14,8 @@ import org.jose4j.jwt.JwtClaims
 
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.security.jwt.JwtAuthenticator
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.jwt.JwtAuthenticator
 
 class JwtNodeAuthenticator(
   nodeStore: NodeStore.View,

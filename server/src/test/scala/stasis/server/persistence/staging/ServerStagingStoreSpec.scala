@@ -17,7 +17,7 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.staging.ServerStagingStore
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec

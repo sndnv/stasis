@@ -29,8 +29,8 @@ import stasis.shared.model.schedules.Schedule
 object Formats {
   import play.api.libs.json._
 
-  import stasis.layers.api.Formats.optionFormat
-  import stasis.layers.api.Formats.uuidMapFormat
+  import io.github.sndnv.layers.api.Formats.optionFormat
+  import io.github.sndnv.layers.api.Formats.uuidMapFormat
   import stasis.shared.api.Formats.commandFormat
   import stasis.shared.api.Formats.scheduleFormat
 

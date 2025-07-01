@@ -9,7 +9,7 @@ import org.apache.pekko.util.ByteString
 
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.layers.Generators._
+import io.github.sndnv.layers.testing.Generators._
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device

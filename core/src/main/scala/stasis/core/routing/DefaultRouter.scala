@@ -34,7 +34,7 @@ import stasis.core.routing.exceptions.DiscardFailure
 import stasis.core.routing.exceptions.DistributionFailure
 import stasis.core.routing.exceptions.PullFailure
 import stasis.core.routing.exceptions.PushFailure
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultRouter(
   routerId: Node.Id,

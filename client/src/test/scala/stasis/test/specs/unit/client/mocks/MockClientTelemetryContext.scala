@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.client.mocks
 
-import stasis.layers.telemetry.analytics.AnalyticsCollector
-import stasis.layers.telemetry.metrics.MetricsProvider
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.metrics.MetricsProvider
 
 class MockClientTelemetryContext(
   collector: Option[AnalyticsCollector]

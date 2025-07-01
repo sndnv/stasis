@@ -10,7 +10,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
 import stasis.core.api.PoolClient
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.server.security.devices.IdentityDeviceCredentialsManager
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.AsyncUnitSpec

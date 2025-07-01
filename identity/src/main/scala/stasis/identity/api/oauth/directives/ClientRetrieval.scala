@@ -12,7 +12,7 @@ import org.slf4j.Logger
 
 import stasis.identity.model.clients.Client
 import stasis.identity.persistence.clients.ClientStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait ClientRetrieval extends EntityDiscardingDirectives {
 

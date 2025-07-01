@@ -13,7 +13,7 @@ import stasis.identity.model.Generators
 import stasis.identity.model.GrantType
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.TokenType
-import stasis.layers
+import io.github.sndnv.layers
 
 class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -33,7 +33,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -67,7 +67,7 @@ class ClientCredentialsGrantSpec extends RouteTest with OAuthFixtures {
     val grant = new ClientCredentialsGrant(config, providers)
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt

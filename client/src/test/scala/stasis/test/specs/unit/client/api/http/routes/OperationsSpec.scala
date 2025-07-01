@@ -31,7 +31,7 @@ import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.RecoveryState
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation

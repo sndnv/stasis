@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.identity.model.clients.Client
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait ClientStore extends Store { store =>
   def put(client: Client): Future[Done]

@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.DatasetDefinitions
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.UpdateDatasetDefinition
 import stasis.shared.api.responses.CreatedDatasetDefinition

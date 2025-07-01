@@ -23,7 +23,7 @@ import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.ContainerBackend
 import stasis.core.persistence.backends.file.FileBackend
 import stasis.core.persistence.backends.memory.StreamingMemoryBackend
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class CrateStore(
   val backend: StreamingBackend

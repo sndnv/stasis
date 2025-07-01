@@ -8,7 +8,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.identity.model.apis.Api
 import stasis.identity.persistence.mocks.MockApiStore
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ApiBootstrapEntityProviderSpec extends UnitSpec {
   "An ApiBootstrapEntityProvider" should "provide its name and default entities" in {

@@ -9,12 +9,12 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.core.persistence.manifests.DefaultManifestStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
-class DefaultManifestStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultManifestStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultManifestStore" should "add, retrieve and delete manifests" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultManifestStore(name = "TEST_MANIFESTS", profile = profile, database = database)

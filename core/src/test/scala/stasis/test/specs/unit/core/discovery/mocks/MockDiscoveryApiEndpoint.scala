@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.core.discovery.ServiceDiscoveryRequest
 import stasis.core.discovery.ServiceDiscoveryResult
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 class MockDiscoveryApiEndpoint(
   expectedCredentials: HttpCredentials,

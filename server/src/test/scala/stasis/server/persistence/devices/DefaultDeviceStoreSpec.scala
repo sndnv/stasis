@@ -9,13 +9,13 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultDeviceStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultDeviceStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultDeviceStore" should "add, retrieve and delete devices" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultDeviceStore(name = "TEST_DEVICES", profile = profile, database = database)

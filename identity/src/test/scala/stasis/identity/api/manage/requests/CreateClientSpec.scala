@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 
 import stasis.identity.model.Generators
 import stasis.identity.model.secrets.Secret
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class CreateClientSpec extends UnitSpec {
   private val request = CreateClient(

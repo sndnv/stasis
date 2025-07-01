@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
 
-import stasis.layers.api.MessageResponse
+import io.github.sndnv.layers.api.MessageResponse
 import stasis.server.api.handlers.Sanitizing
 import stasis.server.security.exceptions.AuthorizationFailure
 import stasis.test.specs.unit.UnitSpec

@@ -33,7 +33,7 @@ import stasis.shared.model.devices.Device
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
-  import stasis.layers.api.Matchers._
+  import io.github.sndnv.layers.api.Matchers._
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =

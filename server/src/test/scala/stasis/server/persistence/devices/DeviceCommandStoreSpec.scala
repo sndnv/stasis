@@ -11,7 +11,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.CommandSource
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.devices.Device
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec

@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 import stasis.server.persistence.devices.MockDeviceStore
 import stasis.shared.model.devices.Device
 import stasis.test.specs.unit.shared.model.Generators

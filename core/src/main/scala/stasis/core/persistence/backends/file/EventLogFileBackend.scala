@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.file.state.StateStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class EventLogFileBackend[E, S] private (
   config: EventLogFileBackend.Config,

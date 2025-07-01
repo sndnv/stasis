@@ -20,7 +20,7 @@ import stasis.client.service.components.bootstrap.internal.SelfSignedCertificate
 import stasis.client.service.ApplicationDirectory
 import stasis.client.service.ApplicationTemplates
 import stasis.client.service.components
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.DeviceBootstrapParameters
 
 trait Parameters {

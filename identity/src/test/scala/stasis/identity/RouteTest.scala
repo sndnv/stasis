@@ -34,11 +34,11 @@ import stasis.identity.persistence.mocks.MockRefreshTokenStore
 import stasis.identity.persistence.mocks.MockResourceOwnerStore
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
 trait RouteTest extends UnitSpec with ScalatestRouteTest {
   import scala.language.implicitConversions

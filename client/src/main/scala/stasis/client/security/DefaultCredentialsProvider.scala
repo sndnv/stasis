@@ -19,9 +19,9 @@ import org.apache.pekko.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.security.exceptions.ProviderFailure
-import stasis.layers.security.oauth.OAuthClient
-import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
+import io.github.sndnv.layers.security.exceptions.ProviderFailure
+import io.github.sndnv.layers.security.oauth.OAuthClient
+import io.github.sndnv.layers.security.oauth.OAuthClient.AccessTokenResponse
 
 class DefaultCredentialsProvider private (
   providerRef: ActorRef[DefaultCredentialsProvider.Message]

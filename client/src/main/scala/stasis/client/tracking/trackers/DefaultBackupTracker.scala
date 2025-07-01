@@ -21,7 +21,7 @@ import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.trackers.DefaultBackupTracker.updateState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation

@@ -20,7 +20,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.errors.TokenError
 import stasis.identity.persistence.apis.ApiStore
 import stasis.identity.persistence.clients.ClientStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait AudienceExtraction extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

@@ -15,7 +15,7 @@ import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.generators.RefreshTokenGenerator
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait RefreshTokenGeneration extends EntityDiscardingDirectives {
 

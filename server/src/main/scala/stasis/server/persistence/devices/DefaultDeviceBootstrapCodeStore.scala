@@ -10,10 +10,10 @@ import scala.concurrent.duration._
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.devices.DeviceBootstrapCode
 
 class DefaultDeviceBootstrapCodeStore(

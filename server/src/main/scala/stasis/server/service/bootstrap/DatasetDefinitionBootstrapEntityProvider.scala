@@ -10,7 +10,7 @@ import com.typesafe.config.Config
 import com.typesafe.{config => typesafe}
 import org.apache.pekko.Done
 
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.shared.model.datasets.DatasetDefinition
 

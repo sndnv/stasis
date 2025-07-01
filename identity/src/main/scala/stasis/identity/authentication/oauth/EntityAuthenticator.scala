@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.identity.model.secrets.Secret
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 trait EntityAuthenticator[T] {
 

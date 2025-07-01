@@ -34,7 +34,7 @@ class Operations()(implicit context: Context) extends ApiRoutes {
   import org.apache.pekko.http.scaladsl.marshalling.sse.EventStreamMarshalling._
 
   import Operations._
-  import stasis.layers.api.Matchers._
+  import io.github.sndnv.layers.api.Matchers._
 
   def routes(): Route =
     concat(

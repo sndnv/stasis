@@ -14,7 +14,7 @@ import stasis.client.tracking.ServerTracker
 import stasis.client.tracking.ServerTracker.ServerState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 
 class DefaultServerTracker(
   backend: EventLogBackend[DefaultServerTracker.ServerEvent, Map[String, ServerState]]

@@ -12,7 +12,7 @@ import org.scalatest.concurrent.Eventually
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.core.persistence.events.EventLog
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 

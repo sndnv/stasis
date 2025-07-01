@@ -8,7 +8,7 @@ import scala.concurrent.Promise
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.Http
 
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 trait Init {
   def credentials(): Future[(String, Array[Char])]

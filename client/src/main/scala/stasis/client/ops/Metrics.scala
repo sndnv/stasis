@@ -6,8 +6,8 @@ import io.opentelemetry.api.metrics.Meter
 import stasis.client.model.EntityMetadata
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
-import stasis.layers.telemetry.metrics.MeterExtensions.ExtendedMeter
-import stasis.layers.telemetry.metrics.MetricsProvider
+import io.github.sndnv.layers.telemetry.metrics.MeterExtensions.ExtendedMeter
+import io.github.sndnv.layers.telemetry.metrics.MetricsProvider
 
 object Metrics {
   def noop(): Set[MetricsProvider] = Set(

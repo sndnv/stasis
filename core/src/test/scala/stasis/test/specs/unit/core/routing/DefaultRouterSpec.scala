@@ -28,7 +28,7 @@ import stasis.core.routing.exceptions.DiscardFailure
 import stasis.core.routing.exceptions.DistributionFailure
 import stasis.core.routing.exceptions.PullFailure
 import stasis.core.routing.exceptions.PushFailure
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient

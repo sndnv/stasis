@@ -13,11 +13,11 @@ import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.MockTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class MockRefreshTokenStore(
   underlying: KeyValueStore[RefreshToken, StoredRefreshToken]

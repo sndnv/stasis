@@ -8,8 +8,8 @@ import play.api.libs.json._
 
 import stasis.identity.model.Generators
 import stasis.identity.model.Seconds
-import stasis.layers
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers
+import io.github.sndnv.layers.testing.UnitSpec
 
 trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
   def jwtBearerAccessTokenGenerator(withKeyType: String, withJwk: JsonWebKey): Unit = {
@@ -23,7 +23,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
         subject = Some("some-subject"),
         tokenExpiration = clientTokenExpiration
       )
-      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val audience = layers.testing.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val accessToken = generator.generate(client, audience)
 
       accessToken.expiration should be(clientTokenExpiration: Seconds)
@@ -51,7 +51,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
         subject = None,
         tokenExpiration = clientTokenExpiration
       )
-      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateClient)
+      val audience = layers.testing.Generators.generateSeq(min = 1, g = Generators.generateClient)
       val accessToken = generator.generate(client, audience)
 
       accessToken.expiration should be(clientTokenExpiration: Seconds)
@@ -76,7 +76,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
 
     it should s"generate JWTs for resource owners with custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = Some("some-subject"))
-      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val audience = layers.testing.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val accessToken = generator.generate(owner, audience)
 
       accessToken.expiration should be(jwtExpiration: Seconds)
@@ -101,7 +101,7 @@ trait JwtBearerAccessTokenGeneratorBehaviour { _: UnitSpec =>
 
     it should s"generate JWTs for resource owners without custom subject ($withKeyType)" in {
       val owner = Generators.generateResourceOwner.copy(subject = None)
-      val audience = layers.Generators.generateSeq(min = 1, g = Generators.generateApi)
+      val audience = layers.testing.Generators.generateSeq(min = 1, g = Generators.generateApi)
       val accessToken = generator.generate(owner, audience)
 
       val jws = new JsonWebSignature()

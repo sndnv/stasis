@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateAnalyticsEntry
@@ -105,7 +105,7 @@ object Analytics {
 
   import play.api.libs.json._
 
-  import stasis.layers.api.Formats._
+  import io.github.sndnv.layers.api.Formats._
 
   implicit val analyticsEntrySummaryFormat: Format[AnalyticsEntrySummary] =
     Json.format[AnalyticsEntrySummary]

@@ -14,7 +14,7 @@ import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.reservations.DefaultReservationStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
@@ -94,7 +94,7 @@ class DefaultReservationStoreSpec extends AsyncUnitSpec {
       _ <- store.init()
       _ <- store.put(expectedReservation)
       actualReservation <- store.get(expectedReservation.id)
-      _ <- after(expiration * 2, using = system)(Future.successful(Done))
+      _ <- after(expiration * 2)(Future.successful(Done))
       missingReservation <- store.get(expectedReservation.id)
       _ <- store.drop()
     } yield {

@@ -11,11 +11,11 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.identity.model.Generators
 import stasis.identity.persistence.internal.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
-class DefaultResourceOwnerStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultResourceOwnerStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultResourceOwnerStore" should "add, retrieve and delete resource owners" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultResourceOwnerStore(name = "TEST_OWNERS", profile = profile, database = database)

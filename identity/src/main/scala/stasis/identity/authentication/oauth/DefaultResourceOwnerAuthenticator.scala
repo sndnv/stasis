@@ -6,7 +6,7 @@ import org.apache.pekko.actor.typed.ActorSystem
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.owners.ResourceOwnerStore
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class DefaultResourceOwnerAuthenticator(
   store: ResourceOwnerStore.View,

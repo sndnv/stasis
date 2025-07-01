@@ -11,9 +11,9 @@ import slick.lifted.ProvenShape
 
 import stasis.identity.model.apis.Api
 import stasis.identity.persistence.internal
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultApiStore(
   override val name: String,

@@ -25,7 +25,7 @@ import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.errors.TokenError
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.persistence.codes.AuthorizationCodeStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

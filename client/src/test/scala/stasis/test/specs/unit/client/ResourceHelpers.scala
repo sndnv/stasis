@@ -15,7 +15,7 @@ import stasis.client.analysis.Metadata
 import stasis.client.model.EntityMetadata
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
-import stasis.layers.FileSystemHelpers
+import io.github.sndnv.layers.testing.FileSystemHelpers
 
 trait ResourceHelpers extends FileSystemHelpers {
   implicit class PathWithMetadataExtraction(resourcePath: Path) {

@@ -9,9 +9,9 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 
 import stasis.client.security.DefaultCredentialsProvider
-import stasis.layers.security.exceptions.ProviderFailure
-import stasis.layers.security.mocks.MockOAuthClient
-import stasis.layers.security.oauth.OAuthClient.AccessTokenResponse
+import io.github.sndnv.layers.security.exceptions.ProviderFailure
+import io.github.sndnv.layers.security.mocks.MockOAuthClient
+import io.github.sndnv.layers.security.oauth.OAuthClient.AccessTokenResponse
 import stasis.test.specs.unit.AsyncUnitSpec
 
 class DefaultCredentialsProviderSpec extends AsyncUnitSpec with Eventually {

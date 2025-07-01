@@ -6,7 +6,7 @@ import org.apache.pekko.Done
 
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait AuthorizationCodeStore extends Store {
   def put(storedCode: StoredAuthorizationCode): Future[Done]

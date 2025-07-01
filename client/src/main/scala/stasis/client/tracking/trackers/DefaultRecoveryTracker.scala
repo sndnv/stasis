@@ -18,7 +18,7 @@ import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.RecoveryState
 import stasis.core.persistence.backends.EventLogBackend
 import stasis.core.persistence.events.EventLog
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 import stasis.shared.ops.Operation
 
 class DefaultRecoveryTracker(
