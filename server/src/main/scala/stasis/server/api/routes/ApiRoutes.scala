@@ -7,7 +7,7 @@ import scala.reflect.ClassTag
 import org.apache.pekko.http.scaladsl.server.Directives.onSuccess
 import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 import stasis.server.security.CurrentUser
 import stasis.server.security.Resource
 import stasis.server.security.ResourceProvider

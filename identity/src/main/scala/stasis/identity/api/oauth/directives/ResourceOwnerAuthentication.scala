@@ -17,7 +17,7 @@ import stasis.identity.api.Formats._
 import stasis.identity.authentication.oauth.ResourceOwnerAuthenticator
 import stasis.identity.model.errors.AuthorizationError
 import stasis.identity.model.owners.ResourceOwner
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait ResourceOwnerAuthentication extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

@@ -9,7 +9,7 @@ import org.apache.pekko.actor.typed.ActorSystem
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.clients.ClientStore
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class DefaultClientAuthenticator(
   store: ClientStore.View,

@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.core.discovery.ServiceDiscoveryRequest
 import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class HttpServiceDiscoveryEndpoint(
   provider: ServiceDiscoveryProvider

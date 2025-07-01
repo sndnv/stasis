@@ -9,7 +9,7 @@ import stasis.identity.api.manage.CodesSpec.PartialStoredAuthorizationCode
 import stasis.identity.model.Generators
 import stasis.identity.model.clients.Client
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.layers
+import io.github.sndnv.layers
 
 class CodesSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -19,7 +19,7 @@ class CodesSpec extends RouteTest {
     val codes = new Codes(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedCodes = layers.Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
+    val expectedCodes = layers.testing.Generators.generateSeq(min = 2, g = Generators.generateAuthorizationCode)
 
     Future
       .sequence(

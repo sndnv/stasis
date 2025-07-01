@@ -18,9 +18,9 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
-import stasis.layers.api.MessageResponse
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore

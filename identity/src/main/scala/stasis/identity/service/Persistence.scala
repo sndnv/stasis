@@ -23,12 +23,12 @@ import stasis.identity.persistence.owners.DefaultResourceOwnerStore
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.identity.persistence.tokens.DefaultRefreshTokenStore
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.MigrationExecutor
-import stasis.layers.persistence.migration.MigrationResult
-import stasis.layers.service.PersistenceProvider
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.MigrationExecutor
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.service.PersistenceProvider
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class Persistence(
   persistenceConfig: typesafe.Config,

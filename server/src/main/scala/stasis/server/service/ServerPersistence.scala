@@ -11,11 +11,11 @@ import slick.jdbc.JdbcProfile
 
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.core.persistence.commands.DefaultCommandStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.MigrationExecutor
-import stasis.layers.persistence.migration.MigrationResult
-import stasis.layers.service.PersistenceProvider
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.MigrationExecutor
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.service.PersistenceProvider
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.persistence.analytics.DefaultAnalyticsEntryStore
 import stasis.server.persistence.datasets.DatasetDefinitionStore

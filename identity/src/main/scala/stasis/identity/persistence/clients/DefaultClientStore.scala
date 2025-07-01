@@ -15,9 +15,9 @@ import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.internal
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultClientStore(
   override val name: String,

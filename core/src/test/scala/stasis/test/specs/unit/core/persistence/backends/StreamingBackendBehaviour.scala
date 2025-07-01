@@ -10,7 +10,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
 import stasis.core.persistence.backends.StreamingBackend
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 

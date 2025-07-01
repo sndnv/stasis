@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.persistence.apis.ApiStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Apis(store: ApiStore) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

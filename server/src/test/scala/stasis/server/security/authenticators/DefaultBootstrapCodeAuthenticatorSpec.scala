@@ -7,8 +7,8 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.devices.MockDeviceBootstrapCodeStore
 import stasis.server.security.authenticators.DefaultBootstrapCodeAuthenticator
 import stasis.test.specs.unit.AsyncUnitSpec

@@ -2,9 +2,9 @@ package stasis.test.specs.unit.shared.model.analytics
 
 import java.time.Instant
 
-import stasis.layers.UnitSpec
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.model.analytics.StoredAnalyticsEntry
 
 class StoredAnalyticsEntrySpec extends UnitSpec {

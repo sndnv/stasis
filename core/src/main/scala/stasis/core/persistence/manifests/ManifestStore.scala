@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait ManifestStore extends Store { store =>
   def put(manifest: Manifest): Future[Done]

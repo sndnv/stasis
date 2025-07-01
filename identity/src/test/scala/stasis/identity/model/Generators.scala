@@ -10,7 +10,7 @@ import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.RefreshToken
-import stasis.layers.Generators._
+import io.github.sndnv.layers.testing.Generators._
 
 object Generators {
   object Defaults {

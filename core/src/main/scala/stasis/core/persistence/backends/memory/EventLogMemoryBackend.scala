@@ -20,7 +20,7 @@ import org.apache.pekko.util.Timeout
 
 import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.EventLogBackend
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class EventLogMemoryBackend[E, S] private (
   name: String,

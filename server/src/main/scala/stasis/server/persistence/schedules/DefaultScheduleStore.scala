@@ -14,9 +14,9 @@ import slick.jdbc.JdbcType
 import slick.lifted.ProvenShape
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.schedules.Schedule
 
 class DefaultScheduleStore(
@@ -76,7 +76,7 @@ class DefaultScheduleStore(
   override val migrations: Seq[Migration] = Seq(
     LegacyKeyValueStore(name, profile, database)
       .asMigration[Schedule, SlickStore](withVersion = 1, current = store) { e =>
-        import stasis.layers.api.Formats.finiteDurationFormat
+        import io.github.sndnv.layers.api.Formats.finiteDurationFormat
 
         Schedule(
           id = (e \ "id").as[Schedule.Id],

@@ -33,7 +33,7 @@ import stasis.identity.RouteTest
 import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.api.manage.requests.CreateOwner
 import stasis.identity.model.apis.Api
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 class ServiceSpec extends RouteTest with Eventually {
   import ServiceSpec._

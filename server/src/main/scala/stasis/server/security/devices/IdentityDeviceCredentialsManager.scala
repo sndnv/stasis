@@ -16,8 +16,8 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 import stasis.core.api.PoolClient
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
@@ -165,7 +165,7 @@ class IdentityDeviceCredentialsManager(
 }
 
 object IdentityDeviceCredentialsManager {
-  import stasis.layers.api.Formats.jsonConfig
+  import io.github.sndnv.layers.api.Formats.jsonConfig
 
   private implicit val clientFormat: Format[Client] =
     Json.format[Client]

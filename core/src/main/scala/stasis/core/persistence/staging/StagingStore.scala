@@ -27,8 +27,8 @@ import stasis.core.persistence.exceptions.StagingFailure
 import stasis.core.persistence.staging.StagingStore.PendingDestaging
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class StagingStore(
   crateStore: CrateStore,

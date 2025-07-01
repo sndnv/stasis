@@ -1,7 +1,7 @@
 package stasis.identity.model.apis
 
 import stasis.identity.model.Generators
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ApiSpec extends UnitSpec {
   "An Api" should "validate its fields" in {

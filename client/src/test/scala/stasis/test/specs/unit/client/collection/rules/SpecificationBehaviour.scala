@@ -9,7 +9,7 @@ import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.Specification
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.IndexedRule
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

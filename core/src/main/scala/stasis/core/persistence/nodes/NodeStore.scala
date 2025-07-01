@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.core.routing.Node
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait NodeStore extends Store { store =>
   def put(node: Node): Future[Done]

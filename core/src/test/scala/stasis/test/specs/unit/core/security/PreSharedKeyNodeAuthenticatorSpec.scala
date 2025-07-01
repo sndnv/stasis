@@ -11,7 +11,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.PreSharedKeyNodeAuthenticator
-import stasis.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext

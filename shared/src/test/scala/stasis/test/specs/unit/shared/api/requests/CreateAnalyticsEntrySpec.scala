@@ -2,8 +2,8 @@ package stasis.test.specs.unit.shared.api.requests
 
 import java.time.Instant
 
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateAnalyticsEntry
 import stasis.shared.model.analytics.StoredAnalyticsEntry
 import stasis.test.specs.unit.UnitSpec

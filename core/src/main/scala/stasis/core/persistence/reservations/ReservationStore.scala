@@ -7,7 +7,7 @@ import org.apache.pekko.Done
 import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait ReservationStore extends Store { store =>
   def put(reservation: CrateStorageReservation): Future[Done]

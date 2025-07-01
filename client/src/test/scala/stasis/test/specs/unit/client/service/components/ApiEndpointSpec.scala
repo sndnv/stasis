@@ -142,10 +142,10 @@ class ApiEndpointSpec extends AsyncUnitSpec with ResourceHelpers {
 
     response.status should be(StatusCodes.NoContent)
 
-    await(delay = apiTerminationDelay / 2, withSystem = typedSystem)
+    await(delay = apiTerminationDelay / 2)
     terminationCounter.get should be(0)
 
-    await(delay = apiTerminationDelay, withSystem = typedSystem)
+    await(delay = apiTerminationDelay)
     terminationCounter.get should be(1)
   }
 

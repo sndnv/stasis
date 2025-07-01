@@ -18,7 +18,7 @@ import stasis.client.api.http.routes.Device
 import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.tracking.ServerTracker
 import stasis.core.commands.proto.Command
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec

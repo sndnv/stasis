@@ -19,11 +19,11 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.DefaultReservationStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.MigrationExecutor
-import stasis.layers.persistence.migration.MigrationResult
-import stasis.layers.service.PersistenceProvider
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.MigrationExecutor
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.service.PersistenceProvider
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.manifests.ServerManifestStore
 import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.persistence.reservations.ServerReservationStore

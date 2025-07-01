@@ -7,8 +7,8 @@ import java.nio.file.Paths
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-import stasis.layers.FileSystemHelpers
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.FileSystemHelpers
+import io.github.sndnv.layers.testing.UnitSpec
 
 class SignatureKeySpec extends UnitSpec with FileSystemHelpers {
   "A SignatureKey" should "provide JWK based on config (generated)" in {

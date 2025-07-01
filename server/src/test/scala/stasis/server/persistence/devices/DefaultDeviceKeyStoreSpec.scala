@@ -9,12 +9,12 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultDeviceKeyStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultDeviceKeyStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultDeviceKeyStore" should "add, retrieve and delete device keys" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultDeviceKeyStore(name = "TEST_DEVICE_KEYS", profile = profile, database = database)
@@ -47,7 +47,7 @@ class DefaultDeviceKeyStoreSpec extends UnitSpec with SlickTestDatabase {
       withStore { (profile, database) =>
         import play.api.libs.json._
 
-        import stasis.layers.api.Formats._
+        import io.github.sndnv.layers.api.Formats._
 
         val name = "TEST_DEVICE_KEYS"
         val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)

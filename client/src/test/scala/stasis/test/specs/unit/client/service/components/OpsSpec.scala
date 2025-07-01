@@ -168,7 +168,7 @@ class OpsSpec extends AsyncUnitSpec with ResourceHelpers with Eventually {
 
     noException should be thrownBy Ops.executeCommand(base, command = command).await
 
-    await(delay = 300.millis, withSystem = typedSystem)
+    await(delay = 300.millis)
 
     terminationCount.get() should be(0)
   }

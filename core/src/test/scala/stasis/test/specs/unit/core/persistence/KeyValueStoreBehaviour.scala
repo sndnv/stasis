@@ -1,12 +1,12 @@
-package stasis.layers.persistence
+package stasis.test.specs.unit.core.persistence
 
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
 import org.apache.pekko.Done
-
-import stasis.layers.UnitSpec
-import stasis.layers.telemetry.MockTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
 
 trait KeyValueStoreBehaviour { _: UnitSpec =>
   def keyValueStore[B <: KeyValueStore[String, Int]](

@@ -10,8 +10,8 @@ import scala.util.Try
 
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class PreSharedKeyNodeAuthenticator(
   nodeStore: NodeStore.View,

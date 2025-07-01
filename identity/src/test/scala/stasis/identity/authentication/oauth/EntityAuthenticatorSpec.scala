@@ -9,8 +9,8 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 
 import stasis.identity.model.secrets.Secret
-import stasis.layers.UnitSpec
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class EntityAuthenticatorSpec extends UnitSpec {
   "An EntityAuthenticator" should "successfully authenticate entities" in {

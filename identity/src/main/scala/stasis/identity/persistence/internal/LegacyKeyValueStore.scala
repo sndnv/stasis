@@ -9,7 +9,7 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.relational.RelationalProfile
 
-import stasis.layers.persistence.migration.Migration
+import io.github.sndnv.layers.persistence.migration.Migration
 
 class LegacyKeyValueStore(
   val name: String,

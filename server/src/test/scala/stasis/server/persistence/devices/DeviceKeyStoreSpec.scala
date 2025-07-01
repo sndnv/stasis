@@ -10,7 +10,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.ByteString
 
 import stasis.core.routing.Node
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User

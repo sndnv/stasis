@@ -24,8 +24,8 @@ import stasis.client.api.clients.Clients
 import stasis.client.ops.exceptions.ScheduleRetrievalFailure
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import stasis.client.service.ApplicationConfiguration
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
 
 class DefaultOperationScheduler private (
   schedulerRef: ActorRef[DefaultOperationScheduler.Message]

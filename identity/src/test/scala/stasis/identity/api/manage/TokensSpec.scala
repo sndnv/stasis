@@ -7,7 +7,7 @@ import stasis.identity.api.manage.TokensSpec.PartialStoredRefreshToken
 import stasis.identity.model.Generators
 import stasis.identity.model.clients.Client
 import stasis.identity.model.tokens.RefreshToken
-import stasis.layers
+import io.github.sndnv.layers
 
 class TokensSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -17,7 +17,7 @@ class TokensSpec extends RouteTest {
     val tokens = new Tokens(store)
 
     val owner = Generators.generateResourceOwner
-    val expectedTokens = layers.Generators
+    val expectedTokens = layers.testing.Generators
       .generateSeq(min = 2, g = Generators.generateRefreshToken)
       .map(token => PartialStoredRefreshToken(token.value, Client.generateId(), owner.username, scope = None))
 

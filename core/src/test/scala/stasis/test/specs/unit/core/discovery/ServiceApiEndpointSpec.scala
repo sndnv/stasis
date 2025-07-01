@@ -4,7 +4,7 @@ import stasis.core.discovery.ServiceApiEndpoint
 import stasis.core.networking.EndpointAddress
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ServiceApiEndpointSpec extends UnitSpec {
   "A ServiceApiEndpoint" should "support providing an ID" in {

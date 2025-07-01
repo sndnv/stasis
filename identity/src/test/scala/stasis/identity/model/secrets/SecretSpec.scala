@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 
 import stasis.identity.EncodingHelpers
 import stasis.identity.model.Generators
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class SecretSpec extends UnitSpec with EncodingHelpers {
   "A Secret" should "generate random password salt values" in {

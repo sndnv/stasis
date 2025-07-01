@@ -10,7 +10,7 @@ import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 

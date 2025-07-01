@@ -6,8 +6,8 @@ import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.RejectionHandler
 import org.apache.pekko.http.scaladsl.server.ValidationRejection
 import org.slf4j.Logger
-import stasis.layers.api.MessageResponse
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 
 object Rejection {
   def create(log: Logger): RejectionHandler =

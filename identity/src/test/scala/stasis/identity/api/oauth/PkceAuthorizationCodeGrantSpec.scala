@@ -21,7 +21,7 @@ import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.codes.StoredAuthorizationCode
 import stasis.identity.model.secrets.Secret
 import stasis.identity.model.tokens.TokenType
-import stasis.layers
+import io.github.sndnv.layers
 
 class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -106,7 +106,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -118,8 +118,8 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = layers.Generators.generateString(withSize = 16),
-      code_challenge = layers.Generators.generateString(withSize = 128),
+      state = layers.testing.Generators.generateString(withSize = 16),
+      code_challenge = layers.testing.Generators.generateString(withSize = 128),
       code_challenge_method = Some(ChallengeMethod.Plain)
     )
 
@@ -168,7 +168,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -180,8 +180,8 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some(client.redirectUri),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = layers.Generators.generateString(withSize = 16),
-      code_challenge = layers.Generators.generateString(withSize = 128),
+      state = layers.testing.Generators.generateString(withSize = 16),
+      code_challenge = layers.testing.Generators.generateString(withSize = 128),
       code_challenge_method = Some(ChallengeMethod.Plain)
     )
 
@@ -237,12 +237,12 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     stores.apis.put(api).await
     stores.clients.put(client).await
 
-    val requests = layers.Generators.generateSeq(
+    val requests = layers.testing.Generators.generateSeq(
       min = 3,
       g = {
 
-        val rawPassword = layers.Generators.generateString(24)
-        val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
+        val rawPassword = layers.testing.Generators.generateString(24)
+        val salt = layers.testing.Generators.generateString(withSize = secrets.owner.saltSize)
         val owner = Generators.generateResourceOwner.copy(
           password = Secret.derive(rawPassword, salt)(secrets.owner),
           salt = salt
@@ -254,8 +254,8 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
           client_id = client.id,
           redirect_uri = Some(client.redirectUri),
           scope = grant.apiAudienceToScope(Seq(api)),
-          state = layers.Generators.generateString(withSize = 16),
-          code_challenge = layers.Generators.generateString(withSize = 128),
+          state = layers.testing.Generators.generateString(withSize = 16),
+          code_challenge = layers.testing.Generators.generateString(withSize = 128),
           code_challenge_method = Some(ChallengeMethod.Plain)
         )
 
@@ -294,7 +294,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.owner.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.owner.saltSize)
     val owner = Generators.generateResourceOwner.copy(
       password = Secret.derive(rawPassword, salt)(secrets.owner),
       salt = salt
@@ -306,8 +306,8 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       client_id = client.id,
       redirect_uri = Some("some-uri"),
       scope = grant.apiAudienceToScope(Seq(api)),
-      state = layers.Generators.generateString(withSize = 16),
-      code_challenge = layers.Generators.generateString(withSize = 128),
+      state = layers.testing.Generators.generateString(withSize = 16),
+      code_challenge = layers.testing.Generators.generateString(withSize = 128),
       code_challenge_method = None
     )
 
@@ -339,7 +339,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -347,7 +347,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = Some(ChallengeMethod.Plain)
     )
 
@@ -403,7 +403,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -411,7 +411,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = Some(ChallengeMethod.Plain)
     )
 
@@ -469,7 +469,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -477,7 +477,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = Some(ChallengeMethod.Plain)
     )
 
@@ -533,7 +533,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -541,7 +541,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = Some(ChallengeMethod.Plain)
     )
 
@@ -588,7 +588,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val api = Generators.generateApi
 
     val rawPassword = "some-password"
-    val salt = layers.Generators.generateString(withSize = secrets.client.saltSize)
+    val salt = layers.testing.Generators.generateString(withSize = secrets.client.saltSize)
     val client = Generators.generateClient.copy(
       secret = Secret.derive(rawPassword, salt)(secrets.client),
       salt = salt
@@ -596,7 +596,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
     val credentials = BasicHttpCredentials(client.id.toString, rawPassword)
 
     val challenge = StoredAuthorizationCode.Challenge(
-      value = layers.Generators.generateString(withSize = 128),
+      value = layers.testing.Generators.generateString(withSize = 128),
       method = Some(ChallengeMethod.Plain)
     )
 
@@ -614,7 +614,7 @@ class PkceAuthorizationCodeGrantSpec extends RouteTest with OAuthFixtures {
       code = code,
       redirect_uri = Some(client.redirectUri),
       client_id = client.id,
-      code_verifier = layers.Generators.generateString(withSize = 128)
+      code_verifier = layers.testing.Generators.generateString(withSize = 128)
     )
 
     stores.clients.put(client).await

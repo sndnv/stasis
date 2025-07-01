@@ -10,8 +10,8 @@ import org.apache.pekko.util.ByteString
 
 import stasis.client.api.clients.CachedServerApiEndpointClient
 import stasis.core.packaging.Crate
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword

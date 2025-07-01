@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import org.apache.pekko.Done
 
 import stasis.core.commands.proto.Command
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait CommandStore extends Store { store =>
   def put(command: Command): Future[Done]

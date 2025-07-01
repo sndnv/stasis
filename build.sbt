@@ -10,16 +10,16 @@ ThisBuild / scalaVersion := "2.13.16"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.1.3"
+  val pekko         = "1.1.4"
   val pekkoHttp     = "1.2.0"
   val pekkoHttpCors = "1.2.0"
-  val pekkoJson     = "3.2.0"
+  val pekkoJson     = "3.2.1"
 
   // persistence
   val slick    = "3.6.1"
   val postgres = "42.7.7"
-  val mariadb  = "3.5.3"
-  val sqlite   = "3.50.1.0"
+  val mariadb  = "3.5.4"
+  val sqlite   = "3.50.2.0"
   val h2       = "2.3.232"
 
   // telemetry
@@ -36,7 +36,7 @@ lazy val versions = new {
   val jimfs         = "1.3.0"
 
   // misc
-  val playJson     = "2.10.6"
+  val playJson     = "2.10.7"
   val jose4j       = "0.9.6"
   val hkdf         = "2.0.0"
   val appdirs      = "1.4.0"
@@ -44,6 +44,7 @@ lazy val versions = new {
   val logback      = "1.5.18"
   val systemTray   = "4.4"
   val bouncycastle = "1.81"
+  val layers       = "1.0.0"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:21-noble"
@@ -63,7 +64,8 @@ lazy val server = (project in file("./server"))
       "org.apache.pekko"   %% "pekko-http-cors"                   % versions.pekkoHttpCors,
       "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
-      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
+      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus,
+      "io.github.sndnv"    %% "layers"                            % versions.layers
     ),
     dockerBaseImage := jdkDockerImage,
     dockerLabels    := Map("org.opencontainers.image.description" -> "Backup management and storage service")
@@ -86,7 +88,9 @@ lazy val client = (project in file("./client"))
       "io.prometheus"     % "simpleclient_hotspot"              % versions.prometheus,
       "com.dorkbox"       % "SystemTray"                        % versions.systemTray,
       "org.bouncycastle"  % "bcprov-jdk18on"                    % versions.bouncycastle,
-      "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle
+      "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle,
+      "io.github.sndnv"  %% "layers"                            % versions.layers,
+      "com.google.jimfs"  % "jimfs"                             % versions.jimfs % Test
     ),
     dockerBaseImage                    := jdkDockerImage,
     dockerLabels                       := Map(
@@ -115,7 +119,8 @@ lazy val identity = (project in file("./identity"))
       "org.apache.pekko"   %% "pekko-http-cors"                   % versions.pekkoHttpCors,
       "io.opentelemetry"    % "opentelemetry-sdk"                 % versions.openTelemetry,
       "io.opentelemetry"    % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus,
-      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus
+      "io.prometheus"       % "simpleclient_hotspot"              % versions.prometheus,
+      "io.github.sndnv"    %% "layers"                            % versions.layers
     ),
     dockerBaseImage := jdkDockerImage,
     dockerLabels    := Map("org.opencontainers.image.description" -> "OAuth2 identity management service based on RFC 6749")
@@ -125,41 +130,12 @@ lazy val identity = (project in file("./identity"))
 
 lazy val shared = (project in file("./shared"))
   .settings(commonSettings)
-  .dependsOn(core % "compile->compile;test->test")
-
-lazy val layers = (project in file("./layers"))
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.apache.pekko"      %% "pekko-actor"                       % versions.pekko                   % Provided,
-      "org.apache.pekko"      %% "pekko-actor-typed"                 % versions.pekko                   % Provided,
-      "org.apache.pekko"      %% "pekko-stream"                      % versions.pekko                   % Provided,
-      "org.apache.pekko"      %% "pekko-discovery"                   % versions.pekko                   % Provided,
-      "org.apache.pekko"      %% "pekko-slf4j"                       % versions.pekko                   % Provided,
-      "org.apache.pekko"      %% "pekko-http"                        % versions.pekkoHttp               % Provided,
-      "org.apache.pekko"      %% "pekko-http-core"                   % versions.pekkoHttp               % Provided,
-      "com.typesafe.play"     %% "play-json"                         % versions.playJson                % Provided,
-      "com.github.pjfanning"  %% "pekko-http-play-json"              % versions.pekkoJson               % Provided,
-      "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j                  % Provided,
-      "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry           % Provided,
-      "ch.qos.logback"         % "logback-classic"                   % versions.logback                 % Provided,
-      "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
-      "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
-      "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
-      "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Test,
-      "com.h2database"         % "h2"                                % versions.h2                      % Test,
-      "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
-      "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
-      "org.apache.pekko"      %% "pekko-testkit"                     % versions.pekko                   % Test,
-      "org.apache.pekko"      %% "pekko-stream-testkit"              % versions.pekko                   % Test,
-      "org.apache.pekko"      %% "pekko-http-testkit"                % versions.pekkoHttp               % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
-      "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
-      "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
-      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
+      "io.github.sndnv" %% "layers" % versions.layers % Provided
     )
   )
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val core = (project in file("./core"))
   .settings(commonSettings)
@@ -181,6 +157,8 @@ lazy val core = (project in file("./core"))
       "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
       "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
       "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Provided,
+      "io.github.sndnv"       %% "layers"                            % versions.layers                  % Provided,
+      "io.github.sndnv"       %% "layers-testing"                    % versions.layers                  % Test,
       "com.h2database"         % "h2"                                % versions.h2                      % Test,
       "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
       "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
@@ -190,10 +168,11 @@ lazy val core = (project in file("./core"))
       "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
       "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
       "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test
+      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
+      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
     )
   )
-  .dependsOn(proto, layers % "compile->compile;test->test")
+  .dependsOn(proto)
 
 lazy val proto = (project in file("./proto"))
   .settings(
@@ -275,7 +254,7 @@ lazy val buildInfoSettings = Seq(
     BuildInfoKey.action("buildTime") { System.currentTimeMillis }
   ),
   buildInfoPackage := s"stasis.${name.value}",
-  buildInfoOptions += BuildInfoOption.Traits("stasis.layers.telemetry.ApplicationInformation")
+  buildInfoOptions += BuildInfoOption.Traits("io.github.sndnv.layers.telemetry.ApplicationInformation")
 )
 
 Global / concurrentRestrictions += Tags.limit(

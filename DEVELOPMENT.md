@@ -48,14 +48,6 @@ Protocol Buffers file(s) defining gRPC services and messages used by the `core` 
 * **Testing** - `n/a`
 * **Packaging** - `n/a`
 
-#### [`layers`](layers)
-
-Generic code commonly used by the various layers of the `stasis` services - API, persistence, security, telemetry.
-
-* **Scala** code
-* **Testing** - `sbt "project layers" qa`
-* **Packaging** - `n/a`
-
 #### [`core`](core)
 
 Core routing, networking and persistence code. Represents the subsystem that handles data exchange.

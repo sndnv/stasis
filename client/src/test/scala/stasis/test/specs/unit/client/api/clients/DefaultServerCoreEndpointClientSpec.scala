@@ -22,7 +22,7 @@ import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
 import stasis.core.routing.exceptions.PullFailure
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.mocks.MockServerCoreEndpoint
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext

@@ -23,9 +23,9 @@ import stasis.client.ops.Metrics
 import stasis.client.service.ApplicationTray
 import stasis.client.service.components.Base
 import stasis.core
-import stasis.layers
-import stasis.layers.telemetry.analytics.AnalyticsCollector
-import stasis.layers.telemetry.analytics.DefaultAnalyticsCollector
+import io.github.sndnv.layers
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers.telemetry.analytics.DefaultAnalyticsCollector
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

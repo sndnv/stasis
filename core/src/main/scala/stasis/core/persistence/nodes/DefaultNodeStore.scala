@@ -18,10 +18,10 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.routing.Node
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultNodeStore(
   override val name: String,

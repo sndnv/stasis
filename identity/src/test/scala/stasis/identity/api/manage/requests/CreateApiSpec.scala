@@ -1,7 +1,7 @@
 package stasis.identity.api.manage.requests
 
 import stasis.identity.model.apis.Api
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class CreateApiSpec extends UnitSpec {
   private val request = CreateApi(id = "some-api")

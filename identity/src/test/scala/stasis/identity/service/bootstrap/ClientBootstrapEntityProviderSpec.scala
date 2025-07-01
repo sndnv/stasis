@@ -12,7 +12,7 @@ import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.mocks.MockClientStore
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ClientBootstrapEntityProviderSpec extends UnitSpec {
   "An ClientBootstrapEntityProvider" should "provide its name and default entities" in {

@@ -15,7 +15,7 @@ import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components
 import stasis.client.service.components.maintenance.Base
 import stasis.client.service.components.maintenance.Certificates
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

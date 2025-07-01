@@ -2,7 +2,7 @@ package stasis.shared.model.devices
 
 import play.api.libs.json.JsObject
 
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.secrets.SecretsConfig
 
 final case class DeviceBootstrapParameters(

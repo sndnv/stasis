@@ -18,7 +18,7 @@ import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.discovery.exceptions.DiscoveryFailure
 import stasis.core.discovery.providers.client.ServiceDiscoveryProvider
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 import stasis.test.specs.unit.core.discovery.mocks.MockServiceDiscoveryClient
 import stasis.test.specs.unit.core.discovery.providers.client.ServiceDiscoveryProviderSpec.TestApiClient
 import stasis.test.specs.unit.core.discovery.providers.client.ServiceDiscoveryProviderSpec.TestCoreClient
@@ -87,7 +87,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     val initialApiClient = provider.latest[TestApiClient]
     val initialCoreClient = provider.latest[TestCoreClient]
 
-    await(delay = 100.millis, withSystem = typedSystem)
+    await(delay = 100.millis)
 
     provider.latest[ServiceDiscoveryClient] should be(initialDiscoveryClient)
     provider.latest[TestApiClient] should be(initialApiClient)
@@ -116,7 +116,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     val initialApiClient = provider.latest[TestApiClient]
     val initialCoreClient = provider.latest[TestCoreClient]
 
-    await(delay = 100.millis, withSystem = typedSystem)
+    await(delay = 100.millis)
 
     provider.latest[ServiceDiscoveryClient] should be(initialDiscoveryClient)
     provider.latest[TestApiClient] should be(initialApiClient)
@@ -151,7 +151,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     val initialApiClient = provider.latest[TestApiClient]
     val initialCoreClient = provider.latest[TestCoreClient]
 
-    await(delay = 200.millis, withSystem = typedSystem)
+    await(delay = 200.millis)
 
     provider.latest[ServiceDiscoveryClient] should not be initialDiscoveryClient
     provider.latest[TestApiClient] should not be initialApiClient
@@ -161,7 +161,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     val latestApiClient = provider.latest[TestApiClient]
     val latestCoreClient = provider.latest[TestCoreClient]
 
-    await(delay = 200.millis, withSystem = typedSystem)
+    await(delay = 200.millis)
 
     eventually[Assertion] {
       latestDiscoveryClient should not be initialDiscoveryClient
@@ -228,11 +228,11 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
 
     clientCalls.get() should be(0)
 
-    await(delay = 100.millis, withSystem = typedSystem)
+    await(delay = 100.millis)
 
     clientCalls.get() should be(0)
 
-    await(delay = 300.millis, withSystem = typedSystem)
+    await(delay = 300.millis)
 
     clientCalls.get() should be >= 5 // the interval is reduced so more requests should be made
   }

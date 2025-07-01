@@ -7,7 +7,7 @@ import scala.collection.mutable
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.internal.FilesWalker
 import stasis.client.collection.rules.internal.IndexedRule
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 

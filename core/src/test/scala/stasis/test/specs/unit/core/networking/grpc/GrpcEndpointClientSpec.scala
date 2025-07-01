@@ -19,8 +19,8 @@ import stasis.core.networking.grpc.GrpcEndpointClient
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.networking.mocks.MockGrpcNodeCredentialsProvider
 import stasis.test.specs.unit.core.persistence.crates.MockCrateStore

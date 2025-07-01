@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Tokens(store: RefreshTokenStore) extends EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._

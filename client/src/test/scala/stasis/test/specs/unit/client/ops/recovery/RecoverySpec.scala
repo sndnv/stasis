@@ -32,7 +32,7 @@ import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
-import stasis.layers.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device

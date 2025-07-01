@@ -62,7 +62,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     )
 
     managedMonitor(monitor) {
-      await(initialDelay / 2, withSystem = typedSystem)
+      await(initialDelay / 2)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryDeleted) should be(0)
@@ -92,7 +92,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(0)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
 
-      await(initialDelay, withSystem = typedSystem)
+      await(initialDelay)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryDeleted) should be(0)
@@ -122,7 +122,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)
 
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved) should be(0)
       mockApiClient.statistics(MockServerApiEndpointClient.Statistic.DatasetEntryDeleted) should be(0)
@@ -167,7 +167,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     )
 
     managedMonitor(monitor) {
-      await(defaultInterval, withSystem = typedSystem)
+      await(defaultInterval)
 
       mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(0)
       mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be >= 1
@@ -190,7 +190,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
 
     val _ = monitor.stop().await
 
-    await(defaultInterval, withSystem = typedSystem)
+    await(defaultInterval)
 
     mockTracker.statistics(MockServerTracker.Statistic.ServerReachable) should be(1)
     mockTracker.statistics(MockServerTracker.Statistic.ServerUnreachable) should be(0)

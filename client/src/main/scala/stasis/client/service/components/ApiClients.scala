@@ -15,8 +15,8 @@ import stasis.core.discovery.http.HttpServiceDiscoveryClient
 import stasis.core.discovery.providers.client.ServiceDiscoveryProvider
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.analytics.AnalyticsClient
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsClient
 import stasis.shared.model.devices.Device
 import stasis.shared.model.users.User
 

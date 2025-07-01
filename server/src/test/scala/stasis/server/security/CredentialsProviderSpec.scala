@@ -2,7 +2,7 @@ package stasis.server.security
 
 import scala.concurrent.Future
 
-import stasis.layers.security.jwt.JwtProvider
+import io.github.sndnv.layers.security.jwt.JwtProvider
 import stasis.server.security.CredentialsProvider
 import stasis.test.specs.unit.AsyncUnitSpec
 

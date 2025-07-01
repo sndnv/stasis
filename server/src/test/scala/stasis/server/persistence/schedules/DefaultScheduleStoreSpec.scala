@@ -7,13 +7,13 @@ import scala.concurrent.Future
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultScheduleStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultScheduleStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultScheduleStore" should "add, retrieve and delete schedules" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultScheduleStore(name = "TEST_SCHEDULES", profile = profile, database = database)
@@ -42,7 +42,7 @@ class DefaultScheduleStoreSpec extends UnitSpec with SlickTestDatabase {
       withStore { (profile, database) =>
         import play.api.libs.json._
 
-        import stasis.layers.api.Formats._
+        import io.github.sndnv.layers.api.Formats._
 
         val name = "TEST_SCHEDULES"
         val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)

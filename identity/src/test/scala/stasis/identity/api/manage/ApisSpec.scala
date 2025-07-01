@@ -9,7 +9,7 @@ import stasis.identity.api.Formats._
 import stasis.identity.api.manage.requests.CreateApi
 import stasis.identity.model.Generators
 import stasis.identity.model.apis.Api
-import stasis.layers
+import io.github.sndnv.layers
 
 class ApisSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -18,7 +18,7 @@ class ApisSpec extends RouteTest {
     val store = createApiStore()
     val apis = new Apis(store)
 
-    val expectedApis = layers.Generators
+    val expectedApis = layers.testing.Generators
       .generateSeq(min = 2, g = Generators.generateApi)
 
     Future.sequence(expectedApis.map(store.put)).await

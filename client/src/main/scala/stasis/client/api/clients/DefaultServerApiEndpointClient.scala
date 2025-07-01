@@ -23,9 +23,9 @@ import stasis.client.model.DatasetMetadata
 import stasis.core.api.PoolClient
 import stasis.core.commands.proto.Command
 import stasis.core.networking.exceptions.ClientFailure
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedSource
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateAnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry

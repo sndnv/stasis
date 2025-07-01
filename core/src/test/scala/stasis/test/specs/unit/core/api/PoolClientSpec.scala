@@ -19,8 +19,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import stasis.core.api.PoolClient
-import stasis.layers.security.mocks.MockJwksEndpoint
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.mocks.MockJwksEndpoint
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.api.PoolClientSpec.TestClient
 
@@ -64,8 +64,8 @@ class PoolClientSpec extends AsyncUnitSpec {
   }
 
   it should "support making HTTP requests" in {
-    val endpoint = new MockJwksEndpoint(port = ports.dequeue())
-    endpoint.start()
+    val endpoint = MockJwksEndpoint(port = ports.dequeue())
+    endpoint.start().await
 
     val client = new TestClient(context = None)
 
@@ -89,18 +89,18 @@ class PoolClientSpec extends AsyncUnitSpec {
   it should "support custom connection contexts" in {
     val config: Config = ConfigFactory.load().getConfig("stasis.test.core.security.tls")
 
-    val serverContextConfig = EndpointContext.Config(config.getConfig("context-server-jks"))
+    val serverContextConfig = EndpointContext(EndpointContext.Config(config.getConfig("context-server-jks")))
 
     val clientContext = EndpointContext(
       config = EndpointContext.Config(config.getConfig("context-client"))
     )
 
-    val endpoint = new MockJwksEndpoint(
+    val endpoint = MockJwksEndpoint(
       port = ports.dequeue(),
-      withKeystoreConfig = serverContextConfig.keyStoreConfig
+      context = serverContextConfig
     )
 
-    endpoint.start()
+    endpoint.start().await
 
     val client = new TestClient(context = Some(clientContext))
 
@@ -122,8 +122,8 @@ class PoolClientSpec extends AsyncUnitSpec {
   }
 
   it should "support retrying failed http requests" in {
-    val endpoint = new MockJwksEndpoint(port = ports.dequeue())
-    endpoint.start()
+    val endpoint = MockJwksEndpoint(port = ports.dequeue())
+    endpoint.start().await
 
     val client = new TestClient(context = None)
 

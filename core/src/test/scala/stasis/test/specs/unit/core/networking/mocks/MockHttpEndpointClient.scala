@@ -21,8 +21,8 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.networking.http.HttpEndpointClient
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class MockHttpEndpointClient(
   pushFailureAddresses: Map[HttpEndpointAddress, Exception] = Map.empty,

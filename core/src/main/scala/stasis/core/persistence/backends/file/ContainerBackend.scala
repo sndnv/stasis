@@ -17,7 +17,7 @@ import stasis.core.persistence.Metrics
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.backends.file.container.Container
 import stasis.core.persistence.backends.file.container.ops.ConversionOps
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class ContainerBackend(
   val path: String,

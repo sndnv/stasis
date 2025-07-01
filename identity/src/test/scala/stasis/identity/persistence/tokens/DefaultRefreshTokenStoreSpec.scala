@@ -22,12 +22,12 @@ import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.persistence.internal.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
-class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with SlickTestDatabase {
+class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with TestSlickDatabase {
   "A DefaultRefreshTokenStore" should "add, retrieve and delete refresh tokens" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultRefreshTokenStore(

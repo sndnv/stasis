@@ -12,8 +12,8 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.persistence.analytics.MockAnalyticsEntryStore
 import stasis.server.security.CurrentUser

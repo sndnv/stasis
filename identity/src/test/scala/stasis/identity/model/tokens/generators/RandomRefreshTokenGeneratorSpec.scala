@@ -1,6 +1,6 @@
 package stasis.identity.model.tokens.generators
 
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class RandomRefreshTokenGeneratorSpec extends UnitSpec {
   "A RandomRefreshTokenGenerator" should "generate random refresh tokens" in {

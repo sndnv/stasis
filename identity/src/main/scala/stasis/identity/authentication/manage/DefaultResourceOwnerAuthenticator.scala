@@ -8,8 +8,8 @@ import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwt.JwtClaims
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.persistence.owners.ResourceOwnerStore
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.security.jwt.JwtAuthenticator
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.jwt.JwtAuthenticator
 
 class DefaultResourceOwnerAuthenticator(
   store: ResourceOwnerStore.View,

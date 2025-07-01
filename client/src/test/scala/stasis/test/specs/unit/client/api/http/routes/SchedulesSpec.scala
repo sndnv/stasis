@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Schedules
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
-import stasis.layers.telemetry.analytics.MockAnalyticsCollector
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures

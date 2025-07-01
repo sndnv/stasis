@@ -10,7 +10,7 @@ import stasis.client.api.Context
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.security.DefaultFrontendAuthenticator
 import stasis.client.service.components.exceptions.ServiceStartupFailure
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 trait ApiEndpoint {
   def context: Context

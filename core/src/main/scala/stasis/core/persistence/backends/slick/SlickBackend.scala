@@ -10,10 +10,10 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 
 import stasis.core.persistence.backends.KeyValueBackend
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class SlickBackend[K, V](
   override val name: String,

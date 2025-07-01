@@ -8,7 +8,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 
 trait RefreshTokenStore extends Store { store =>
   def put(client: Client.Id, token: RefreshToken, owner: ResourceOwner, scope: Option[String]): Future[Done]

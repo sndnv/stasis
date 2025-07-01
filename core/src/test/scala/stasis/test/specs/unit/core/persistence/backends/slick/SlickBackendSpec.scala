@@ -2,6 +2,10 @@ package stasis.test.specs.unit.core.persistence.backends.slick
 
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -10,11 +14,7 @@ import slick.jdbc.H2Profile
 
 import stasis.core.persistence.backends.KeyValueBackend
 import stasis.core.persistence.backends.slick.SlickBackend
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.KeyValueStoreBehaviour
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import stasis.test.specs.unit.core.persistence.KeyValueStoreBehaviour
 
 class SlickBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
   "A SlickBackend" should behave like keyValueStore[TestSlickBackend](

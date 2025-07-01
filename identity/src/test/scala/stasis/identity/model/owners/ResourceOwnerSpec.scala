@@ -4,7 +4,7 @@ import org.apache.pekko.util.ByteString
 
 import stasis.identity.model.Generators
 import stasis.identity.model.secrets.Secret
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ResourceOwnerSpec extends UnitSpec {
   "A Client" should "validate its fields" in {

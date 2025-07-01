@@ -16,8 +16,8 @@ import stasis.core.api.PoolClient
 import stasis.core.discovery.ServiceDiscoveryClient
 import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.discovery.exceptions.DiscoveryFailure
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 
 class HttpServiceDiscoveryClient(
   apiUrl: String,

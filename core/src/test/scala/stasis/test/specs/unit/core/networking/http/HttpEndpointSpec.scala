@@ -20,8 +20,8 @@ import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.routing.Node
-import stasis.layers.api.MessageResponse
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.persistence.reservations.MockReservationStore

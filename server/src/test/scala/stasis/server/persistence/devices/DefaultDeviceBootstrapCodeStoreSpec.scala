@@ -5,17 +5,17 @@ import java.time.Instant
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapCode
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.shared.model.Generators
 
-class DefaultDeviceBootstrapCodeStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultDeviceBootstrapCodeStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultDeviceBootstrapCodeStore" should "add, retrieve and delete device bootstrap codes" in withRetry {
     val underlying = MemoryStore[String, DeviceBootstrapCode](
       name = s"mock-device-bootstrap-code-store-${java.util.UUID.randomUUID()}"

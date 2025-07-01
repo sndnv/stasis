@@ -1,21 +1,21 @@
 package stasis.identity.model.tokens.generators
 
-import stasis.layers.UnitSpec
-import stasis.layers.security.mocks.MockJwksGenerators
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
 
 class JwtBearerAccessTokenGeneratorSpec extends UnitSpec with JwtBearerAccessTokenGeneratorBehaviour {
   "A JwtBearerAccessTokenGenerator" should behave like jwtBearerAccessTokenGenerator(
     withKeyType = "RSA",
-    withJwk = MockJwksGenerators.generateRandomRsaKey(Some("rsa-0"))
+    withJwk = MockJwksGenerator.generateRandomRsaKey(Some("rsa-0"))
   )
 
   it should behave like jwtBearerAccessTokenGenerator(
     withKeyType = "EC",
-    withJwk = MockJwksGenerators.generateRandomEcKey(Some("ec-0"))
+    withJwk = MockJwksGenerator.generateRandomEcKey(Some("ec-0"))
   )
 
   it should behave like jwtBearerAccessTokenGenerator(
     withKeyType = "Secret",
-    withJwk = MockJwksGenerators.generateRandomSecretKey(Some("oct-0"))
+    withJwk = MockJwksGenerator.generateRandomSecretKey(Some("oct-0"))
   )
 }

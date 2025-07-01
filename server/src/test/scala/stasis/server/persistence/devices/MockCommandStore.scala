@@ -15,10 +15,10 @@ import org.apache.pekko.util.Timeout
 
 import stasis.core.commands.proto.Command
 import stasis.core.persistence.commands.CommandStore
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class MockCommandStore(
   underlying: KeyValueStore[Long, Command]

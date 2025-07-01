@@ -9,7 +9,7 @@ import org.apache.pekko.Done
 
 import stasis.identity.model.apis.Api
 import stasis.identity.persistence.apis.ApiStore
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 
 class ApiBootstrapEntityProvider(store: ApiStore) extends BootstrapEntityProvider[Api] {
   override val name: String = "apis"

@@ -9,8 +9,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.jose4j.jwk.JsonWebKeySet
 
-import stasis.layers.security.mocks.MockJwksGenerators
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 class MockSimpleJwtEndpoint(
   port: Int,
@@ -45,7 +45,7 @@ class MockSimpleJwtEndpoint(
 
   def url: String = s"$scheme://localhost:$port"
 
-  val jwks: JsonWebKeySet = MockJwksGenerators.generateKeySet(
+  val jwks: JsonWebKeySet = MockJwksGenerator.generateJwks(
     rsaKeysCount = 1,
     ecKeysCount = 0,
     secretKeysCount = 0

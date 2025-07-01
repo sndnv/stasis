@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.LoggerFactory
 import play.api.libs.json.JsArray
 
-import stasis.layers.api.MessageResponse
+import io.github.sndnv.layers.api.MessageResponse
 import stasis.server.api.handlers.Rejection
 import stasis.test.specs.unit.UnitSpec
 

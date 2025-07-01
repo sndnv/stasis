@@ -22,8 +22,8 @@ import stasis.client.ops.exceptions.OperationExecutionFailure
 import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery
 import stasis.client.tracking.state.OperationState
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation

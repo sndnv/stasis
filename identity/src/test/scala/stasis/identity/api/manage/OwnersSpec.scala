@@ -15,7 +15,7 @@ import stasis.identity.api.manage.requests.UpdateOwnerCredentials
 import stasis.identity.model.Generators
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
-import stasis.layers
+import io.github.sndnv.layers
 
 class OwnersSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -27,7 +27,7 @@ class OwnersSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedOwners = layers.Generators
+    val expectedOwners = layers.testing.Generators
       .generateSeq(min = 2, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt).truncated())
 
@@ -91,7 +91,7 @@ class OwnersSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedOwners = layers.Generators
+    val expectedOwners = layers.testing.Generators
       .generateSeq(min = 3, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt))
       .zipWithIndex
@@ -191,7 +191,7 @@ class OwnersSpec extends RouteTest {
 
     val ownersSubject = "test-subject"
 
-    val expectedOwners = layers.Generators
+    val expectedOwners = layers.testing.Generators
       .generateSeq(min = 3, g = Generators.generateResourceOwner)
       .map(_.copy(password = secret, salt = salt, subject = Some(ownersSubject)))
 

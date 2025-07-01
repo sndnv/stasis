@@ -9,7 +9,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.headers.HttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class DefaultFrontendAuthenticator(val token: String) extends FrontendAuthenticator {
   override def authenticate(credentials: HttpCredentials): Future[Done] =

@@ -14,7 +14,7 @@ import org.apache.pekko.util.ByteString
 
 import stasis.client.model.DatasetMetadata
 import stasis.core.commands.proto.Command
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword

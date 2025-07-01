@@ -25,11 +25,11 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import stasis.layers.api.MessageResponse
-import stasis.layers.api.directives.EntityDiscardingDirectives
-import stasis.layers.api.directives.LoggingDirectives
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(

@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import org.apache.pekko.Done
 
-import stasis.layers.persistence.Store
+import io.github.sndnv.layers.persistence.Store
 import stasis.server.security.CurrentUser
 import stasis.server.security.Resource
 import stasis.shared.model.devices.Device

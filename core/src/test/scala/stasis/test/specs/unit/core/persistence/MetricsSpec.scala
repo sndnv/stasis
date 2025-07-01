@@ -2,7 +2,7 @@ package stasis.test.specs.unit.core.persistence
 
 import stasis.core.persistence.Metrics
 import stasis.core.routing.Node
-import stasis.layers.telemetry.mocks.MockMeter
+import io.github.sndnv.layers.telemetry.mocks.MockMeter
 import stasis.test.specs.unit.UnitSpec
 
 class MetricsSpec extends UnitSpec {

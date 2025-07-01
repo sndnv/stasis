@@ -8,7 +8,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateDeviceOwn
 import stasis.shared.model.devices.Device

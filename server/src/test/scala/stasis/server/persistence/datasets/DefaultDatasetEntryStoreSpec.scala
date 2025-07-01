@@ -10,15 +10,15 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.core.packaging.Crate
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
 
-class DefaultDatasetEntryStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultDatasetEntryStore" should "add, retrieve and delete dataset entries" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultDatasetEntryStore(name = "TEST_ENTRIES", profile = profile, database = database)

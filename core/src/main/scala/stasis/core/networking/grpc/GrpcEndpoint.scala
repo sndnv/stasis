@@ -32,10 +32,10 @@ import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import stasis.layers.api.Metrics
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.security.tls.EndpointContext.RichServerBuilder
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.Metrics
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext.RichServerBuilder
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class GrpcEndpoint(
   router: Router,

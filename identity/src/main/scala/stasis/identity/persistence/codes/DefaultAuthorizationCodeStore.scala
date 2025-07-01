@@ -7,10 +7,10 @@ import org.apache.pekko.actor.typed.ActorSystem
 
 import stasis.identity.model.codes.AuthorizationCode
 import stasis.identity.model.codes.StoredAuthorizationCode
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultAuthorizationCodeStore(
   override val name: String,

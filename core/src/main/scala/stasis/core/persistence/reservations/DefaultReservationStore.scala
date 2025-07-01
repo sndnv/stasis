@@ -11,10 +11,10 @@ import stasis.core.packaging.Crate
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.persistence.Metrics
 import stasis.core.routing.Node
-import stasis.layers.persistence.KeyValueStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultReservationStore(
   override val name: String,

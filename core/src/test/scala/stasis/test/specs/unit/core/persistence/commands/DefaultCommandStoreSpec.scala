@@ -7,12 +7,12 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.core.persistence.commands.DefaultCommandStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
 import stasis.test.specs.unit.core.persistence.Generators
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
-class DefaultCommandStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultCommandStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultCommandStore" should "add, retrieve and delete commands" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultCommandStore(name = "TEST_COMMANDS", profile = profile, database = database)

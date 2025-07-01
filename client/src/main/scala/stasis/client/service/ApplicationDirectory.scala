@@ -11,7 +11,7 @@ import net.harawata.appdirs.AppDirsFactory
 import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import stasis.layers.files.FilteringFileVisitor
+import io.github.sndnv.layers.files.FilteringFileVisitor
 
 trait ApplicationDirectory {
   def findFile(file: String): Option[Path]

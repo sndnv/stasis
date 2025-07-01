@@ -14,7 +14,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import stasis.layers.service.bootstrap.BootstrapEntityProvider
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 
 class NodeBootstrapEntityProvider(store: NodeStore) extends BootstrapEntityProvider[Node] {
   override val name: String = "nodes"

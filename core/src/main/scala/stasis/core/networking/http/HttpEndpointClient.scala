@@ -29,9 +29,9 @@ import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.CrateStorageReservation
 import stasis.core.security.NodeCredentialsProvider
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedByteStringSource
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedByteStringSource
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpointClient(

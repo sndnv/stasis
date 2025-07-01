@@ -8,7 +8,7 @@ import org.apache.pekko.http.scaladsl.server.Directives.complete
 import org.slf4j.Logger
 
 import stasis.identity.model.owners.ResourceOwner
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait UserAuthorization extends EntityDiscardingDirectives {
 

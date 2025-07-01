@@ -6,7 +6,7 @@ import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
 import stasis.core.networking.grpc.GrpcEndpointAddress
 import stasis.core.networking.http.HttpEndpointAddress
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class ServiceDiscoveryProviderSpec extends UnitSpec {
   "A ServiceDiscoveryProvider" should "be created from config" in {

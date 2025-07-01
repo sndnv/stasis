@@ -1,7 +1,7 @@
 package stasis.test.specs.unit.core.routing
 
 import stasis.core.routing.Metrics
-import stasis.layers.telemetry.mocks.MockMeter
+import io.github.sndnv.layers.telemetry.mocks.MockMeter
 import stasis.test.specs.unit.UnitSpec
 
 class MetricsSpec extends UnitSpec {

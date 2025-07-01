@@ -15,7 +15,7 @@ import stasis.identity.api.manage.requests.UpdateOwnerCredentials
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.owners.ResourceOwnerStore
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 class Owners(
   store: ResourceOwnerStore,

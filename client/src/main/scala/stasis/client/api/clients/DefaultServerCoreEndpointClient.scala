@@ -14,7 +14,7 @@ import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.networking.http.HttpEndpointClient
 import stasis.core.packaging
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 
 class DefaultServerCoreEndpointClient(
   address: HttpEndpointAddress,

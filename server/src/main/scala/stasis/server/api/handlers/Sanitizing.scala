@@ -7,8 +7,8 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.ExceptionHandler
 import org.slf4j.Logger
-import stasis.layers.api.MessageResponse
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 import stasis.server.security.exceptions.AuthorizationFailure
 
 object Sanitizing {

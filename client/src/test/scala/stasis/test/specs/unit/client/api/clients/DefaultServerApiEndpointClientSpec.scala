@@ -27,9 +27,9 @@ import stasis.core.api.PoolClient
 import stasis.core.networking.exceptions.ClientFailure
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword

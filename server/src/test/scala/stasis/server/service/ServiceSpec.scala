@@ -31,8 +31,8 @@ import stasis.core.api.PoolClient
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.networking.http.HttpEndpointClient
 import stasis.core.packaging.Crate
-import stasis.layers.security.mocks.MockJwtGenerators
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.mocks.MockJwtGenerator
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.server.security.mocks._
 import stasis.shared.api.requests.CreateUser
 import stasis.shared.model.devices.Device
@@ -404,7 +404,7 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   ): Future[String] = {
     val authConfig = defaultConfig.getConfig("stasis.server.authenticators.users")
 
-    val jwt = MockJwtGenerators.generateJwt(
+    val jwt = MockJwtGenerator.generateJwt(
       issuer = authConfig.getString("issuer"),
       audience = authConfig.getString("audience"),
       subject = subject,

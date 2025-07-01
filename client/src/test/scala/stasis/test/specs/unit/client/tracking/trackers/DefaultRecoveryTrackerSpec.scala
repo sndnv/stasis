@@ -88,12 +88,12 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
 
     val expectedUpdates = 3
     val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.entityProcessed(entity)
-    await(100.millis, withSystem = system)
+    await(100.millis)
     tracker.completed()
 
     updates.await.toList match {
@@ -136,7 +136,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
       tracker.state.await.keys.toSeq.sorted should be(Seq(operation1, operation2).sorted)
     }
 
-    await(250.millis, withSystem = system)
+    await(250.millis)
 
     val operation3 = Operation.generateId()
     tracker.entityProcessed(entity)(operation3)
@@ -161,10 +161,10 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     tracker.entityExamined(entity, metadataChanged = false, contentChanged = false)
     tracker.entityProcessed(entity)
     tracker.completed()
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     val updates = tracker.updates(operation).take(expectedUpdates.toLong).runWith(Sink.seq)
-    await(100.millis, withSystem = system)
+    await(100.millis)
 
     updates.await.toList match {
       case update :: Nil =>

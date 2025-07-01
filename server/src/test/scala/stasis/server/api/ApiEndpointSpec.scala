@@ -32,10 +32,10 @@ import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
-import stasis.layers.api.MessageResponse
-import stasis.layers.telemetry.ApplicationInformation
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsEntry
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import stasis.server.Secrets
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.persistence.analytics.MockAnalyticsEntryStore

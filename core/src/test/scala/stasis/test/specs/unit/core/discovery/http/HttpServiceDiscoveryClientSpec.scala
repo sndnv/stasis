@@ -14,8 +14,8 @@ import stasis.core.discovery.ServiceDiscoveryClient
 import stasis.core.discovery.ServiceDiscoveryResult
 import stasis.core.discovery.exceptions.DiscoveryFailure
 import stasis.core.discovery.http.HttpServiceDiscoveryClient
-import stasis.layers.UnitSpec
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.test.specs.unit.core.discovery.http.HttpServiceDiscoveryClientSpec.TestAttributes
 import stasis.test.specs.unit.core.discovery.mocks.MockDiscoveryApiEndpoint
 

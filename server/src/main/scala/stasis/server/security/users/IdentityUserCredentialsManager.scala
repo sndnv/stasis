@@ -18,7 +18,7 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 import stasis.core.api.PoolClient
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.server.security.CredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.server.security.users.UserCredentialsManager.Result
@@ -121,7 +121,7 @@ class IdentityUserCredentialsManager(
 }
 
 object IdentityUserCredentialsManager {
-  import stasis.layers.api.Formats.jsonConfig
+  import io.github.sndnv.layers.api.Formats.jsonConfig
 
   private implicit val createOwnerFormat: Format[CreateOwner] =
     Json.format[CreateOwner]

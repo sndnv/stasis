@@ -8,7 +8,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.scalatest.concurrent.Eventually
 
 import stasis.core.persistence.backends.memory.EventLogMemoryBackend
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.backends.EventLogBackendBehaviour
 

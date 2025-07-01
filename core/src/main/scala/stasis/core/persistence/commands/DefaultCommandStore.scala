@@ -15,9 +15,9 @@ import stasis.core.commands.proto
 import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandSource
 import stasis.core.persistence.{Metrics => CoreMetrics}
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.persistence.{Metrics => LayersMetrics}
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.persistence.{Metrics => LayersMetrics}
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultCommandStore(
   override val name: String,

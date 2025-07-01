@@ -10,8 +10,8 @@ import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import stasis.identity.model.Generators
 import stasis.identity.model.secrets.Secret
 import stasis.identity.persistence.mocks.MockResourceOwnerStore
-import stasis.layers.UnitSpec
-import stasis.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
 
 class DefaultResourceOwnerAuthenticatorSpec extends UnitSpec {
   "A DefaultResourceOwnerAuthenticator" should "successfully authenticate resource owners" in {

@@ -19,8 +19,8 @@ import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.crates.CrateStore
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class NodeProxy(
   val httpClient: EndpointClient[HttpEndpointAddress, _],

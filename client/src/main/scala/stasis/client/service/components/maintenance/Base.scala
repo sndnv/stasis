@@ -17,10 +17,10 @@ import stasis.client.service.ApplicationDirectory
 import stasis.client.service.components.internal.ConfigOverride
 import stasis.client.service.components.internal.FutureOps
 import stasis.core
-import stasis.layers
-import stasis.layers.telemetry.DefaultTelemetryContext
-import stasis.layers.telemetry.TelemetryContext
-import stasis.layers.telemetry.analytics.AnalyticsCollector
+import io.github.sndnv.layers
+import io.github.sndnv.layers.telemetry.DefaultTelemetryContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
 
 trait Base extends FutureOps {
   implicit def system: ActorSystem[Nothing]

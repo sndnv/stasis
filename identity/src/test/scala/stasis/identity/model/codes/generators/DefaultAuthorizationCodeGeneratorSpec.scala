@@ -1,6 +1,6 @@
 package stasis.identity.model.codes.generators
 
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class DefaultAuthorizationCodeGeneratorSpec extends UnitSpec {
   "A DefaultAuthorizationCodeGenerator" should "generate random authorization codes" in {

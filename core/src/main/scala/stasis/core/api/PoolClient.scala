@@ -22,8 +22,8 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.Logger
 
 import stasis.core.networking.exceptions.ClientFailure
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.streaming.Operators.ExtendedSource
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.streaming.Operators.ExtendedSource
 
 trait PoolClient {
   protected implicit def system: ActorSystem[Nothing]

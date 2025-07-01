@@ -2,7 +2,7 @@ package stasis.identity.api.manage.requests
 
 import scala.concurrent.duration._
 
-import stasis.layers.UnitSpec
+import io.github.sndnv.layers.testing.UnitSpec
 
 class UpdateClientSpec extends UnitSpec {
   "An UpdateClient request" should "validate its content" in withRetry {

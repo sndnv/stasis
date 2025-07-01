@@ -22,8 +22,8 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.backends.StreamingBackend
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.exceptions.PersistenceFailure
-import stasis.layers.persistence.memory.MemoryStore
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class MockCrateStore(
   maxStorageSize: Option[Long] = None,

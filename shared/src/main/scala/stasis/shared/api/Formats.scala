@@ -41,7 +41,7 @@ object Formats {
   import stasis.core.api.Formats.crateStoreDescriptorWrites
   import stasis.core.api.Formats.grpcEndpointAddressFormat
   import stasis.core.api.Formats.httpEndpointAddressFormat
-  import stasis.layers.api.Formats._
+  import io.github.sndnv.layers.api.Formats._
 
   implicit val permissionFormat: Format[Permission] = Format(
     fjs = _.validate[String].map(stringToPermission),

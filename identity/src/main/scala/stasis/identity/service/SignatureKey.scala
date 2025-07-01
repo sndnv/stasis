@@ -16,7 +16,7 @@ import org.jose4j.jwk.RsaJsonWebKey
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.layers.security.keys.Generators
+import io.github.sndnv.layers.security.keys.Generators
 
 object SignatureKey {
   def fromConfig(signatureKeyConfig: typesafe.Config): JsonWebKey =

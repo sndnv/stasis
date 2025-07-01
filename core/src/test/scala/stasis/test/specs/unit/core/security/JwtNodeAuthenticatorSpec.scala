@@ -1,26 +1,29 @@
 package stasis.test.specs.unit.core.security
 
+import java.security.Key
 import java.time.Instant
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import io.github.sndnv.layers.security.exceptions.AuthenticationFailure
+import io.github.sndnv.layers.security.jwt.DefaultJwtAuthenticator
+import io.github.sndnv.layers.security.keys.KeyProvider
+import io.github.sndnv.layers.security.mocks.MockJwksGenerator
+import io.github.sndnv.layers.security.mocks.MockJwtGenerator
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.jose4j.jwk.JsonWebKey
+import org.jose4j.jws.AlgorithmIdentifiers
 
 import stasis.core.networking.http.HttpEndpointAddress
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
 import stasis.core.security.JwtNodeAuthenticator
-import stasis.layers.security.exceptions.AuthenticationFailure
-import stasis.layers.security.jwt.DefaultJwtAuthenticator
-import stasis.layers.security.mocks.MockJwkProvider
-import stasis.layers.security.mocks.MockJwksGenerators
-import stasis.layers.security.mocks.MockJwtGenerators
-import stasis.layers.telemetry.TelemetryContext
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
@@ -39,7 +42,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       updated = Instant.now()
     )
 
-    val nodeToken: String = MockJwtGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerator.generateJwt(
       issuer = "self",
       audience = "self",
       subject = node.id.toString,
@@ -69,7 +72,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
       updated = Instant.now()
     )
 
-    val nodeToken: String = MockJwtGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerator.generateJwt(
       issuer = "self",
       audience = "self",
       subject = node.id.toString,
@@ -101,7 +104,7 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     )
 
     val otherNode = "some-node"
-    val nodeToken: String = MockJwtGenerators.generateJwt(
+    val nodeToken: String = MockJwtGenerator.generateJwt(
       issuer = "self",
       audience = "self",
       subject = otherNode,
@@ -151,7 +154,24 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     val store = MockNodeStore()
 
     val underlying = new DefaultJwtAuthenticator(
-      provider = MockJwkProvider(jwk),
+      provider = new KeyProvider {
+        override def key(id: Option[String]): Future[Key] = Future.successful(jwk.getKey)
+
+        override def issuer: String = "self"
+
+        override def allowedAlgorithms: Seq[String] =
+          Seq(
+            AlgorithmIdentifiers.HMAC_SHA256,
+            AlgorithmIdentifiers.HMAC_SHA384,
+            AlgorithmIdentifiers.HMAC_SHA512,
+            AlgorithmIdentifiers.RSA_USING_SHA256,
+            AlgorithmIdentifiers.RSA_USING_SHA384,
+            AlgorithmIdentifiers.RSA_USING_SHA512,
+            AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256,
+            AlgorithmIdentifiers.ECDSA_USING_P384_CURVE_AND_SHA384,
+            AlgorithmIdentifiers.ECDSA_USING_P521_CURVE_AND_SHA512
+          )
+      },
       audience = "self",
       identityClaim = "sub",
       expirationTolerance = 10.seconds
@@ -170,5 +190,5 @@ class JwtNodeAuthenticatorSpec extends AsyncUnitSpec {
     "JwtNodeAuthenticatorSpec"
   )
 
-  private val jwk: JsonWebKey = MockJwksGenerators.generateRandomRsaKey(Some("rsa-0"))
+  private val jwk: JsonWebKey = MockJwksGenerator.generateRandomRsaKey(Some("rsa-0"))
 }

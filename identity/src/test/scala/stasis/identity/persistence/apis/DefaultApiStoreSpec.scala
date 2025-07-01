@@ -9,11 +9,11 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 import stasis.identity.model.Generators
 import stasis.identity.persistence.internal.LegacyKeyValueStore
-import stasis.layers.UnitSpec
-import stasis.layers.persistence.SlickTestDatabase
-import stasis.layers.telemetry.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 
-class DefaultApiStoreSpec extends UnitSpec with SlickTestDatabase {
+class DefaultApiStoreSpec extends UnitSpec with TestSlickDatabase {
   "A DefaultApiStore" should "add, retrieve and delete APIs" in withRetry {
     withStore { (profile, database) =>
       val store = new DefaultApiStore(name = "TEST_APIS", profile = profile, database = database)

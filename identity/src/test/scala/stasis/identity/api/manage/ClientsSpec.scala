@@ -17,7 +17,7 @@ import stasis.identity.model.Generators
 import stasis.identity.model.Seconds
 import stasis.identity.model.clients.Client
 import stasis.identity.model.secrets.Secret
-import stasis.layers
+import io.github.sndnv.layers
 
 class ClientsSpec extends RouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -29,7 +29,7 @@ class ClientsSpec extends RouteTest {
     val secret = Secret(ByteString("some-secret"))
     val salt = "some-salt"
 
-    val expectedClients = layers.Generators
+    val expectedClients = layers.testing.Generators
       .generateSeq(min = 2, g = Generators.generateClient)
       .map(_.copy(secret = secret, salt = salt).truncated())
 

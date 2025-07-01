@@ -24,8 +24,8 @@ import stasis.client.service.components.bootstrap.Base
 import stasis.client.service.components.bootstrap.Bootstrap
 import stasis.client.service.components.bootstrap.Parameters
 import stasis.core.routing.Node
-import stasis.layers.FileSystemHelpers.FileSystemSetup
-import stasis.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.security.tls.EndpointContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceBootstrapParameters
 import stasis.shared.model.users.User

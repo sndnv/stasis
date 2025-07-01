@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
 import stasis.client.ops.Metrics
-import stasis.layers.telemetry.mocks.MockMeter
+import io.github.sndnv.layers.telemetry.mocks.MockMeter
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
 

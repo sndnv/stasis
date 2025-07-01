@@ -13,9 +13,9 @@ import slick.jdbc.JdbcType
 import slick.lifted.ProvenShape
 
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import stasis.layers.persistence.Metrics
-import stasis.layers.persistence.migration.Migration
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.devices.Device
 import stasis.shared.model.devices.DeviceKey
 import stasis.shared.model.users.User
@@ -80,7 +80,7 @@ class DefaultDeviceKeyStore(
   override val migrations: Seq[Migration] = Seq(
     LegacyKeyValueStore(name, profile, database)
       .asMigration[DeviceKey, SlickStore](withVersion = 1, current = store) { e =>
-        import stasis.layers.api.Formats.byteStringFormat
+        import io.github.sndnv.layers.api.Formats.byteStringFormat
         DeviceKey(
           value = (e \ "value").as[ByteString],
           owner = (e \ "owner").as[User.Id],

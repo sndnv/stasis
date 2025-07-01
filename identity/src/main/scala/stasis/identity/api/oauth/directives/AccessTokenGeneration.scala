@@ -8,7 +8,7 @@ import stasis.identity.model.clients.Client
 import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.AccessTokenWithExpiration
 import stasis.identity.model.tokens.generators.AccessTokenGenerator
-import stasis.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
 
 trait AccessTokenGeneration extends EntityDiscardingDirectives {
 

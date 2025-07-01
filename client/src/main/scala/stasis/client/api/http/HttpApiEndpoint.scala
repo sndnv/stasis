@@ -18,11 +18,11 @@ import stasis.client.api.Context
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.routes._
 import stasis.client.security.FrontendAuthenticator
-import stasis.layers.api.MessageResponse
-import stasis.layers.api.directives.EntityDiscardingDirectives
-import stasis.layers.api.directives.LoggingDirectives
-import stasis.layers.security.tls.EndpointContext
-import stasis.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class HttpApiEndpoint(
   authenticator: FrontendAuthenticator
