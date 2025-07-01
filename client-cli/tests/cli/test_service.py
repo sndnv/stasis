@@ -49,6 +49,37 @@ class ServiceSpec(unittest.TestCase):
     @patch('psutil.process_iter')
     @patch('subprocess.Popen.__init__')
     @patch('time.sleep')
+    def test_should_start_background_service_with_extra_arguments(self, mock_sleep, mock_popen, mock_process_iter):
+        context = Context()
+        context.api = InactiveClientApi()
+        context.init = MockInitApi(state_responses=[mock_data.INIT_STATE_PENDING, mock_data.INIT_STATE_SUCCESSFUL])
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        mock_process_iter.return_value = []
+        mock_popen.return_value = None
+        mock_sleep.return_value = None
+
+        username = 'username'
+        password = 'password'
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['start', '--username', username, '--password', password, 'a', '-b', '--c'],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        mock_popen.assert_called_once()
+        mock_sleep.assert_called_once()
+        self.assertEqual(context.init.stats['state'], 2)
+        self.assertEqual(context.init.stats['provide_credentials'], 1)
+
+    @patch('psutil.process_iter')
+    @patch('subprocess.Popen.__init__')
+    @patch('time.sleep')
     def test_should_poll_init_state_when_starting_background_service(self, mock_sleep, mock_popen, mock_process_iter):
         expected_retries = 10
 
@@ -494,6 +525,7 @@ class ServiceSpec(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertTrue(json.loads(result.output))
         self.assertEqual(context.api.stats['analytics_state_send'], 1)
+
 
 class MockProcess:
     def __init__(self):
