@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
+import stasis.server.events.Events.{DatasetEntries => Events}
 import stasis.server.persistence.datasets.DatasetEntryStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.security.CurrentUser
@@ -16,8 +17,8 @@ import stasis.shared.api.responses.DeletedDatasetEntry
 
 class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-
   import io.github.sndnv.layers.api.Matchers._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =
@@ -99,6 +100,11 @@ class DatasetEntries()(implicit ctx: RoutesContext) extends ApiRoutes {
                             .flatMap(devices => entryManage.create(devices.map(_.id), entry))
                             .map { _ =>
                               log.debugN("User [{}] successfully created entry [{}]", currentUser, entry.id)
+
+                              Events.DatasetEntryCreated.recordWithAttributes(
+                                Events.Attributes.Device.withValue(value = entry.device)
+                              )
+
                               complete(CreatedDatasetEntry(entry.id))
                             }
                         }

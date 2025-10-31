@@ -6,6 +6,7 @@ import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -24,12 +25,11 @@ import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
-import io.github.sndnv.layers.telemetry.TelemetryContext
-import stasis.server.api.routes.RoutesContext
-import stasis.server.api.routes.Staging
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.staging.ServerStagingStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
+import stasis.server.security.mocks.MockResourceProvider
 import stasis.shared.api.responses.DeletedPendingDestaging
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -37,7 +37,6 @@ import stasis.test.specs.unit.core.networking.mocks.MockGrpcEndpointClient
 import stasis.test.specs.unit.core.networking.mocks.MockHttpEndpointClient
 import stasis.test.specs.unit.core.persistence.crates.MockCrateStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
-import stasis.server.security.mocks.MockResourceProvider
 
 class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -59,6 +58,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[JsArray].value.map(_ \ "crate").map(_.as[UUID]) should be(Seq(testManifest.crate))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -77,6 +78,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${testManifest.crate}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedPendingDestaging] should be(DeletedPendingDestaging(existing = true))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -86,12 +89,14 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${testManifest.crate}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedPendingDestaging] should be(DeletedPendingDestaging(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "StagingSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "StagingSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -113,6 +118,8 @@ class StagingSpec extends AsyncUnitSpec with ScalatestRouteTest {
         serverStagingStore.manage()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

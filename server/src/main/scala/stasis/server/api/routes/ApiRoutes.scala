@@ -8,6 +8,8 @@ import org.apache.pekko.http.scaladsl.server.Directives.onSuccess
 import org.apache.pekko.http.scaladsl.server.Route
 import org.slf4j.Logger
 import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.events.EventCollector
+
 import stasis.server.security.CurrentUser
 import stasis.server.security.Resource
 import stasis.server.security.ResourceProvider
@@ -80,6 +82,8 @@ trait ApiRoutes extends EntityDiscardingDirectives {
   implicit def routeContextToExecutionContext(implicit ctx: RoutesContext): ExecutionContext = ctx.ec
 
   implicit def routeContextToResourceProvider(implicit ctx: RoutesContext): ResourceProvider = ctx.resourceProvider
+
+  implicit def routeContextToEventCollector(implicit ctx: RoutesContext): EventCollector = ctx.eventCollector
 
   def log(implicit ctx: RoutesContext): Logger = ctx.log
 }

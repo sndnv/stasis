@@ -20,3 +20,7 @@ class MockResourceProvider(resources: Set[Resource]) extends ResourceProvider {
         )
     }
 }
+
+object MockResourceProvider {
+  def apply(): MockResourceProvider = new MockResourceProvider(resources = Set.empty)
+}

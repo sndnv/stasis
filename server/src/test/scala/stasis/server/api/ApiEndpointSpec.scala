@@ -33,9 +33,11 @@ import stasis.core.persistence.staging.StagingStore
 import stasis.core.routing.Node
 import stasis.core.routing.NodeProxy
 import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.events.EventCollector
 import io.github.sndnv.layers.telemetry.ApplicationInformation
 import io.github.sndnv.layers.telemetry.TelemetryContext
 import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
+
 import stasis.server.Secrets
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.persistence.analytics.MockAnalyticsEntryStore
@@ -393,6 +395,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
   it should "handle authorization failures reported by routes" in withRetry {
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set.empty),
+      eventCollector = EventCollector.NoOp,
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
       serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
@@ -400,7 +403,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     )
 
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(
+    endpoint.start(
       interface = "localhost",
       port = endpointPort,
       context = None
@@ -425,6 +428,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
+      eventCollector = EventCollector.NoOp,
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
       serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
@@ -432,7 +436,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     )
 
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(
+    endpoint.start(
       interface = "localhost",
       port = endpointPort,
       context = None
@@ -460,6 +464,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
     val endpoint = new ApiEndpoint(
       resourceProvider = new MockResourceProvider(Set(userStore.manageSelf())),
+      eventCollector = EventCollector.NoOp,
       authenticator = new MockUserAuthenticator(testUser.toString, testPassword),
       userCredentialsManager = MockUserCredentialsManager(),
       serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),
@@ -467,7 +472,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
     )
 
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(
+    endpoint.start(
       interface = "localhost",
       port = endpointPort,
       context = None
@@ -554,6 +559,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
 
     lazy val endpoint: ApiEndpoint = new ApiEndpoint(
       resourceProvider = provider,
+      eventCollector = EventCollector.NoOp,
       authenticator = authenticator,
       userCredentialsManager = MockUserCredentialsManager(),
       serviceDiscoveryProvider = _ => Future.successful(ServiceDiscoveryResult.KeepExisting),

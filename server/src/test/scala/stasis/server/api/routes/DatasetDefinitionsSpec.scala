@@ -16,6 +16,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import stasis.core.routing.Node
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.server.persistence.datasets.MockDatasetDefinitionStore
 import stasis.server.persistence.devices.DeviceStore
@@ -44,6 +46,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetDefinition]] should contain theSameElementsAs definitions
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -55,7 +59,23 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(entityAs[CreatedDatasetDefinition].definition)
-        .map(_.isDefined should be(true))
+        .map { definition =>
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("dataset_definition_created")
+              event.attributes should be(
+                Map(
+                  Events.DatasetDefinitions.Attributes.Device.withValue(createRequest.device),
+                  Events.DatasetDefinitions.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+
+          definition.isDefined should be(true)
+        }
     }
   }
 
@@ -67,6 +87,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${definitions.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetDefinition] should be(definitions.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -74,6 +96,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/${DatasetDefinition.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -87,7 +111,23 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(definitions.head.id)
-        .map(_.map(_.redundantCopies) should be(Some(updatedCopies)))
+        .map { definition =>
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("dataset_definition_updated")
+              event.attributes should be(
+                Map(
+                  Events.DatasetDefinitions.Attributes.Device.withValue(definitions.head.device),
+                  Events.DatasetDefinitions.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+
+          definition.map(_.redundantCopies) should be(Some(updatedCopies))
+        }
     }
   }
 
@@ -96,6 +136,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${DatasetDefinition.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -110,7 +152,10 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(definitions.head.id)
-        .map(_ should be(None))
+        .map { definition =>
+          fixtures.eventCollector.events should be(empty)
+          definition should be(None)
+        }
     }
   }
 
@@ -120,6 +165,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${definitions.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDatasetDefinition] should be(DeletedDatasetDefinition(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -131,6 +178,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/own") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetDefinition]] should contain theSameElementsAs definitions.take(1)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -145,7 +194,23 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(entityAs[CreatedDatasetDefinition].definition)
-        .map(_.isDefined should be(true))
+        .map {
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("dataset_definition_created")
+              event.attributes should be(
+                Map(
+                  Events.DatasetDefinitions.Attributes.Device.withValue(userDevice.id),
+                  Events.DatasetDefinitions.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+
+          definition => definition.isDefined should be(true)
+        }
     }
   }
 
@@ -158,6 +223,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/${definitions.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetDefinition] should be(definitions.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -165,6 +232,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/own/${DatasetDefinition.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -179,7 +248,23 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(definitions.head.id)
-        .map(_.map(_.redundantCopies) should be(Some(updatedCopies)))
+        .map { definition =>
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("dataset_definition_updated")
+              event.attributes should be(
+                Map(
+                  Events.DatasetDefinitions.Attributes.Device.withValue(userDevice.id),
+                  Events.DatasetDefinitions.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+
+          definition.map(_.redundantCopies) should be(Some(updatedCopies))
+        }
     }
   }
 
@@ -188,6 +273,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/own/${DatasetDefinition.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -203,7 +290,11 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.definitionStore
         .view()
         .get(definitions.head.id)
-        .map(_ should be(None))
+        .map { definition =>
+          definition should be(None)
+
+          fixtures.eventCollector.events should be(empty)
+        }
     }
   }
 
@@ -214,12 +305,14 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/own/${definitions.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDatasetDefinition] should be(DeletedDatasetDefinition(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DatasetDefinitionsSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DatasetDefinitionsSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -231,7 +324,7 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val definitionStore: DatasetDefinitionStore = MockDatasetDefinitionStore()
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         deviceStore.view(),
         deviceStore.viewSelf(),
@@ -241,6 +334,8 @@ class DatasetDefinitionsSpec extends AsyncUnitSpec with ScalatestRouteTest {
         definitionStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

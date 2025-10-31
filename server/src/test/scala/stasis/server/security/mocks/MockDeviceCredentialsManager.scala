@@ -9,3 +9,7 @@ class MockDeviceCredentialsManager extends DeviceCredentialsManager {
   override def setClientSecret(device: Device, clientSecret: String): Future[String] =
     Future.successful("test-client-id")
 }
+
+object MockDeviceCredentialsManager {
+  def apply(): MockDeviceCredentialsManager = new MockDeviceCredentialsManager()
+}

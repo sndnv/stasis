@@ -5,6 +5,12 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.api.{Endpoint => BaseEndpoint}
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
@@ -25,11 +31,6 @@ import stasis.core.persistence.CrateStorageRequest
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import io.github.sndnv.layers.api.MessageResponse
-import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
-import io.github.sndnv.layers.api.directives.LoggingDirectives
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 class HttpEndpoint(
@@ -37,7 +38,8 @@ class HttpEndpoint(
   reservationStore: ReservationStore.View,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
-    extends Endpoint[HttpCredentials]
+    extends BaseEndpoint
+    with Endpoint[HttpCredentials]
     with EntityDiscardingDirectives
     with LoggingDirectives {
 
@@ -45,9 +47,11 @@ class HttpEndpoint(
 
   import stasis.core.api.Formats._
 
+  override val name: String = "core-http"
+
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+  def bind(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
     import EndpointContext._
 
     Http()

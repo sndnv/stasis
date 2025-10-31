@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory
 import stasis.core.persistence.crates.CrateStore
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
@@ -42,6 +44,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Node]] should be(Seq(node))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -56,7 +60,22 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
       fixtures.nodeStore
         .get(entityAs[CreatedNode].node)
-        .map(_.isDefined should be(true))
+        .map { node =>
+          node.isDefined should be(true)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("node_created")
+              event.attributes should be(
+                Map(
+                  Events.Nodes.Attributes.Node.withValue(node.get.id)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -68,6 +87,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${node.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Node] should be(node)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -76,6 +97,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get(s"/${Node.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -92,6 +115,19 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         case Some(updatedNode: Node.Local) => updatedNode.storeDescriptor should be(request.storeDescriptor)
         case other                         => fail(s"Unexpected response received: [$other]")
       }
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("node_updated")
+          event.attributes should be(
+            Map(
+              Events.Nodes.Attributes.Node.withValue(node.id)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -102,6 +138,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/${Node.generateId()}").withEntity(request) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -113,6 +151,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${node.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedNode] should be(DeletedNode(existing = true))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -122,12 +162,14 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${Node.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedNode] should be(DeletedNode(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "NodesSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "NodesSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -145,6 +187,8 @@ class NodesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         serverNodeStore.manage()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

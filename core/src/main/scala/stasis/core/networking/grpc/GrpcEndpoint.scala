@@ -6,6 +6,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+import io.github.sndnv.layers.api.Metrics
+import io.github.sndnv.layers.api.{Endpoint => BaseEndpoint}
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.security.tls.EndpointContext.RichServerBuilder
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
@@ -22,7 +27,9 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.SystemMaterializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
 import stasis.core.networking.Endpoint
 import stasis.core.networking.exceptions.CredentialsFailure
 import stasis.core.networking.exceptions.EndpointFailure
@@ -32,27 +39,26 @@ import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.routing.Node
 import stasis.core.routing.Router
 import stasis.core.security.NodeAuthenticator
-import io.github.sndnv.layers.api.Metrics
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.security.tls.EndpointContext.RichServerBuilder
-import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class GrpcEndpoint(
   router: Router,
   reservationStore: ReservationStore.View,
   override protected val authenticator: NodeAuthenticator[HttpCredentials]
 )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext)
-    extends Endpoint[HttpCredentials] {
+    extends BaseEndpoint
+    with Endpoint[HttpCredentials] {
+  override val name: String = "core-grpc"
+
+  override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
   import internal.Implicits._
 
   private implicit val mat: Materializer = SystemMaterializer(system).materializer
   private implicit val ec: ExecutionContext = system.executionContext
 
-  private val log = LoggerFactory.getLogger(this.getClass.getName)
   private val metrics = telemetry.metrics[Metrics.Endpoint]
 
-  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] =
+  def bind(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] =
     Http()
       .newServerAt(
         interface = interface,

@@ -16,6 +16,7 @@ import org.apache.pekko.util.ByteString
 import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.CommandSource
+import stasis.server.events.Events.{Devices => Events}
 import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore
@@ -32,8 +33,8 @@ import stasis.shared.model.devices.Device
 
 class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
-
   import io.github.sndnv.layers.api.Matchers._
+
   import stasis.shared.api.Formats._
 
   def routes(implicit currentUser: CurrentUser): Route =
@@ -61,6 +62,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                         device.id,
                         device.node
                       )
+
+                      Events.DeviceCreated.recordWithAttributes(
+                        Events.Attributes.Owner.withValue(value = owner.id),
+                        Events.Attributes.Device.withValue(value = device.id),
+                        Events.Attributes.Privileged.withValue(value = true)
+                      )
+
                       complete(CreatedDevice(device.id, device.node))
                     }
 
@@ -189,6 +197,11 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                           deviceId
                         )
 
+                        Events.DeviceCommandCreated.recordWithAttributes(
+                          Events.Attributes.Device.withValue(value = deviceId),
+                          Events.Attributes.Privileged.withValue(value = true)
+                        )
+
                         complete(StatusCodes.OK)
                       }
                   }
@@ -228,6 +241,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                               device.id,
                               device.node
                             )
+
+                            Events.DeviceCreated.recordWithAttributes(
+                              Events.Attributes.Owner.withValue(value = device.owner),
+                              Events.Attributes.Device.withValue(value = device.id),
+                              Events.Attributes.Privileged.withValue(value = false)
+                            )
+
                             complete(CreatedDevice(device.id, device.node))
                           }
 
@@ -335,6 +355,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                                         _ <- keyManage.put(ownDevices.map(_.id), keyBytes.toDeviceKey(device, owner))
                                       } yield {
                                         log.debugN("User [{}] successfully updated key for device [{}]", currentUser, deviceId)
+
+                                        Events.DeviceKeyUpdated.recordWithAttributes(
+                                          Events.Attributes.Owner.withValue(value = device.owner),
+                                          Events.Attributes.Device.withValue(value = device.id)
+                                        )
+
                                         complete(StatusCodes.OK)
                                       }
 
@@ -453,6 +479,12 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                                 deviceId
                               )
 
+                              Events.DeviceCommandCreated.recordWithAttributes(
+                                Events.Attributes.Owner.withValue(value = currentUser.id),
+                                Events.Attributes.Device.withValue(value = deviceId),
+                                Events.Attributes.Privileged.withValue(value = false)
+                              )
+
                               discardEntity & complete(commands)
                             }
                         }
@@ -519,6 +551,10 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
                           currentUser
                         )
 
+                        Events.DeviceCommandCreated.recordWithAttributes(
+                          Events.Attributes.Privileged.withValue(value = true)
+                        )
+
                         complete(StatusCodes.OK)
                       }
                   }
@@ -568,6 +604,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
               case Some(owner) =>
                 deviceManage.put(updateRequest.toUpdatedDevice(device, owner)).map { _ =>
                   log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
+
+                  Events.DeviceUpdated.recordWithAttributes(
+                    Events.Attributes.Owner.withValue(value = device.owner),
+                    Events.Attributes.Device.withValue(value = device.id),
+                    Events.Attributes.Privileged.withValue(value = true)
+                  )
+
                   complete(StatusCodes.OK)
                 }
 
@@ -602,6 +645,13 @@ class Devices()(implicit ctx: RoutesContext) extends ApiRoutes {
             case Some(owner) =>
               deviceManage.put(currentUser, updateRequest.toUpdatedDevice(device, owner)).map { _ =>
                 log.debugN("User [{}] successfully updated device [{}]", currentUser, deviceId)
+
+                Events.DeviceUpdated.recordWithAttributes(
+                  Events.Attributes.Owner.withValue(value = device.owner),
+                  Events.Attributes.Device.withValue(value = device.id),
+                  Events.Attributes.Privileged.withValue(value = false)
+                )
+
                 complete(StatusCodes.OK)
               }
 

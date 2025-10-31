@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory
 
 import stasis.core.packaging.Crate
 import stasis.core.routing.Node
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.datasets.DatasetEntryStore
 import stasis.server.persistence.datasets.MockDatasetEntryStore
 import stasis.server.persistence.devices.DeviceStore
@@ -45,6 +47,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/for-definition/$definition") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetEntry]] should contain theSameElementsAs entries
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -56,6 +60,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetEntry] should be(entries.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -63,6 +69,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/${DatasetEntry.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -77,7 +85,10 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.entryStore
         .view()
         .get(entries.head.id)
-        .map(_ should be(None))
+        .map { entry =>
+          fixtures.eventCollector.events should be(empty)
+          entry should be(None)
+        }
     }
   }
 
@@ -87,6 +98,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDatasetEntry] should be(DeletedDatasetEntry(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -98,6 +111,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/for-definition/$definition") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DatasetEntry]] should contain theSameElementsAs entries.take(1)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -112,6 +127,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/for-definition/$definition/latest") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetEntry] should be(latestEntry.copy(device = userDevice.id))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -119,6 +136,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/own/for-definition/$definition/latest") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -135,6 +154,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/for-definition/$definition/latest?until=$until") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetEntry] should be(earliestEntry.copy(device = userDevice.id))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -149,7 +170,22 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.entryStore
         .view()
         .get(entityAs[CreatedDatasetEntry].entry)
-        .map(_.isDefined should be(true))
+        .map { entry =>
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("dataset_entry_created")
+              event.attributes should be(
+                Map(
+                  Events.DatasetEntries.Attributes.Device.withValue(userDevice.id)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+
+          entry.isDefined should be(true)
+        }
     }
   }
 
@@ -160,6 +196,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Post(s"/own/for-definition/${DatasetDefinition.generateId()}")
       .withEntity(createRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -172,6 +210,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DatasetEntry] should be(entries.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -179,6 +219,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/own/${DatasetEntry.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -194,7 +236,10 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.entryStore
         .view()
         .get(entries.head.id)
-        .map(_ should be(None))
+        .map { entry =>
+          fixtures.eventCollector.events should be(empty)
+          entry should be(None)
+        }
     }
   }
 
@@ -205,12 +250,14 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/own/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDatasetEntry] should be(DeletedDatasetEntry(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DatasetEntriesSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DatasetEntriesSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -222,7 +269,7 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     lazy val entryStore: DatasetEntryStore = MockDatasetEntryStore()
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         deviceStore.view(),
         deviceStore.viewSelf(),
@@ -232,6 +279,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         entryStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

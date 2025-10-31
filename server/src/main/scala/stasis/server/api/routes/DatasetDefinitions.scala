@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
+import stasis.server.events.Events.{DatasetDefinitions => Events}
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.security.CurrentUser
@@ -38,6 +39,12 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                 val definition = createRequest.toDefinition
                 manage.put(definition).map { _ =>
                   log.debugN("User [{}] successfully created definition [{}]", currentUser, definition.id)
+
+                  Events.DatasetDefinitionCreated.recordWithAttributes(
+                    Events.Attributes.Device.withValue(value = definition.device),
+                    Events.Attributes.Privileged.withValue(value = true)
+                  )
+
                   complete(CreatedDatasetDefinition(definition.id))
                 }
               }
@@ -67,6 +74,12 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                   case Some(definition) =>
                     manage.put(updateRequest.toUpdatedDefinition(definition)).map { _ =>
                       log.debugN("User [{}] successfully updated definition [{}]", currentUser, definitionId)
+
+                      Events.DatasetDefinitionUpdated.recordWithAttributes(
+                        Events.Attributes.Device.withValue(value = definition.device),
+                        Events.Attributes.Privileged.withValue(value = true)
+                      )
+
                       complete(StatusCodes.OK)
                     }
 
@@ -116,6 +129,12 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                       .flatMap(devices => definitionManage.put(devices.map(_.id), definition))
                       .map { _ =>
                         log.debugN("User [{}] successfully created definition [{}]", currentUser, definition.id)
+
+                        Events.DatasetDefinitionCreated.recordWithAttributes(
+                          Events.Attributes.Device.withValue(value = definition.device),
+                          Events.Attributes.Privileged.withValue(value = false)
+                        )
+
                         complete(CreatedDatasetDefinition(definition.id))
                       }
                   }
@@ -157,11 +176,13 @@ class DatasetDefinitions()(implicit ctx: RoutesContext) extends ApiRoutes {
                             definitionManage
                               .put(deviceIds, updateRequest.toUpdatedDefinition(definition))
                               .map { _ =>
-                                log.debugN(
-                                  "User [{}] successfully updated definition [{}]",
-                                  currentUser,
-                                  definitionId
+                                log.debugN("User [{}] successfully updated definition [{}]", currentUser, definitionId)
+
+                                Events.DatasetDefinitionUpdated.recordWithAttributes(
+                                  Events.Attributes.Device.withValue(value = definition.device),
+                                  Events.Attributes.Privileged.withValue(value = false)
                                 )
+
                                 complete(StatusCodes.OK)
                               }
 

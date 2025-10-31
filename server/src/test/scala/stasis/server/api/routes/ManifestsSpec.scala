@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import stasis.core.packaging.Crate
 import stasis.core.packaging.Manifest
 import stasis.core.persistence.manifests.ManifestStore
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.manifests.ServerManifestStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
@@ -35,6 +36,8 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${manifest.crate}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Manifest] should be(manifest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -43,6 +46,8 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get(s"/${Crate.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -54,6 +59,8 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${manifest.crate}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedManifest] should be(DeletedManifest(existing = true))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -63,12 +70,14 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${Crate.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedManifest] should be(DeletedManifest(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "ManifestsSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "ManifestsSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -86,6 +95,8 @@ class ManifestsSpec extends AsyncUnitSpec with ScalatestRouteTest {
         serverManifestStore.manage()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

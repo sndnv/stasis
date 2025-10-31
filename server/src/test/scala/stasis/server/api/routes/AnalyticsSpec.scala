@@ -2,6 +2,8 @@ package stasis.server.api.routes
 
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.telemetry.ApplicationInformation
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
@@ -12,8 +14,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import io.github.sndnv.layers.telemetry.ApplicationInformation
-import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.analytics.AnalyticsEntryStore
 import stasis.server.persistence.analytics.MockAnalyticsEntryStore
 import stasis.server.security.CurrentUser
@@ -40,6 +41,8 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       responseAs[Seq[Analytics.AnalyticsEntrySummary]] should contain theSameElementsAs entries.map(
         Analytics.AnalyticsEntrySummary.fromEntry
       )
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -51,7 +54,10 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.analyticsStore
         .view()
         .get(entityAs[CreatedAnalyticsEntry].entry)
-        .map(_.isDefined should be(true))
+        .map { entry =>
+          fixtures.eventCollector.events should be(empty)
+          entry.isDefined should be(true)
+        }
     }
   }
 
@@ -63,6 +69,8 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[StoredAnalyticsEntry] should be(entries.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -70,6 +78,8 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/${StoredAnalyticsEntry.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -84,7 +94,10 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.analyticsStore
         .view()
         .get(entries.head.id)
-        .map(_ should be(None))
+        .map { entry =>
+          fixtures.eventCollector.events should be(empty)
+          entry should be(None)
+        }
     }
   }
 
@@ -94,6 +107,8 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${entries.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedAnalyticsEntry] should be(DeletedAnalyticsEntry(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -109,13 +124,15 @@ class AnalyticsSpec extends AsyncUnitSpec with ScalatestRouteTest {
   private trait TestFixtures {
     lazy val analyticsStore: AnalyticsEntryStore = MockAnalyticsEntryStore()
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         analyticsStore.view(),
         analyticsStore.manage(),
         analyticsStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

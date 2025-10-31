@@ -5,6 +5,12 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
+import io.github.sndnv.layers.api.Endpoint
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.events.EventCollector
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.apache.pekko.http.scaladsl.Http
@@ -16,10 +22,6 @@ import org.slf4j.LoggerFactory
 
 import stasis.core.discovery.http.HttpServiceDiscoveryEndpoint
 import stasis.core.discovery.providers.server.ServiceDiscoveryProvider
-import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
-import io.github.sndnv.layers.api.directives.LoggingDirectives
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.api.routes._
 import stasis.server.security.ResourceProvider
 import stasis.server.security.authenticators.UserAuthenticator
@@ -28,18 +30,27 @@ import stasis.shared.secrets.SecretsConfig
 
 class ApiEndpoint(
   resourceProvider: ResourceProvider,
+  eventCollector: EventCollector,
   authenticator: UserAuthenticator,
   userCredentialsManager: UserCredentialsManager,
   serviceDiscoveryProvider: ServiceDiscoveryProvider,
   secretsConfig: SecretsConfig
 )(implicit val system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
-    extends LoggingDirectives
+    extends Endpoint
+    with LoggingDirectives
     with EntityDiscardingDirectives {
+  override val name: String = "api"
+
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
-  private implicit val context: RoutesContext = RoutesContext(resourceProvider, ec, log)
+  private implicit val context: RoutesContext = RoutesContext(
+    resourceProvider = resourceProvider,
+    eventCollector = eventCollector,
+    ec = ec,
+    log = log
+  )
 
   private val definitions = DatasetDefinitions()
   private val entries = DatasetEntries()
@@ -107,7 +118,7 @@ class ApiEndpoint(
       }
     }
 
-  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+  override def bind(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
     import EndpointContext._
 
     Http()
@@ -130,6 +141,7 @@ class ApiEndpoint(
 object ApiEndpoint {
   def apply(
     resourceProvider: ResourceProvider,
+    eventCollector: EventCollector,
     authenticator: UserAuthenticator,
     userCredentialsManager: UserCredentialsManager,
     serviceDiscoveryProvider: ServiceDiscoveryProvider,
@@ -137,6 +149,7 @@ object ApiEndpoint {
   )(implicit system: ActorSystem[Nothing], telemetry: TelemetryContext): ApiEndpoint =
     new ApiEndpoint(
       resourceProvider = resourceProvider,
+      eventCollector = eventCollector,
       authenticator = authenticator,
       userCredentialsManager = userCredentialsManager,
       serviceDiscoveryProvider = serviceDiscoveryProvider,

@@ -258,7 +258,7 @@ trait Service {
 
             log.info("Service starting on [{}:{}]...", apiConfig.interface, apiConfig.port)
             serviceState.set(State.Started(persistence, endpoint))
-            val _ = endpoint.start(
+            endpoint.start(
               interface = apiConfig.interface,
               port = apiConfig.port,
               context = context

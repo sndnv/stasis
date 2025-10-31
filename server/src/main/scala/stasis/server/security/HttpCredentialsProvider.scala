@@ -8,16 +8,16 @@ import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 
 import io.github.sndnv.layers.security.jwt.JwtProvider
 
-trait CredentialsProvider {
+trait HttpCredentialsProvider {
   def provide(): Future[HttpCredentials]
 }
 
-object CredentialsProvider {
+object HttpCredentialsProvider {
   class Default(
     scope: String,
     underlying: JwtProvider
   )(implicit ec: ExecutionContext)
-      extends CredentialsProvider {
+      extends HttpCredentialsProvider {
     override def provide(): Future[HttpCredentials] =
       underlying.provide(scope = scope).map(OAuth2BearerToken)
   }

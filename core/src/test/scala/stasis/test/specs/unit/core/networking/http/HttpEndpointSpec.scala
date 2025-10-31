@@ -227,7 +227,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       testCrateStore = Some(new MockCrateStore(persistDisabled = true))
     )
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
+    endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     endpoint.testReservationStore.put(testReservation).await
 
@@ -251,7 +251,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
+    endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     Http()
       .singleRequest(
@@ -274,7 +274,7 @@ class HttpEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val endpoint = createTestHttpEndpoint()
     val endpointPort = ports.dequeue()
-    val _ = endpoint.start(interface = "localhost", port = endpointPort, context = None)
+    endpoint.start(interface = "localhost", port = endpointPort, context = None)
 
     Http()
       .singleRequest(

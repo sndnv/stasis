@@ -4,13 +4,11 @@ import java.time.Instant
 import java.util.UUID
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import com.typesafe.config.Config
-import com.typesafe.{config => typesafe}
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import org.apache.pekko.Done
 
-import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import stasis.server.persistence.datasets.DatasetDefinitionStore
 import stasis.shared.model.datasets.DatasetDefinition
 
@@ -27,8 +25,8 @@ class DatasetDefinitionBootstrapEntityProvider(store: DatasetDefinitionStore) ex
       info = config.getString("info"),
       device = UUID.fromString(config.getString("device")),
       redundantCopies = config.getInt("redundant-copies"),
-      existingVersions = retentionFromConfig(config.getConfig("existing-versions")),
-      removedVersions = retentionFromConfig(config.getConfig("removed-versions")),
+      existingVersions = DatasetDefinition.Retention(config.getConfig("existing-versions")),
+      removedVersions = DatasetDefinition.Retention(config.getConfig("removed-versions")),
       created = now,
       updated = now
     )
@@ -58,14 +56,4 @@ class DatasetDefinitionBootstrapEntityProvider(store: DatasetDefinitionStore) ex
 
   override def extractId(entity: DatasetDefinition): String =
     entity.id.toString
-
-  private def retentionFromConfig(config: typesafe.Config): DatasetDefinition.Retention =
-    DatasetDefinition.Retention(
-      policy = config.getString("policy").toLowerCase match {
-        case "at-most"     => DatasetDefinition.Retention.Policy.AtMost(config.getInt("policy-versions"))
-        case "latest-only" => DatasetDefinition.Retention.Policy.LatestOnly
-        case "all"         => DatasetDefinition.Retention.Policy.All
-      },
-      duration = config.getDuration("duration").toSeconds.seconds
-    )
 }

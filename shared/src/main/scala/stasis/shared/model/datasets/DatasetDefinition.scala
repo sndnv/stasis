@@ -2,7 +2,7 @@ package stasis.shared.model.datasets
 
 import java.time.Instant
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 import stasis.shared.model.devices.Device
 
@@ -30,6 +30,16 @@ object DatasetDefinition {
   )
 
   object Retention {
+    def apply(config: com.typesafe.config.Config): Retention =
+      Retention(
+        policy = config.getString("policy").toLowerCase match {
+          case "at-most"     => DatasetDefinition.Retention.Policy.AtMost(config.getInt("policy-versions"))
+          case "latest-only" => DatasetDefinition.Retention.Policy.LatestOnly
+          case "all"         => DatasetDefinition.Retention.Policy.All
+        },
+        duration = config.getDuration("duration").toSeconds.seconds
+      )
+
     sealed trait Policy
     object Policy {
       final case class AtMost(versions: Int) extends Policy {

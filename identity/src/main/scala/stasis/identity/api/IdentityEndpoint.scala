@@ -3,6 +3,12 @@ package stasis.identity.api
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+import io.github.sndnv.layers.api.Endpoint
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
+import io.github.sndnv.layers.api.directives.LoggingDirectives
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
@@ -18,11 +24,6 @@ import stasis.identity.api.manage.setup.{Config => ManageConfig}
 import stasis.identity.api.manage.setup.{Providers => ManageProviders}
 import stasis.identity.api.oauth.setup.{Config => OAuthConfig}
 import stasis.identity.api.oauth.setup.{Providers => OAuthProviders}
-import io.github.sndnv.layers.api.MessageResponse
-import io.github.sndnv.layers.api.directives.EntityDiscardingDirectives
-import io.github.sndnv.layers.api.directives.LoggingDirectives
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class IdentityEndpoint(
   keys: Seq[JsonWebKey],
@@ -31,9 +32,12 @@ class IdentityEndpoint(
   manageConfig: ManageConfig,
   manageProviders: ManageProviders
 )(implicit system: ActorSystem[Nothing], override val telemetry: TelemetryContext)
-    extends LoggingDirectives
+    extends Endpoint
+    with LoggingDirectives
     with EntityDiscardingDirectives {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
+  override val name: String = "api"
 
   override protected val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -110,7 +114,7 @@ class IdentityEndpoint(
       pathPrefix("service") { path("health") { complete(StatusCodes.OK) } }
     )
 
-  def start(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
+  def bind(interface: String, port: Int, context: Option[EndpointContext]): Future[Http.ServerBinding] = {
     import EndpointContext._
 
     Http()

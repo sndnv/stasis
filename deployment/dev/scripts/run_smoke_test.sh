@@ -94,11 +94,11 @@ TEST_START="$(date +%s)"
 
 echo "Started: [$(now)]"
 
-echo "[$(now)] Requesting client token for [${SMOKE_TEST_CLIENT_ID}]..."
+echo "[$(now)] Requesting client token for [${SMOKE_TEST_CLIENT_ID}]... "
 CLIENT_TOKEN_REQUEST_PARAMS="grant_type=client_credentials&scope=${OAUTH_URN}:${SERVER_NODE}"
 CLIENT_TOKEN=$(curl -sk -u "${SMOKE_TEST_CLIENT_ID}:${CLIENT_PASSWORD}" -X POST "${OAUTH_TOKEN_URL}?${CLIENT_TOKEN_REQUEST_PARAMS}" | jq -r .access_token)
 
-echo "[$(now)] Requesting user token for [${USER_ID}]..."
+echo "[$(now)] Requesting user token for [${USER_ID}]... "
 USER_TOKEN_REQUEST_PARAMS="grant_type=password&username=${USER_ID}&password=${USER_PASSWORD_DERIVED}&scope=${OAUTH_URN}:${SERVER_API}"
 USER_TOKEN=$(curl -sk -u "${SMOKE_TEST_CLIENT_ID}:${CLIENT_PASSWORD}" -X POST "${OAUTH_TOKEN_URL}?${USER_TOKEN_REQUEST_PARAMS}" | jq -r .access_token)
 
@@ -168,7 +168,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] Retrieving users..."
+echo -n "[$(now)] Retrieving users... "
 EXPECTED_USERS_COUNT=2
 ACTUAL_USERS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/users" | jq ". | length")
 if [ "${ACTUAL_USERS_COUNT}" = "${EXPECTED_USERS_COUNT}" ]
@@ -178,7 +178,7 @@ else
   echo "failed; expected [${EXPECTED_USERS_COUNT}] but found [${ACTUAL_USERS_COUNT}]"
 fi
 
-echo -n "[$(now)] Retrieving devices..."
+echo -n "[$(now)] Retrieving devices... "
 EXPECTED_DEVICES_COUNT=3
 ACTUAL_DEVICES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices" | jq ". | length")
 if [ "${ACTUAL_DEVICES_COUNT}" = "${EXPECTED_DEVICES_COUNT}" ]
@@ -188,7 +188,7 @@ else
   echo "failed; expected [${EXPECTED_DEVICES_COUNT}] but found [${ACTUAL_DEVICES_COUNT}]"
 fi
 
-echo -n "[$(now)] Retrieving nodes..."
+echo -n "[$(now)] Retrieving nodes... "
 EXPECTED_NODES_COUNT=5
 ACTUAL_NODES_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/nodes" | jq ". | length")
 if [ "${ACTUAL_NODES_COUNT}" = "${EXPECTED_NODES_COUNT}" ]
@@ -198,7 +198,7 @@ else
   echo "failed; expected [${EXPECTED_NODES_COUNT}] but found [${ACTUAL_NODES_COUNT}]"
 fi
 
-echo -n "[$(now)] Retrieving device keys..."
+echo -n "[$(now)] Retrieving device keys... "
 EXPECTED_INITIAL_DEVICE_KEYS_COUNT=0
 ACTUAL_INITIAL_DEVICE_KEYS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices/keys" | jq ". | length")
 if [ "${ACTUAL_INITIAL_DEVICE_KEYS_COUNT}" = "${EXPECTED_INITIAL_DEVICE_KEYS_COUNT}" ]
@@ -208,7 +208,50 @@ else
   echo "failed; expected [${EXPECTED_INITIAL_DEVICE_KEYS_COUNT}] but found [${ACTUAL_INITIAL_DEVICE_KEYS_COUNT}]"
 fi
 
-echo -n "[$(now)] Looking up PRIMARY client container [${PRIMARY_CLIENT_CONTAINER_NAME}]..."
+echo -n "[$(now)] Creating new device... "
+DEVICE_CREATION_REQUEST="{
+  \"name\": \"new-test-device\",
+  \"limits\": null
+}"
+DEVICE_CREATE_RESULT=$(curl -sk -H "${HEADER_JSON}" -H "Authorization: Bearer ${USER_TOKEN}" -X POST "${SERVER_API_URL}/v1/devices/own" -d "${DEVICE_CREATION_REQUEST}")
+NEW_DEVICE_ID=$(jq -r .device <<< "${DEVICE_CREATE_RESULT}")
+NEW_DEVICE_NODE_ID=$(jq -r .node <<< "${DEVICE_CREATE_RESULT}")
+echo "created [${NEW_DEVICE_ID}] with node [${NEW_DEVICE_NODE_ID}]"
+
+echo -n "[$(now)] Retrieving updated devices... "
+EXPECTED_DEVICES_COUNT_AFTER_CREATION=$((EXPECTED_DEVICES_COUNT + 1))
+ACTUAL_DEVICES_COUNT_AFTER_CREATION=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices" | jq ". | length")
+if [ "${ACTUAL_DEVICES_COUNT_AFTER_CREATION}" = "${EXPECTED_DEVICES_COUNT_AFTER_CREATION}" ]
+then
+  echo "found [${ACTUAL_DEVICES_COUNT_AFTER_CREATION}] (OK)"
+else
+  echo "failed; expected [${EXPECTED_DEVICES_COUNT_AFTER_CREATION}] but found [${ACTUAL_DEVICES_COUNT_AFTER_CREATION}]"
+fi
+
+echo -n "[$(now)] Retrieving dataset definitions... "
+EXPECTED_DATASET_DEFINITIONS=3
+DATASET_DEFINITIONS_RESULT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/datasets/definitions/own")
+DATASET_DEFINITIONS_COUNT=$(jq ". | length" <<< "${DATASET_DEFINITIONS_RESULT}")
+if [ "${DATASET_DEFINITIONS_COUNT}" = "${EXPECTED_DATASET_DEFINITIONS}" ]
+then
+  echo "found [${DATASET_DEFINITIONS_COUNT}] (OK)"
+else
+  echo "failed; expected [${EXPECTED_DATASET_DEFINITIONS}] but found [${DATASET_DEFINITIONS_COUNT}]"
+fi
+
+echo -n "[$(now)] Extracting dataset definition for device [${NEW_DEVICE_ID}]... "
+DATASET_DEFINITION_FOR_NEW_DEVICE=$(jq ".[] | select(.device == \"${NEW_DEVICE_ID}\")" <<< "${DATASET_DEFINITIONS_RESULT}")
+DATASET_DEFINITION_ID_FOR_NEW_DEVICE=$(jq -r .id <<< "${DATASET_DEFINITION_FOR_NEW_DEVICE}")
+
+if [ "${DATASET_DEFINITION_ID_FOR_NEW_DEVICE}" != "" ]
+then
+  echo "found [${DATASET_DEFINITION_ID_FOR_NEW_DEVICE}] (OK)"
+else
+  echo "failed; dataset definition not found"
+  exit 1
+fi
+
+echo -n "[$(now)] Looking up PRIMARY client container [${PRIMARY_CLIENT_CONTAINER_NAME}]... "
 PRIMARY_CLIENT_CONTAINER_ID=$(container_executable ps --filter "name=${PRIMARY_CLIENT_CONTAINER_NAME}" --quiet)
 if [ "${PRIMARY_CLIENT_CONTAINER_ID}" != "" ]
 then
@@ -218,7 +261,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] Looking up SECONDARY client container [${SECONDARY_CLIENT_CONTAINER_NAME}]..."
+echo -n "[$(now)] Looking up SECONDARY client container [${SECONDARY_CLIENT_CONTAINER_NAME}]... "
 SECONDARY_CLIENT_CONTAINER_ID=$(container_executable ps --filter "name=${SECONDARY_CLIENT_CONTAINER_NAME}" --quiet)
 if [ "${SECONDARY_CLIENT_CONTAINER_ID}" != "" ]
 then
@@ -228,7 +271,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Starting client service..."
+echo -n "[$(now)] (PRIMARY) Starting client service... "
 CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD} -no-version-check"
 CLIENT_SERVICE_START_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
@@ -242,7 +285,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Checking user status..."
+echo -n "[$(now)] (PRIMARY) Checking user status... "
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
 CLIENT_STATUS_USER_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_USER_RESULT}" | jq '.active')" = "true" ]
@@ -253,7 +296,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Checking device status..."
+echo -n "[$(now)] (PRIMARY) Checking device status... "
 CLIENT_STATUS_DEVICE_COMMAND="stasis-client-cli --json service status device"
 CLIENT_STATUS_DEVICE_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_DEVICE_RESULT}" | jq '.active')" = "true" ]
@@ -264,7 +307,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Looking up backup definition..."
+echo -n "[$(now)] (PRIMARY) Looking up backup definition... "
 CLIENT_BACKUP_SHOW_DEFINITIONS_COMMAND="stasis-client-cli --json backup show definitions"
 CLIENT_BACKUP_SHOW_DEFINITIONS_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SHOW_DEFINITIONS_COMMAND})
 CLIENT_BACKUP_DEFINITION=$(echo "${CLIENT_BACKUP_SHOW_DEFINITIONS_RESULT}" | jq -r '.[0] | .definition')
@@ -283,7 +326,7 @@ function start_backup() {
 
   [[ "${CONTAINER_ID}" = "${PRIMARY_CLIENT_CONTAINER_ID}" ]] && CONTAINER_TYPE="PRIMARY" || CONTAINER_TYPE="SECONDARY"
 
-  echo -n "[$(now)] (${CONTAINER_TYPE}) Running backup [${BACKUP_NAME}]..."
+  echo -n "[$(now)] (${CONTAINER_TYPE}) Running backup [${BACKUP_NAME}]... "
   BACKUP_START_COMMAND="stasis-client-cli --json backup start ${DEFINITION} --follow"
   BACKUP_START_RESULT=$(container_executable exec "${CONTAINER_ID}" ${BACKUP_START_COMMAND})
   if [ $? = 0 ]
@@ -297,7 +340,7 @@ function start_backup() {
 
 start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "base"
 
-echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_BACKUP_DIRS_COUNT}] backup directories..."
+echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_BACKUP_DIRS_COUNT}] backup directories... "
 for TEST_DIR in "${CLIENT_BACKUP_DIRS[@]}"
 do
   MKDIR_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${TEST_DIR} 2>&1)
@@ -309,7 +352,7 @@ do
 done
 echo "OK"
 
-echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_TEST_FILES_COUNT}] test files..."
+echo -n "[$(now)] (PRIMARY) Creating [${CLIENT_TEST_FILES_COUNT}] test files... "
 for i in "${!CLIENT_TEST_FILES[@]}"
 do
   DD_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_TEST_FILES[$i]} bs=1M count=$((i + 1)) 2>&1)
@@ -333,7 +376,7 @@ echo "OK"
 
 start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "primary"
 
-echo -n "[$(now)] (PRIMARY) Updating test files..."
+echo -n "[$(now)] (PRIMARY) Updating test files... "
 CLIENT_UPDATED_TEST_FILE_DD_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" dd if=/dev/urandom of=${CLIENT_UPDATED_TEST_FILE} bs=1M count=10 2>&1)
 if [ $? != 0 ]
 then
@@ -361,7 +404,7 @@ start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "upd
 
 start_backup "${PRIMARY_CLIENT_CONTAINER_ID}" "${CLIENT_BACKUP_DEFINITION}" "empty"
 
-echo -n "[$(now)] (PRIMARY) Looking up primary backup entry..."
+echo -n "[$(now)] (PRIMARY) Looking up primary backup entry... "
 CLIENT_BACKUP_ENTRY_PRIMARY_COMMAND="stasis-client-cli --json backup show entries -f crates==${CLIENT_TEST_FILES_COUNT} -o created --ordering DESC"
 CLIENT_BACKUP_ENTRY_PRIMARY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_PRIMARY_COMMAND})
 CLIENT_BACKUP_ENTRY_PRIMARY=$(echo "${CLIENT_BACKUP_ENTRY_PRIMARY_RESULT}" | jq -r '.[0] | .entry')
@@ -373,7 +416,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Looking up updated backup entry..."
+echo -n "[$(now)] (PRIMARY) Looking up updated backup entry... "
 CLIENT_BACKUP_ENTRY_SECONDARY_COMMAND="stasis-client-cli --json backup show entries -f crates==1 -o created --ordering DESC"
 CLIENT_BACKUP_ENTRY_SECONDARY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_SECONDARY_COMMAND})
 CLIENT_BACKUP_ENTRY_SECONDARY=$(echo "${CLIENT_BACKUP_ENTRY_SECONDARY_RESULT}" | jq -r '.[0] | .entry')
@@ -385,7 +428,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Looking up empty backup entry..."
+echo -n "[$(now)] (PRIMARY) Looking up empty backup entry... "
 CLIENT_BACKUP_ENTRY_EMPTY_COMMAND="stasis-client-cli --json backup show entries -f crates==0 -o created --ordering DESC"
 CLIENT_BACKUP_ENTRY_EMPTY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_ENTRY_EMPTY_COMMAND})
 CLIENT_BACKUP_ENTRY_EMPTY=$(echo "${CLIENT_BACKUP_ENTRY_EMPTY_RESULT}" | jq -r '.[0] | .entry')
@@ -397,7 +440,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Checking metadata of [${CLIENT_TEST_FILES_COUNT}] test files..."
+echo -n "[$(now)] (PRIMARY) Checking metadata of [${CLIENT_TEST_FILES_COUNT}] test files... "
 for i in "${!CLIENT_TEST_FILES[@]}"
 do
   BACKUP_FILE_METADATA_COMMAND="stasis-client-cli --json backup show metadata ${CLIENT_BACKUP_ENTRY_PRIMARY} -f entity==${CLIENT_TEST_FILES[$i]}"
@@ -429,7 +472,7 @@ do
 done
 echo "OK"
 
-echo -n "[$(now)] (PRIMARY) Checking metadata of updated test file..."
+echo -n "[$(now)] (PRIMARY) Checking metadata of updated test file... "
 CLIENT_UPDATED_BACKUP_FILE_METADATA_COMMAND="stasis-client-cli --json backup show metadata ${CLIENT_BACKUP_ENTRY_SECONDARY} -f entity==${CLIENT_UPDATED_TEST_FILE}"
 CLIENT_UPDATED_BACKUP_FILE_METADATA_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_UPDATED_BACKUP_FILE_METADATA_COMMAND})
 
@@ -442,7 +485,7 @@ then
 fi
 echo "OK"
 
-echo -n "[$(now)] (PRIMARY) Searching for file [.*/d]..."
+echo -n "[$(now)] (PRIMARY) Searching for file [.*/d]... "
 CLIENT_BACKUP_SEARCH_COMMAND="stasis-client-cli --json backup search .*/d"
 CLIENT_BACKUP_SEARCH_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_BACKUP_SEARCH_COMMAND})
 
@@ -472,7 +515,7 @@ then
 fi
 echo "OK"
 
-echo -n "[$(now)] (PRIMARY) Removing recovery directory..."
+echo -n "[$(now)] (PRIMARY) Removing recovery directory... "
 CLIENT_RECOVERY_DIR_RM_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" rm -rf ${CLIENT_RECOVERY_DIR} 2>&1)
 if [ $? = 0 ]
 then
@@ -482,7 +525,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Creating recovery directory..."
+echo -n "[$(now)] (PRIMARY) Creating recovery directory... "
 CLIENT_RECOVERY_DIR_MKDIR_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" mkdir -p ${CLIENT_RECOVERY_DIR} 2>&1)
 if [ $? = 0 ]
 then
@@ -492,7 +535,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Recovering from entry [${CLIENT_BACKUP_ENTRY_PRIMARY}]..."
+echo -n "[$(now)] (PRIMARY) Recovering from entry [${CLIENT_BACKUP_ENTRY_PRIMARY}]... "
 CLIENT_RECOVER_FROM_ENTRY_COMMAND="stasis-client-cli --json recover from ${CLIENT_BACKUP_DEFINITION} ${CLIENT_BACKUP_ENTRY_PRIMARY} --follow --destination ${CLIENT_RECOVERY_DIR}"
 CLIENT_RECOVER_FROM_ENTRY_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_RECOVER_FROM_ENTRY_COMMAND})
 
@@ -504,7 +547,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (PRIMARY) Checking [${CLIENT_TEST_FILES_COUNT}] recovered test files..."
+echo -n "[$(now)] (PRIMARY) Checking [${CLIENT_TEST_FILES_COUNT}] recovered test files... "
 for i in "${!CLIENT_TEST_FILES[@]}"
 do
   ORIGINAL_FILE="${CLIENT_TEST_FILES[$i]}"
@@ -527,7 +570,7 @@ do
 done
 echo "OK"
 
-echo -n "[$(now)] (PRIMARY) Stopping client service..."
+echo -n "[$(now)] (PRIMARY) Stopping client service... "
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
 CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful')"
@@ -539,7 +582,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Ensuring client service is stopped..."
+echo -n "[$(now)] (SECONDARY) Ensuring client service is stopped... "
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
 CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND} 2>&1)
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful' 2>&1)"
@@ -553,7 +596,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Ensuring client config is not available..."
+echo -n "[$(now)] (SECONDARY) Ensuring client config is not available... "
 for CONFIG_FILE in "${CLIENT_CONFIG_FILES[@]}"
 do
   RM_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" rm -rf ${CONFIG_FILE} 2>&1)
@@ -565,7 +608,7 @@ do
 done
 echo "OK"
 
-echo -n "[$(now)] (SECONDARY) Checking user status..."
+echo -n "[$(now)] (SECONDARY) Checking user status... "
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
 CLIENT_STATUS_USER_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND} 2>&1)
 if [[ "${CLIENT_STATUS_USER_RESULT}" == *"client not configured"* ]]
@@ -576,7 +619,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Retrieving device bootstrap code..."
+echo -n "[$(now)] (SECONDARY) Retrieving device bootstrap code... "
 DEVICE_BOOTSTRAP_CODE_RESULT=$(curl -sk -H "${HEADER_JSON}" -H "Authorization: Bearer ${USER_TOKEN}" -X PUT "${SERVER_BOOTSTRAP_URL}/v1/devices/codes/own/for-device/${SECONDARY_DEVICE_ID}")
 DEVICE_BOOTSTRAP_CODE=$(jq -r .value <<< "${DEVICE_BOOTSTRAP_CODE_RESULT}")
 
@@ -588,7 +631,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Executing device bootstrap..."
+echo -n "[$(now)] (SECONDARY) Executing device bootstrap... "
 DEVICE_BOOTSTRAP_COMMAND="stasis-client -no-version-check bootstrap --server ${SERVER_BOOTSTRAP_URL_INTERNAL} --code ${DEVICE_BOOTSTRAP_CODE} --accept-self-signed --user-name ${USER_ID} --user-password ${USER_PASSWORD}"
 DEVICE_BOOTSTRAP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_BOOTSTRAP_COMMAND} 2>&1)
 if [ $? = 0 ]
@@ -599,7 +642,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Starting client service..."
+echo -n "[$(now)] (SECONDARY) Starting client service... "
 CLIENT_SERVICE_START_COMMAND="stasis-client-cli --json service start --username ${USER_ID} --password ${USER_PASSWORD} -no-version-check"
 CLIENT_SERVICE_START_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_START_COMMAND})
 CLIENT_SERVICE_START_SUCCESSFUL="$(echo "${CLIENT_SERVICE_START_RESULT}" | jq '.successful')"
@@ -613,7 +656,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Checking user status..."
+echo -n "[$(now)] (SECONDARY) Checking user status... "
 CLIENT_STATUS_USER_COMMAND="stasis-client-cli --json service status user"
 CLIENT_STATUS_USER_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_USER_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_USER_RESULT}" | jq '.active')" = "true" ]
@@ -624,7 +667,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Checking device status..."
+echo -n "[$(now)] (SECONDARY) Checking device status... "
 CLIENT_STATUS_DEVICE_COMMAND="stasis-client-cli --json service status device"
 CLIENT_STATUS_DEVICE_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_STATUS_DEVICE_COMMAND})
 if [ "$(echo "${CLIENT_STATUS_DEVICE_RESULT}" | jq '.active')" = "true" ]
@@ -635,7 +678,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Stopping client service..."
+echo -n "[$(now)] (SECONDARY) Stopping client service... "
 CLIENT_SERVICE_STOP_COMMAND="stasis-client-cli --json service stop --confirm"
 CLIENT_SERVICE_STOP_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${CLIENT_SERVICE_STOP_COMMAND})
 CLIENT_SERVICE_STOP_SUCCESSFUL="$(echo "${CLIENT_SERVICE_STOP_RESULT}" | jq '.successful')"
@@ -647,7 +690,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] (SECONDARY) Pushing device key..."
+echo -n "[$(now)] (SECONDARY) Pushing device key... "
 DEVICE_KEY_PUSH_COMMAND="stasis-client -no-version-check maintenance secret push --current-user-name ${USER_ID} --current-user-password ${USER_PASSWORD}"
 DEVICE_KEY_PUSH_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" ${DEVICE_KEY_PUSH_COMMAND} 2>&1)
 if [ $? = 0 ]
@@ -658,7 +701,7 @@ else
   exit 1
 fi
 
-echo -n "[$(now)] Retrieving device keys..."
+echo -n "[$(now)] Retrieving device keys... "
 EXPECTED_FINAL_DEVICE_KEYS_COUNT=1
 ACTUAL_FINAL_DEVICE_KEYS_COUNT=$(curl -sk -H "Authorization: Bearer ${USER_TOKEN}" -X GET "${SERVER_API_URL}/v1/devices/keys" | jq ". | length")
 if [ "${ACTUAL_FINAL_DEVICE_KEYS_COUNT}" = "${EXPECTED_FINAL_DEVICE_KEYS_COUNT}" ]
