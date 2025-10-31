@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
+import stasis.server.events.Events.{Schedules => Events}
 import stasis.server.persistence.schedules.ScheduleStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateSchedule
@@ -38,6 +39,11 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
 
                 manage.put(schedule).map { _ =>
                   log.debugN("User [{}] successfully created schedule [{}]", currentUser, schedule.id)
+
+                  Events.ScheduleCreated.recordWithAttributes(
+                    Events.Attributes.Schedule.withValue(value = schedule.id)
+                  )
+
                   complete(CreatedSchedule(schedule.id))
                 }
               }
@@ -96,6 +102,11 @@ class Schedules()(implicit ctx: RoutesContext) extends ApiRoutes {
                   case Some(schedule) =>
                     manage.put(updateRequest.toUpdatedSchedule(schedule)).map { _ =>
                       log.debugN("User [{}] successfully updated schedule [{}]", currentUser, scheduleId)
+
+                      Events.ScheduleUpdated.recordWithAttributes(
+                        Events.Attributes.Schedule.withValue(value = schedule.id)
+                      )
+
                       complete(StatusCodes.OK)
                     }
 

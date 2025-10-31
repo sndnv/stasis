@@ -4,6 +4,8 @@ import java.time.Instant
 
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
@@ -17,9 +19,9 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.devices.MockDeviceBootstrapCodeStore
@@ -59,6 +61,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Get("/devices/codes") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DeviceBootstrapCode]] should contain theSameElementsAs codes.map(_.copy(value = "*****"))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -71,6 +75,19 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Delete(s"/devices/codes/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_deleted")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.Privileged.withValue(true)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -82,6 +99,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Delete(s"/devices/codes/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -104,6 +123,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Get("/devices/codes/own") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DeviceBootstrapCode]] should contain theSameElementsAs codes.map(_.copy(value = "*****")).take(2)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -123,6 +144,20 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
       code.value should be("test-code")
       code.owner should be(currentUser.id)
       code.target should be(Left(devices.head.id))
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_created")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.User.withValue(currentUser.id),
+              Events.DeviceBootstrap.Attributes.Device.withValue(devices.head.id)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -143,6 +178,19 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
       code.value should be("test-code")
       code.owner should be(currentUser.id)
       code.target should be(Right(request))
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_created")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.User.withValue(currentUser.id)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -157,6 +205,20 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Delete(s"/devices/codes/own/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_deleted")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.User.withValue(currentUser.id),
+              Events.DeviceBootstrap.Attributes.Privileged.withValue(false)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -170,6 +232,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Delete(s"/devices/codes/own/${bootstrapCode.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(None)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -199,6 +263,20 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
             userSalt = user.salt
           )
       )
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_consumed")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.User.withValue(currentUser.id),
+              Events.DeviceBootstrap.Attributes.Device.withValue(devices.head.id)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -243,6 +321,20 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
       fixtures.deviceStore.view().list().await should not be empty
       fixtures.nodeStore.view().list().await should not be empty
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("bootstrap_code_consumed")
+          event.attributes should be(
+            Map(
+              Events.DeviceBootstrap.Attributes.User.withValue(currentUser.id),
+              Events.DeviceBootstrap.Attributes.Device.withValue(device.id)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -257,6 +349,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
     Put("/devices/execute") ~> fixtures.routes ~> check {
       status should be(StatusCodes.Conflict)
       fixtures.bootstrapCodeStore.view().get(bootstrapCode.value).await should be(Some(bootstrapCode))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -267,12 +361,14 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
     Put("/devices/execute") ~> fixtures.routes ~> check {
       status should be(StatusCodes.Conflict)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DeviceBootstrapSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DeviceBootstrapSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -297,7 +393,7 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
 
     lazy val bootstrap = new DeviceBootstrap(bootstrapContext)
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
         userStore.viewSelf(),
@@ -312,6 +408,8 @@ class DeviceBootstrapSpec extends AsyncUnitSpec with ScalatestRouteTest with Sec
         nodeStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

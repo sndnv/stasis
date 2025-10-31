@@ -6,14 +6,13 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.server.api.routes.RoutesContext
-import stasis.server.api.routes.Service
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
+import stasis.server.security.mocks.MockResourceProvider
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.users.User
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.server.security.mocks.MockResourceProvider
 
 class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -26,6 +25,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/ping") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       noException should be thrownBy responseAs[Ping]
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -34,6 +35,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get("/health") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -43,6 +46,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest {
     lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set.empty
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

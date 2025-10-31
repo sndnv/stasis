@@ -4,6 +4,10 @@ import java.time.Instant
 
 import scala.collection.mutable
 
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.events.EventCollector
+import io.github.sndnv.layers.security.tls.EndpointContext
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
@@ -18,9 +22,6 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import play.api.libs.json.Json
 
 import stasis.core.routing.Node
-import io.github.sndnv.layers.api.MessageResponse
-import io.github.sndnv.layers.security.tls.EndpointContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.Secrets
 import stasis.server.api.routes.DeviceBootstrap
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
@@ -44,7 +45,7 @@ import stasis.test.specs.unit.core.persistence.nodes.MockNodeStore
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
-  "A BootstrapEndpoint" should "successfully authenticate requests with user credentials" in withRetry {
+  "A Default BootstrapEndpoint" should "successfully authenticate requests with user credentials" in withRetry {
     import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
 
     import stasis.shared.api.Formats._
@@ -144,7 +145,8 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     }
 
     val endpointPort = ports.dequeue()
-    val _ = fixtures.endpoint.start(
+
+    fixtures.endpoint.start(
       interface = "localhost",
       port = endpointPort,
       context = None
@@ -163,6 +165,13 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
           "Failed to process request; failure reference is"
         )
       }
+  }
+
+  it should "provide its name and device parameters" in {
+    val fixtures = new TestFixtures {}
+
+    fixtures.endpoint.name should be("bootstrap")
+    fixtures.endpoint.parameters should be(baseParams)
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
@@ -205,8 +214,9 @@ class BootstrapEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with S
     lazy val userAuthenticator: UserAuthenticator = new MockUserAuthenticator(user.id.toString, userPassword)
     lazy val codeAuthenticator: BootstrapCodeAuthenticator = new MockBootstrapCodeAuthenticator(bootstrapCode)
 
-    lazy val endpoint: BootstrapEndpoint = new BootstrapEndpoint(
+    lazy val endpoint: BootstrapEndpoint.Default = new BootstrapEndpoint.Default(
       resourceProvider = provider,
+      eventCollector = EventCollector.NoOp,
       userAuthenticator = userAuthenticator,
       bootstrapCodeAuthenticator = codeAuthenticator,
       deviceBootstrapContext = bootstrapContext

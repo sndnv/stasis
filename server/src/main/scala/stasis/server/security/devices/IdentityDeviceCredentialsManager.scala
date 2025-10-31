@@ -18,13 +18,13 @@ import play.api.libs.json.Json
 import stasis.core.api.PoolClient
 import io.github.sndnv.layers.security.tls.EndpointContext
 import io.github.sndnv.layers.streaming.Operators.ExtendedSource
-import stasis.server.security.CredentialsProvider
+import stasis.server.security.HttpCredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.shared.model.devices.Device
 
 class IdentityDeviceCredentialsManager(
   identityUrl: String,
-  identityCredentials: CredentialsProvider,
+  identityCredentials: HttpCredentialsProvider,
   redirectUri: String,
   tokenExpiration: FiniteDuration,
   override protected val context: Option[EndpointContext]
@@ -200,7 +200,7 @@ object IdentityDeviceCredentialsManager {
 
   def apply(
     identityUrl: String,
-    identityCredentials: CredentialsProvider,
+    identityCredentials: HttpCredentialsProvider,
     redirectUri: String,
     tokenExpiration: FiniteDuration,
     context: Option[EndpointContext]

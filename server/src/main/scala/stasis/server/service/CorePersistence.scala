@@ -1,10 +1,14 @@
 package stasis.server.service
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import com.typesafe.{config => typesafe}
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.MigrationExecutor
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.service.PersistenceProvider
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
@@ -19,11 +23,6 @@ import stasis.core.persistence.nodes.NodeStore
 import stasis.core.persistence.reservations.DefaultReservationStore
 import stasis.core.persistence.reservations.ReservationStore
 import stasis.core.persistence.staging.StagingStore
-import io.github.sndnv.layers.persistence.memory.MemoryStore
-import io.github.sndnv.layers.persistence.migration.MigrationExecutor
-import io.github.sndnv.layers.persistence.migration.MigrationResult
-import io.github.sndnv.layers.service.PersistenceProvider
-import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.server.persistence.manifests.ServerManifestStore
 import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.persistence.reservations.ServerReservationStore
@@ -37,7 +36,7 @@ class CorePersistence(
   telemetry: TelemetryContext,
   timeout: Timeout
 ) extends PersistenceProvider { persistence =>
-  private implicit val ec: ExecutionContext = system.executionContext
+  import system.executionContext
 
   val profile: JdbcProfile = SlickProfile(profile = persistenceConfig.getString("database.profile"))
 

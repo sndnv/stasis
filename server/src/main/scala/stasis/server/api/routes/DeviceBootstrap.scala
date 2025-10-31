@@ -8,6 +8,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
+import stasis.server.events.Events.{DeviceBootstrap => Events}
 import stasis.server.persistence.devices.DeviceBootstrapCodeStore
 import stasis.server.persistence.devices.DeviceStore
 import stasis.server.persistence.nodes.ServerNodeStore
@@ -63,6 +64,12 @@ class DeviceBootstrap(
                     _ <- bootstrapCodeManage.put(currentUser, code)
                   } yield {
                     log.debugN("User [{}] successfully created bootstrap code for own device [{}]", currentUser, deviceId)
+
+                    Events.BootstrapCodeCreated.recordWithAttributes(
+                      Events.Attributes.User.withValue(value = currentUser.id),
+                      Events.Attributes.Device.withValue(value = deviceId)
+                    )
+
                     discardEntity & complete(code)
                   }
                 }
@@ -78,6 +85,11 @@ class DeviceBootstrap(
                     _ <- bootstrapCodeManage.put(currentUser, code)
                   } yield {
                     log.debugN("User [{}] successfully created bootstrap code for a new device", currentUser)
+
+                    Events.BootstrapCodeCreated.recordWithAttributes(
+                      Events.Attributes.User.withValue(value = currentUser.id)
+                    )
+
                     discardEntity & complete(code)
                   }
                 }
@@ -90,6 +102,11 @@ class DeviceBootstrap(
                 bootstrapCodeManage.delete(currentUser, codeId).map { deleted =>
                   if (deleted) {
                     log.debugN("User [{}] successfully deleted bootstrap code [{}] for own device", currentUser, codeId)
+
+                    Events.BootstrapCodeDeleted.recordWithAttributes(
+                      Events.Attributes.User.withValue(value = currentUser.id),
+                      Events.Attributes.Privileged.withValue(value = false)
+                    )
                   } else {
                     log.warnN("User [{}] failed to delete bootstrap code for own device", currentUser)
                   }
@@ -107,6 +124,10 @@ class DeviceBootstrap(
             bootstrapCodeManage.delete(codeId).map { deleted =>
               if (deleted) {
                 log.debugN("User [{}] successfully deleted device bootstrap code [{}]", currentUser, codeId)
+
+                Events.BootstrapCodeDeleted.recordWithAttributes(
+                  Events.Attributes.Privileged.withValue(value = true)
+                )
               } else {
                 log.warnN("User [{}] failed to delete device bootstrap code", currentUser)
               }
@@ -152,6 +173,11 @@ class DeviceBootstrap(
             clientSecret <- context.clientSecretGenerator.generate()
             clientId <- context.credentialsManager.setClientSecret(device = device, clientSecret = clientSecret)
           } yield {
+            Events.BootstrapCodeConsumed.recordWithAttributes(
+              Events.Attributes.User.withValue(value = currentUser.id),
+              Events.Attributes.Device.withValue(value = device.id)
+            )
+
             context.deviceParams
               .withDeviceInfo(
                 device = device.id.toString,

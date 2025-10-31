@@ -16,6 +16,8 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.schedules.MockScheduleStore
 import stasis.server.persistence.schedules.ScheduleStore
 import stasis.server.security.CurrentUser
@@ -41,6 +43,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Schedule]] should contain theSameElementsAs schedules
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -52,7 +56,22 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.scheduleStore
         .view()
         .get(entityAs[CreatedSchedule].schedule)
-        .map(_.isDefined should be(true))
+        .map { schedule =>
+          schedule.isDefined should be(true)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("schedule_created")
+              event.attributes should be(
+                Map(
+                  Events.Schedules.Attributes.Schedule.withValue(schedule.get.id)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -66,6 +85,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         case publicSchedule :: Nil => publicSchedule should be(schedules.head)
         case other                 => fail(s"Unexpected response received: [$other]")
       }
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -77,6 +98,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/public/${schedules.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Schedule] should be(schedules.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -84,6 +107,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/public/${Schedule.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -95,6 +120,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${schedules.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Schedule] should be(schedules.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -102,6 +129,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/${Schedule.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -116,7 +145,22 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.scheduleStore
         .view()
         .get(schedules.head.id)
-        .map(_.map(_.interval) should be(Some(updateRequest.interval)))
+        .map { schedule =>
+          schedule.map(_.interval) should be(Some(updateRequest.interval))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("schedule_updated")
+              event.attributes should be(
+                Map(
+                  Events.Schedules.Attributes.Schedule.withValue(schedules.head.id)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -125,6 +169,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${Schedule.generateId()}")
       .withEntity(updateRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -139,7 +185,10 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.scheduleStore
         .view()
         .get(schedules.head.id)
-        .map(_ should be(None))
+        .map { schedule =>
+          fixtures.eventCollector.events should be(empty)
+          schedule should be(None)
+        }
     }
   }
 
@@ -149,12 +198,14 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${schedules.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedSchedule] should be(DeletedSchedule(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "SchedulesSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "SchedulesSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -171,6 +222,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         scheduleStore.manage()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

@@ -16,11 +16,15 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import stasis.server.api.routes.RoutesContext
-import stasis.server.api.routes.Users
+import stasis.server.Secrets
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
+import stasis.server.persistence.users.MockUserStore
 import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.ResourceProvider
+import stasis.server.security.mocks.MockResourceProvider
+import stasis.server.security.mocks.MockUserCredentialsManager
 import stasis.server.security.users.UserCredentialsManager
 import stasis.shared.api.requests._
 import stasis.shared.api.responses.CreatedUser
@@ -29,10 +33,6 @@ import stasis.shared.api.responses.UpdatedUserSalt
 import stasis.shared.model.users.User
 import stasis.shared.security.Permission
 import stasis.test.specs.unit.AsyncUnitSpec
-import stasis.server.Secrets
-import stasis.server.persistence.users.MockUserStore
-import stasis.server.security.mocks.MockResourceProvider
-import stasis.server.security.mocks.MockUserCredentialsManager
 
 class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
@@ -46,6 +46,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[User]] should contain theSameElementsAs users
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -70,6 +72,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
           fixtures.credentialsManager.latestPassword should not be empty
           fixtures.credentialsManager.latestPassword should not be createRequest.rawPassword
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_created")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -98,6 +114,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
           fixtures.credentialsManager.latestPassword should not be empty
           fixtures.credentialsManager.latestPassword should be(createRequest.rawPassword)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_created")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -125,6 +155,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(1)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -152,6 +184,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(1)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -164,6 +198,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Get(s"/${users.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[User] should be(users.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -171,6 +207,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     val fixtures = new TestFixtures {}
     Get(s"/${User.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -185,7 +223,23 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.limits) should be(Some(updateLimitsRequest.limits)))
+        .map { user =>
+          user.map(_.limits) should be(Some(updateLimitsRequest.limits))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -200,7 +254,23 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.userStore
         .view()
         .get(users.head.id)
-        .map(_.map(_.permissions.size).getOrElse(0) should be(updatePermissionsRequest.permissions.size))
+        .map { user =>
+          user.map(_.permissions.size).getOrElse(0) should be(updatePermissionsRequest.permissions.size)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -229,6 +299,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -258,6 +342,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -293,6 +391,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(1)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -328,6 +428,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(1)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -337,6 +439,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Put(s"/${User.generateId()}/limits")
       .withEntity(updateLimitsRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -345,6 +449,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Put(s"/${User.generateId()}/permissions")
       .withEntity(updatePermissionsRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -358,6 +464,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Put(s"/${User.generateId()}/state")
       .withEntity(updateStateRequest) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -382,6 +490,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -392,6 +502,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Delete(s"/${users.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedUser] should be(DeletedUser(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -420,6 +532,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(1)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -449,6 +563,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(1)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -471,6 +587,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
       fixtures.credentialsManager.latestPassword should not be empty
       fixtures.credentialsManager.latestPassword should not be resetUserPasswordRequest.rawPassword
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("user_updated")
+          event.attributes should be(
+            Map(
+              Events.Users.Attributes.User.withValue(users.head.id),
+              Events.Users.Attributes.Privileged.withValue(true)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -495,6 +625,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
       fixtures.credentialsManager.latestPassword should not be empty
       fixtures.credentialsManager.latestPassword should be(resetUserPasswordRequest.rawPassword)
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("user_updated")
+          event.attributes should be(
+            Map(
+              Events.Users.Attributes.User.withValue(users.head.id),
+              Events.Users.Attributes.Privileged.withValue(true)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -519,6 +663,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.notFound should be(1)
       fixtures.credentialsManager.conflicts should be(0)
       fixtures.credentialsManager.failures should be(0)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -543,6 +689,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.notFound should be(0)
       fixtures.credentialsManager.conflicts should be(1)
       fixtures.credentialsManager.failures should be(0)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -553,6 +701,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     Get("/self") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[User] should be(users.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -560,6 +710,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     val fixtures = new TestFixtures {}
     Get("/self") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -583,6 +735,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -612,6 +778,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(1)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -641,6 +809,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(1)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events should be(empty)
         }
     }
   }
@@ -669,6 +839,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
           fixtures.credentialsManager.notFound should be(0)
           fixtures.credentialsManager.conflicts should be(0)
           fixtures.credentialsManager.failures should be(0)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("user_updated")
+              event.attributes should be(
+                Map(
+                  Events.Users.Attributes.User.withValue(user.get.id),
+                  Events.Users.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -677,6 +861,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     val fixtures = new TestFixtures {}
     Put("/self/salt") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -699,6 +885,20 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
 
       // when users reset their own password, hashing happens on the client side
       fixtures.credentialsManager.latestPassword should be(resetUserPasswordRequest.rawPassword)
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("user_updated")
+          event.attributes should be(
+            Map(
+              Events.Users.Attributes.User.withValue(users.head.id),
+              Events.Users.Attributes.Privileged.withValue(false)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -722,6 +922,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.notFound should be(1)
       fixtures.credentialsManager.conflicts should be(0)
       fixtures.credentialsManager.failures should be(0)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -745,6 +947,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.notFound should be(0)
       fixtures.credentialsManager.conflicts should be(1)
       fixtures.credentialsManager.failures should be(0)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -761,12 +965,14 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
       fixtures.credentialsManager.notFound should be(0)
       fixtures.credentialsManager.conflicts should be(0)
       fixtures.credentialsManager.failures should be(0)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "UsersSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "UsersSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -778,7 +984,7 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
     lazy val credentialsManager: MockUserCredentialsManager = MockUserCredentialsManager()
     lazy val hashAuthenticationPasswords: Boolean = true
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
         userStore.viewSelf(),
@@ -786,6 +992,8 @@ class UsersSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets {
         userStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

@@ -6,6 +6,8 @@ import org.apache.pekko.actor.typed.scaladsl.LoggerOps
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
+
+import stasis.server.events.Events.{Nodes => Events}
 import stasis.server.persistence.nodes.ServerNodeStore
 import stasis.server.security.CurrentUser
 import stasis.shared.api.requests.CreateNode
@@ -38,6 +40,11 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
 
                 manage.create(node).map { _ =>
                   log.debugN("User [{}] successfully created node [{}]", currentUser, node.id)
+
+                  Events.NodeCreated.recordWithAttributes(
+                    Events.Attributes.Node.withValue(value = node.id)
+                  )
+
                   complete(CreatedNode(node.id))
                 }
               }
@@ -67,6 +74,11 @@ class Nodes()(implicit ctx: RoutesContext) extends ApiRoutes {
                   case Some(node) =>
                     manage.update(updateRequest.toUpdatedNode(node)).map { _ =>
                       log.debugN("User [{}] successfully updated node [{}]", currentUser, nodeId)
+
+                      Events.NodeUpdated.recordWithAttributes(
+                        Events.Attributes.Node.withValue(value = node.id)
+                      )
+
                       complete(StatusCodes.OK)
                     }
 

@@ -3,11 +3,11 @@ package stasis.server.security
 import scala.concurrent.Future
 
 import io.github.sndnv.layers.security.jwt.JwtProvider
-import stasis.server.security.CredentialsProvider
+
 import stasis.test.specs.unit.AsyncUnitSpec
 
-class CredentialsProviderSpec extends AsyncUnitSpec {
-  "A Default CredentialsProvider" should "provide credentials" in {
+class HttpCredentialsProviderSpec extends AsyncUnitSpec {
+  "A Default HttpCredentialsProvider" should "provide http credentials" in {
     val expectedToken = "test-token"
     val expectedScope = "test-scope"
 
@@ -15,7 +15,7 @@ class CredentialsProviderSpec extends AsyncUnitSpec {
       override def provide(scope: String): Future[String] = Future.successful(s"$expectedToken;$scope")
     }
 
-    val provider = CredentialsProvider.Default(
+    val provider = HttpCredentialsProvider.Default(
       scope = expectedScope,
       underlying = underlying
     )

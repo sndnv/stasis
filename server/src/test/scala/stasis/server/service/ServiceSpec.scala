@@ -248,8 +248,6 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val coreUrl = s"https://$interface:$corePort"
 
     val bootstrapPort = ports.dequeue()
-    val bootstrapUrl = s"https://$interface:$bootstrapPort"
-
     val metricsPort = ports.dequeue()
 
     val service = new Service {
@@ -269,11 +267,9 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     for {
       serviceFailure <- makeBasicRequest(serviceUrl).failed
       coreFailure <- makeBasicRequest(coreUrl).failed
-      bootstrapFailure <- makeBasicRequest(bootstrapUrl).failed
     } yield {
       serviceFailure.getMessage should include("Connection refused")
       coreFailure.getMessage should include("Connection refused")
-      bootstrapFailure.getMessage should include("Connection refused")
     }
   }
 
@@ -288,7 +284,6 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     val coreUrl = s"https://$interface:$corePort"
 
     val bootstrapPort = ports.dequeue()
-    val bootstrapUrl = s"https://$interface:$bootstrapPort"
 
     val metricsPort = ports.dequeue()
 
@@ -309,11 +304,9 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     for {
       serviceFailure <- makeBasicRequest(serviceUrl).failed
       coreFailure <- makeBasicRequest(coreUrl).failed
-      bootstrapFailure <- makeBasicRequest(bootstrapUrl).failed
     } yield {
       serviceFailure.getMessage should include("Connection refused")
       coreFailure.getMessage should include("Connection refused")
-      bootstrapFailure.getMessage should include("Connection refused")
     }
   }
 
@@ -335,59 +328,6 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
     eventually[Assertion] {
       service.state shouldBe a[Service.State.StartupFailed]
     }
-  }
-
-  it should "load device bootstrap params with additional config" in {
-    val params = Service.Config.DeviceBootstrap.params(
-      ConfigFactory
-        .load("application-device-bootstrap")
-        .getConfig("stasis.server.bootstrap.devices.parameters")
-    )
-
-    params.authentication.tokenEndpoint should be("http://localhost:28998/oauth/token")
-    params.authentication.clientId shouldBe empty
-    params.authentication.clientSecret shouldBe empty
-    params.authentication.useQueryString should be(false)
-    params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
-    params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
-    params.authentication.context.enabled should be(true)
-    params.authentication.context.protocol should be("TLS")
-    params.serverApi.url should be("https://localhost:28999")
-    params.serverApi.user shouldBe empty
-    params.serverApi.userSalt shouldBe empty
-    params.serverApi.device shouldBe empty
-    params.serverApi.context.enabled should be(false)
-    params.serverApi.context.protocol should be("TLS")
-    params.serverCore.address should be("https://localhost:38999")
-    params.serverCore.context.enabled should be(false)
-    params.serverCore.context.protocol should be("TLS")
-    params.additionalConfig should be(Json.parse("""{"a":{"b":{"c":"d","e":1,"f":["g","h"]}}}"""))
-  }
-
-  it should "load device bootstrap params without additional config" in {
-    val params = Service.Config.DeviceBootstrap.params(
-      typedSystem.settings.config
-        .getConfig("stasis.server.bootstrap.devices.parameters")
-    )
-
-    params.authentication.tokenEndpoint should be("http://localhost:29998/oauth/token")
-    params.authentication.clientId shouldBe empty
-    params.authentication.clientSecret shouldBe empty
-    params.authentication.useQueryString should be(false)
-    params.authentication.scopes.api should be("urn:stasis:identity:audience:stasis-server-test")
-    params.authentication.scopes.core should be("urn:stasis:identity:audience:stasis-server-test")
-    params.authentication.context.enabled should be(true)
-    params.authentication.context.protocol should be("TLS")
-    params.serverApi.url should be("https://localhost:39999")
-    params.serverApi.user shouldBe empty
-    params.serverApi.userSalt shouldBe empty
-    params.serverApi.device shouldBe empty
-    params.serverApi.context.enabled should be(false)
-    params.serverApi.context.protocol should be("TLS")
-    params.serverCore.address should be("https://localhost:49999")
-    params.serverCore.context.enabled should be(false)
-    params.serverCore.context.protocol should be("TLS")
-    params.additionalConfig should be(Json.parse("{}"))
   }
 
   private def makeBasicRequest(url: String)(implicit trustedContext: EndpointContext): Future[Done] =
@@ -542,8 +482,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
   private val defaultConfig: Config = ConfigFactory.load()
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "ServiceSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "ServiceSpec"
   )
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(15.seconds, 250.milliseconds)

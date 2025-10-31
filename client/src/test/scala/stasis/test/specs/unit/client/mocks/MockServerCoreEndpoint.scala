@@ -44,7 +44,7 @@ class MockServerCoreEndpoint(
     crateStore.retrieve(entry).map(_.isDefined)
 
   def start(port: Int, context: Option[EndpointContext] = None): Future[Http.ServerBinding] =
-    endpoint.start(
+    endpoint.bind(
       interface = "localhost",
       port = port,
       context = context

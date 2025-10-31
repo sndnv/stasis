@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
+import stasis.server.events.Events.{Users => Events}
 import stasis.server.persistence.users.UserStore
 import stasis.server.security.CurrentUser
 import stasis.server.security.users.UserCredentialsManager
@@ -68,6 +69,12 @@ class Users(
                     case UserCredentialsManager.Result.Success =>
                       onSuccess(manage.put(user)) { _ =>
                         log.debugN("User [{}] successfully created user [{}]", currentUser, user.id)
+
+                        Events.UserCreated.recordWithAttributes(
+                          Events.Attributes.User.withValue(value = user.id),
+                          Events.Attributes.Privileged.withValue(value = true)
+                        )
+
                         complete(CreatedUser(user.id))
                       }
 
@@ -156,14 +163,14 @@ class Users(
           path("limits") {
             put {
               entity(as[UpdateUserLimits]) { updateRequest =>
-                update(updateRequest, userId)
+                updatePrivileged(updateRequest, userId)
               }
             }
           },
           path("permissions") {
             put {
               entity(as[UpdateUserPermissions]) { updateRequest =>
-                update(updateRequest, userId)
+                updatePrivileged(updateRequest, userId)
               }
             }
           },
@@ -178,7 +185,7 @@ class Users(
 
                 val result = updated.map {
                   case UserCredentialsManager.Result.Success =>
-                    update(
+                    updatePrivileged(
                       updateRequest = updateRequest,
                       userId = userId
                     )
@@ -241,7 +248,7 @@ class Users(
                           userId,
                           credentialsManager.id
                         )
-                        update(
+                        updatePrivileged(
                           updateRequest = UpdateUserSalt(salt),
                           userId = userId
                         )
@@ -296,6 +303,12 @@ class Users(
                   case UserCredentialsManager.Result.Success =>
                     onSuccess(manage.deactivate(currentUser)) { _ =>
                       log.debugN("User [{}] successfully deactivated own account", currentUser)
+
+                      Events.UserUpdated.recordWithAttributes(
+                        Events.Attributes.User.withValue(value = currentUser.id),
+                        Events.Attributes.Privileged.withValue(value = false)
+                      )
+
                       complete(StatusCodes.OK)
                     }
 
@@ -327,6 +340,12 @@ class Users(
                   case Some(_) =>
                     manage.resetSalt(currentUser).map { salt =>
                       log.debugN("User [{}] successfully updated own password salt", currentUser)
+
+                      Events.UserUpdated.recordWithAttributes(
+                        Events.Attributes.User.withValue(value = currentUser.id),
+                        Events.Attributes.Privileged.withValue(value = false)
+                      )
+
                       discardEntity & complete(UpdatedUserSalt(salt))
                     }
 
@@ -347,6 +366,12 @@ class Users(
                       credentialsManager.setResourceOwnerPassword(currentUser.id, updateRequest.rawPassword).map {
                         case UserCredentialsManager.Result.Success =>
                           log.debugN("User [{}] successfully updated own password", currentUser)
+
+                          Events.UserUpdated.recordWithAttributes(
+                            Events.Attributes.User.withValue(value = currentUser.id),
+                            Events.Attributes.Privileged.withValue(value = false)
+                          )
+
                           complete(StatusCodes.OK)
 
                         case UserCredentialsManager.Result.NotFound(message) =>
@@ -380,7 +405,7 @@ class Users(
       }
     )
 
-  private def update(
+  private def updatePrivileged(
     updateRequest: UpdateUser,
     userId: User.Id
   )(implicit ctx: RoutesContext, currentUser: CurrentUser): Route =
@@ -389,6 +414,12 @@ class Users(
         case Some(user) =>
           manage.put(updateRequest.toUpdatedUser(user)).map { _ =>
             log.debugN("User [{}] successfully updated user [{}]", currentUser, userId)
+
+            Events.UserUpdated.recordWithAttributes(
+              Events.Attributes.User.withValue(value = userId),
+              Events.Attributes.Privileged.withValue(value = true)
+            )
+
             complete(StatusCodes.OK)
           }
 

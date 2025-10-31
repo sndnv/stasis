@@ -6,45 +6,45 @@ name     := projectName
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/sndnv/stasis"))
 
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "2.13.17"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.1.4"
-  val pekkoHttp     = "1.2.0"
-  val pekkoHttpCors = "1.2.0"
-  val pekkoJson     = "3.2.1"
+  val pekko         = "1.2.1"
+  val pekkoHttp     = "1.3.0"
+  val pekkoHttpCors = "1.3.0"
+  val pekkoJson     = "3.6.0"
 
   // persistence
   val slick    = "3.6.1"
-  val postgres = "42.7.7"
-  val mariadb  = "3.5.4"
-  val sqlite   = "3.50.2.0"
-  val h2       = "2.3.232"
+  val postgres = "42.7.8"
+  val mariadb  = "3.5.6"
+  val sqlite   = "3.50.3.0"
+  val h2       = "2.4.240"
 
   // telemetry
-  val openTelemetry           = "1.51.0"
-  val openTelemetryPrometheus = "1.51.0-alpha"
+  val openTelemetry           = "1.55.0"
+  val openTelemetryPrometheus = "1.55.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
-  val scalaCheck    = "1.18.1"
+  val scalaCheck    = "1.19.0"
   val scalaTest     = "3.2.19"
   val wiremock      = "3.0.1"
   val mockito       = "2.0.0"
   val mockitoInline = "5.2.0"
-  val jimfs         = "1.3.0"
+  val jimfs         = "1.3.1"
 
   // misc
-  val playJson     = "2.10.7"
+  val playJson     = "2.10.8"
   val jose4j       = "0.9.6"
   val hkdf         = "2.0.0"
-  val appdirs      = "1.4.0"
+  val appdirs      = "1.5.0"
   val scopt        = "4.1.0"
-  val logback      = "1.5.18"
+  val logback      = "1.5.20"
   val systemTray   = "4.4"
-  val bouncycastle = "1.81"
-  val layers       = "1.0.0"
+  val bouncycastle = "1.82"
+  val layers       = "1.1.1"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:21-noble"

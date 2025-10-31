@@ -5,6 +5,7 @@ import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.marshalling.Marshal
@@ -24,7 +25,8 @@ import stasis.core.commands.proto.CommandSource
 import stasis.core.commands.proto.LogoutUser
 import stasis.core.persistence.nodes.NodeStore
 import stasis.core.routing.Node
-import io.github.sndnv.layers.telemetry.TelemetryContext
+import stasis.server.events.Events
+import stasis.server.events.mocks.MockEventCollector
 import stasis.server.persistence.devices.DeviceCommandStore
 import stasis.server.persistence.devices.DeviceKeyStore
 import stasis.server.persistence.devices.DeviceStore
@@ -51,6 +53,7 @@ import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+
   import stasis.shared.api.Formats._
 
   "Devices routes (full permissions)" should "respond with all devices" in withRetry {
@@ -60,6 +63,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Device]] should contain theSameElementsAs devices
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -73,7 +78,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(entityAs[CreatedDevice].device)
-        .map(_.isDefined should be(true))
+        .map { device =>
+          device.isDefined should be(true)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_created")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(user.id),
+                  Events.Devices.Attributes.Device.withValue(device.get.id),
+                  Events.Devices.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -82,6 +104,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Post("/").withEntity(createRequestPrivileged) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -93,6 +117,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/${devices.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Device] should be(devices.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -100,6 +126,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/${Device.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -113,7 +141,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.active) should be(Some(updateRequestState.active)))
+        .map { device =>
+          device.map(_.active) should be(Some(updateRequestState.active))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_updated")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(devices.head.owner),
+                  Events.Devices.Attributes.Device.withValue(devices.head.id),
+                  Events.Devices.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -127,7 +172,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.limits) should be(Some(updateRequestLimits.limits)))
+        .map { device =>
+          device.map(_.limits) should be(Some(updateRequestLimits.limits))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_updated")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(devices.head.owner),
+                  Events.Devices.Attributes.Device.withValue(devices.head.id),
+                  Events.Devices.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -136,6 +198,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${Device.generateId()}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -144,6 +208,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${Device.generateId()}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -154,6 +220,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${devices.head.id}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -164,6 +232,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/${devices.head.id}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -178,7 +248,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_ should be(None))
+        .map { device =>
+          fixtures.eventCollector.events should be(empty)
+          device should be(None)
+        }
     }
   }
 
@@ -188,6 +261,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${devices.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDevice] should be(DeletedDevice(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -209,6 +284,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/$device/key") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeviceKey] should be(deviceKey.copy(value = ByteString.empty))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -217,6 +294,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get(s"/${devices.head.id}/key") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -242,7 +321,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceKeyStore
         .view()
         .get(device)
-        .map(_ should be(None))
+        .map { device =>
+          fixtures.eventCollector.events should be(empty)
+          device should be(None)
+        }
     }
   }
 
@@ -252,6 +334,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/${devices.head.id}/key") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDeviceKey] should be(DeletedDeviceKey(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -266,6 +350,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/$device/commands") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Command]] should be(Seq(command.copy(sequenceId = 1)))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -290,6 +376,20 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
             case other => fail(s"Unexpected result received: [$other]")
           }
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_command_created")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Device.withValue(device),
+                  Events.Devices.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -312,6 +412,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/keys") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DeviceKey]] should be(Seq(deviceKey.copy(value = ByteString.empty)))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -326,6 +428,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/commands") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Command]] should be(Seq(command.copy(sequenceId = 1)))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -349,6 +453,19 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
             case other => fail(s"Unexpected result received: [$other]")
           }
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_command_created")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Privileged.withValue(true)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
         }
     }
   }
@@ -368,7 +485,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceCommandStore
         .view()
         .list()
-        .map(_ should be(empty))
+        .map { commands =>
+          fixtures.eventCollector.events should be(empty)
+          commands should be(empty)
+        }
     }
   }
 
@@ -378,6 +498,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete("/commands/1") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedCommand] should be(DeletedCommand(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -406,7 +528,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceCommandStore
         .view()
         .list()
-        .map(_.size should be(2))
+        .map { commands =>
+          fixtures.eventCollector.events should be(empty)
+          commands.size should be(2)
+        }
     }
   }
 
@@ -417,6 +542,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get("/own") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Device]] should contain theSameElementsAs devices.take(1)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -431,7 +558,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(entityAs[CreatedDevice].device)
-        .map(_.isDefined should be(true))
+        .map { device =>
+          device.isDefined should be(true)
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_created")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(currentUser.id),
+                  Events.Devices.Attributes.Device.withValue(device.get.id),
+                  Events.Devices.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -441,6 +585,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Post("/own")
       .withEntity(createRequestOwn) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -452,6 +598,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/${devices.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Device] should be(devices.head)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -459,6 +607,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     val fixtures = new TestFixtures {}
     Get(s"/own/${Device.generateId()}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -472,7 +622,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.active) should be(Some(updateRequestState.active)))
+        .map { device =>
+          device.map(_.active) should be(Some(updateRequestState.active))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_updated")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(user.id),
+                  Events.Devices.Attributes.Device.withValue(device.get.id),
+                  Events.Devices.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -486,7 +653,24 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_.map(_.limits) should be(Some(updateRequestLimits.limits)))
+        .map { device =>
+          device.map(_.limits) should be(Some(updateRequestLimits.limits))
+
+          fixtures.eventCollector.events.toList match {
+            case event :: Nil =>
+              event.name should be("device_updated")
+              event.attributes should be(
+                Map(
+                  Events.Devices.Attributes.Owner.withValue(user.id),
+                  Events.Devices.Attributes.Device.withValue(device.get.id),
+                  Events.Devices.Attributes.Privileged.withValue(false)
+                )
+              )
+
+            case other =>
+              fail(s"Unexpected result received: [$other]")
+          }
+        }
     }
   }
 
@@ -495,6 +679,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/own/${Device.generateId()}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -503,6 +689,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/own/${Device.generateId()}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -513,6 +701,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/own/${devices.head.id}/state")
       .withEntity(updateRequestState) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -523,6 +713,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Put(s"/own/${devices.head.id}/limits")
       .withEntity(updateRequestLimits) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -537,7 +729,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceStore
         .view()
         .get(devices.head.id)
-        .map(_ should be(None))
+        .map { device =>
+          fixtures.eventCollector.events should be(empty)
+          device should be(None)
+        }
     }
   }
 
@@ -547,6 +742,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Delete(s"/own/${devices.head.id}") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[DeletedDevice] should be(DeletedDevice(existing = false))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -578,6 +775,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Head(s"/own/$device2/key") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -603,6 +802,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
       val actualKey = response.entity.dataBytes.runFold(ByteString.empty)(_ concat _).await
       actualKey should be(deviceKey.value)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -613,6 +814,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get(s"/own/${devices.head.id}/key") ~> fixtures.routes ~> check {
       status should be(StatusCodes.NotFound)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -643,6 +846,20 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         case None =>
           fail("Expected key but none was found")
       }
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("device_key_updated")
+          event.attributes should be(
+            Map(
+              Events.Devices.Attributes.Owner.withValue(user.id),
+              Events.Devices.Attributes.Device.withValue(device)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -658,6 +875,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/own/$device/key") ~> Route.seal(fixtures.routes) ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -672,6 +891,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/own/$device/key").withEntity(ByteString("test-key")) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -683,6 +904,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Put(s"/own/${devices.head.id}/key").withEntity(ByteString("test-key")) ~> fixtures.routes ~> check {
       status should be(StatusCodes.BadRequest)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -708,7 +931,10 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       fixtures.deviceKeyStore
         .view()
         .get(device)
-        .map(_ should be(None))
+        .map { key =>
+          fixtures.eventCollector.events should be(empty)
+          key should be(None)
+        }
     }
   }
 
@@ -742,6 +968,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
           command.copy(sequenceId = 3)
         )
       )
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -762,6 +990,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
           command.copy(sequenceId = 3)
         )
       )
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -781,6 +1011,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/$device/commands?newer_than=$now") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Command]].map(_.sequenceId) should be(Seq(3, 4))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -800,6 +1032,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/$device/commands?newer_than=$now") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[Command]] should be(empty)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -815,6 +1049,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     Get(s"/own/$device/commands") ~> fixtures.routes ~> check {
       status should be(StatusCodes.InternalServerError)
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
@@ -840,6 +1076,21 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
             case other => fail(s"Unexpected result received: [$other]")
           }
         }
+
+      fixtures.eventCollector.events.toList match {
+        case event :: Nil =>
+          event.name should be("device_command_created")
+          event.attributes should be(
+            Map(
+              Events.Devices.Attributes.Owner.withValue(currentUser.id),
+              Events.Devices.Attributes.Device.withValue(device),
+              Events.Devices.Attributes.Privileged.withValue(false)
+            )
+          )
+
+        case other =>
+          fail(s"Unexpected result received: [$other]")
+      }
     }
   }
 
@@ -861,12 +1112,14 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     Get(s"/own/keys") ~> fixtures.routes ~> check {
       status should be(StatusCodes.OK)
       responseAs[Seq[DeviceKey]] should be(Seq(deviceKey.copy(value = ByteString.empty)))
+
+      fixtures.eventCollector.events should be(empty)
     }
   }
 
   private implicit val typedSystem: ActorSystem[Nothing] = ActorSystem(
-    Behaviors.ignore,
-    "DevicesSpec"
+    guardianBehavior = Behaviors.ignore,
+    name = "DevicesSpec"
   )
 
   private implicit val untypedSystem: org.apache.pekko.actor.ActorSystem = typedSystem.classicSystem
@@ -885,7 +1138,7 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     lazy val nodeStore: NodeStore = MockNodeStore()
     lazy val serverNodeStore: ServerNodeStore = ServerNodeStore(nodeStore)
 
-    implicit lazy val provider: ResourceProvider = new MockResourceProvider(
+    lazy implicit val provider: ResourceProvider = new MockResourceProvider(
       resources = Set(
         userStore.view(),
         userStore.viewSelf(),
@@ -904,6 +1157,8 @@ class DevicesSpec extends AsyncUnitSpec with ScalatestRouteTest {
         serverNodeStore.manageSelf()
       )
     )
+
+    lazy implicit val eventCollector: MockEventCollector = MockEventCollector()
 
     lazy implicit val context: RoutesContext = RoutesContext.collect()
 

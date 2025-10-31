@@ -19,14 +19,14 @@ import play.api.libs.json.Json
 
 import stasis.core.api.PoolClient
 import io.github.sndnv.layers.security.tls.EndpointContext
-import stasis.server.security.CredentialsProvider
+import stasis.server.security.HttpCredentialsProvider
 import stasis.server.security.exceptions.CredentialsManagementFailure
 import stasis.server.security.users.UserCredentialsManager.Result
 import stasis.shared.model.users.User
 
 class IdentityUserCredentialsManager(
   identityUrl: String,
-  identityCredentials: CredentialsProvider,
+  identityCredentials: HttpCredentialsProvider,
   override protected val context: Option[EndpointContext]
 )(implicit override protected val system: ActorSystem[Nothing])
     extends UserCredentialsManager
@@ -142,7 +142,7 @@ object IdentityUserCredentialsManager {
 
   def apply(
     identityUrl: String,
-    identityCredentials: CredentialsProvider,
+    identityCredentials: HttpCredentialsProvider,
     context: Option[EndpointContext]
   )(implicit system: ActorSystem[Nothing]): IdentityUserCredentialsManager =
     new IdentityUserCredentialsManager(
