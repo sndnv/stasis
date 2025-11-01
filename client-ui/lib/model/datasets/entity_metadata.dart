@@ -5,7 +5,7 @@ part 'entity_metadata.freezed.dart';
 part 'entity_metadata.g.dart';
 
 abstract class EntityMetadata {
-  EntityMetadata();
+  const EntityMetadata();
 
   factory EntityMetadata.fromJson(Map<String, dynamic> json) {
     final type = json['entity_type'] as String;
@@ -121,7 +121,7 @@ extension ExtendedEntityMetadata on EntityMetadata {
 }
 
 @freezed
-class FileEntityMetadata extends EntityMetadata with _$FileEntityMetadata {
+abstract class FileEntityMetadata extends EntityMetadata with _$FileEntityMetadata {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory FileEntityMetadata({
     required String path,
@@ -139,11 +139,13 @@ class FileEntityMetadata extends EntityMetadata with _$FileEntityMetadata {
     required String entityType,
   }) = _FileEntityMetadata;
 
+  const FileEntityMetadata._();
+
   factory FileEntityMetadata.fromJson(Map<String, Object?> json) => _$FileEntityMetadataFromJson(json);
 }
 
 @freezed
-class DirectoryEntityMetadata extends EntityMetadata with _$DirectoryEntityMetadata {
+abstract class DirectoryEntityMetadata extends EntityMetadata with _$DirectoryEntityMetadata {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DirectoryEntityMetadata({
     required String path,
@@ -156,6 +158,8 @@ class DirectoryEntityMetadata extends EntityMetadata with _$DirectoryEntityMetad
     required String permissions,
     required String entityType,
   }) = _DirectoryEntityMetadata;
+
+  const DirectoryEntityMetadata._();
 
   factory DirectoryEntityMetadata.fromJson(Map<String, Object?> json) => _$DirectoryEntityMetadataFromJson(json);
 }

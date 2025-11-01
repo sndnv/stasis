@@ -1,10 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'operation_state.freezed.dart';
+
 part 'operation_state.g.dart';
 
 abstract class OperationState {
-  OperationState();
+  const OperationState();
 
   factory OperationState.fromJson(Map<String, dynamic> json) {
     final type = json['type'] as String;
@@ -22,7 +23,7 @@ abstract class OperationState {
 }
 
 @freezed
-class BackupState extends OperationState with _$BackupState {
+abstract class BackupState extends OperationState with _$BackupState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory BackupState({
     required String operation,
@@ -36,11 +37,13 @@ class BackupState extends OperationState with _$BackupState {
     required DateTime? completed,
   }) = _BackupState;
 
+  const BackupState._();
+
   factory BackupState.fromJson(Map<String, Object?> json) => _$BackupStateFromJson(json);
 }
 
 @freezed
-class RecoveryState extends OperationState with _$RecoveryState {
+abstract class RecoveryState extends OperationState with _$RecoveryState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory RecoveryState({
     required String operation,
@@ -51,11 +54,13 @@ class RecoveryState extends OperationState with _$RecoveryState {
     required DateTime? completed,
   }) = _RecoveryState;
 
+  const RecoveryState._();
+
   factory RecoveryState.fromJson(Map<String, Object?> json) => _$RecoveryStateFromJson(json);
 }
 
 @freezed
-class BackupStateEntities with _$BackupStateEntities {
+abstract class BackupStateEntities with _$BackupStateEntities {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory BackupStateEntities({
     required List<String> discovered,
@@ -72,7 +77,7 @@ class BackupStateEntities with _$BackupStateEntities {
 }
 
 @freezed
-class RecoveryStateEntities with _$RecoveryStateEntities {
+abstract class RecoveryStateEntities with _$RecoveryStateEntities {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory RecoveryStateEntities({
     required List<String> examined,
@@ -87,45 +92,35 @@ class RecoveryStateEntities with _$RecoveryStateEntities {
 }
 
 @freezed
-class PendingSourceEntity with _$PendingSourceEntity {
+abstract class PendingSourceEntity with _$PendingSourceEntity {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory PendingSourceEntity({
-    required int expectedParts,
-    required int processedParts,
-  }) = _PendingSourceEntity;
+  const factory PendingSourceEntity({required int expectedParts, required int processedParts}) = _PendingSourceEntity;
 
   factory PendingSourceEntity.fromJson(Map<String, Object?> json) => _$PendingSourceEntityFromJson(json);
 }
 
 @freezed
-class ProcessedSourceEntity with _$ProcessedSourceEntity {
+abstract class ProcessedSourceEntity with _$ProcessedSourceEntity {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ProcessedSourceEntity({
-    required int expectedParts,
-    required int processedParts,
-  }) = _ProcessedSourceEntity;
+  const factory ProcessedSourceEntity({required int expectedParts, required int processedParts}) =
+      _ProcessedSourceEntity;
 
   factory ProcessedSourceEntity.fromJson(Map<String, Object?> json) => _$ProcessedSourceEntityFromJson(json);
 }
 
 @freezed
-class PendingTargetEntity with _$PendingTargetEntity {
+abstract class PendingTargetEntity with _$PendingTargetEntity {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory PendingTargetEntity({
-    required int expectedParts,
-    required int processedParts,
-  }) = _PendingTargetEntity;
+  const factory PendingTargetEntity({required int expectedParts, required int processedParts}) = _PendingTargetEntity;
 
   factory PendingTargetEntity.fromJson(Map<String, Object?> json) => _$PendingTargetEntityFromJson(json);
 }
 
 @freezed
-class ProcessedTargetEntity with _$ProcessedTargetEntity {
+abstract class ProcessedTargetEntity with _$ProcessedTargetEntity {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ProcessedTargetEntity({
-    required int expectedParts,
-    required int processedParts,
-  }) = _ProcessedTargetEntity;
+  const factory ProcessedTargetEntity({required int expectedParts, required int processedParts}) =
+      _ProcessedTargetEntity;
 
   factory ProcessedTargetEntity.fromJson(Map<String, Object?> json) => _$ProcessedTargetEntityFromJson(json);
 }

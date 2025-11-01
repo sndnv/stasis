@@ -5,7 +5,7 @@ part 'manifest.freezed.dart';
 part 'manifest.g.dart';
 
 @freezed
-class Manifest with _$Manifest {
+abstract class Manifest with _$Manifest {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Manifest({
     required String crate,

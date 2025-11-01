@@ -8,7 +8,7 @@ part 'stored_analytics_entry.freezed.dart';
 part 'stored_analytics_entry.g.dart';
 
 @freezed
-class StoredAnalyticsEntry with _$StoredAnalyticsEntry {
+abstract class StoredAnalyticsEntry with _$StoredAnalyticsEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory StoredAnalyticsEntry({
     required String id,

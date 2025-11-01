@@ -5,7 +5,7 @@ part 'update_dataset_definition.freezed.dart';
 part 'update_dataset_definition.g.dart';
 
 @freezed
-class UpdateDatasetDefinition with _$UpdateDatasetDefinition {
+abstract class UpdateDatasetDefinition with _$UpdateDatasetDefinition {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateDatasetDefinition({
     required String info,

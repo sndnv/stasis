@@ -5,7 +5,7 @@ part 'command.freezed.dart';
 part 'command.g.dart';
 
 @freezed
-class Command with _$Command {
+abstract class Command with _$Command {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Command({
     required int sequenceId,
@@ -19,7 +19,7 @@ class Command with _$Command {
 }
 
 @freezed
-class CommandParameters with _$CommandParameters {
+abstract class CommandParameters with _$CommandParameters {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CommandParameters({
     required String commandType,
@@ -30,7 +30,7 @@ class CommandParameters with _$CommandParameters {
 }
 
 @freezed
-class LogoutUserCommand with _$LogoutUserCommand {
+abstract class LogoutUserCommand with _$LogoutUserCommand {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LogoutUserCommand({
     String? reason,

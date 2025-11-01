@@ -39,7 +39,7 @@ class _RecoverState extends State<Recover> {
                 .map((d) =>
                     DropdownMenuItem<String>(value: d.id, child: Text('${d.info} (${d.id.toMinimizedString()})')))
                 .toList(),
-            value: _selectedDefinition,
+            initialValue: _selectedDefinition,
             decoration: const InputDecoration(labelText: 'Backup Definition'),
             onChanged: (value) {
               setState(() {

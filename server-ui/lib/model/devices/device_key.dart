@@ -5,7 +5,7 @@ part 'device_key.freezed.dart';
 part 'device_key.g.dart';
 
 @freezed
-class DeviceKey with _$DeviceKey {
+abstract class DeviceKey with _$DeviceKey {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DeviceKey({
     required String owner,

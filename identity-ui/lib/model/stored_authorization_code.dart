@@ -4,7 +4,7 @@ part 'stored_authorization_code.freezed.dart';
 part 'stored_authorization_code.g.dart';
 
 @freezed
-class StoredAuthorizationCode with _$StoredAuthorizationCode {
+abstract class StoredAuthorizationCode with _$StoredAuthorizationCode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory StoredAuthorizationCode({
     required String code,

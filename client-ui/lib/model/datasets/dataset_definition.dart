@@ -5,7 +5,7 @@ part 'dataset_definition.freezed.dart';
 part 'dataset_definition.g.dart';
 
 @freezed
-class DatasetDefinition with _$DatasetDefinition {
+abstract class DatasetDefinition with _$DatasetDefinition {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DatasetDefinition({
     required String id,
@@ -22,7 +22,7 @@ class DatasetDefinition with _$DatasetDefinition {
 }
 
 @freezed
-class Retention with _$Retention {
+abstract class Retention with _$Retention {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Retention({
     required Policy policy,
@@ -33,7 +33,7 @@ class Retention with _$Retention {
 }
 
 @freezed
-class Policy with _$Policy {
+abstract class Policy with _$Policy {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Policy({
     required String policyType,

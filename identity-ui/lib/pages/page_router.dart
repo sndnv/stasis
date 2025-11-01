@@ -199,7 +199,7 @@ class PageRouter {
   );
 
   static final Handler _authorizeHandler = Handler(
-    handlerFunc: (_, __) => FutureBuilder<SharedPreferences>(
+    handlerFunc: (_, _) => FutureBuilder<SharedPreferences>(
       future: SharedPreferences.getInstance(),
       builder: (_, snapshot) {
         if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
@@ -217,11 +217,11 @@ class PageRouter {
   );
 
   static final Handler _loginCallbackHandler = Handler(
-    handlerFunc: (_, __) => AuthorizationCallback(config: oauthConfig),
+    handlerFunc: (_, _) => AuthorizationCallback(config: oauthConfig),
   );
 
   static final Handler _notFoundHandler = Handler(
-    handlerFunc: (_, __) => const NotFound(),
+    handlerFunc: (_, _) => const NotFound(),
   );
 
   static void init() {

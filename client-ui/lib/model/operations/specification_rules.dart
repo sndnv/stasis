@@ -6,7 +6,7 @@ part 'specification_rules.freezed.dart';
 part 'specification_rules.g.dart';
 
 @freezed
-class SpecificationRules with _$SpecificationRules {
+abstract class SpecificationRules with _$SpecificationRules {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory SpecificationRules({
     required List<String> included,
@@ -19,7 +19,7 @@ class SpecificationRules with _$SpecificationRules {
 }
 
 @freezed
-class Explanation with _$Explanation {
+abstract class Explanation with _$Explanation {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Explanation({
     required String operation,

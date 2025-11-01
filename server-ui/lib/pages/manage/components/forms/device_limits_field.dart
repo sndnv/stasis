@@ -36,7 +36,7 @@ class _DeviceLimitsFieldState extends State<DeviceLimitsField> {
       title: Text('Enable ${widget.title}'),
       trailing: Switch(
         value: _enabled,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
         onChanged: (value) {
           setState(() => _enabled = value);
           if (_limitsAvailable()) {

@@ -5,15 +5,10 @@ part 'crate_store_descriptor.freezed.dart';
 part 'crate_store_descriptor.g.dart';
 
 abstract class CrateStoreDescriptor {
-  CrateStoreDescriptor();
+  const CrateStoreDescriptor();
 
   factory CrateStoreDescriptor.memory({required int maxSize, required int maxChunkSize, required String name}) =>
-      StreamingMemoryBackendDescriptor(
-        backendType: 'memory',
-        maxSize: maxSize,
-        maxChunkSize: maxChunkSize,
-        name: name,
-      );
+      StreamingMemoryBackendDescriptor(backendType: 'memory', maxSize: maxSize, maxChunkSize: maxChunkSize, name: name);
 
   factory CrateStoreDescriptor.container({required String path, required int maxChunkSize, required int maxChunks}) =>
       ContainerBackendDescriptor(
@@ -23,10 +18,8 @@ abstract class CrateStoreDescriptor {
         maxChunks: maxChunks,
       );
 
-  factory CrateStoreDescriptor.file({required String parentDirectory}) => FileBackendDescriptor(
-        backendType: 'file',
-        parentDirectory: parentDirectory,
-      );
+  factory CrateStoreDescriptor.file({required String parentDirectory}) =>
+      FileBackendDescriptor(backendType: 'file', parentDirectory: parentDirectory);
 
   factory CrateStoreDescriptor.fromJson(Map<String, dynamic> json) {
     final type = json['backend_type'] as String;
@@ -46,7 +39,7 @@ abstract class CrateStoreDescriptor {
 }
 
 @freezed
-class StreamingMemoryBackendDescriptor extends CrateStoreDescriptor with _$StreamingMemoryBackendDescriptor {
+abstract class StreamingMemoryBackendDescriptor extends CrateStoreDescriptor with _$StreamingMemoryBackendDescriptor {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory StreamingMemoryBackendDescriptor({
     required String backendType,
@@ -55,12 +48,14 @@ class StreamingMemoryBackendDescriptor extends CrateStoreDescriptor with _$Strea
     required String name,
   }) = _StreamingMemoryBackendDescriptor;
 
+  const StreamingMemoryBackendDescriptor._();
+
   factory StreamingMemoryBackendDescriptor.fromJson(Map<String, dynamic> json) =>
       _$StreamingMemoryBackendDescriptorFromJson(json);
 }
 
 @freezed
-class ContainerBackendDescriptor extends CrateStoreDescriptor with _$ContainerBackendDescriptor {
+abstract class ContainerBackendDescriptor extends CrateStoreDescriptor with _$ContainerBackendDescriptor {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ContainerBackendDescriptor({
     required String backendType,
@@ -69,16 +64,18 @@ class ContainerBackendDescriptor extends CrateStoreDescriptor with _$ContainerBa
     required int maxChunks,
   }) = _ContainerBackendDescriptor;
 
+  const ContainerBackendDescriptor._();
+
   factory ContainerBackendDescriptor.fromJson(Map<String, dynamic> json) => _$ContainerBackendDescriptorFromJson(json);
 }
 
 @freezed
-class FileBackendDescriptor extends CrateStoreDescriptor with _$FileBackendDescriptor {
+abstract class FileBackendDescriptor extends CrateStoreDescriptor with _$FileBackendDescriptor {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory FileBackendDescriptor({
-    required String backendType,
-    required String parentDirectory,
-  }) = _FileBackendDescriptor;
+  const factory FileBackendDescriptor({required String backendType, required String parentDirectory}) =
+      _FileBackendDescriptor;
+
+  const FileBackendDescriptor._();
 
   factory FileBackendDescriptor.fromJson(Map<String, dynamic> json) => _$FileBackendDescriptorFromJson(json);
 }

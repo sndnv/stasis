@@ -4,7 +4,7 @@ part 'rule.freezed.dart';
 part 'rule.g.dart';
 
 @freezed
-class Rule with _$Rule {
+abstract class Rule with _$Rule {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Rule({
     required String operation,
@@ -18,7 +18,7 @@ class Rule with _$Rule {
 }
 
 @freezed
-class OriginalRule with _$OriginalRule {
+abstract class OriginalRule with _$OriginalRule {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory OriginalRule({
     required String line,

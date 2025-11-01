@@ -3,10 +3,11 @@ import 'package:server_ui/model/nodes/crate_store_descriptor.dart';
 import 'package:server_ui/model/nodes/node.dart';
 
 part 'update_node.freezed.dart';
+
 part 'update_node.g.dart';
 
 abstract class UpdateNode {
-  UpdateNode();
+  const UpdateNode();
 
   factory UpdateNode.local(CrateStoreDescriptor storeDescriptor) =>
       UpdateLocalNode(nodeType: 'local', storeDescriptor: storeDescriptor);
@@ -21,18 +22,18 @@ abstract class UpdateNode {
 }
 
 @freezed
-class UpdateLocalNode extends UpdateNode with _$UpdateLocalNode {
+abstract class UpdateLocalNode extends UpdateNode with _$UpdateLocalNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory UpdateLocalNode({
-    required String nodeType,
-    required CrateStoreDescriptor storeDescriptor,
-  }) = _UpdateLocalNode;
+  const factory UpdateLocalNode({required String nodeType, required CrateStoreDescriptor storeDescriptor}) =
+      _UpdateLocalNode;
+
+  const UpdateLocalNode._();
 
   factory UpdateLocalNode.fromJson(Map<String, Object?> json) => _$UpdateLocalNodeFromJson(json);
 }
 
 @freezed
-class UpdateRemoteHttpNode extends UpdateNode with _$UpdateRemoteHttpNode {
+abstract class UpdateRemoteHttpNode extends UpdateNode with _$UpdateRemoteHttpNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateRemoteHttpNode({
     required String nodeType,
@@ -40,17 +41,21 @@ class UpdateRemoteHttpNode extends UpdateNode with _$UpdateRemoteHttpNode {
     required bool storageAllowed,
   }) = _UpdateRemoteHttpNode;
 
+  const UpdateRemoteHttpNode._();
+
   factory UpdateRemoteHttpNode.fromJson(Map<String, Object?> json) => _$UpdateRemoteHttpNodeFromJson(json);
 }
 
 @freezed
-class UpdateRemoteGrpcNode extends UpdateNode with _$UpdateRemoteGrpcNode {
+abstract class UpdateRemoteGrpcNode extends UpdateNode with _$UpdateRemoteGrpcNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateRemoteGrpcNode({
     required String nodeType,
     required GrpcEndpointAddress address,
     required bool storageAllowed,
   }) = _UpdateRemoteGrpcNode;
+
+  const UpdateRemoteGrpcNode._();
 
   factory UpdateRemoteGrpcNode.fromJson(Map<String, Object?> json) => _$UpdateRemoteGrpcNodeFromJson(json);
 }

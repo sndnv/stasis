@@ -34,7 +34,7 @@ class _PolicyFieldState extends State<PolicyField> {
     final policyTypeInput = DropdownButtonFormField<String>(
       decoration: InputDecoration(labelText: widget.title, errorText: _policyVersionsInvalid ? '' : null),
       items: _policyTypes.map((e) => DropdownMenuItem<String>(value: e.a, child: Text(e.b))).toList(),
-      value: _policyType,
+      initialValue: _policyType,
       onChanged: (value) {
         _policyType = value!;
         if (_policyVersions != null || _policyType != 'at-most') {

@@ -4,7 +4,7 @@ part 'analytics_entry_runtime_information.freezed.dart';
 part 'analytics_entry_runtime_information.g.dart';
 
 @freezed
-class AnalyticsEntryRuntimeInformation with _$AnalyticsEntryRuntimeInformation {
+abstract class AnalyticsEntryRuntimeInformation with _$AnalyticsEntryRuntimeInformation {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsEntryRuntimeInformation({
     required String id,

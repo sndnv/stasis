@@ -5,7 +5,7 @@ part 'user.freezed.dart';
 part 'user.g.dart';
 
 @freezed
-class User with _$User {
+abstract class User with _$User {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory User({
     required String id,
@@ -20,7 +20,7 @@ class User with _$User {
 }
 
 @freezed
-class UserLimits with _$UserLimits {
+abstract class UserLimits with _$UserLimits {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UserLimits({
     required int maxDevices,

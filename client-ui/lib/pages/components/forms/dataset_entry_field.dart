@@ -129,7 +129,7 @@ class _DatasetEntryFieldState extends State<DatasetEntryField> {
                               ),
                             ))
                         .toList(),
-                    value: widget.controller.entry,
+                    initialValue: widget.controller.entry,
                     onChanged: (value) {
                       widget.controller.entry = value;
                     },

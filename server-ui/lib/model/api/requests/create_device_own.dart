@@ -5,7 +5,7 @@ part 'create_device_own.freezed.dart';
 part 'create_device_own.g.dart';
 
 @freezed
-class CreateDeviceOwn with _$CreateDeviceOwn {
+abstract class CreateDeviceOwn with _$CreateDeviceOwn {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CreateDeviceOwn({
     required String name,

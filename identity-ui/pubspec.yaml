@@ -5,26 +5,26 @@ version: 1.5.1-SNAPSHOT
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.1.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  freezed_annotation: ^2.4.4
+  freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
-  http: ^1.4.0
-  oauth2: ^2.0.3
-  url_launcher: ^6.3.1
+  http: ^1.5.0
+  oauth2: ^2.0.5
+  url_launcher: ^6.3.2
   fluro: ^2.0.5
   url_strategy: ^0.3.0
   shared_preferences: ^2.5.3
-  flutter_svg: ^2.1.0
+  flutter_svg: ^2.2.1
   intl: ^0.20.2
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^6.0.0
   cryptography: ^2.7.0
-  watcher: ^1.1.2
+  watcher: ^1.1.4
   web: ^1.1.1
 
 dev_dependencies:
@@ -32,10 +32,10 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
-  build_runner: ^2.4.15
-  freezed: ^2.4.5
-  json_serializable: ^6.9.5
-  mockito: ^5.4.6
+  build_runner: ^2.10.1
+  freezed: ^3.2.3
+  json_serializable: ^6.11.1
+  mockito: ^5.5.1
 
 flutter:
   uses-material-design: true

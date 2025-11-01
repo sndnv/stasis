@@ -4,7 +4,7 @@ part 'update_user_permissions.freezed.dart';
 part 'update_user_permissions.g.dart';
 
 @freezed
-class UpdateUserPermissions with _$UpdateUserPermissions {
+abstract class UpdateUserPermissions with _$UpdateUserPermissions {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateUserPermissions({
     required Set<String> permissions,

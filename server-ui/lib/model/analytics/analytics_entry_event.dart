@@ -4,7 +4,7 @@ part 'analytics_entry_event.freezed.dart';
 part 'analytics_entry_event.g.dart';
 
 @freezed
-class AnalyticsEntryEvent with _$AnalyticsEntryEvent {
+abstract class AnalyticsEntryEvent with _$AnalyticsEntryEvent {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsEntryEvent({
     required int id,

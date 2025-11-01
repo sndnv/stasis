@@ -11,7 +11,7 @@ class Pair<A, B> {
 
   @override
   bool operator ==(Object other) =>
-      other is Pair && this.a == other.a && this.b == other.b;
+      other is Pair && a == other.a && b == other.b;
 
   @override
   int get hashCode => Object.hash(

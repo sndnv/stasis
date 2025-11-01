@@ -4,7 +4,7 @@ part 'resource_owner.freezed.dart';
 part 'resource_owner.g.dart';
 
 @freezed
-class ResourceOwner with _$ResourceOwner {
+abstract class ResourceOwner with _$ResourceOwner {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ResourceOwner({
     required String username,

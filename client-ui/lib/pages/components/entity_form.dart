@@ -137,7 +137,7 @@ DropdownButtonFormField dropdownField({
               child: Text(e.b),
             ))
         .toList(),
-    value: selected,
+    initialValue: selected,
     decoration: InputDecoration(
       labelText: title,
       border: outlined ? const OutlineInputBorder() : null,

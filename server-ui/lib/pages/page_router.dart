@@ -188,7 +188,7 @@ class PageRouter {
                   title: const Text('Manage'),
                   trailing: Switch(
                     value: routerContext.usePrivilegedApis.enabled(),
-                    activeColor: Theme.of(buildContext).colorScheme.primary,
+                    activeThumbColor: Theme.of(buildContext).colorScheme.primary,
                     onChanged: (value) {
                       routerContext.usePrivilegedApis.set(value);
                       web.window.location.assign(PageRouterDestination.home.route);
@@ -273,7 +273,7 @@ class PageRouter {
     Widget Function(BuildContext buildContext, RouterContext routerContext) builder,
   ) {
     return Handler(
-        handlerFunc: (_, __) => FutureBuilder<RouterContext>(
+        handlerFunc: (_, _) => FutureBuilder<RouterContext>(
               future: _login(),
               builder: (buildContext, snapshot) {
                 if (snapshot.data != null && snapshot.connectionState == ConnectionState.done) {
@@ -411,11 +411,11 @@ class PageRouter {
   );
 
   static final Handler _loginCallbackHandler = Handler(
-    handlerFunc: (_, __) => AuthorizationCallback(config: config),
+    handlerFunc: (_, _) => AuthorizationCallback(config: config),
   );
 
   static final Handler _notFoundHandler = Handler(
-    handlerFunc: (_, __) => const NotFound(),
+    handlerFunc: (_, _) => const NotFound(),
   );
 
   static void init() {

@@ -6,7 +6,7 @@ part 'analytics_entry_summary.freezed.dart';
 part 'analytics_entry_summary.g.dart';
 
 @freezed
-class AnalyticsEntrySummary with _$AnalyticsEntrySummary {
+abstract class AnalyticsEntrySummary with _$AnalyticsEntrySummary {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsEntrySummary({
     required String id,

@@ -8,7 +8,7 @@ part 'schedule.freezed.dart';
 part 'schedule.g.dart';
 
 @freezed
-class Schedule with _$Schedule {
+abstract class Schedule with _$Schedule {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Schedule({
     required String id,

@@ -5,7 +5,7 @@ part 'device.freezed.dart';
 part 'device.g.dart';
 
 @freezed
-class Device with _$Device {
+abstract class Device with _$Device {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Device({
     required String id,
@@ -22,7 +22,7 @@ class Device with _$Device {
 }
 
 @freezed
-class DeviceLimits with _$DeviceLimits {
+abstract class DeviceLimits with _$DeviceLimits {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DeviceLimits({
     required int maxCrates,

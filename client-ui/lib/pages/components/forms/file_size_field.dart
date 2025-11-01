@@ -70,7 +70,7 @@ class _FileSizeFieldState extends State<FileSizeField> {
 
     final fileSizeUnitInput = DropdownButtonFormField<FileSizeUnit>(
       decoration: InputDecoration(errorText: _amountInvalid ? '' : null),
-      value: _unit,
+      initialValue: _unit,
       items: _units.map((e) => DropdownMenuItem<FileSizeUnit>(value: e, child: Text(e.symbol))).toList(),
       onChanged: (value) {
         _unit = value!;

@@ -7,21 +7,14 @@ part 'node.freezed.dart';
 part 'node.g.dart';
 
 abstract class Node {
-  Node();
+  const Node();
 
   factory Node.local({
     required String id,
     required CrateStoreDescriptor storeDescriptor,
     required DateTime created,
     required DateTime updated,
-  }) =>
-      LocalNode(
-        nodeType: 'local',
-        id: id,
-        storeDescriptor: storeDescriptor,
-        created: created,
-        updated: updated,
-      );
+  }) => LocalNode(nodeType: 'local', id: id, storeDescriptor: storeDescriptor, created: created, updated: updated);
 
   factory Node.remoteHttp({
     required String id,
@@ -29,15 +22,14 @@ abstract class Node {
     required bool storageAllowed,
     required DateTime created,
     required DateTime updated,
-  }) =>
-      RemoteHttpNode(
-        nodeType: 'remote-http',
-        id: id,
-        address: address,
-        storageAllowed: storageAllowed,
-        created: created,
-        updated: updated,
-      );
+  }) => RemoteHttpNode(
+    nodeType: 'remote-http',
+    id: id,
+    address: address,
+    storageAllowed: storageAllowed,
+    created: created,
+    updated: updated,
+  );
 
   factory Node.remoteGrpc({
     required String id,
@@ -45,15 +37,14 @@ abstract class Node {
     required bool storageAllowed,
     required DateTime created,
     required DateTime updated,
-  }) =>
-      RemoteGrpcNode(
-        nodeType: 'remote-grpc',
-        id: id,
-        address: address,
-        storageAllowed: storageAllowed,
-        created: created,
-        updated: updated,
-      );
+  }) => RemoteGrpcNode(
+    nodeType: 'remote-grpc',
+    id: id,
+    address: address,
+    storageAllowed: storageAllowed,
+    created: created,
+    updated: updated,
+  );
 
   factory Node.fromJson(Map<String, dynamic> json) {
     final type = json['node_type'] as String;
@@ -73,7 +64,7 @@ abstract class Node {
 }
 
 @freezed
-class LocalNode extends Node with _$LocalNode {
+abstract class LocalNode extends Node with _$LocalNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LocalNode({
     required String nodeType,
@@ -83,11 +74,13 @@ class LocalNode extends Node with _$LocalNode {
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _LocalNode;
 
+  const LocalNode._();
+
   factory LocalNode.fromJson(Map<String, Object?> json) => _$LocalNodeFromJson(json);
 }
 
 @freezed
-class RemoteHttpNode extends Node with _$RemoteHttpNode {
+abstract class RemoteHttpNode extends Node with _$RemoteHttpNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory RemoteHttpNode({
     required String nodeType,
@@ -98,11 +91,13 @@ class RemoteHttpNode extends Node with _$RemoteHttpNode {
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _RemoteHttpNode;
 
+  const RemoteHttpNode._();
+
   factory RemoteHttpNode.fromJson(Map<String, Object?> json) => _$RemoteHttpNodeFromJson(json);
 }
 
 @freezed
-class RemoteGrpcNode extends Node with _$RemoteGrpcNode {
+abstract class RemoteGrpcNode extends Node with _$RemoteGrpcNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory RemoteGrpcNode({
     required String nodeType,
@@ -113,27 +108,28 @@ class RemoteGrpcNode extends Node with _$RemoteGrpcNode {
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime updated,
   }) = _RemoteGrpcNode;
 
+  const RemoteGrpcNode._();
+
   factory RemoteGrpcNode.fromJson(Map<String, Object?> json) => _$RemoteGrpcNodeFromJson(json);
 }
 
 @freezed
-class HttpEndpointAddress with _$HttpEndpointAddress {
+abstract class HttpEndpointAddress with _$HttpEndpointAddress {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory HttpEndpointAddress({
-    required String uri,
-  }) = _HttpEndpointAddress;
+  const HttpEndpointAddress._();
+
+  const factory HttpEndpointAddress({required String uri}) = _HttpEndpointAddress;
 
   factory HttpEndpointAddress.fromJson(Map<String, Object?> json) => _$HttpEndpointAddressFromJson(json);
 }
 
 @freezed
-class GrpcEndpointAddress with _$GrpcEndpointAddress {
+abstract class GrpcEndpointAddress with _$GrpcEndpointAddress {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory GrpcEndpointAddress({
-    required String host,
-    required int port,
-    required bool tlsEnabled,
-  }) = _GrpcEndpointAddress;
+  const factory GrpcEndpointAddress({required String host, required int port, required bool tlsEnabled}) =
+      _GrpcEndpointAddress;
+
+  const GrpcEndpointAddress._();
 
   factory GrpcEndpointAddress.fromJson(Map<String, Object?> json) => _$GrpcEndpointAddressFromJson(json);
 }

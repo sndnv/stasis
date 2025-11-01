@@ -5,7 +5,7 @@ part 'create_dataset_definition.freezed.dart';
 part 'create_dataset_definition.g.dart';
 
 @freezed
-class CreateDatasetDefinition with _$CreateDatasetDefinition {
+abstract class CreateDatasetDefinition with _$CreateDatasetDefinition {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CreateDatasetDefinition({
     required String info,
