@@ -27,7 +27,7 @@ class _BooleanFieldState extends State<BooleanField> {
       title: Text(widget.title),
       trailing: Switch(
         value: _value,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
         onChanged: (value) {
           setState(() => _value = value);
           widget.onChange(_value);

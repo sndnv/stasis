@@ -5,7 +5,7 @@ part 'init_state.freezed.dart';
 part 'init_state.g.dart';
 
 @freezed
-class InitState with _$InitState {
+abstract class InitState with _$InitState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory InitState({
     required String startup,

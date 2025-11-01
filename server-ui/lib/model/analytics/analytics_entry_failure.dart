@@ -5,7 +5,7 @@ part 'analytics_entry_failure.freezed.dart';
 part 'analytics_entry_failure.g.dart';
 
 @freezed
-class AnalyticsEntryFailure with _$AnalyticsEntryFailure {
+abstract class AnalyticsEntryFailure with _$AnalyticsEntryFailure {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsEntryFailure({
     required String message,

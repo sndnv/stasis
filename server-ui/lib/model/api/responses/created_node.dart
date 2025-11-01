@@ -4,7 +4,7 @@ part 'created_node.freezed.dart';
 part 'created_node.g.dart';
 
 @freezed
-class CreatedNode with _$CreatedNode {
+abstract class CreatedNode with _$CreatedNode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CreatedNode({
     required String node,

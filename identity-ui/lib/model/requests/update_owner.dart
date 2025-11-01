@@ -4,7 +4,7 @@ part 'update_owner.freezed.dart';
 part 'update_owner.g.dart';
 
 @freezed
-class UpdateOwner with _$UpdateOwner {
+abstract class UpdateOwner with _$UpdateOwner {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateOwner({
     required List<String> allowedScopes,

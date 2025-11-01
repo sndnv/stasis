@@ -4,7 +4,7 @@ part 'update_client.freezed.dart';
 part 'update_client.g.dart';
 
 @freezed
-class UpdateClient with _$UpdateClient {
+abstract class UpdateClient with _$UpdateClient {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateClient({
     required int tokenExpiration,

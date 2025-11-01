@@ -35,7 +35,7 @@ class _CreateNodeFieldState extends State<CreateNodeField> {
   Widget build(BuildContext context) {
     final nodeTypeInput = DropdownButtonFormField<String>(
       decoration: const InputDecoration(labelText: 'Node Type'),
-      value: _selectedNode,
+      initialValue: _selectedNode,
       items: _nodeTypes.map((e) => DropdownMenuItem(value: e.a, child: Text(e.b))).toList(),
       onChanged: (value) {
         if (value != null) {
@@ -48,7 +48,7 @@ class _CreateNodeFieldState extends State<CreateNodeField> {
       title: const Text('Storage Allowed'),
       trailing: Switch(
         value: _storageAllowed,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
         onChanged: (value) {
           setState(() => _storageAllowed = value);
           _refreshCollectedData();
@@ -142,7 +142,7 @@ class _UpdateNodeFieldState extends State<UpdateNodeField> {
       title: const Text('Storage Allowed'),
       trailing: Switch(
         value: _storageAllowed,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
         onChanged: (value) {
           setState(() => _storageAllowed = value);
           _refreshCollectedData();

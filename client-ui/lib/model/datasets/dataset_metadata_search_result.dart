@@ -5,7 +5,7 @@ part 'dataset_metadata_search_result.freezed.dart';
 part 'dataset_metadata_search_result.g.dart';
 
 @freezed
-class DatasetMetadataSearchResult with _$DatasetMetadataSearchResult {
+abstract class DatasetMetadataSearchResult with _$DatasetMetadataSearchResult {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DatasetMetadataSearchResult({
     required Map<String, DatasetDefinitionResult?> definitions,
@@ -16,7 +16,7 @@ class DatasetMetadataSearchResult with _$DatasetMetadataSearchResult {
 }
 
 @freezed
-class DatasetDefinitionResult with _$DatasetDefinitionResult {
+abstract class DatasetDefinitionResult with _$DatasetDefinitionResult {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DatasetDefinitionResult({
     required String definitionInfo,

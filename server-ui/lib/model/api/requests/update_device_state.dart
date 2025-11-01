@@ -4,7 +4,7 @@ part 'update_device_state.freezed.dart';
 part 'update_device_state.g.dart';
 
 @freezed
-class UpdateDeviceState with _$UpdateDeviceState {
+abstract class UpdateDeviceState with _$UpdateDeviceState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateDeviceState({
     required bool active,

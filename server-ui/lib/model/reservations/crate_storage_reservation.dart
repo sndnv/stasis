@@ -5,7 +5,7 @@ part 'crate_storage_reservation.freezed.dart';
 part 'crate_storage_reservation.g.dart';
 
 @freezed
-class CrateStorageReservation with _$CrateStorageReservation {
+abstract class CrateStorageReservation with _$CrateStorageReservation {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CrateStorageReservation({
     required String id,

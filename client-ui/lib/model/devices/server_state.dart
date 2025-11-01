@@ -4,7 +4,7 @@ part 'server_state.freezed.dart';
 part 'server_state.g.dart';
 
 @freezed
-class ServerState with _$ServerState {
+abstract class ServerState with _$ServerState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ServerState({
     required bool reachable,

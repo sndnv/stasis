@@ -239,7 +239,7 @@ class TestApiClient extends ApiClient {
 }
 
 @freezed
-class TestData with _$TestData {
+abstract class TestData with _$TestData {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TestData({
     required String a,
@@ -250,7 +250,7 @@ class TestData with _$TestData {
 }
 
 @freezed
-class TestResponse with _$TestResponse {
+abstract class TestResponse with _$TestResponse {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TestResponse({
     required String c,

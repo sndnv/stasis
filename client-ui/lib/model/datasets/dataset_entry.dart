@@ -5,7 +5,7 @@ part 'dataset_entry.freezed.dart';
 part 'dataset_entry.g.dart';
 
 @freezed
-class DatasetEntry with _$DatasetEntry {
+abstract class DatasetEntry with _$DatasetEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DatasetEntry({
     required String id,

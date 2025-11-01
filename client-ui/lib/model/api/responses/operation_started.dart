@@ -4,7 +4,7 @@ part 'operation_started.freezed.dart';
 part 'operation_started.g.dart';
 
 @freezed
-class OperationStarted with _$OperationStarted {
+abstract class OperationStarted with _$OperationStarted {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory OperationStarted({
     required String operation,

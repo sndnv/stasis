@@ -4,7 +4,7 @@ part 'update_owner_credentials.freezed.dart';
 part 'update_owner_credentials.g.dart';
 
 @freezed
-class UpdateOwnerCredentials with _$UpdateOwnerCredentials {
+abstract class UpdateOwnerCredentials with _$UpdateOwnerCredentials {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateOwnerCredentials({
     required String rawPassword,

@@ -5,7 +5,7 @@ part 'create_device_privileged.freezed.dart';
 part 'create_device_privileged.g.dart';
 
 @freezed
-class CreateDevicePrivileged with _$CreateDevicePrivileged {
+abstract class CreateDevicePrivileged with _$CreateDevicePrivileged {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CreateDevicePrivileged({
     required String name,

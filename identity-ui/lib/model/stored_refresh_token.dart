@@ -4,7 +4,7 @@ part 'stored_refresh_token.freezed.dart';
 part 'stored_refresh_token.g.dart';
 
 @freezed
-class StoredRefreshToken with _$StoredRefreshToken {
+abstract class StoredRefreshToken with _$StoredRefreshToken {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory StoredRefreshToken({
     required String token,

@@ -2,21 +2,19 @@ import 'package:stasis_client_ui/model/formats.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'active_schedule.freezed.dart';
+
 part 'active_schedule.g.dart';
 
 @freezed
-class ActiveSchedule with _$ActiveSchedule {
+abstract class ActiveSchedule with _$ActiveSchedule {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ActiveSchedule({
-    required Assignment assignment,
-    required EmbeddedSchedule? schedule,
-  }) = _ActiveSchedule;
+  const factory ActiveSchedule({required Assignment assignment, required EmbeddedSchedule? schedule}) = _ActiveSchedule;
 
   factory ActiveSchedule.fromJson(Map<String, Object?> json) => _$ActiveScheduleFromJson(json);
 }
 
 abstract class Assignment {
-  Assignment();
+  const Assignment();
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
     final type = json['assignment_type'] as String;
@@ -38,7 +36,7 @@ abstract class Assignment {
 }
 
 @freezed
-class BackupAssignment extends Assignment with _$BackupAssignment {
+abstract class BackupAssignment extends Assignment with _$BackupAssignment {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory BackupAssignment({
     required String assignmentType,
@@ -47,44 +45,46 @@ class BackupAssignment extends Assignment with _$BackupAssignment {
     required List<String> entities,
   }) = _BackupAssignment;
 
+  const BackupAssignment._();
+
   factory BackupAssignment.fromJson(Map<String, Object?> json) => _$BackupAssignmentFromJson(json);
 }
 
 @freezed
-class ExpirationAssignment extends Assignment with _$ExpirationAssignment {
+abstract class ExpirationAssignment extends Assignment with _$ExpirationAssignment {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ExpirationAssignment({
-    required String assignmentType,
-    required String schedule,
-  }) = _ExpirationAssignment;
+  const factory ExpirationAssignment({required String assignmentType, required String schedule}) =
+      _ExpirationAssignment;
+
+  const ExpirationAssignment._();
 
   factory ExpirationAssignment.fromJson(Map<String, Object?> json) => _$ExpirationAssignmentFromJson(json);
 }
 
 @freezed
-class ValidationAssignment extends Assignment with _$ValidationAssignment {
+abstract class ValidationAssignment extends Assignment with _$ValidationAssignment {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ValidationAssignment({
-    required String assignmentType,
-    required String schedule,
-  }) = _ValidationAssignment;
+  const factory ValidationAssignment({required String assignmentType, required String schedule}) =
+      _ValidationAssignment;
+
+  const ValidationAssignment._();
 
   factory ValidationAssignment.fromJson(Map<String, Object?> json) => _$ValidationAssignmentFromJson(json);
 }
 
 @freezed
-class KeyRotationAssignment extends Assignment with _$KeyRotationAssignment {
+abstract class KeyRotationAssignment extends Assignment with _$KeyRotationAssignment {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory KeyRotationAssignment({
-    required String assignmentType,
-    required String schedule,
-  }) = _KeyRotationAssignment;
+  const factory KeyRotationAssignment({required String assignmentType, required String schedule}) =
+      _KeyRotationAssignment;
+
+  const KeyRotationAssignment._();
 
   factory KeyRotationAssignment.fromJson(Map<String, Object?> json) => _$KeyRotationAssignmentFromJson(json);
 }
 
 @freezed
-class EmbeddedSchedule with _$EmbeddedSchedule {
+abstract class EmbeddedSchedule with _$EmbeddedSchedule {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory EmbeddedSchedule({
     required String id,

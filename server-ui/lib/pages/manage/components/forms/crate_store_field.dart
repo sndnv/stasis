@@ -33,7 +33,7 @@ class _CrateStoreDescriptorFieldState extends State<CrateStoreDescriptorField> {
   Widget build(BuildContext context) {
     final backendTypeInput = DropdownButtonFormField<String>(
       decoration: const InputDecoration(labelText: 'Backend Type'),
-      value: _selectedBackend,
+      initialValue: _selectedBackend,
       items: _backendTypes.map((e) => DropdownMenuItem(value: e.a, child: Text(e.b))).toList(),
       onChanged: (value) {
         if (value != null) {
@@ -126,7 +126,7 @@ class _StreamingMemoryBackendDescriptorFieldState extends State<StreamingMemoryB
 
     final maxChunkSizeField = DropdownButtonFormField<int>(
       decoration: const InputDecoration(labelText: 'Maximum Chunk Size'),
-      value: _maxChunkSize,
+      initialValue: _maxChunkSize,
       items: _maxChunkSizes.map((e) => DropdownMenuItem(value: e.a, child: Text(e.b))).toList(),
       onChanged: (updated) {
         _maxChunkSize = updated!;
@@ -199,7 +199,7 @@ class _ContainerBackendDescriptorFieldState extends State<ContainerBackendDescri
 
     final maxChunkSizeField = DropdownButtonFormField<int>(
       decoration: const InputDecoration(labelText: 'Maximum Chunk Size'),
-      value: _maxChunkSize,
+      initialValue: _maxChunkSize,
       items: _maxChunkSizes.map((e) => DropdownMenuItem(value: e.a, child: Text(e.b))).toList(),
       onChanged: (updated) {
         _maxChunkSize = updated!;

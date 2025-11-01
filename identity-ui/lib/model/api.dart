@@ -4,7 +4,7 @@ part 'api.freezed.dart';
 part 'api.g.dart';
 
 @freezed
-class Api with _$Api {
+abstract class Api with _$Api {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Api({
     required String id,

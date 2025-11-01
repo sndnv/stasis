@@ -63,7 +63,7 @@ class _DurationFieldState extends State<DurationField> {
 
     final durationUnitInput = DropdownButtonFormField<ChronoUnit>(
       decoration: InputDecoration(errorText: _amountInvalid ? '' : null),
-      value: _unit,
+      initialValue: _unit,
       items: _units.map((e) => DropdownMenuItem<ChronoUnit>(value: e, child: Text(e.plural))).toList(),
       onChanged: (value) {
         _unit = value!;

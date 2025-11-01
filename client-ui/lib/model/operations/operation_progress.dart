@@ -6,7 +6,7 @@ part 'operation_progress.freezed.dart';
 part 'operation_progress.g.dart';
 
 @freezed
-class OperationProgress with _$OperationProgress {
+abstract class OperationProgress with _$OperationProgress {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory OperationProgress({
     required String operation,

@@ -42,7 +42,7 @@ class DefaultInitApi extends ApiClient implements InitApi {
   @override
   Future<InitState> state() async {
     const path = '/init';
-    return await getOne(from: path, fromJson: InitState.fromJson).onError((_, __) => InitState.empty());
+    return await getOne(from: path, fromJson: InitState.fromJson).onError((_, _) => InitState.empty());
   }
 
   @override

@@ -5,7 +5,7 @@ part 'update_device_limits.freezed.dart';
 part 'update_device_limits.g.dart';
 
 @freezed
-class UpdateDeviceLimits with _$UpdateDeviceLimits {
+abstract class UpdateDeviceLimits with _$UpdateDeviceLimits {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateDeviceLimits({
     DeviceLimits? limits,

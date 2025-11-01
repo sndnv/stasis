@@ -6,7 +6,7 @@ part 'analytics_state.freezed.dart';
 part 'analytics_state.g.dart';
 
 @freezed
-class AnalyticsState with _$AnalyticsState {
+abstract class AnalyticsState with _$AnalyticsState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsState({
     required AnalyticsEntry entry,

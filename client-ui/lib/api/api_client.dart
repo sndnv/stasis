@@ -332,7 +332,7 @@ extension ExtendedResponse<R extends http.BaseResponse> on Future<R> {
 
   Future<T?> andProcessOptionalResponseWith<T>(T Function(R response) f) async {
     try {
-      return await this.andProcessResponseWith(f);
+      return await andProcessResponseWith(f);
     } on BadRequest catch (e) {
       if (e.status == 404) {
         return null;

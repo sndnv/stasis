@@ -116,7 +116,7 @@ class _GrpcEndpointAddressFieldState extends State<GrpcEndpointAddressField> {
       title: const Text('TLS Enabled'),
       trailing: Switch(
         value: _tlsEnabled,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
         onChanged: (value) {
           setState(() => _tlsEnabled = value);
           if (_addressAvailable()) {

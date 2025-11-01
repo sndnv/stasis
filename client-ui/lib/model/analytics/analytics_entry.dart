@@ -6,7 +6,7 @@ part 'analytics_entry.freezed.dart';
 part 'analytics_entry.g.dart';
 
 @freezed
-class AnalyticsEntry with _$AnalyticsEntry {
+abstract class AnalyticsEntry with _$AnalyticsEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AnalyticsEntry({
     required RuntimeInformation runtime,
@@ -20,7 +20,7 @@ class AnalyticsEntry with _$AnalyticsEntry {
 }
 
 @freezed
-class RuntimeInformation with _$RuntimeInformation {
+abstract class RuntimeInformation with _$RuntimeInformation {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory RuntimeInformation({
     required String id,
@@ -33,7 +33,7 @@ class RuntimeInformation with _$RuntimeInformation {
 }
 
 @freezed
-class Event with _$Event {
+abstract class Event with _$Event {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Event({
     required int id,
@@ -44,7 +44,7 @@ class Event with _$Event {
 }
 
 @freezed
-class Failure with _$Failure {
+abstract class Failure with _$Failure {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Failure({
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime timestamp,

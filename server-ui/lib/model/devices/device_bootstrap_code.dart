@@ -7,7 +7,7 @@ part 'device_bootstrap_code.freezed.dart';
 part 'device_bootstrap_code.g.dart';
 
 @freezed
-class DeviceBootstrapCode with _$DeviceBootstrapCode {
+abstract class DeviceBootstrapCode with _$DeviceBootstrapCode {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DeviceBootstrapCode({
     required String id,
@@ -63,7 +63,7 @@ class DeviceBootstrapCode with _$DeviceBootstrapCode {
 }
 
 @freezed
-class DeviceBootstrapCodeTarget with _$DeviceBootstrapCodeTarget {
+abstract class DeviceBootstrapCodeTarget with _$DeviceBootstrapCodeTarget {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DeviceBootstrapCodeTarget({
     required String type,

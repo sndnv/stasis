@@ -4,7 +4,7 @@ part 'update_user_salt.freezed.dart';
 part 'update_user_salt.g.dart';
 
 @freezed
-class UpdateUserSalt with _$UpdateUserSalt {
+abstract class UpdateUserSalt with _$UpdateUserSalt {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UpdateUserSalt({
     required String currentPassword,

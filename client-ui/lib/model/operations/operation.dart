@@ -63,7 +63,7 @@ enum Type {
 }
 
 @freezed
-class Progress with _$Progress {
+abstract class Progress with _$Progress {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Progress({
     required DateTime started,

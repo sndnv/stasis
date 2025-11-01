@@ -5,7 +5,7 @@ part 'create_user.freezed.dart';
 part 'create_user.g.dart';
 
 @freezed
-class CreateUser with _$CreateUser {
+abstract class CreateUser with _$CreateUser {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory CreateUser({
     required String username,

@@ -6,7 +6,7 @@ part 'dataset_metadata.freezed.dart';
 part 'dataset_metadata.g.dart';
 
 @freezed
-class DatasetMetadata with _$DatasetMetadata {
+abstract class DatasetMetadata with _$DatasetMetadata {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DatasetMetadata({
     required Map<String, EntityMetadata> contentChanged,
@@ -28,7 +28,7 @@ extension ExtendedDatasetMetadata on DatasetMetadata {
 }
 
 @freezed
-class FilesystemMetadata with _$FilesystemMetadata {
+abstract class FilesystemMetadata with _$FilesystemMetadata {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory FilesystemMetadata({
     required Map<String, EntityState> entities,
@@ -38,7 +38,7 @@ class FilesystemMetadata with _$FilesystemMetadata {
 }
 
 @freezed
-class EntityState with _$EntityState {
+abstract class EntityState with _$EntityState {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory EntityState({
     required String entityState,
