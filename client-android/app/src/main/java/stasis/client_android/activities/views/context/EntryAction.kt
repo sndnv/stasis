@@ -4,11 +4,11 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 
 data class EntryAction(
-    @DrawableRes val icon: Int,
+    @field:DrawableRes val icon: Int,
     val name: String,
     val description: String,
     val handler: () -> Unit,
-    @ColorRes val color: Int?
+    @field:ColorRes val color: Int?
 ) {
     companion object {
         operator fun invoke(

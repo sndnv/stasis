@@ -18,6 +18,7 @@
         android:layout_height="24dp"
         android:layout_centerVertical="true"
         android:layout_toEndOf="@id/rule_tree_node_state"
+        android:importantForAccessibility="no"
         android:src="@drawable/ic_tree_directory" />
 
     <TextView

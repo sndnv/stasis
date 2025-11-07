@@ -12,11 +12,11 @@ data class DatasetDefinition(
     val id: DatasetDefinitionId,
     val info: String,
     val device: DeviceId,
-    @Json(name = "redundant_copies")
+    @field:Json(name = "redundant_copies")
     val redundantCopies: Int,
-    @Json(name = "existing_versions")
+    @field:Json(name = "existing_versions")
     val existingVersions: Retention,
-    @Json(name = "removed_versions")
+    @field:Json(name = "removed_versions")
     val removedVersions: Retention,
     val created: Instant,
     val updated: Instant

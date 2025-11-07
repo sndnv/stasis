@@ -20,6 +20,7 @@ import stasis.client_android.activities.fragments.settings.AnalyticsDialogFragme
 import stasis.client_android.activities.fragments.settings.AvailableCommandsDialogFragment
 import stasis.client_android.activities.fragments.settings.ExportDialogFragment
 import stasis.client_android.activities.fragments.settings.ImportDialogFragment
+import stasis.client_android.activities.fragments.settings.PermissionsDialogFragment
 import stasis.client_android.activities.fragments.settings.PullDialogFragment
 import stasis.client_android.activities.fragments.settings.PushDialogFragment
 import stasis.client_android.activities.fragments.settings.SupportedCommandsDialogFragment
@@ -651,6 +652,13 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             AnalyticsDialogFragment()
                 .withArgumentsId<AnalyticsDialogFragment>(id = "AnalyticsDialogFragment")
                 .show(childFragmentManager, AnalyticsDialogFragment.DialogTag)
+
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ShowPermissions)?.setOnPreferenceClickListener {
+            PermissionsDialogFragment()
+                .show(childFragmentManager, PermissionsDialogFragment.DialogTag)
 
             true
         }

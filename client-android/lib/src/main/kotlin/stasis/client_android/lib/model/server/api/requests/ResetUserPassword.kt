@@ -5,6 +5,6 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ResetUserPassword(
-    @Json(name = "raw_password")
+    @field:Json(name = "raw_password")
     val rawPassword: String,
 )

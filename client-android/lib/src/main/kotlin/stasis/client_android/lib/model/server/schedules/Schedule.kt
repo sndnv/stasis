@@ -13,7 +13,7 @@ import kotlin.math.max
 data class Schedule(
     val id: ScheduleId,
     val info: String,
-    @Json(name = "is_public")
+    @field:Json(name = "is_public")
     val isPublic: Boolean,
     val start: LocalDateTime,
     val interval: Duration,

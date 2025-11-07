@@ -3,13 +3,13 @@ package stasis.client_android.activities.helpers
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import stasis.client_android.activities.fragments.settings.PermissionsDialogFragment
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.liveData
 import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.Permissions.needsExtraPermissions
-import stasis.client_android.utils.Permissions.requestMissingPermissions
 
 object Backups {
     fun Fragment.startBackup(
@@ -21,7 +21,8 @@ object Backups {
         onOperationCompleted: (Int, Throwable?) -> Unit,
     ) {
         if (activity.needsExtraPermissions()) {
-            activity?.requestMissingPermissions()
+            PermissionsDialogFragment()
+                .show(childFragmentManager, PermissionsDialogFragment.DialogTag)
         } else {
             rulesModel.rules.observeOnce(this) { rulesList ->
                 val rules = rulesList.groupBy { it.definition }

@@ -8,11 +8,11 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21")
-        classpath("com.android.tools.build:gradle:8.10.1")
-        classpath("com.squareup.wire:wire-gradle-plugin:5.3.3")
-        classpath("com.google.dagger:hilt-android-gradle-plugin:2.56.2")
-        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.9.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21")
+        classpath("com.android.tools.build:gradle:8.13.0")
+        classpath("com.squareup.wire:wire-gradle-plugin:5.4.0")
+        classpath("com.google.dagger:hilt-android-gradle-plugin:2.57.2")
+        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.9.6")
     }
 }
 
@@ -25,7 +25,7 @@ allprojects {
 
 plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("com.google.devtools.ksp") version "2.1.21-2.0.2" apply false
+    id("com.google.devtools.ksp") version "2.2.21-2.0.4" apply false
 }
 
 subprojects {

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/permissions_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawablePadding="4dp"
+        android:padding="16dp"
+        android:text="@string/permissions_title"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:drawableStartCompat="@drawable/ic_permissions"
+        app:layout_constraintBottom_toTopOf="@id/permissions_general_info"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/permissions_general_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:text="@string/permissions_general_hint"
+        app:layout_constraintBottom_toTopOf="@id/permissions_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/permissions_title" />
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/permissions_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/permissions_general_info">
+
+        <ListView
+            android:id="@+id/permissions_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fadeScrollbars="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/permissions_not_shown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="66dp"
+            android:backgroundTint="@color/primary"
+            android:contentDescription="@string/permissions_dialog_not_shown_hint"
+            android:tooltipText="@string/permissions_dialog_not_shown_hint"
+            app:borderWidth="0dp"
+            app:fabCustomSize="40dp"
+            app:layout_anchor="@id/permissions_request_button"
+            app:layout_anchorGravity="top|end"
+            app:srcCompat="@drawable/ic_info"
+            app:useCompatPadding="true" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/permissions_request_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/permissions_request_button_hint"
+            android:text="@string/permissions_request_button_text"
+            android:tooltipText="@string/permissions_request_button_hint"
+            app:borderWidth="0dp"
+            app:icon="@drawable/ic_add_permissions"
+            app:useCompatPadding="true" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

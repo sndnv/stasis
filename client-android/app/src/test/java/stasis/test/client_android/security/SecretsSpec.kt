@@ -106,7 +106,8 @@ class SecretsSpec {
                 anyOf(
                     containsString("Output buffer invalid"),
                     containsString("BAD_DECRYPT"),
-                    equalTo("Input too short - need tag")
+                    equalTo("Input too short - need tag"),
+                    containsString("Input data too short")
                 )
             )
         }

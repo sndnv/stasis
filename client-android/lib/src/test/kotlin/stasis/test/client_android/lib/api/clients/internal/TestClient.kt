@@ -5,6 +5,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
 import okio.Source
@@ -35,7 +36,7 @@ class TestClient(
     suspend fun read(from: String?): TestDataClass? =
         Response.Builder()
             .request(request = Request.Builder().url("http://localhost:1234").build())
-            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()))
+            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()) ?: ResponseBody.EMPTY)
             .code(200)
             .protocol(protocol = Protocol.HTTP_1_0)
             .message("test")
@@ -47,7 +48,7 @@ class TestClient(
     suspend fun readRequired(from: String?): TestDataClass =
         Response.Builder()
             .request(request = Request.Builder().url("http://localhost:1234").build())
-            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()))
+            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()) ?: ResponseBody.EMPTY)
             .code(200)
             .protocol(protocol = Protocol.HTTP_1_0)
             .message("test")
@@ -59,7 +60,7 @@ class TestClient(
     suspend fun readList(from: String?): List<TestDataClass>? =
         Response.Builder()
             .request(request = Request.Builder().url("http://localhost:1234").build())
-            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()))
+            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()) ?: ResponseBody.EMPTY)
             .code(200)
             .protocol(protocol = Protocol.HTTP_1_0)
             .message("test")
@@ -71,7 +72,7 @@ class TestClient(
     suspend fun readRequiredList(from: String?): List<TestDataClass> =
         Response.Builder()
             .request(request = Request.Builder().url("http://localhost:1234").build())
-            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()))
+            .body(body = from?.toResponseBody(contentType = "application/json".toMediaType()) ?: ResponseBody.EMPTY)
             .code(200)
             .protocol(protocol = Protocol.HTTP_1_0)
             .message("test")

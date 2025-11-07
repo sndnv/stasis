@@ -6,19 +6,19 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class DeviceBootstrapParameters(
     val authentication: Authentication,
-    @Json(name = "server_api")
+    @field:Json(name = "server_api")
     val serverApi: ServerApi,
-    @Json(name = "server_core")
+    @field:Json(name = "server_core")
     val serverCore: ServerCore,
     val secrets: SecretsConfig
 ) {
     @JsonClass(generateAdapter = true)
     data class Authentication(
-        @Json(name = "token_endpoint")
+        @field:Json(name = "token_endpoint")
         val tokenEndpoint: String,
-        @Json(name = "client_id")
+        @field:Json(name = "client_id")
         val clientId: String,
-        @Json(name = "client_secret")
+        @field:Json(name = "client_secret")
         val clientSecret: String,
         val scopes: Scopes
     )
@@ -27,7 +27,7 @@ data class DeviceBootstrapParameters(
     data class ServerApi(
         val url: String,
         val user: String,
-        @Json(name = "user_salt")
+        @field:Json(name = "user_salt")
         val userSalt: String,
         val device: String
     )
@@ -35,7 +35,7 @@ data class DeviceBootstrapParameters(
     @JsonClass(generateAdapter = true)
     data class ServerCore(
         val address: String,
-        @Json(name = "node_id")
+        @field:Json(name = "node_id")
         val nodeId: String
     )
 
@@ -57,20 +57,20 @@ data class DeviceBootstrapParameters(
         ) {
             @JsonClass(generateAdapter = true)
             data class Encryption(
-                @Json(name = "secret_size")
+                @field:Json(name = "secret_size")
                 val secretSize: Int,
                 val iterations: Int,
-                @Json(name = "salt_prefix")
+                @field:Json(name = "salt_prefix")
                 val saltPrefix: String
             )
 
             @JsonClass(generateAdapter = true)
             data class Authentication(
                 val enabled: Boolean,
-                @Json(name = "secret_size")
+                @field:Json(name = "secret_size")
                 val secretSize: Int,
                 val iterations: Int,
-                @Json(name = "salt_prefix")
+                @field:Json(name = "salt_prefix")
                 val saltPrefix: String
             )
         }
@@ -79,30 +79,30 @@ data class DeviceBootstrapParameters(
         data class Encryption(
             val file: Encryption.File,
             val metadata: Encryption.Metadata,
-            @Json(name = "device_secret")
+            @field:Json(name = "device_secret")
             val deviceSecret: Encryption.DeviceSecret
         ) {
             @JsonClass(generateAdapter = true)
             data class File(
-                @Json(name = "key_size")
+                @field:Json(name = "key_size")
                 val keySize: Int,
-                @Json(name = "iv_size")
+                @field:Json(name = "iv_size")
                 val ivSize: Int
             )
 
             @JsonClass(generateAdapter = true)
             data class Metadata(
-                @Json(name = "key_size")
+                @field:Json(name = "key_size")
                 val keySize: Int,
-                @Json(name = "iv_size")
+                @field:Json(name = "iv_size")
                 val ivSize: Int
             )
 
             @JsonClass(generateAdapter = true)
             data class DeviceSecret(
-                @Json(name = "key_size")
+                @field:Json(name = "key_size")
                 val keySize: Int,
-                @Json(name = "iv_size")
+                @field:Json(name = "iv_size")
                 val ivSize: Int
             )
         }

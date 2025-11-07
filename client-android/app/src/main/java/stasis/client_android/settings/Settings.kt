@@ -106,6 +106,7 @@ object Settings {
         const val AnalyticsPersistenceInterval: String = "analytics_persistence_interval"
         const val AnalyticsTransmissionInterval: String = "analytics_transmission_interval"
         const val AnalyticsShowCollected: String = "analytics_show_collected"
+        const val ShowPermissions: String = "show_permissions"
         const val ResetConfig: String = "reset_config"
     }
 
