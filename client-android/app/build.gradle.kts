@@ -72,7 +72,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
+        buildConfigField("long", "BUILD_TIME", getBuildTime())
     }
 
     signingConfigs {
@@ -147,4 +147,24 @@ kotlin {
 
 tasks.register("qa") {
     dependsOn("check")
+}
+
+fun getBuildTime(): String {
+    val mainBranch = "master"
+
+    val currentBranch = providers.exec {
+        commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
+    }.standardOutput.asText.get()
+
+    val gitTime = providers.exec {
+        commandLine("git", "show", "-s", "--format=%at")
+    }.standardOutput.asText.get()
+
+    val buildTime = if (currentBranch == mainBranch) {
+        gitTime.trim().toLongOrNull()?.let { it * 1000 } ?: System.currentTimeMillis()
+    } else {
+        System.currentTimeMillis()
+    }
+
+    return buildTime.toString()
 }
