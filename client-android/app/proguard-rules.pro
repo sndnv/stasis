@@ -27,4 +27,5 @@
 -dontwarn com.google.errorprone.annotations.Immutable
 -dontwarn org.slf4j.impl.StaticLoggerBinder
 -keepnames class stasis.client_android.lib.ops.Operation$* { *; }
+-keepnames class stasis.client_android.lib.telemetry.analytics.AnalyticsEntry$* { *; }
 -keepnames class * extends java.lang.Throwable
