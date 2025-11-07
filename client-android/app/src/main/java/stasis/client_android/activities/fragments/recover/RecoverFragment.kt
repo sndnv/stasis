@@ -24,6 +24,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.BuildConfig
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.settings.PermissionsDialogFragment
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDate
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDateTime
@@ -47,7 +48,6 @@ import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationStartedNotification
 import stasis.client_android.utils.Permissions.needsExtraPermissions
-import stasis.client_android.utils.Permissions.requestMissingPermissions
 import java.time.Instant
 import java.time.LocalTime
 import javax.inject.Inject
@@ -117,7 +117,8 @@ class RecoverFragment : Fragment() {
 
         binding.runRecover.setOnClickListener {
             if (activity.needsExtraPermissions()) {
-                activity?.requestMissingPermissions()
+                PermissionsDialogFragment()
+                    .show(childFragmentManager, PermissionsDialogFragment.DialogTag)
             } else {
                 liveData { providerContext.executor.active().isNotEmpty() }
                     .observe(viewLifecycleOwner) { operationsPending ->

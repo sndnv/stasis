@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("dagger.hilt.android.plugin")
@@ -9,60 +11,60 @@ plugins {
 dependencies {
     implementation(project(":lib"))
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.21")
-    implementation("com.google.code.gson:gson:2.13.1")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.21")
+    implementation("com.google.code.gson:gson:2.13.2")
+    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
-    implementation("androidx.fragment:fragment-ktx:1.8.8")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.9.0")
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.9.6")
+    implementation("androidx.navigation:navigation-ui-ktx:2.9.6")
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-common-java8:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.1")
+    implementation("androidx.lifecycle:lifecycle-common-java8:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("androidx.room:room-runtime:2.7.1")
-    implementation("androidx.room:room-ktx:2.7.1")
-    implementation("androidx.security:security-crypto:1.1.0-beta01")
+    implementation("androidx.room:room-runtime:2.8.3")
+    implementation("androidx.room:room-ktx:2.8.3")
+    implementation("androidx.security:security-crypto:1.1.0")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.21")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.21")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.15.0")
     implementation("io.github.amrdeveloper:treeview:1.2.0")
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    implementation("com.google.dagger:hilt-android:2.56.2")
-    ksp("com.google.dagger:hilt-compiler:2.56.2")
-    ksp("androidx.room:room-compiler:2.7.1")
+    implementation("com.google.dagger:hilt-android:2.57.2")
+    ksp("com.google.dagger:hilt-compiler:2.57.2")
+    ksp("androidx.room:room-compiler:2.8.3")
 
-    testImplementation("io.mockk:mockk:1.14.2")
-    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("io.mockk:mockk:1.14.6")
+    testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test:core:1.7.0")
 
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.test:rules:1.6.1")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation("androidx.room:room-testing:2.7.1")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.room:room-testing:2.8.3")
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("io.mockk:mockk-android:1.14.2")
+    androidTestImplementation("io.mockk:mockk-android:1.14.6")
 
-    debugImplementation("androidx.fragment:fragment-testing:1.8.8") {
+    debugImplementation("androidx.fragment:fragment-testing:1.8.9") {
         exclude(group = "androidx.test", module = "monitor")
     }
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
 
         applicationId = "stasis.client.android"
         versionCode = 9
@@ -115,11 +117,9 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-
-    kotlinOptions.jvmTarget = "17"
 
     packaging {
         resources {
@@ -138,7 +138,11 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
+
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_21
+    }
 }
 
 tasks.register("qa") {

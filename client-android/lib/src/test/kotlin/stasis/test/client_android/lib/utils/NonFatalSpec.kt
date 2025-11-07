@@ -11,14 +11,12 @@ class NonFatalSpec : WordSpec({
         "check if a throwable is not fatal" {
             RuntimeException().isNonFatal() shouldBe (true)
             OutOfMemoryError().isNonFatal() shouldBe (false)
-            ThreadDeath().isNonFatal() shouldBe (false)
             InterruptedException().isNonFatal() shouldBe (false)
             LinkageError().isNonFatal() shouldBe (false)
 
             RuntimeException().nonFatal() shouldBe (RuntimeException())
 
             shouldThrow<OutOfMemoryError> { OutOfMemoryError().nonFatal() }
-            shouldThrow<ThreadDeath> { ThreadDeath().nonFatal() }
             shouldThrow<InterruptedException> { InterruptedException().nonFatal() }
             shouldThrow<LinkageError> { LinkageError().nonFatal() }
         }

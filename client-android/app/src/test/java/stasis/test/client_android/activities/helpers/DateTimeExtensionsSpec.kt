@@ -35,12 +35,12 @@ import java.time.temporal.ChronoUnit
 class DateTimeExtensionsSpec {
     @Test
     fun formatInstantAsTimeWithContext() {
-        assertThat(instant.formatAsTime(context), equalTo("9:42 PM"))
+        assertThat(instant.formatAsTime(context), equalTo("9:42 PM"))
     }
 
     @Test
     fun formatInstantAsTimeWithFormat() {
-        assertThat(instant.formatAsTime(Settings.DateTimeFormat.System), equalTo("9:42 PM"))
+        assertThat(instant.formatAsTime(Settings.DateTimeFormat.System), equalTo("9:42 PM"))
         assertThat(instant.formatAsTime(Settings.DateTimeFormat.Iso), equalTo("21:42"))
     }
 
@@ -60,7 +60,7 @@ class DateTimeExtensionsSpec {
         val (date, time) = instant.formatAsDateTime(context)
 
         assertThat(date, equalTo("Dec 21, 2000"))
-        assertThat(time, equalTo("9:42 PM"))
+        assertThat(time, equalTo("9:42 PM"))
 
         val today = ZonedDateTime.now().withZoneSameLocal(ZoneId.systemDefault()).toInstant()
         val yesterday = today.minus(1, ChronoUnit.DAYS)
@@ -80,23 +80,23 @@ class DateTimeExtensionsSpec {
     @Test
     fun formatLocalDateTimeAsTime() {
         val time = localDateTime.formatAsTime(context)
-        assertThat(time, equalTo("9:42 PM"))
+        assertThat(time, equalTo("9:42 PM"))
     }
 
     @Test
     fun formatLocalTimeAsTime() {
-        assertThat(LocalTime.of(21, 42).formatAsTime(context), equalTo("9:42 PM"))
+        assertThat(LocalTime.of(21, 42).formatAsTime(context), equalTo("9:42 PM"))
     }
 
     @Test
     fun formatInstantAsFullDateTime() {
-        assertThat(instant.formatAsFullDateTime(context), equalTo("Dec 21, 2000, 9:42 PM"))
+        assertThat(instant.formatAsFullDateTime(context), equalTo("Dec 21, 2000, 9:42 PM"))
     }
 
     @Test
     fun parseStringAsTime() {
         assertThat(
-            "9:42 PM".parseAsTime(context),
+            "9:42 PM".parseAsTime(context),
             equalTo(
                 ZonedDateTime
                     .now()
@@ -112,7 +112,7 @@ class DateTimeExtensionsSpec {
     @Test
     fun parseStringAsLocalTime() {
         assertThat(
-            "9:42 PM".parseAsLocalTime(context),
+            "9:42 PM".parseAsLocalTime(context),
             equalTo(LocalTime.of(21, 42))
         )
     }
@@ -149,7 +149,7 @@ class DateTimeExtensionsSpec {
     @Test
     fun parseStringAsFullDateTime() {
         assertThat(
-            "Dec 21, 2000, 9:42 PM".parseAsFullDateTime(context),
+            "Dec 21, 2000, 9:42 PM".parseAsFullDateTime(context),
             equalTo(instant.truncatedTo(ChronoUnit.MINUTES))
         )
     }
@@ -157,7 +157,7 @@ class DateTimeExtensionsSpec {
     @Test
     fun parseStringPairAsDateTime() {
         assertThat(
-            Pair("Dec 21, 2000", "9:42 PM").parseAsDateTime(context),
+            Pair("Dec 21, 2000", "9:42 PM").parseAsDateTime(context),
             equalTo(instant.truncatedTo(ChronoUnit.MINUTES))
         )
     }
@@ -165,7 +165,7 @@ class DateTimeExtensionsSpec {
     @Test
     fun parseStringPairAsLocalDateTime() {
         assertThat(
-            Pair("Dec 21, 2000", "9:42 PM").parseAsLocalDateTime(context),
+            Pair("Dec 21, 2000", "9:42 PM").parseAsLocalDateTime(context),
             equalTo(localDateTime.truncatedTo(ChronoUnit.MINUTES))
         )
     }

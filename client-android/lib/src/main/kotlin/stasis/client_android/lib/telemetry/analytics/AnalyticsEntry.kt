@@ -25,7 +25,7 @@ interface AnalyticsEntry {
 
     @JsonClass(generateAdapter = true)
     data class AsJson(
-        @Json(name = "entry_type")
+        @field:Json(name = "entry_type")
         val entryType: String,
         override val runtime: RuntimeInformation,
         override val events: List<Event>,

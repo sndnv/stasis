@@ -22,15 +22,15 @@ data class Device(
 ) {
     @JsonClass(generateAdapter = true)
     data class Limits(
-        @Json(name = "max_crates")
+        @field:Json(name = "max_crates")
         val maxCrates: Long,
-        @Json(name = "max_storage")
+        @field:Json(name = "max_storage")
         val maxStorage: BigInteger,
-        @Json(name = "max_storage_per_crate")
+        @field:Json(name = "max_storage_per_crate")
         val maxStoragePerCrate: BigInteger,
-        @Json(name = "max_retention")
+        @field:Json(name = "max_retention")
         val maxRetention: Duration,
-        @Json(name = "min_retention")
+        @field:Json(name = "min_retention")
         val minRetention: Duration
     )
 }

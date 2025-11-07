@@ -12,7 +12,7 @@ import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.eventually
 import java.time.Duration
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 
 class OAuthTokenManagerSpec : WordSpec({
@@ -247,9 +247,11 @@ class OAuthTokenManagerSpec : WordSpec({
             manager.scheduleWithRefreshToken(Success(expectedResponse))
             manager.token shouldBe (Success(expectedResponse))
 
-            requested.get() shouldBe (0)
-            updates.size shouldBe (1)
-            updates[0] shouldBe (Success(expectedResponse))
+            eventually {
+                requested.get() shouldBe (0)
+                updates.size shouldBe (1)
+                updates[0] shouldBe (Success(expectedResponse))
+            }
 
             manager.reset()
         }
@@ -279,9 +281,11 @@ class OAuthTokenManagerSpec : WordSpec({
             manager.scheduleWithClientCredentials(Success(response))
             manager.token shouldBe (Success(response))
 
-            requested.get() shouldBe (0)
-            updates.size shouldBe (1)
-            updates[0] shouldBe (Success(response))
+            eventually {
+                requested.get() shouldBe (0)
+                updates.size shouldBe (1)
+                updates[0] shouldBe (Success(response))
+            }
 
             manager.reset()
         }
@@ -315,12 +319,14 @@ class OAuthTokenManagerSpec : WordSpec({
 
             manager.scheduleWithRefreshToken(Success(expiredResponse))
 
-            manager.token shouldBe (Success(validResponse))
+            eventually {
+                requested.get() shouldBe (1)
+                updates.size shouldBe (2)
+                updates[0] shouldBe (Success(expiredResponse))
+                updates[1] shouldBe (Success(validResponse))
+            }
 
-            requested.get() shouldBe (1)
-            updates.size shouldBe (2)
-            updates[0] shouldBe (Success(expiredResponse))
-            updates[1] shouldBe (Success(validResponse))
+            manager.token shouldBe (Success(validResponse))
 
             manager.reset()
         }
@@ -353,12 +359,14 @@ class OAuthTokenManagerSpec : WordSpec({
 
             manager.scheduleWithClientCredentials(Success(expiredResponse))
 
-            manager.token shouldBe (Success(validResponse))
+            eventually {
+                requested.get() shouldBe (1)
+                updates.size shouldBe (2)
+                updates[0] shouldBe (Success(expiredResponse))
+                updates[1] shouldBe (Success(validResponse))
+            }
 
-            requested.get() shouldBe (1)
-            updates.size shouldBe (2)
-            updates[0] shouldBe (Success(expiredResponse))
-            updates[1] shouldBe (Success(validResponse))
+            manager.token shouldBe (Success(validResponse))
 
             manager.reset()
         }
@@ -390,11 +398,13 @@ class OAuthTokenManagerSpec : WordSpec({
 
             manager.scheduleWithClientCredentials(Success(expiredResponse))
 
-            manager.token.failed().get().message shouldBe ("Test failure")
+            eventually {
+                requested.get() shouldBe (1)
+                updates.size shouldBe (1)
+                updates[0] shouldBe (Success(expiredResponse))
+            }
 
-            requested.get() shouldBe (1)
-            updates.size shouldBe (1)
-            updates[0] shouldBe (Success(expiredResponse))
+            manager.token.failed().get().message shouldBe ("Test failure")
 
             manager.reset()
         }

@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ServiceDiscoveryRequest(
-    @Json(name = "is_initial_request")
+    @field:Json(name = "is_initial_request")
     val isInitialRequest: Boolean,
     val attributes: Map<String, String>
 ) {

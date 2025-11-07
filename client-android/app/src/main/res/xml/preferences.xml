@@ -125,6 +125,10 @@
             app:defaultValue="true"
             app:key="scheduling_enabled"
             app:title="@string/settings_scheduling_enabled_title" />
+
+        <Preference
+            app:key="show_permissions"
+            app:title="@string/settings_permissions_title" />
     </PreferenceCategory>
 
     <PreferenceCategory

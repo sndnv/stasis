@@ -3,32 +3,39 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/active_restrictions"
-        android:contentDescription="@string/debug_mode_button_hint"
+        android:contentDescription="@string/active_restrictions_button_hint"
         android:icon="@drawable/ic_restrictions"
-        android:title="@string/debug_mode_button_hint"
+        android:title="@string/active_restrictions_button_hint"
         android:visible="false"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/debug_mode"
         android:contentDescription="@string/debug_mode_button_hint"
         android:icon="@drawable/ic_debug"
         android:title="@string/debug_mode_button_hint"
         android:visible="false"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/mock_mode"
         android:contentDescription="@string/mock_mode_button_hint"
         android:icon="@drawable/ic_mock"
         android:title="@string/mock_mode_button_hint"
         android:visible="false"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/unreachable_servers"
         android:contentDescription="@string/unreachable_servers_button_hint"
         android:icon="@drawable/ic_warning"
         android:title="@string/unreachable_servers_button_hint"
         android:visible="false"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/no_permissions"
+        android:contentDescription="@string/permissions_missing_button_hint"
+        android:icon="@drawable/ic_no_permissions"
+        android:title="@string/permissions_missing_button_hint"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/context_help"
         android:contentDescription="@string/context_help_button_hint"

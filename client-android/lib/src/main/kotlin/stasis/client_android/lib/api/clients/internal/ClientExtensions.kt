@@ -62,20 +62,24 @@ abstract class ClientExtensions {
 
     protected suspend inline fun <reified T> Response.toModel(): T? =
         withContext(Dispatchers.IO) {
-            body?.let {
-                val result = moshi.adapter(T::class.java).fromJson(it.source())
-                it.close()
+            if (body.contentLength() > 0) {
+                val result = moshi.adapter(T::class.java).fromJson(body.source())
+                body.close()
                 result
+            } else {
+                null
             }
         }
 
     protected suspend inline fun <reified T> Response.toModelAsList(): List<T>? =
         withContext(Dispatchers.IO) {
-            body?.let {
+            if (body.contentLength() > 0) {
                 val type = Types.newParameterizedType(List::class.java, T::class.java)
-                val result = moshi.adapter<List<T>>(type).fromJson(it.source())
-                it.close()
+                val result = moshi.adapter<List<T>>(type).fromJson(body.source())
+                body.close()
                 result
+            } else {
+                null
             }
         }
 
@@ -113,7 +117,7 @@ abstract class ClientExtensions {
             )
         }
 
-        result.failed().foreach { body?.close() }
+        result.failed().foreach { body.close() }
 
         return result.get()
     }

@@ -1,6 +1,5 @@
 package stasis.test.client_android.lib
 
-import io.kotest.assertions.failure
 import kotlinx.coroutines.delay
 import java.time.Duration
 import kotlin.time.ExperimentalTime
@@ -42,5 +41,5 @@ suspend inline fun <reified T> eventually(
         else -> "last failure was [${failure.javaClass.simpleName} - ${failure.message}]"
     }
 
-    throw failure(message = "$outcomeMessage; $failureMessage", cause = failure)
+    throw AssertionError("$outcomeMessage; $failureMessage", failure)
 }

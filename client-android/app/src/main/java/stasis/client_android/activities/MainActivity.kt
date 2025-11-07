@@ -1,15 +1,14 @@
 package stasis.client_android.activities
 
 import android.app.NotificationManager
-import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.map
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.getkeepsafe.taptargetview.TapTarget
@@ -18,6 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import stasis.client_android.BuildConfig
 import stasis.client_android.MainNavGraphDirections
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.settings.PermissionsDialogFragment
 import stasis.client_android.activities.helpers.Common.asRestrictionsHintString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
 import stasis.client_android.activities.helpers.Transitions.operationComplete
@@ -40,7 +40,7 @@ import stasis.client_android.tracking.TrackerViews
 import stasis.client_android.utils.LiveDataExtensions.and
 import stasis.client_android.utils.NotificationManagerExtensions.createSchedulingNotificationChannels
 import stasis.client_android.utils.Permissions.getOperationRestrictions
-import stasis.client_android.utils.Permissions.requestMissingPermissions
+import stasis.client_android.utils.Permissions.needsExtraPermissions
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
@@ -53,26 +53,25 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var trackerViews: TrackerViews
 
-    private lateinit var broadcastManager: LocalBroadcastManager
-    private lateinit var logoutReceiver: LogoutReceiver
+    private lateinit var logoutReceiverObserver: Observer<Unit>
 
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
     private lateinit var controller: NavController
 
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        this.requestMissingPermissions()
-
-        val binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         controller = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment)
             .navController
 
-        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+        Thread.setDefaultUncaughtExceptionHandler { _, e ->
             startActivity(
                 Intent(this, CrashReportActivity::class.java)
                     .putExtra(
@@ -101,12 +100,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
             .createSchedulingNotificationChannels(applicationContext)
 
-        broadcastManager = LocalBroadcastManager.getInstance(this)
-        logoutReceiver = LogoutReceiver(credentials)
-        broadcastManager.registerReceiver(logoutReceiver, logoutReceiver.intentFilter)
+        logoutReceiverObserver = Observer { credentials.logout { } }
+        LogoutReceiver.requests.observe(this, logoutReceiverObserver)
 
         connectivityManager = getSystemService(ConnectivityManager::class.java)
         networkCallback = OperationRestrictionsNetworkCallback {
@@ -120,10 +118,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        broadcastManager.unregisterReceiver(logoutReceiver)
+        LogoutReceiver.requests.removeObserver(logoutReceiverObserver)
         connectivityManager.unregisterNetworkCallback(networkCallback)
 
         super.onDestroy()
+    }
+
+    override fun onResume() {
+        binding.topAppBar.menu.findItem(R.id.no_permissions).isVisible = this.needsExtraPermissions()
+        super.onResume()
     }
 
     private fun initNavigation(
@@ -169,6 +172,11 @@ class MainActivity : AppCompatActivity() {
         val isFirstRun = preferences.isFirstRun()
         val homeHintShown = AtomicBoolean(false)
         val helpHintShown = AtomicBoolean(false)
+
+        if (isFirstRun && this.needsExtraPermissions()) {
+            PermissionsDialogFragment()
+                .show(supportFragmentManager, PermissionsDialogFragment.DialogTag)
+        }
 
         controller.addOnDestinationChangedListener { _, destination, _ ->
             val (itemId, subtitleId, contextHelpId) = when (destination.id) {
@@ -352,6 +360,12 @@ class MainActivity : AppCompatActivity() {
                         .withTitle(getString(R.string.active_restrictions_dialog_title))
                         .withMessage(getString(R.string.active_restrictions_dialog_content, restrictions))
                         .show(supportFragmentManager)
+                    true
+                }
+
+                R.id.no_permissions -> {
+                    PermissionsDialogFragment()
+                        .show(supportFragmentManager, PermissionsDialogFragment.DialogTag)
                     true
                 }
 

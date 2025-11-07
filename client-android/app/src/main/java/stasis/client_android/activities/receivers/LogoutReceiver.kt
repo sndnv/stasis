@@ -1,21 +1,15 @@
 package stasis.client_android.activities.receivers
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import stasis.client_android.persistence.credentials.CredentialsViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
-class LogoutReceiver(
-    private val credentials: CredentialsViewModel
-) : BroadcastReceiver() {
-    val intentFilter: IntentFilter = IntentFilter(Action)
+object LogoutReceiver {
+    private val underlying: MutableLiveData<Unit> = MutableLiveData()
 
-    override fun onReceive(context: Context?, intent: Intent?) {
-        credentials.logout { }
-    }
+    val requests: LiveData<Unit>
+        get() = underlying
 
-    companion object {
-        const val Action: String = "stasis.client_android.activities.receivers.Logout"
+    fun logout() {
+        underlying.value = Unit
     }
 }

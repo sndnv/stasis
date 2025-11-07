@@ -63,6 +63,7 @@
     <string name="confirmation_dialog_cancel_button_title">Cancel</string>
 
     <!-- Operation Restrictions -->
+    <string name="active_restrictions_button_hint">One or more restrictions are currently active</string>
     <string name="active_restrictions_dialog_title">Active Restrictions</string>
     <string name="active_restrictions_dialog_content">One or more restrictions are currently active that impact operations:\n\n%1$s\n\nIf these restrictions can be safely ignored, go to \"Settings\" > \"Advanced\" to override this behaviour.</string>
     <string name="operation_restriction_no_connection">no network connection</string>
@@ -82,6 +83,41 @@
     <string name="unreachable_servers_button_hint">Unreachable Servers</string>
     <string name="unreachable_servers_dialog_title">Unreachable Servers</string>
     <string name="unreachable_servers_list_item">%1$s (last seen: %2$s)</string>
+
+    <!-- Permissions -->
+    <string name="permissions_missing_button_hint">No or insufficient permissions</string>
+    <string name="permissions_field_content_info">%1$s</string>
+    <string name="permissions_field_content_details">%1$s</string>
+    <string name="permissions_read_media_audio_name">Read media - audio</string>
+    <string name="permissions_read_media_audio_hint">Provides access to user audio files (required)</string>
+    <string name="permissions_read_media_images_name">Read media - images</string>
+    <string name="permissions_read_media_images_hint">Provides access to user images (required)</string>
+    <string name="permissions_read_media_video_name">Read medio - video</string>
+    <string name="permissions_read_media_video_hint">Provides access to user videos (required)</string>
+    <string name="permissions_post_notifications_name">Post notifications</string>
+    <string name="permissions_post_notifications_hint">Allows notifications to be shown (optional)</string>
+    <string name="permissions_read_external_storage_name">Read external storage</string>
+    <string name="permissions_read_external_storage_hint">Provides access to read user files (required)</string>
+    <string name="permissions_write_external_storage_name">Write external storage</string>
+    <string name="permissions_write_external_storage_hint">Provides access to write user files (required)</string>
+    <string name="permissions_manage_external_storage_name">Manage external storage</string>
+    <string name="permissions_manage_external_storage_hint">Provides access to manage user files (required)</string>
+    <string name="permissions_unrecognized_hint">-</string>
+    <string name="permissions_title">Application permissions</string>
+    <string name="permissions_request_button_text">Request</string>
+    <string name="permissions_request_button_hint">Request missing permissions</string>
+    <string name="permissions_granted_hint">Denotes if the permission has been granted or not</string>
+    <string name="permissions_general_hint">
+        Backup and recovery operations require broad access to files stored on this device.\n\n
+        The application will continue to function without the required permissions but its core features will not be available.\n\n
+        To enable full functionality, the following permissions need to be granted:
+    </string>
+    <string name="permissions_dialog_not_shown_hint">Permissions request not shown</string>
+    <string name="permissions_dialog_not_shown_info">
+        If one or more of the required permissions have been denied in the past, it is possible that the request dialog is no longer shown.\n\n
+        To allow the necessary access, go to the system settings for the application and make the appropriate changes to the permissions there.
+    </string>
+    <string name="permissions_dialog_not_shown_button_hint">Open Settings</string>
 
     <!-- Context Help -->
     <string name="context_help_first_time_hint_title">Help</string>
@@ -807,6 +843,7 @@
     <string name="settings_command_parameters_title">[%1$s] %2$s</string>
     <string name="settings_command_parameters_info">%1$s</string>
     <string name="settings_discovery_interval_title">Server discovery interval</string>
+    <string name="settings_permissions_title">Application permissions</string>
     <string name="settings_reset_config_title">Reset configuration</string>
     <string name="settings_reset_config_summary">Clears the client\'s configuration and device secret</string>
     <string name="settings_reset_config_confirm_title">Clear all configuration and log out?</string>

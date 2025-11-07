@@ -20,7 +20,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 class RuleTreeEntryContextDialogFragment(
     private val definition: DatasetDefinitionId?,
     private val selectedNode: FileTreeNode,
-    @ColorInt private val nodeColor: Int,
+    @field:ColorInt private val nodeColor: Int,
     private val onRuleCreationRequested: (Rule) -> Unit
 ) : BottomSheetDialogFragment() {
     override fun onCreateView(

@@ -1,13 +1,11 @@
 package stasis.client_android.activities.helpers
 
 import android.content.Context
-import android.content.Intent
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.format.Formatter
 import android.text.style.CharacterStyle
 import android.widget.Toast
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import stasis.client_android.BuildConfig
 import stasis.client_android.R
 import stasis.client_android.activities.receivers.LogoutReceiver
@@ -317,9 +315,7 @@ object Common {
             message?.let { Toast.makeText(withContext, it, Toast.LENGTH_LONG).show() }
 
             if (e is AccessDeniedFailure) {
-                LocalBroadcastManager.getInstance(withContext).sendBroadcast(
-                    Intent().apply { action = LogoutReceiver.Action }
-                )
+                LogoutReceiver.logout()
             }
 
             null

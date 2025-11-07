@@ -19,7 +19,7 @@ class EntryActionsListItemAdapter(
     context: Context,
     private val actions: List<EntryAction>,
     private val onActionComplete: () -> Unit,
-    @ColorInt private val defaultTextColor: Int
+    @field:ColorInt private val defaultTextColor: Int
 ) : ArrayAdapter<EntryAction>(context, R.layout.list_item_entry_action, actions) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val action = actions[position]

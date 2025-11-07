@@ -11,7 +11,7 @@ import java.util.UUID
 
 @JsonClass(generateAdapter = true)
 data class CommandAsJson(
-    @Json(name = "sequence_id")
+    @field:Json(name = "sequence_id")
     val sequenceId: Long,
     val source: String,
     val target: UUID?,
@@ -29,7 +29,7 @@ data class CommandAsJson(
 
     @JsonClass(generateAdapter = true)
     data class CommandParametersAsJson(
-        @Json(name = "logout_user")
+        @field:Json(name = "logout_user")
         val logoutUser: LogoutUserCommandAsJson? = null
     ) {
         fun isEmpty(): Boolean = logoutUser == null
