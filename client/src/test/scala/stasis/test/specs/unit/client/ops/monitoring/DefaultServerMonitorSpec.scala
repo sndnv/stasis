@@ -7,6 +7,7 @@ import scala.concurrent.duration._
 
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.util.Timeout
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
@@ -224,6 +225,8 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
   )
 
   private val defaultInterval: FiniteDuration = 200.millis
+
+  override implicit val timeout: Timeout = 5.seconds
 
   override protected def afterAll(): Unit =
     typedSystem.terminate()
