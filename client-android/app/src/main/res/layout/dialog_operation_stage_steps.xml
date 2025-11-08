@@ -21,6 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
+            android:padding="8dp"
             android:text="@string/operation_stage_steps_list_empty"
             android:visibility="gone" />
 

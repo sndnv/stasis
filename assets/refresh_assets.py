@@ -11,6 +11,8 @@ DESCRIPTION = 'Refresh all assets used by subprojects'
 
 SCALA_ASSETS = 'src/main/resources/assets'
 ANDROID_ASSETS = 'app/src/main/res/drawable'
+ANDROID_FASTLANE_IMAGE_ASSETS = 'fastlane/metadata/android/en-US/images'
+ANDROID_FASTLANE_DESCRIPTION_ASSETS = 'fastlane/metadata/android/en-US'
 FLUTTER_WEB_ASSETS = 'web/assets'
 FLUTTER_DESKTOP_ASSETS = 'assets'
 FLUTTER_DESKTOP_MACOS_ASSETS = 'macos/Runner/Assets.xcassets/AppIcon.appiconset'
@@ -45,7 +47,41 @@ def copy_asset(paths, project_name, asset):
         logging.info('Refreshed asset [{}] for [{}]'.format(asset['asset'], project_name))
     else:
         logging.error(
-            'Refresh of asset [{}] for [{}] failed with code [{}]'.format(asset['asset'], project_name, copy_result)
+            'Refresh of asset [{}] targeting [{}] for [{}] failed with code [{}]'.format(
+                asset['asset'],
+                target_path,
+                project_name,
+                copy_result
+            )
+        )
+        abort()
+
+
+def verify_asset(paths, project_name, asset):
+    asset_path = '{}/{}'.format(paths.assets, asset['asset'])
+    target_path = '{}/{}/{}'.format(paths.repo, project_name, asset['target'])
+
+    logging.debug('Verifying asset for [{}]: {} -> {}'.format(project_name, asset_path, target_path))
+
+    copy_result = subprocess.run(
+        [
+            'cmp',
+            '-s',
+            '{}'.format(asset_path),
+            '{}'.format(target_path),
+        ]
+    ).returncode
+
+    if copy_result == 0:
+        logging.info('Verified asset [{}] for [{}]'.format(asset['asset'], project_name))
+    else:
+        logging.error(
+            'Verification of asset [{}] targeting [{}] for [{}] failed with code [{}]'.format(
+                asset['asset'],
+                target_path,
+                project_name,
+                copy_result
+            )
         )
         abort()
 
@@ -69,6 +105,9 @@ def main():
         ],
         'client-android': [
             {'asset': 'launchers/stasis.logo.xml', 'target': '{}/ic_launcher_foreground.xml'.format(ANDROID_ASSETS)},
+            {'asset': 'descriptions/short.txt', 'target': '{}/short_description.txt'.format(ANDROID_FASTLANE_DESCRIPTION_ASSETS)},
+            {'asset': 'descriptions/full.txt', 'target': '{}/full_description.txt'.format(ANDROID_FASTLANE_DESCRIPTION_ASSETS)},
+            {'asset': 'icons/stasis.logo.256.png', 'target': '{}/icon.png'.format(ANDROID_FASTLANE_IMAGE_ASSETS)},
         ],
         'identity-ui': [
             {'asset': 'identity.logo.svg', 'target': '{}/logo.svg'.format(FLUTTER_WEB_ASSETS)},
@@ -93,6 +132,12 @@ def main():
         help='Enable debug logging'
     )
 
+    parser.add_argument(
+        '--verify',
+        action='store_true',
+        help='Verify that all assets are as expected'
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -104,11 +149,17 @@ def main():
 
     if args.project:
         for current_asset in targets[args.project]:
-            copy_asset(paths=paths, project_name=args.project, asset=current_asset)
+            if args.verify:
+                verify_asset(paths=paths, project_name=args.project, asset=current_asset)
+            else:
+                copy_asset(paths=paths, project_name=args.project, asset=current_asset)
     else:
         for current_project, assets in targets.items():
             for current_asset in assets:
-                copy_asset(paths=paths, project_name=current_project, asset=current_asset)
+                if args.verify:
+                    verify_asset(paths=paths, project_name=current_project, asset=current_asset)
+                else:
+                    copy_asset(paths=paths, project_name=current_project, asset=current_asset)
 
 
 if __name__ == '__main__':

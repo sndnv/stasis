@@ -3,7 +3,25 @@ name: Stasis Build
 on: [push, pull_request]
 
 jobs:
+  assets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Verify Assets
+        run: |
+          ./assets/refresh_assets.py --verify
+
   scala:
+    needs:
+      - assets
+
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +49,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   python:
+    needs:
+      - assets
+
     runs-on: ubuntu-latest
 
     steps:
@@ -56,6 +77,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   flutter-linux:
+    needs:
+      - assets
+
     runs-on: ubuntu-latest
 
     steps:
@@ -83,6 +107,9 @@ jobs:
           ./qa.py
 
   flutter-macos:
+    needs:
+      - assets
+
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,6 +124,9 @@ jobs:
           ./qa.py
 
   android:
+    needs:
+      - assets
+
     runs-on: ubuntu-latest
 
     steps:
