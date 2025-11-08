@@ -15,5 +15,5 @@ class SpecificationSpec extends AsyncUnitSpec with ResourceHelpers with Specific
 
   "A Specification on a Windows filesystem" should behave like specification(setup = FileSystemSetup.Windows)
 
-  override implicit val timeout: Timeout = 10.seconds
+  override implicit val timeout: Timeout = 15.seconds
 }

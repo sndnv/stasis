@@ -23,8 +23,8 @@ lazy val versions = new {
   val h2       = "2.4.240"
 
   // telemetry
-  val openTelemetry           = "1.55.0"
-  val openTelemetryPrometheus = "1.55.0-alpha"
+  val openTelemetry           = "1.56.0"
+  val openTelemetryPrometheus = "1.56.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
