@@ -47,7 +47,7 @@ lazy val versions = new {
   val layers       = "1.1.1"
 }
 
-lazy val jdkDockerImage = "eclipse-temurin:21-noble"
+lazy val jdkDockerImage = "eclipse-temurin:25-noble"
 lazy val dockerRegistry = "ghcr.io/sndnv/stasis"
 
 lazy val server = (project in file("./server"))
