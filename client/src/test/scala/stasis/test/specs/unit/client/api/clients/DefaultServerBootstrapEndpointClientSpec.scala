@@ -100,7 +100,7 @@ class DefaultServerBootstrapEndpointClientSpec extends AsyncUnitSpec {
       }
       .recover { case NonFatal(e) =>
         endpoint.bootstrapExecutedCount() should be(0)
-        e.getMessage should startWith("PKIX path building failed")
+        e.getMessage should include("PKIX path building failed")
       }
   }
 

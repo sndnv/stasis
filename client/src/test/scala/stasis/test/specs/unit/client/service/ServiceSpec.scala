@@ -395,9 +395,9 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
   }
 
   it should "support generating UI start commands" in {
-    Service.startUiCommand(osName = "Linux", userHome = "/a/b/c") should be("stasis-ui")
+    Service.startUiCommand(osName = "Linux", userHome = "/a/b/c") should be(Seq("stasis-ui"))
 
-    Service.startUiCommand(osName = "Mac OS X", userHome = "/a/b/c") should be("open /a/b/c/Applications/stasis.app")
+    Service.startUiCommand(osName = "Mac OS X", userHome = "/a/b/c") should be(Seq("open", "/a/b/c/Applications/stasis.app"))
 
     an[IllegalArgumentException] should be thrownBy Service.startUiCommand(osName = "Windows", userHome = "/a/b/c")
   }
@@ -414,7 +414,7 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
     val expectedUiCommand = Service.startUiCommand()
 
     callbacks.startUiService()
-    verify(runtime).exec(expectedUiCommand)
+    verify(runtime).exec(expectedUiCommand.toArray)
 
     succeed
   }

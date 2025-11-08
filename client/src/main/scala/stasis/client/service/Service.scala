@@ -199,19 +199,19 @@ object Service {
   def createCallbacks(forService: Service, withRuntime: Runtime): ApplicationTray.Callbacks =
     ApplicationTray.Callbacks(
       terminateService = forService.stop,
-      startUiService = () => { val _ = withRuntime.exec(startUiCommand()) }
+      startUiService = () => { val _ = withRuntime.exec(startUiCommand().toArray) }
     )
 
-  def startUiCommand(): String = startUiCommand(
+  def startUiCommand(): Seq[String] = startUiCommand(
     osName = System.getProperty("os.name"),
     userHome = System.getProperty("user.home")
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  def startUiCommand(osName: String, userHome: String): String =
+  def startUiCommand(osName: String, userHome: String): Seq[String] =
     osName.toLowerCase.split(" ").headOption match {
-      case Some("mac")   => s"open $userHome/Applications/stasis.app"
-      case Some("linux") => "stasis-ui"
+      case Some("mac")   => Seq("open", s"$userHome/Applications/stasis.app")
+      case Some("linux") => Seq("stasis-ui")
       case _             => throw new IllegalArgumentException(s"Operating system [$osName}] is not supported")
     }
 }
