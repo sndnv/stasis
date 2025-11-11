@@ -216,7 +216,8 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                             controller.navigate(
                                 DatasetDefinitionDetailsFragmentDirections
                                     .actionDatasetDefinitionDetailsFragmentToDatasetEntryDetailsFragment(
-                                        entry = entry
+                                        entry = entry,
+                                        filter = null
                                     ),
                                 FragmentNavigatorExtras(
                                     itemView to getString(DatasetEntryDetailsFragment.TargetTransitionId)

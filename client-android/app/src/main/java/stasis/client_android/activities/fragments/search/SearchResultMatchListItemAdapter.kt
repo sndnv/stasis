@@ -64,7 +64,8 @@ class SearchResultMatchListItemAdapter(
         layout.setOnClickListener {
             parent.findNavController().navigate(
                 SearchFragmentDirections.actionSearchFragmentToDatasetEntryDetailsFragment(
-                    entry = entry
+                    entry = entry,
+                    filter = path.toAbsolutePath().toString()
                 )
             )
         }

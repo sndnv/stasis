@@ -203,7 +203,7 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
     )
 
     private val metadataFileOnePath = Paths.get("/tmp/file/one")
-    private val metadataFileTwoPath = Paths.get("/tmp/file/two")
+    private val metadataFileTwoPath = Paths.get("/tmp/file/.two")
 
     private val defaultMetadata = DatasetMetadata(
         contentChanged = mapOf(
@@ -237,7 +237,7 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("42"),
                 crates = mapOf(
-                    Paths.get("/tmp/file/two_0") to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+                    Paths.get("/tmp/file/.two_0") to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
                 ),
                 compression = "gzip"
             ),

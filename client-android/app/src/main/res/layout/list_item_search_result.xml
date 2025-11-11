@@ -36,6 +36,7 @@
             android:id="@+id/search_result_matches_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:orientation="vertical"
             android:paddingTop="8dp"
             android:visibility="gone">
@@ -44,8 +45,7 @@
                 android:id="@+id/search_result_matches"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp" />
+                android:paddingHorizontal="4dp" />
 
             <TextView
                 android:id="@+id/search_result_matches_empty"
@@ -54,6 +54,14 @@
                 android:gravity="center"
                 android:text="@string/search_result_matches_empty"
                 android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/search_result_match_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingVertical="8dp"
+                android:textAppearance="?attr/textAppearanceCaption" />
         </LinearLayout>
     </LinearLayout>
 </layout>

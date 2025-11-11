@@ -358,11 +358,15 @@
     <string name="dataset_entry_remove_button_hint">Permanently remove this backup entry</string>
     <string name="dataset_entry_remove_confirm_title">Remove backup entry?</string>
     <string name="dataset_entry_remove_confirm_content">Removing backup entry [%1$s] will make all of its data inaccessible!</string>
-    <string name="dataset_entry_info">%1$s, %2$s"</string>
-    <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)"</string>
-    <string name="dataset_entry_field_content_info">Crates: %1$s, Changes: %2$s, Size: %3$s"</string>
-    <string name="dataset_entry_details_metadata_empty">No Additional Metadata</string>
-    <string name="dataset_entry_details_metadata_filter_toggle_button_hint">Show/hide data saved in previous backups</string>
+    <string name="dataset_entry_info">%1$s, %2$s</string>
+    <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)</string>
+    <string name="dataset_entry_field_content_info">Crates: %1$s, Changes: %2$s, Size: %3$s</string>
+    <string name="dataset_entry_field_content_filters">Showing %1$s of %2$s entries</string>
+    <string name="dataset_entry_field_content_filters_updates_only">Show updates only</string>
+    <string name="dataset_entry_field_content_filters_files_only">Show files only</string>
+    <string name="dataset_entry_field_content_filters_no_hidden">Do not show hidden files</string>
+    <string name="dataset_entry_field_content_filters_content">Filter by file path/name</string>
+    <string name="dataset_entry_details_metadata_empty">No Metadata</string>
 
     <string name="dataset_metadata_entry_state_icon_hint">Metadata entry state</string>
     <string name="dataset_metadata_field_content_summary_file_parent">%1$s/</string>
@@ -403,8 +407,21 @@
     <string name="search_field_error_query_empty">Search query cannot be empty</string>
     <string name="search_run">Search</string>
     <string name="search_result_empty">No results found for %1$s</string>
+    <string name="search_result_match_count">Showing %1$s results</string>
+    <string name="search_result_match_count_single">Showing %1$s result</string>
+    <string name="search_result_too_many_matches">Too many matches (%1$s) found\nShowing only the first %2$s results</string>
     <string name="search_result_matches_empty">No Matches</string>
     <string name="search_result_match_state_icon_hint">Search result match state</string>
+    <string name="search_result_matched_definition_name">%1$s</string>
+    <string name="search_result_matched_definition_description">%1$s, %2$s (%3$s found)</string>
+    <string name="search_result_context_copy_definition_title">Copy [%1$s]</string>
+    <string name="search_result_context_copy_definition_hint">Copy the ID of this backup definition</string>
+    <string name="search_result_context_copy_definition_label">Dataset definition ID</string>
+    <string name="search_result_context_copy_definition_clip_created">Dataset definition ID copied to clipboard</string>
+    <string name="search_result_context_copy_entry_title">Copy [%1$s]</string>
+    <string name="search_result_context_copy_entry_hint">Copy the ID of this backup entry</string>
+    <string name="search_result_context_copy_entry_label">Dataset entry ID</string>
+    <string name="search_result_context_copy_entry_clip_created">Dataset entry ID copied to clipboard</string>
 
     <!-- Recovery -->
     <string name="recovery_picker_run_recover">Recover</string>
@@ -588,8 +605,8 @@
     <string name="device_field_title_limits">Limits</string>
     <string name="device_field_title_created">Created</string>
     <string name="device_field_title_updated">Last Updated</string>
-    <string name="device_field_content_created">%1$s"</string>
-    <string name="device_field_content_updated">%1$s"</string>
+    <string name="device_field_content_created">%1$s</string>
+    <string name="device_field_content_updated">%1$s</string>
     <string name="device_field_title_node">Node</string>
     <string name="device_field_content_node">%1$s</string>
     <string name="device_field_content_info_active">%1$s (active)</string>
@@ -612,8 +629,8 @@
     <string name="user_field_title_permissions">Permissions</string>
     <string name="user_field_title_created">Created</string>
     <string name="user_field_title_updated">Last Updated</string>
-    <string name="user_field_content_created">%1$s"</string>
-    <string name="user_field_content_updated">%1$s"</string>
+    <string name="user_field_content_created">%1$s</string>
+    <string name="user_field_content_updated">%1$s</string>
     <string name="user_field_content_info_active">%1$s (active)</string>
     <string name="user_field_content_info_inactive">%1$s (inactive)</string>
     <string name="user_field_content_limits_none">None</string>
