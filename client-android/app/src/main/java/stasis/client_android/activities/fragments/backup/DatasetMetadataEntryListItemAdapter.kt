@@ -28,10 +28,12 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import java.nio.file.Path
 
 class DatasetMetadataEntryListItemAdapter(
-    private val metadata: DatasetMetadata
+    private val metadata: DatasetMetadata,
+    private val onFiltersUpdated: (Map<String, Filter>, Int, Int) -> Unit
 ) : RecyclerView.Adapter<DatasetMetadataEntryListItemAdapter.ItemViewHolder>() {
     private val originalEntities = metadata.filesystem.entities.keys.sorted().toList()
     private var shownEntities = originalEntities
+    private var latestFilters: Map<String, Filter> = emptyMap()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -61,24 +63,33 @@ class DatasetMetadataEntryListItemAdapter(
         )
     }
 
-    fun filter(by: List<Filter>) {
+    fun filter(by: Map<String, Filter>) {
         fun keep(
             state: FilesystemMetadata.EntityState?,
             metadata: EntityMetadata?
-        ): Boolean = by.all {
+        ): Boolean = by.values.all {
             when (it) {
                 is Filter.ShowUpdatesOnly -> {
                     state == FilesystemMetadata.EntityState.New || state == FilesystemMetadata.EntityState.Updated
                 }
+
                 is Filter.ShowFilesOnly -> {
                     metadata is EntityMetadata.File
                 }
-                is Filter.MatchesContent -> {
-                    metadata?.path?.toString()?.contains(it.content) ?: false
+
+                is Filter.KeepPath -> {
+                    metadata?.path?.toString()?.let { path -> it.withRegex.matches(path) } ?: false
+                }
+
+                is Filter.DropPath -> {
+                    !(metadata?.path?.toString()?.let { path -> it.withRegex.matches(path) } ?: false)
+                }
+
+                is Filter.KeepPathName -> {
+                    metadata?.path?.toString()?.contains(it.name) ?: false
                 }
             }
         }
-
 
         val filtered = originalEntities.filter { entity ->
             keep(
@@ -88,11 +99,13 @@ class DatasetMetadataEntryListItemAdapter(
         }
 
         shownEntities = filtered
+        latestFilters = by
+        onFiltersUpdated(by, originalEntities.size, filtered.size)
         notifyDataSetChanged()
     }
 
-    val filtered: Boolean
-        get() = originalEntities.size != shownEntities.size
+    val activeFilters: Map<String, Filter>
+        get() = latestFilters
 
     val isEmpty: Boolean
         get() = itemCount == 0
@@ -276,7 +289,9 @@ class DatasetMetadataEntryListItemAdapter(
         sealed class Filter {
             object ShowUpdatesOnly : Filter()
             object ShowFilesOnly : Filter()
-            data class MatchesContent(val content: String) : Filter()
+            data class KeepPath(val withRegex: Regex) : Filter()
+            data class DropPath(val withRegex: Regex) : Filter()
+            data class KeepPathName(val name: String) : Filter()
         }
     }
 }

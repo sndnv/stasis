@@ -189,7 +189,8 @@ class HomeFragment : Fragment() {
         binding.lastBackupContainer.setOnClickListener {
             findNavController().navigate(
                 HomeFragmentDirections.actionHomeFragmentToDatasetEntryDetailsFragment(
-                    entry = entry.id
+                    entry = entry.id,
+                    filter = null
                 )
             )
         }

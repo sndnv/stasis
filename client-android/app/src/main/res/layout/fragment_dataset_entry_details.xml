@@ -35,6 +35,77 @@
                 android:textAppearance="?attr/textAppearanceBody2" />
         </LinearLayout>
 
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="64dp"
+            android:layout_marginTop="16dp" />
+
+        <LinearLayout
+            android:id="@+id/dataset_entry_filters_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/dataset_entry_filters_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:maxLines="2"
+                android:paddingHorizontal="4dp"
+                android:textAppearance="?attr/textAppearanceBody2"
+                app:drawableEndCompat="@drawable/ic_status_expand" />
+
+            <LinearLayout
+                android:id="@+id/dataset_entry_filters_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/dataset_entry_filters_updates_only"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dataset_entry_field_content_filters_updates_only" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/dataset_entry_filters_files_only"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dataset_entry_field_content_filters_files_only" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/dataset_entry_filters_no_hidden"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dataset_entry_field_content_filters_no_hidden" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/dataset_entry_filters_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/dataset_entry_field_content_filters_content"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="8dp"
+                    app:endIconMode="clear_text">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/dataset_entry_filters_content_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </LinearLayout>
+
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -56,18 +127,6 @@
                 android:gravity="center"
                 android:text="@string/dataset_entry_details_metadata_empty"
                 android:visibility="gone" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/dataset_entry_details_metadata_filter_toggle_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="16dp"
-                android:contentDescription="@string/dataset_entry_details_metadata_filter_toggle_button_hint"
-                app:borderWidth="0dp"
-                app:fabSize="mini"
-                app:srcCompat="@drawable/ic_filter_off" />
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
     </LinearLayout>
 </layout>

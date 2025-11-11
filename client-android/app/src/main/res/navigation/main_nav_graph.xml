@@ -228,6 +228,11 @@
         <argument
             android:name="entry"
             app:argType="java.util.UUID" />
+
+        <argument
+            android:name="filter"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
 
     <fragment
