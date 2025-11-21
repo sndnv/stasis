@@ -14,13 +14,14 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.lib.model.FilesystemMetadata
+import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
+import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import java.nio.file.Path
-import java.util.UUID
 
 class SearchResultMatchListItemAdapter(
     context: Context,
     private val resource: Int,
-    private val entry: UUID,
+    private val entry: DatasetEntryId,
     private val matches: List<Pair<Path, FilesystemMetadata.EntityState>>,
 ) : ArrayAdapter<Pair<Path, FilesystemMetadata.EntityState>>(context, resource, matches) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {

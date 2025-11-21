@@ -1,6 +1,8 @@
 package stasis.client_android.lib.api.clients
 
 import okio.ByteString
+import stasis.client_android.lib.api.clients.caching.CacheRefreshHandler
+import stasis.client_android.lib.api.clients.caching.DatasetEntriesForDefinition
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
@@ -26,15 +28,15 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.core.commands.proto.Command
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("TooManyFunctions")
 class CachedServerApiEndpointClient(
     private val underlying: ServerApiEndpointClient,
     private val datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
     private val datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry>,
-    private val datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata>
+    private val datasetEntriesForDefinitionCache: Cache<DatasetDefinitionId, DatasetEntriesForDefinition>,
+    private val datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata>,
+    val refreshHandler: CacheRefreshHandler
 ) : ServerApiEndpointClient {
     override val self: DeviceId
         get() = underlying.self
@@ -42,23 +44,37 @@ class CachedServerApiEndpointClient(
     override val server: String
         get() = underlying.server
 
-    private val allDefinitionsCached = AtomicBoolean(false)
-    private val latestEntries = ConcurrentHashMap<DatasetDefinitionId, DatasetEntryId>()
-
-    override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> =
-        loadDefinitions()
+    override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> = Try {
+        datasetDefinitionsCache.all().ifEmpty {
+            refreshHandler.refreshNow(target = CacheRefreshHandler.RefreshTarget.AllDatasetDefinitions)
+            datasetDefinitionsCache.all()
+        }.values.toList().sortedBy { it.info }
+    }
 
     override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> = Try {
-        datasetDefinitionsCache.getOrLoad(
-            key = definition,
-            load = { underlying.datasetDefinition(definition).toOption() }
-        ) ?: throw ResourceMissingFailure()
+        when (val cached = datasetDefinitionsCache.get(key = definition)) {
+            null -> {
+                refreshHandler.refreshNow(
+                    target = CacheRefreshHandler.RefreshTarget.IndividualDatasetDefinition(
+                        definition = definition
+                    )
+                )
+                datasetDefinitionsCache.get(key = definition)
+            }
+
+            else -> cached
+        } ?: throw ResourceMissingFailure()
     }
 
     override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
         val result = underlying.createDatasetDefinition(request)
-        datasetDefinitionsCache.clear()
-        allDefinitionsCached.set(false)
+
+        if (result is Try.Success) {
+            refreshHandler.refreshNow(
+                target = CacheRefreshHandler.RefreshTarget.IndividualDatasetDefinition(result.value.definition)
+            )
+        }
+
         return result
     }
 
@@ -67,43 +83,51 @@ class CachedServerApiEndpointClient(
         request: UpdateDatasetDefinition
     ): Try<Unit> {
         val result = underlying.updateDatasetDefinition(definition, request)
-        datasetDefinitionsCache.clear()
-        allDefinitionsCached.set(false)
+
+        if (result is Try.Success) {
+            refreshHandler.refreshNow(
+                target = CacheRefreshHandler.RefreshTarget.IndividualDatasetDefinition(definition)
+            )
+        }
+
         return result
     }
 
     override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> {
         val result = underlying.deleteDatasetDefinition(definition)
-        datasetDefinitionsCache.remove(definition)
+        datasetDefinitionsCache.remove(key = definition)
+        datasetEntriesForDefinitionCache.remove(key = definition)
         return result
     }
 
-    override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
-        underlying.datasetEntries(definition)
+    override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> = Try {
+        when (val cached = datasetEntriesForDefinitionCache.get(key = definition)) {
+            null -> {
+                refreshHandler.refreshNow(target = CacheRefreshHandler.RefreshTarget.AllDatasetEntries(definition = definition))
+                datasetEntriesForDefinitionCache.get(key = definition)
+            }
+
+            else -> cached
+        }?.let { cached ->
+            cached.entries.keys.mapNotNull { datasetEntriesCache.get(key = it) }
+        } ?: emptyList()
+    }
 
     override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> = Try {
-        datasetEntriesCache.getOrLoad(
-            key = entry,
-            load = { underlying.datasetEntry(entry).toOption() }
-        ) ?: throw ResourceMissingFailure()
+        when (val cached = datasetEntriesCache.get(key = entry)) {
+            null -> {
+                refreshHandler.refreshNow(target = CacheRefreshHandler.RefreshTarget.IndividualDatasetEntry(entry = entry))
+                datasetEntriesCache.get(key = entry)
+            }
+
+            else -> cached
+        } ?: throw ResourceMissingFailure()
     }
 
     override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?> =
         when (until) {
-            null -> when (val entry = latestEntries[definition]) {
-                null -> underlying.latestEntry(definition, until).map {
-                    it?.apply {
-                        latestEntries[definition] = id
-                        datasetEntriesCache.put(id, this)
-                    }
-                }
-
-                else -> Try {
-                    datasetEntriesCache.getOrLoad(
-                        key = entry,
-                        load = { underlying.datasetEntry(entry).toOption() }
-                    )
-                }
+            null -> datasetEntries(definition = definition).map { entries ->
+                entries.maxByOrNull { it.created }
             }
 
             // result depends on value of `until`; do not cache
@@ -112,15 +136,27 @@ class CachedServerApiEndpointClient(
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
         val result = underlying.createDatasetEntry(request)
-        latestEntries.remove(request.definition)
+
+        if (result is Try.Success) {
+            refreshHandler.refreshNow(
+                target = CacheRefreshHandler.RefreshTarget.IndividualDatasetEntry(result.value.entry)
+            )
+        }
+
         return result
     }
 
     override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> {
         val result = underlying.deleteDatasetEntry(entry)
 
-        latestEntries.toList().find { it.second == entry }?.first?.let { latestEntries.remove(it) }
-        datasetEntriesCache.remove(entry)
+        if (result is Try.Success) {
+            datasetEntriesCache.get(key = entry)?.let { cached ->
+                datasetEntriesCache.remove(key = entry)
+                refreshHandler.refreshNow(
+                    target = CacheRefreshHandler.RefreshTarget.AllDatasetEntries(definition = cached.definition)
+                )
+            }
+        }
 
         return result
     }
@@ -178,18 +214,4 @@ class CachedServerApiEndpointClient(
 
     override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> =
         underlying.sendAnalyticsEntry(entry)
-
-    private suspend fun loadDefinitions(): Try<List<DatasetDefinition>> =
-        if (allDefinitionsCached.get()) {
-            Try { datasetDefinitionsCache.all().values.toList().sortedBy { it.info } }
-        } else {
-            underlying.datasetDefinitions()
-                .map { latest ->
-                    if (latest.isNotEmpty()) {
-                        latest.forEach { definition -> datasetDefinitionsCache.put(definition.id, definition) }
-                        allDefinitionsCached.set(true)
-                    }
-                    latest.sortedBy { it.info }
-                }
-        }
 }

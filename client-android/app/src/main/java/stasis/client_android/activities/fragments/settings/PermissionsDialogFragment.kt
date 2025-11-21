@@ -47,9 +47,28 @@ class PermissionsDialogFragment : DialogFragment() {
                 permissions = permissionsStatus.sortedBy { it.first },
             )
 
-        binding.permissionsRequestButton.isEnabled = permissionsMissing
-        binding.permissionsRequestButton.setOnClickListener {
-            activity.requestMissingPermissions()
+        if (permissionsMissing) {
+            binding.permissionsRequestButton.text =
+                getString(R.string.permissions_request_button_request_action_text)
+            binding.permissionsRequestButton.contentDescription =
+                getString(R.string.permissions_request_button_request_action_hint)
+            binding.permissionsRequestButton.tooltipText =
+                getString(R.string.permissions_request_button_request_action_hint)
+            binding.permissionsRequestButton.setIconResource(R.drawable.ic_add_permissions)
+            binding.permissionsRequestButton.setOnClickListener {
+                activity.requestMissingPermissions()
+            }
+        } else {
+            binding.permissionsRequestButton.text =
+                getString(R.string.permissions_request_button_close_action_text)
+            binding.permissionsRequestButton.contentDescription =
+                getString(R.string.permissions_request_button_close_action_hint)
+            binding.permissionsRequestButton.tooltipText =
+                getString(R.string.permissions_request_button_close_action_hint)
+            binding.permissionsRequestButton.setIconResource(0)
+            binding.permissionsRequestButton.setOnClickListener {
+                dismiss()
+            }
         }
 
         binding.permissionsNotShown.isVisible = permissionsMissing

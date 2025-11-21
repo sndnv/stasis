@@ -24,11 +24,11 @@ object Backups {
             PermissionsDialogFragment()
                 .show(childFragmentManager, PermissionsDialogFragment.DialogTag)
         } else {
-            rulesModel.rules.observeOnce(this) { rulesList ->
+            rulesModel.rules.observe(viewLifecycleOwner) { rulesList ->
                 val rules = rulesList.groupBy { it.definition }
 
                 liveData { providerContext.executor.active().isNotEmpty() }
-                    .observe(viewLifecycleOwner) { operationsPending ->
+                    .observeOnce(viewLifecycleOwner) { operationsPending ->
                         if (operationsPending) {
                             onOperationsPending()
                         } else {

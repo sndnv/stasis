@@ -20,6 +20,7 @@ import stasis.test.client_android.lib.eventually
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
+@Suppress("LargeClass")
 class CacheSpec : WordSpec({
     val key = "test-key"
     val value = "test-initial-value"
@@ -45,12 +46,28 @@ class CacheSpec : WordSpec({
             loadedValues.get() shouldBe (1)
         }
 
-        "support explicitly adding data" {
+        "support explicitly adding data (individual)" {
             val cache = Cache.Map<String, String>()
 
             cache.get(key) shouldBe (null)
             cache.put(key, value)
             cache.get(key) shouldBe (value)
+        }
+
+        "support explicitly adding data (bulk)" {
+            val cache = Cache.Map<String, String>()
+
+            val key1 = "test-key-1"
+            val key2 = "test-key-2"
+            val key3 = "test-key-3"
+
+            cache.get(key1) shouldBe (null)
+            cache.get(key2) shouldBe (null)
+            cache.get(key3) shouldBe (null)
+            cache.put(mapOf(key1 to value, key2 to value, key3 to value))
+            cache.get(key1) shouldBe (value)
+            cache.get(key2) shouldBe (value)
+            cache.get(key3) shouldBe (value)
         }
 
         "support removing data" {
@@ -145,7 +162,7 @@ class CacheSpec : WordSpec({
             override fun deserializeValue(value: ByteArray): Try<String> = Try.Success(String(value))
         }
 
-        "support caching data"  {
+        "support caching data" {
             val (filesystem, _) = createMockFileSystem(setup)
 
             val target = filesystem.getPath("/cache")
@@ -178,7 +195,7 @@ class CacheSpec : WordSpec({
             deserialized shouldBe (Try.Success(value))
         }
 
-        "support explicitly adding data" {
+        "support explicitly adding data (individual)" {
             val (filesystem, _) = createMockFileSystem(setup)
 
             val target = filesystem.getPath("/cache")
@@ -197,6 +214,35 @@ class CacheSpec : WordSpec({
             val content = cachedPath.content()
             val deserialized = serdes.deserializeValue(content.toByteArray())
             deserialized shouldBe (Try.Success(value))
+        }
+
+        "support explicitly adding data (bulk)" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val cache = Cache.File(target, serdes)
+
+            val key1 = "test-key-1"
+            val key2 = "test-key-2"
+            val key3 = "test-key-3"
+
+            cache.get(key1) shouldBe (null)
+            cache.get(key2) shouldBe (null)
+            cache.get(key3) shouldBe (null)
+            cache.put(mapOf(key1 to value, key2 to value, key3 to value))
+            cache.get(key1) shouldBe (value)
+            cache.get(key2) shouldBe (value)
+            cache.get(key3) shouldBe (value)
+
+            val cachedPaths = target.files().filter { it.fileName.toString().startsWith("test-key") }
+            cachedPaths.size shouldBe (3)
+
+            cachedPaths.forEach { cachedPath ->
+                val content = cachedPath.content()
+                val deserialized = serdes.deserializeValue(content.toByteArray())
+                deserialized shouldBe (Try.Success(value))
+            }
         }
 
         "support removing data" {
@@ -295,6 +341,16 @@ class CacheSpec : WordSpec({
 
             cache.all() shouldBe (emptyMap())
         }
+
+        "handle failures when retrieving all cache entries" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val cache = Cache.File(target, serdes)
+
+            cache.all().size shouldBe (0)
+        }
     }
 
     "An Expiring Cache" should {
@@ -338,7 +394,7 @@ class CacheSpec : WordSpec({
             }
         }
 
-        "support explicitly adding data" {
+        "support explicitly adding data (individual)" {
             val expiredValues = AtomicInteger(0)
 
             val expiration = Duration.ofMillis(250)
@@ -359,6 +415,39 @@ class CacheSpec : WordSpec({
             eventually {
                 cache.get(key) shouldBe (null)
                 expiredValues.get() shouldBe (1)
+            }
+        }
+
+        "support explicitly adding data (bulk)" {
+            val expiredValues = AtomicInteger(0)
+
+            val expiration = Duration.ofMillis(250)
+
+            val cache = Cache.Expiring<String, String>(
+                underlying = Cache.Map(),
+                expiration = expiration,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.registerOnEntryExpiredListener { expiredValues.incrementAndGet() }
+
+            expiredValues.get() shouldBe (0)
+
+            val key1 = "test-key-1"
+            val key2 = "test-key-2"
+            val key3 = "test-key-3"
+
+            cache.get(key1) shouldBe (null)
+            cache.get(key2) shouldBe (null)
+            cache.get(key3) shouldBe (null)
+
+            cache.put(mapOf(key1 to value, key2 to value, key3 to value))
+
+            eventually {
+                cache.get(key1) shouldBe (null)
+                cache.get(key2) shouldBe (null)
+                cache.get(key3) shouldBe (null)
+                expiredValues.get() shouldBe (3)
             }
         }
 
@@ -507,7 +596,7 @@ class CacheSpec : WordSpec({
             }
         }
 
-        "support explicitly adding data" {
+        "support explicitly adding data (individual)" {
             val refreshedValues = AtomicInteger(0)
 
             val interval = Duration.ofMillis(100)
@@ -526,6 +615,40 @@ class CacheSpec : WordSpec({
             cache.put(key, value)
 
             cache.get(key) shouldBe (value)
+
+            awaitAndThen {
+                refreshedValues.get() shouldBe (0)
+            }
+        }
+
+        "support explicitly adding data (bulk)" {
+            val refreshedValues = AtomicInteger(0)
+
+            val interval = Duration.ofMillis(100)
+
+            val cache = Cache.Refreshing<String, String>(
+                underlying = Cache.Map(),
+                interval = interval,
+                scope = CoroutineScope(Dispatchers.IO)
+            )
+
+            cache.registerOnEntryRefreshedListener { _, _ -> refreshedValues.incrementAndGet() }
+
+            refreshedValues.get() shouldBe (0)
+
+            val key1 = "test-key-1"
+            val key2 = "test-key-2"
+            val key3 = "test-key-3"
+
+            cache.get(key1) shouldBe (null)
+            cache.get(key2) shouldBe (null)
+            cache.get(key3) shouldBe (null)
+
+            cache.put(mapOf(key1 to value, key2 to value, key3 to value))
+
+            cache.get(key1) shouldBe (value)
+            cache.get(key2) shouldBe (value)
+            cache.get(key3) shouldBe (value)
 
             awaitAndThen {
                 refreshedValues.get() shouldBe (0)
@@ -680,6 +803,169 @@ class CacheSpec : WordSpec({
                 interval = interval,
                 scope = CoroutineScope(Dispatchers.IO)
             )
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+
+            cache.all().size shouldBe (3)
+
+            cache.clear()
+
+            cache.all() shouldBe (emptyMap())
+        }
+    }
+
+    "A Tracking Cache" should {
+        "support caching data" {
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                value
+            }
+
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (0)
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null) // miss
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (1)
+
+            cache.getOrLoad(key, load) shouldBe (value) // miss + load
+            cache.getOrLoad(key, load) shouldBe (value) // hit
+            cache.getOrLoad(key, load) shouldBe (value) // hit
+
+            cache.hits shouldBe (2)
+            cache.misses shouldBe (2)
+
+            loadedValues.get() shouldBe (1)
+        }
+
+        "support explicitly adding data (individual)" {
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (0)
+
+            cache.get(key) shouldBe (null) // miss
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (1)
+
+            cache.put(key, value)
+            cache.get(key) shouldBe (value) // hit
+
+            cache.hits shouldBe (1)
+            cache.misses shouldBe (1)
+        }
+
+        "support explicitly adding data (bulk)" {
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            val key1 = "test-key-1"
+            val key2 = "test-key-2"
+            val key3 = "test-key-3"
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (0)
+
+            cache.get(key1) shouldBe (null) // miss
+            cache.get(key2) shouldBe (null) // miss
+            cache.get(key3) shouldBe (null) // miss
+
+            cache.hits shouldBe (0)
+            cache.misses shouldBe (3)
+
+            cache.put(mapOf(key1 to value, key2 to value, key3 to value))
+            cache.get(key1) shouldBe (value) // hit
+            cache.get(key2) shouldBe (value) // hit
+            cache.get(key3) shouldBe (value) // hit
+
+            cache.hits shouldBe (3)
+            cache.misses shouldBe (3)
+        }
+
+        "support removing data" {
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                value
+            }
+
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            cache.remove(key)
+            cache.get(key) shouldBe (null)
+
+            cache.getOrLoad(key, load) shouldBe (value)
+            cache.getOrLoad(key, load) shouldBe (value)
+
+            loadedValues.get() shouldBe (2)
+        }
+
+        "not update the cache if the load operation fails" {
+            val loadedValues = AtomicInteger(0)
+
+            val load: suspend (String) -> String = {
+                loadedValues.incrementAndGet()
+                throw RuntimeException("Test failure")
+            }
+
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            loadedValues.get() shouldBe (0)
+            cache.get(key) shouldBe (null)
+
+            val e = shouldThrow<RuntimeException> {
+                cache.getOrLoad(key, load)
+            }
+
+            e.message shouldBe ("Test failure")
+
+            loadedValues.get() shouldBe (1)
+            cache.get(key) shouldBe (null)
+        }
+
+        "support retrieving all cached data" {
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
+
+            cache.put("k1", "v1")
+            cache.put("k2", "v2")
+            cache.put("k3", "v3")
+            cache.put("k4", "v4")
+            cache.put("k5", "v5")
+
+            val expected = mapOf(
+                "k1" to "v1",
+                "k2" to "v2",
+                "k3" to "v3",
+                "k4" to "v4",
+                "k5" to "v5"
+            )
+
+            cache.all() shouldBe (expected)
+        }
+
+        "support clearing all cached data" {
+            val underlying = Cache.Map<String, String>()
+            val cache = Cache.Tracking(underlying)
 
             cache.put("k1", "v1")
             cache.put("k2", "v2")

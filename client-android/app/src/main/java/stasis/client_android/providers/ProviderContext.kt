@@ -10,6 +10,7 @@ import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
+import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
 import stasis.client_android.tracking.TrackerViews
 
@@ -23,7 +24,8 @@ data class ProviderContext(
     val monitor: ServerMonitor,
     val commandProcessor: CommandProcessor,
     val secretsConfig: Secret.Config,
-    val analytics: AnalyticsCollector
+    val analytics: AnalyticsCollector,
+    val caches: Map<String, Cache<*, *>>
 ) {
     interface Factory {
         fun getOrCreate(preferences: SharedPreferences): Reference<ProviderContext>

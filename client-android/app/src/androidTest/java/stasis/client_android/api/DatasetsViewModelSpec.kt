@@ -19,7 +19,6 @@ import stasis.client_android.eventually
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.UpdateDatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
-import stasis.client_android.lib.ops.commands.CommandProcessor
 import stasis.client_android.lib.ops.search.Search
 import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.utils.Reference
@@ -321,6 +320,114 @@ class DatasetsViewModelSpec {
         }
     }
 
+    @Test
+    fun refreshDatasetDefinitions() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshDefinitions {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun refreshDatasetEntries() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshEntries(forDefinition = UUID.randomUUID()) {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun refreshIndividualDefinitions() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshDefinition(definition = UUID.randomUUID()) {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun refreshIndividualEntries() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshEntry(entry = UUID.randomUUID()) {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun refreshIndividualLatestEntries() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshLatestEntry(forDefinition = UUID.randomUUID()) {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
+    @Test
+    fun refreshAllLatestEntries() {
+        val refreshCompleted = AtomicBoolean(false)
+
+        val mockApiClient = MockServerApiEndpointClient()
+        val model = createModel(mockApiClient)
+
+        runBlocking {
+            model.refreshLatestEntries {
+                refreshCompleted.set(true)
+            }
+
+            eventually {
+                assertThat(refreshCompleted.get(), equalTo(true))
+            }
+        }
+    }
+
     @get:Rule
     var instantTaskExecutorRule = InstantTaskExecutorRule()
 
@@ -381,7 +488,8 @@ class DatasetsViewModelSpec {
                             monitor = MockServerMonitor(),
                             commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig,
-                            analytics = MockAnalyticsCollector()
+                            analytics = MockAnalyticsCollector(),
+                            caches = emptyMap()
                         )
                     },
                     destroy = {}

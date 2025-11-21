@@ -9,6 +9,7 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -22,6 +23,7 @@ import stasis.client_android.activities.helpers.Backups.startBackup
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
+import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDateTime
@@ -71,18 +73,25 @@ class HomeFragment : Fragment() {
         showLastBackupInProgress(binding)
         showLastOperationInProgress(binding)
 
-        providerContextFactory.getOrCreate(preferences).provided { providerContext ->
-            datasets.latestEntry().observe(viewLifecycleOwner) { latestEntry ->
+        fun loadData() = providerContextFactory.getOrCreate(preferences).provided { providerContext ->
+            datasets.latestEntry().observeOnce(viewLifecycleOwner) { latestEntry ->
                 when (latestEntry) {
                     null -> showLastBackupNoData(binding)
-                    else -> datasets.metadata(forEntry = latestEntry)
-                        .observe(viewLifecycleOwner) { metadata ->
-                            showLastBackupDetails(
-                                binding = binding,
-                                entry = latestEntry,
-                                metadata = metadata
-                            )
+                    else -> datasets.metadata(
+                        forEntry = latestEntry,
+                        onFailure = {
+                            showLastBackupNoData(binding)
+                            binding.homeRefresh?.isRefreshing = false
                         }
+                    ).observeOnce(viewLifecycleOwner) { metadata ->
+                        showLastBackupDetails(
+                            binding = binding,
+                            entry = latestEntry,
+                            metadata = metadata
+                        )
+
+                        binding.homeRefresh?.isRefreshing = false
+                    }
                 }
             }
 
@@ -109,6 +118,23 @@ class HomeFragment : Fragment() {
                         )
                     }
                 }
+            }
+        }
+
+        loadData()
+
+        binding.homeRefresh?.setOnRefreshListener {
+            datasets.refreshLatestEntries {
+                it.getOrRenderFailure(withContext = requireContext())
+                    ?.let {
+                        loadData()
+
+                        Toast.makeText(
+                            binding.root.context,
+                            getString(R.string.toast_data_refreshed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
             }
         }
 
@@ -139,10 +165,6 @@ class HomeFragment : Fragment() {
         metadata: DatasetMetadata
     ) {
         val context = binding.root.context
-
-        binding.lastBackupInProgress.isVisible = false
-        binding.lastBackupNoData.isVisible = false
-        binding.lastBackupContainer.isVisible = true
 
         val (creationDate, creationTime) = entry.created.formatAsDateTime(context)
 
@@ -194,6 +216,10 @@ class HomeFragment : Fragment() {
                 )
             )
         }
+
+        binding.lastBackupInProgress.isVisible = false
+        binding.lastBackupNoData.isVisible = false
+        binding.lastBackupContainer.isVisible = true
     }
 
     private fun showLastOperationInProgress(binding: FragmentHomeBinding) {
@@ -221,10 +247,6 @@ class HomeFragment : Fragment() {
         progress: Operation.Progress
     ) {
         val context = binding.root.context
-
-        binding.lastOperationInProgress.isVisible = false
-        binding.lastOperationNoData.isVisible = false
-        binding.lastOperationContainer.isVisible = true
 
         binding.operationInfo.text = context.getString(R.string.operation_field_content_info)
             .renderAsSpannable(
@@ -282,6 +304,10 @@ class HomeFragment : Fragment() {
                 )
             )
         }
+
+        binding.lastOperationInProgress.isVisible = false
+        binding.lastOperationNoData.isVisible = false
+        binding.lastOperationContainer.isVisible = true
     }
 
     private fun showBackupStartButton(

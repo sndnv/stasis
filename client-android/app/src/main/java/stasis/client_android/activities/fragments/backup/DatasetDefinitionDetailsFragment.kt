@@ -36,6 +36,7 @@ import stasis.client_android.databinding.FragmentDatasetDefinitionDetailsBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationStartedNotification
 import javax.inject.Inject
@@ -82,7 +83,16 @@ class DatasetDefinitionDetailsFragment : Fragment() {
         configureTargetTransition()
         configureSourceTransition()
 
-        datasets.definition(definitionId).observe(viewLifecycleOwner) { definition ->
+        datasets.definition(
+            definitionId,
+            onFailure = {
+                activity?.operationComplete()
+                startPostponedEnterTransition()
+                controller.navigate(
+                    DatasetDefinitionDetailsFragmentDirections.actionGlobalBackupFragment()
+                )
+            }
+        ).observeOnce(viewLifecycleOwner) { definition ->
             providerContext.analytics.recordEvent(name = "get_dataset_definition")
 
             binding.datasetDefinitionDetailsInfo.text =
@@ -198,9 +208,14 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                 )
             }
 
-            datasets.metadata(forDefinition = definition.id)
-                .observe(viewLifecycleOwner) { entries ->
-                    providerContext.analytics.recordEvent(name = "get_dataset_entries", "type" to "for-definition")
+            fun loadEntries() = datasets.metadata(forDefinition = definition.id)
+                .observeOnce(viewLifecycleOwner) { entries ->
+                    providerContext.analytics.recordEvent(
+                        name = "get_dataset_entries",
+                        "type" to "for-definition"
+                    )
+
+                    binding.entriesLoadingInProgress?.isVisible = false
 
                     if (entries.isNotEmpty()) {
                         binding.entriesList.isVisible = true
@@ -226,7 +241,10 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                         },
                         onEntryDeleteRequested = { entry ->
                             datasets.deleteEntry(entry) {
-                                providerContext.analytics.recordEvent(name = "delete_dataset_entry", result = it)
+                                providerContext.analytics.recordEvent(
+                                    name = "delete_dataset_entry",
+                                    result = it
+                                )
 
                                 it.getOrRenderFailure(withContext = requireContext())
                                     ?.let {
@@ -240,10 +258,28 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                         }
                     )
                     binding.entriesList.setHasFixedSize(true)
-
-                    activity?.operationComplete()
-                    startPostponedEnterTransition()
                 }
+
+            loadEntries()
+
+            binding.datasetEntriesRefresh?.setOnRefreshListener {
+                datasets.refreshEntries(forDefinition = definition.id) {
+                    it.getOrRenderFailure(withContext = context)
+                        ?.let {
+                            Toast.makeText(
+                                binding.root.context,
+                                getString(R.string.toast_dataset_entries_refreshed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                    loadEntries()
+                    binding.datasetEntriesRefresh.isRefreshing = false
+                }
+            }
+
+            activity?.operationComplete()
+            startPostponedEnterTransition()
         }
 
         return binding.root

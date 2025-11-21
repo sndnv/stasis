@@ -30,6 +30,7 @@ import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getDateTimeFormat
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import java.time.Instant
 import java.time.LocalTime
 import java.util.regex.Pattern
@@ -104,7 +105,7 @@ class SearchFragment : Fragment() {
                 binding.searchResultEmpty.isVisible = false
                 binding.searchResult.isVisible = false
 
-                datasets.search(regex, until).observe(viewLifecycleOwner) { result ->
+                datasets.search(regex, until).observeOnce(viewLifecycleOwner) { result ->
                     searchResultAdapter.setResult(result)
 
                     if (result.definitions.none { it.value != null }) {

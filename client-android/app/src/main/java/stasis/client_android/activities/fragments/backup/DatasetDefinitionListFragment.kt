@@ -21,6 +21,7 @@ import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionListBinding
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -94,29 +95,49 @@ class DatasetDefinitionListFragment : Fragment() {
 
         binding.datasetDefinitionsList.adapter = adapter
 
-        datasets.definitions().observe(viewLifecycleOwner) { definitions ->
-            providerContext.analytics.recordEvent(name = "get_dataset_definitions")
-            adapter.setDefinitions(definitions)
+        fun loadDefinitions() {
+            datasets.definitions().observeOnce(viewLifecycleOwner) { definitions ->
+                providerContext.analytics.recordEvent(name = "get_dataset_definitions")
+                adapter.setDefinitions(definitions)
 
-            if (definitions.isEmpty()) {
-                binding.datasetDefinitionsList.isVisible = false
-                binding.datasetDefinitionsListEmpty.isVisible = true
-            } else {
-                binding.datasetDefinitionsList.isVisible = true
-                binding.datasetDefinitionsListEmpty.isVisible = false
-            }
+                if (definitions.isEmpty()) {
+                    binding.datasetDefinitionsList.isVisible = false
+                    binding.datasetDefinitionsListEmpty.isVisible = true
+                } else {
+                    binding.datasetDefinitionsList.isVisible = true
+                    binding.datasetDefinitionsListEmpty.isVisible = false
+                }
 
-            (view.parent as? ViewGroup)?.doOnPreDraw {
-                activity?.operationComplete()
-                startPostponedEnterTransition()
+                (view.parent as? ViewGroup)?.doOnPreDraw {
+                    activity?.operationComplete()
+                    startPostponedEnterTransition()
+                }
             }
         }
+
+        loadDefinitions()
 
         binding.datasetDefinitionAddButton.setOnClickListener {
             findNavController().navigate(
                 DatasetDefinitionListFragmentDirections
                     .actionBackupFragmentToDatasetDefinitionFormFragment(definition = null)
             )
+        }
+
+        binding.datasetDefinitionsRefresh.setOnRefreshListener {
+            datasets.refreshDefinitions {
+                it.getOrRenderFailure(withContext = context)
+                    ?.let {
+                        loadDefinitions()
+
+                        Toast.makeText(
+                            binding.root.context,
+                            getString(R.string.toast_dataset_definitions_refreshed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                binding.datasetDefinitionsRefresh.isRefreshing = false
+            }
         }
     }
 }
