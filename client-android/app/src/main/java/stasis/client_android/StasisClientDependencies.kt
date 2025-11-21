@@ -27,6 +27,8 @@ import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerBootstrapEndpointClient
 import stasis.client_android.lib.api.clients.ServerCoreEndpointClient
 import stasis.client_android.lib.api.clients.ServiceApiClientFactory
+import stasis.client_android.lib.api.clients.caching.DatasetEntriesForDefinition
+import stasis.client_android.lib.api.clients.caching.DefaultCacheRefreshHandler
 import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.compression.Gzip
 import stasis.client_android.lib.discovery.ClientDiscoveryAttributes
@@ -55,6 +57,8 @@ import stasis.client_android.lib.staging.DefaultFileStaging
 import stasis.client_android.lib.telemetry.ApplicationInformation
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
+import stasis.client_android.persistence.cache.DatasetDefinitionCacheFileSerdes
+import stasis.client_android.persistence.cache.DatasetEntriesForDefinitionCacheFileSerdes
 import stasis.client_android.persistence.cache.DatasetEntryCacheFileSerdes
 import stasis.client_android.persistence.cache.DatasetMetadataCacheFileSerdes
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getAuthenticationConfig
@@ -67,6 +71,8 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.security.DefaultCredentialsManagementBridge
 import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
 import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
+import stasis.client_android.settings.Settings.getCacheActiveInterval
+import stasis.client_android.settings.Settings.getCachePendingInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
@@ -141,6 +147,7 @@ object StasisClientDependencies {
         trackerViews: TrackerViews,
         datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition>,
         datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry>,
+        datasetEntriesForDefinitionCache: Cache<DatasetDefinitionId, DatasetEntriesForDefinition>,
         datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata>
     ): ProviderContext.Factory =
         object : ProviderContext.Factory {
@@ -198,8 +205,8 @@ object StasisClientDependencies {
                             fun createServerApiEndpointClient(
                                 uri: String,
                                 coreClient: ServerCoreEndpointClient
-                            ): ServerApiEndpointClient = CachedServerApiEndpointClient(
-                                underlying = when {
+                            ): ServerApiEndpointClient {
+                                val underlying = when {
                                     mocksEnabled(server = apiConfig.url) -> MockServerApiEndpointClient()
                                     else -> DefaultServerApiEndpointClient(
                                         serverApiUrl = uri,
@@ -211,11 +218,28 @@ object StasisClientDependencies {
                                         ),
                                         self = bridge.device
                                     )
-                                },
-                                datasetDefinitionsCache = datasetDefinitionsCache,
-                                datasetEntriesCache = datasetEntriesCache,
-                                datasetMetadataCache = datasetMetadataCache
-                            )
+                                }
+
+                                val refreshHandler = DefaultCacheRefreshHandler(
+                                    underlying = underlying,
+                                    datasetDefinitionsCache = datasetDefinitionsCache,
+                                    datasetEntriesCache = datasetEntriesCache,
+                                    datasetEntriesForDefinitionCache = datasetEntriesForDefinitionCache,
+                                    initialDelay = Duration.ofSeconds(1),
+                                    activeInterval = preferences.getCacheActiveInterval(),
+                                    pendingInterval = preferences.getCachePendingInterval(),
+                                    coroutineScope = coroutineScope
+                                )
+
+                                return CachedServerApiEndpointClient(
+                                    underlying = underlying,
+                                    datasetDefinitionsCache = datasetDefinitionsCache,
+                                    datasetEntriesCache = datasetEntriesCache,
+                                    datasetEntriesForDefinitionCache = datasetEntriesForDefinitionCache,
+                                    datasetMetadataCache = datasetMetadataCache,
+                                    refreshHandler = refreshHandler
+                                )
+                            }
 
                             fun createServiceDiscoveryClient(uri: String): ServiceDiscoveryClient = when {
                                 mocksEnabled(server = apiConfig.url) -> MockServiceDiscoveryClient()
@@ -309,7 +333,7 @@ object StasisClientDependencies {
                             )
 
                             val monitor = DefaultServerMonitor(
-                                initialDelay = Duration.ofSeconds(3),
+                                initialDelay = Duration.ofSeconds(2),
                                 interval = preferences.getPingInterval(),
                                 api = apiClient,
                                 tracker = trackers.server,
@@ -366,7 +390,13 @@ object StasisClientDependencies {
                                 monitor = monitor,
                                 commandProcessor = commandProcessor,
                                 secretsConfig = preferences.getSecretsConfig(),
-                                analytics = analyticsCollector
+                                analytics = analyticsCollector,
+                                caches = mapOf(
+                                    "dataset_definitions" to datasetDefinitionsCache,
+                                    "dataset_entries" to datasetEntriesCache,
+                                    "dataset_entries_for_definition" to datasetEntriesForDefinitionCache,
+                                    "dataset_metadata" to datasetMetadataCache,
+                                )
                             )
                         },
                         destroy = { context -> context?.credentials?.logout() }
@@ -376,22 +406,55 @@ object StasisClientDependencies {
 
     @Singleton
     @Provides
-    fun provideDatasetDefinitionsCache(): Cache<DatasetDefinitionId, DatasetDefinition> =
-        inMemoryCache()
+    fun provideDatasetDefinitionsCache(
+        application: Application
+    ): Cache<DatasetDefinitionId, DatasetDefinition> =
+        trackingCache(
+            underlying = persistedCache(
+                name = "dataset_definitions",
+                application = application,
+                serdes = DatasetDefinitionCacheFileSerdes
+            )
+        )
 
     @Singleton
     @Provides
     fun provideDatasetEntriesCache(
         application: Application
     ): Cache<DatasetEntryId, DatasetEntry> =
-        persistedCache(name = "dataset_entries", application = application, serdes = DatasetEntryCacheFileSerdes)
+        trackingCache(
+            underlying = persistedCache(
+                name = "dataset_entries",
+                application = application,
+                serdes = DatasetEntryCacheFileSerdes
+            )
+        )
+
+    @Singleton
+    @Provides
+    fun provideDatasetEntriesForDefinitionCache(
+        application: Application
+    ): Cache<DatasetDefinitionId, DatasetEntriesForDefinition> =
+        trackingCache(
+            underlying = persistedCache(
+                name = "dataset_entries_for_definition",
+                application = application,
+                serdes = DatasetEntriesForDefinitionCacheFileSerdes
+            )
+        )
 
     @Singleton
     @Provides
     fun provideDatasetMetadataCache(
         application: Application
     ): Cache<DatasetEntryId, DatasetMetadata> =
-        persistedCache(name = "dataset_metadata", application = application, serdes = DatasetMetadataCacheFileSerdes)
+        trackingCache(
+            underlying = persistedCache(
+                name = "dataset_metadata",
+                application = application,
+                serdes = DatasetMetadataCacheFileSerdes
+            )
+        )
 
     @Singleton
     @Provides
@@ -414,9 +477,6 @@ object StasisClientDependencies {
     ): Cache.Refreshing<Int, List<Schedule>> =
         refreshingCache(dispatcher, interval = Defaults.SchedulesRefreshInterval)
 
-    private fun <K : Any, V> inMemoryCache(): Cache<K, V> =
-        Cache.Map()
-
     private fun <K : Any, V> refreshingCache(
         dispatcher: CoroutineDispatcher,
         interval: Duration
@@ -436,6 +496,9 @@ object StasisClientDependencies {
             target = application.applicationContext.cacheDir.toPath().resolve(name),
             serdes = serdes
         )
+
+    private fun <K : Any, V> trackingCache(underlying: Cache<K, V>): Cache<K, V> =
+        Cache.Tracking(underlying = underlying)
 
     fun mocksEnabled(server: String): Boolean =
         BuildConfig.DEBUG && server == MockConfig.ServerApi

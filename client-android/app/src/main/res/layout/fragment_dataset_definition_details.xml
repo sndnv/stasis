@@ -95,33 +95,53 @@
                 android:tooltipText="@string/dataset_definition_start_backup_hint" />
         </LinearLayout>
 
-        <LinearLayout
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/dataset_entries_refresh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="match_parent">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
-                android:text="@string/dataset_definition_entries_list_label"
-                android:textAppearance="?attr/textAppearanceCaption" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/entries_list"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scrollbars="vertical"
-                android:transitionGroup="true"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/entries_list_empty"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="@string/dataset_definition_entries_list_empty"
-                android:visibility="gone" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="8dp"
+                    android:text="@string/dataset_definition_entries_list_label"
+                    android:textAppearance="?attr/textAppearanceCaption" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/entries_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scrollbars="vertical"
+                    android:transitionGroup="true"
+                    android:visibility="gone"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                <TextView
+                    android:id="@+id/entries_list_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="@string/dataset_definition_entries_list_empty"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/entries_loading_in_progress"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:indeterminate="true" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 </layout>

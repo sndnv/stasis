@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import stasis.client_android.R
 import stasis.client_android.activities.fragments.settings.AnalyticsDialogFragment
 import stasis.client_android.activities.fragments.settings.AvailableCommandsDialogFragment
+import stasis.client_android.activities.fragments.settings.CacheStatisticsDialogFragment
 import stasis.client_android.activities.fragments.settings.ExportDialogFragment
 import stasis.client_android.activities.fragments.settings.ImportDialogFragment
 import stasis.client_android.activities.fragments.settings.PermissionsDialogFragment
@@ -32,8 +33,10 @@ import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDate
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsTime
 import stasis.client_android.activities.views.dialogs.ConfirmationDialogFragment
+import stasis.client_android.lib.api.clients.caching.CachingExtensions.statistics
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.security.exceptions.InvalidUserCredentials
+import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository
@@ -50,6 +53,8 @@ import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getAnalyticsEnabled
 import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
 import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
+import stasis.client_android.settings.Settings.getCacheActiveInterval
+import stasis.client_android.settings.Settings.getCachePendingInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDiscoveryInterval
 import stasis.client_android.settings.Settings.getPingInterval
@@ -411,9 +416,7 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                     val providerContext = providerContextFactory.getOrCreate(preferences).required()
 
                     liveData { providerContext.analytics.state() }
-                        .observeOnce(viewLifecycleOwner) {
-                            f(it)
-                        }
+                        .observeOnce(viewLifecycleOwner) { f(it) }
                 },
                 sendAnalytics = { f ->
                     val preferences = CredentialsRepository.getEncryptedPreferences(context)
@@ -422,6 +425,23 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                     providerContext.analytics.send()
 
                     f()
+                }
+            )
+        )
+
+        providedArguments.put(
+            key = "CacheStatisticsDialogFragment",
+            arguments = CacheStatisticsDialogFragment.Companion.Arguments(
+                retrieveCacheStats = { f ->
+                    val preferences = CredentialsRepository.getEncryptedPreferences(context)
+                    val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+                    val refresh = providerContext.api.statistics()
+                    val caches = providerContext.caches
+                        .mapNotNull { e -> (e.value as? Cache.Tracking<*, *>)?.let { e.key to it } }
+                        .toMap()
+
+                    f(refresh, caches)
                 }
             )
         )
@@ -554,6 +574,50 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
             }
 
             discoveryInterval.summary = renderDiscoveryInterval(updatedDiscoveryInterval, context)
+            true
+        }
+
+        val cachePendingInterval = findPreference<DropDownPreference>(Settings.Keys.CachePendingInterval)
+        val currentCachePendingInterval = preferenceManager.sharedPreferences?.getCachePendingInterval()
+        cachePendingInterval?.summary = renderCachePendingInterval(currentCachePendingInterval, context)
+        cachePendingInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedCachePendingInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedCachePendingInterval?.seconds != currentCachePendingInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            cachePendingInterval.summary = renderCachePendingInterval(updatedCachePendingInterval, context)
+            true
+        }
+
+        val cacheActiveInterval = findPreference<DropDownPreference>(Settings.Keys.CacheActiveInterval)
+        val currentCacheActiveInterval = preferenceManager.sharedPreferences?.getCacheActiveInterval()
+        cacheActiveInterval?.summary = renderCacheActiveInterval(currentCacheActiveInterval, context)
+        cacheActiveInterval?.setOnPreferenceChangeListener { _, newValue ->
+            val updatedCacheActiveInterval = newValue.toString().toLongOrNull()?.let { Duration.ofSeconds(it) }
+
+            if (updatedCacheActiveInterval?.seconds != currentCacheActiveInterval?.seconds) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_restart_required_for_setting),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            cacheActiveInterval.summary = renderCacheActiveInterval(updatedCacheActiveInterval, context)
+            true
+        }
+
+        findPreference<Preference>(Settings.Keys.ShowCacheStatistics)?.setOnPreferenceClickListener {
+            CacheStatisticsDialogFragment()
+                .withArgumentsId<CacheStatisticsDialogFragment>(id = "CacheStatisticsDialogFragment")
+                .show(childFragmentManager, CacheStatisticsDialogFragment.DialogTag)
+
             true
         }
 
@@ -721,6 +785,26 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                 StyledString(
                     placeholder = "%1\$s",
                     content = (interval ?: Settings.Defaults.DiscoveryInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderCachePendingInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_cache_pending_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.CachePendingInterval).asString(context),
+                    style = StyleSpan(Typeface.BOLD)
+                )
+            )
+
+    private fun renderCacheActiveInterval(interval: Duration?, context: Context): SpannableString =
+        getString(R.string.settings_cache_active_interval_hint)
+            .renderAsSpannable(
+                StyledString(
+                    placeholder = "%1\$s",
+                    content = (interval ?: Settings.Defaults.CacheActiveInterval).asString(context),
                     style = StyleSpan(Typeface.BOLD)
                 )
             )

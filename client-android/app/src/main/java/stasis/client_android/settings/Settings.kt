@@ -35,6 +35,16 @@ object Settings {
             ?: Defaults.DiscoveryInterval
     }
 
+    fun SharedPreferences.getCacheActiveInterval(): Duration {
+        return getString(Keys.CacheActiveInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.CacheActiveInterval
+    }
+
+    fun SharedPreferences.getCachePendingInterval(): Duration {
+        return getString(Keys.CachePendingInterval, null)?.toLongOrNull()?.let { Duration.ofSeconds(it) }
+            ?: Defaults.CachePendingInterval
+    }
+
     fun SharedPreferences.getAnalyticsEnabled(): Boolean {
         return getBoolean(Keys.AnalyticsEnabled, Defaults.AnalyticsEnabled)
     }
@@ -100,6 +110,9 @@ object Settings {
         const val ShowAvailableCommands: String = "show_available_commands"
         const val ShowSupportedCommands: String = "show_supported_commands"
         const val DiscoveryInterval: String = "discovery_interval"
+        const val CacheActiveInterval: String = "cache_active_interval"
+        const val CachePendingInterval: String = "cache_pending_interval"
+        const val ShowCacheStatistics: String = "show_cache_statistics"
         const val AnalyticsEnabled: String = "analytics_enabled"
         const val AnalyticsKeepEvents: String = "analytics_keep_events"
         const val AnalyticsKeepFailures: String = "analytics_keep_failures"
@@ -117,6 +130,8 @@ object Settings {
         val PingInterval: Duration = Duration.ofMinutes(3)
         val CommandRefreshInterval: Duration = Duration.ofMinutes(5)
         val DiscoveryInterval: Duration = Duration.ofMinutes(30)
+        val CacheActiveInterval: Duration = Duration.ofSeconds(30)
+        val CachePendingInterval: Duration = Duration.ofMinutes(60)
         val AnalyticsEnabled: Boolean = true
         val AnalyticsKeepEvents: Boolean = true
         val AnalyticsKeepFailures: Boolean = true

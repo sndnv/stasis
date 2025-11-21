@@ -1,5 +1,6 @@
 package stasis.client_android.api.clients
 
+import kotlinx.coroutines.delay
 import okio.ByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
@@ -39,59 +40,90 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import java.util.concurrent.ThreadLocalRandom
 
-class MockServerApiEndpointClient : ServerApiEndpointClient {
+class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : ServerApiEndpointClient {
     override val self: DeviceId = MockConfig.Device
 
     override val server: String = MockConfig.ServerApi
 
-    override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> =
-        Success(listOf(defaultDefinition, otherDefinition))
+    private val nextDelay: Long
+        get() = ThreadLocalRandom.current().nextLong(0, maxSimulatedDelay)
 
-    override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> =
-        when (definition) {
+    override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> {
+        delay(nextDelay)
+        return Success(
+            listOf(
+                defaultDefinition,
+                otherDefinition,
+                otherDefinition.copy(id = UUID.randomUUID(), created = Instant.now(), updated = Instant.now())
+            )
+        )
+    }
+
+    override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> {
+        delay(nextDelay)
+        return when (definition) {
             defaultDefinition.id -> Success(defaultDefinition)
             else -> Failure(RuntimeException("Invalid definition requested: [$definition]"))
         }
+    }
 
-    override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> =
-        Success(CreatedDatasetDefinition(definition = defaultDefinition.id))
+    override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
+        delay(nextDelay)
+        return Success(CreatedDatasetDefinition(definition = defaultDefinition.id))
+    }
 
     override suspend fun updateDatasetDefinition(
         definition: DatasetDefinitionId,
         request: UpdateDatasetDefinition
-    ): Try<Unit> =
-        Success(Unit)
+    ): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
-    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> =
-        Success(Unit)
+    override suspend fun deleteDatasetDefinition(definition: DatasetDefinitionId): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
-    override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> =
-        when (definition) {
+    override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> {
+        delay(nextDelay)
+        return when (definition) {
             defaultDefinition.id -> Success(listOf(defaultEntry))
             else -> Failure(RuntimeException("Invalid definition requested: [$definition]"))
         }
+    }
 
-    override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> =
-        when (entry) {
+    override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> {
+        delay(nextDelay)
+        return when (entry) {
             defaultEntry.id -> Success(defaultEntry)
             else -> Failure(RuntimeException("Invalid entry requested: [$entry]"))
         }
+    }
 
-    override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?> =
-        when (definition) {
+    override suspend fun latestEntry(definition: DatasetDefinitionId, until: Instant?): Try<DatasetEntry?> {
+        delay(nextDelay)
+        return when (definition) {
             defaultDefinition.id -> Success(defaultEntry)
             else -> Success(null)
         }
+    }
 
-    override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> =
-        Success(CreatedDatasetEntry(entry = defaultEntry.id))
+    override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
+        delay(nextDelay)
+        return Success(CreatedDatasetEntry(entry = defaultEntry.id))
+    }
 
-    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> =
-        Success(Unit)
+    override suspend fun deleteDatasetEntry(entry: DatasetEntryId): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
-    override suspend fun publicSchedules(): Try<List<Schedule>> =
-        Success(
+    override suspend fun publicSchedules(): Try<List<Schedule>> {
+        delay(nextDelay)
+        return Success(
             listOf(
                 defaultSchedule,
                 defaultSchedule.copy(
@@ -101,53 +133,80 @@ class MockServerApiEndpointClient : ServerApiEndpointClient {
                 )
             )
         )
+    }
 
-    override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> =
-        when (schedule) {
+    override suspend fun publicSchedule(schedule: ScheduleId): Try<Schedule> {
+        delay(nextDelay)
+        return when (schedule) {
             defaultSchedule.id -> Success(defaultSchedule)
             else -> Failure(RuntimeException("Invalid schedule requested: [$schedule]"))
         }
+    }
 
-    override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> =
-        Success(defaultMetadata)
+    override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> {
+        delay(nextDelay)
+        return Success(defaultMetadata)
+    }
 
-    override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> =
-        Success(defaultMetadata)
+    override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> {
+        delay(nextDelay)
+        return Success(defaultMetadata)
+    }
 
-    override suspend fun user(): Try<User> =
-        Success(currentUser)
+    override suspend fun user(): Try<User> {
+        delay(nextDelay)
+        return Success(currentUser)
+    }
 
-    override suspend fun resetUserSalt(): Try<UpdatedUserSalt> =
-        Success(UpdatedUserSalt(salt = currentUser.salt))
+    override suspend fun resetUserSalt(): Try<UpdatedUserSalt> {
+        delay(nextDelay)
+        return Success(UpdatedUserSalt(salt = currentUser.salt))
+    }
 
-    override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> =
-        Success(Unit)
+    override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
-    override suspend fun device(): Try<Device> =
-        Success(currentDevice)
+    override suspend fun device(): Try<Device> {
+        delay(nextDelay)
+        return Success(currentDevice)
+    }
 
-    override suspend fun pushDeviceKey(key: ByteString): Try<Unit> =
-        Success(Unit)
+    override suspend fun pushDeviceKey(key: ByteString): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
-    override suspend fun pullDeviceKey(): Try<ByteString> =
-        Failure(ResourceMissingFailure())
+    override suspend fun pullDeviceKey(): Try<ByteString> {
+        delay(nextDelay)
+        return Failure(ResourceMissingFailure())
+    }
 
-    override suspend fun deviceKeyExists(): Try<Boolean> =
-        Success(false)
+    override suspend fun deviceKeyExists(): Try<Boolean> {
+        delay(nextDelay)
+        return Success(false)
+    }
 
-    override suspend fun ping(): Try<Ping> =
-        Success(Ping(id = UUID.randomUUID()))
+    override suspend fun ping(): Try<Ping> {
+        delay(nextDelay)
+        return Success(Ping(id = UUID.randomUUID()))
+    }
 
-    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> =
-        Success(
+    override suspend fun commands(lastSequenceId: Long?): Try<List<Command>> {
+        delay(nextDelay)
+        return Success(
             listOf(command1, command2)
                 .withIndex()
                 .map { it.value.copy(sequenceId = it.index.toLong() + 1) }
                 .filter { it.sequenceId > (lastSequenceId ?: 0) }
         )
+    }
 
-    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> =
-        Success(Unit)
+    override suspend fun sendAnalyticsEntry(entry: AnalyticsEntry): Try<Unit> {
+        delay(nextDelay)
+        return Success(Unit)
+    }
 
     private val defaultDefinition = DatasetDefinition(
         id = DatasetDefinitionId.randomUUID(),

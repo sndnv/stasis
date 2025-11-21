@@ -59,6 +59,36 @@ message EntityState {
   }
 }
 
+message DatasetDefinition {
+  Uuid id = 1;
+  string info = 2;
+  Uuid device = 3;
+  int32 redundant_copies = 4;
+  Retention existing_versions = 5;
+  Retention removed_versions = 6;
+  int64 created = 7;
+  int64 updated = 8;
+
+  message Retention {
+    Policy policy = 1;
+    int64 duration = 2;
+
+    message Policy {
+      oneof value {
+        AtMost atMost = 1;
+        LatestOnly latestOnly = 2;
+        All all = 3;
+      }
+
+      message AtMost {
+        int32 versions = 1;
+      }
+      message LatestOnly {}
+      message All {}
+    }
+  }
+}
+
 message DatasetEntry {
   Uuid id = 1;
   Uuid definition = 2;
@@ -66,6 +96,11 @@ message DatasetEntry {
   repeated Uuid data = 4;
   Uuid metadata = 5;
   int64 created = 6;
+}
+
+message DatasetEntriesForDefinition {
+  map<string, int64> entries = 1;
+  optional string latest = 2;
 }
 
 message Uuid {

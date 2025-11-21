@@ -78,7 +78,8 @@ class UserStatusViewModelSpec {
                             monitor = MockServerMonitor(),
                             commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig,
-                            analytics = MockAnalyticsCollector()
+                            analytics = MockAnalyticsCollector(),
+                            caches = emptyMap()
                         )
                     },
                     destroy = {}

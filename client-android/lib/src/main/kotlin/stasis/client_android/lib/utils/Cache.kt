@@ -12,11 +12,12 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 import kotlin.math.min
-import kotlin.streams.toList
+import kotlin.streams.toList as kotlinToList
 
 interface Cache<K : Any, V> {
 
@@ -35,6 +36,13 @@ interface Cache<K : Any, V> {
      * @param value the value to insert
      */
     suspend fun put(key: K, value: V)
+
+    /**
+     * Puts the provided entries in the cache.
+     *
+     * @param entries entries to insert
+     */
+    suspend fun put(entries: kotlin.collections.Map<K, V>)
 
     /**
      * Retrieves the cached value associated with [key] or attempts to load it.
@@ -74,6 +82,9 @@ interface Cache<K : Any, V> {
             map[key] = value
         }
 
+        override suspend fun put(entries: kotlin.collections.Map<K, V>) =
+            map.putAll(entries)
+
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             get(key) ?: load(key)?.also { map[key] = it }
 
@@ -109,6 +120,9 @@ interface Cache<K : Any, V> {
             key.asStateFile().writeBytes(serdes.serializeValue(value))
         }
 
+        override suspend fun put(entries: kotlin.collections.Map<K, V>) =
+            entries.forEach { put(it.key, it.value) }
+
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             get(key) ?: load(key)?.also { put(key, it) }
 
@@ -131,8 +145,8 @@ interface Cache<K : Any, V> {
         }
 
         private fun keys(): List<K> =
-            Files.list(target)
-                .toList()
+            Try { Files.list(target).kotlinToList() }
+                .getOrElse { emptyList() }
                 .mapNotNull { serdes.deserializeKey(it.fileName.toString()) }
 
         interface Serdes<K : Any, V> {
@@ -167,6 +181,10 @@ interface Cache<K : Any, V> {
         override suspend fun put(key: K, value: V) {
             underlying.put(key, value)
             expire(key)
+        }
+
+        override suspend fun put(entries: kotlin.collections.Map<K, V>) {
+            entries.forEach { put(it.key, it.value) }
         }
 
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
@@ -240,6 +258,10 @@ interface Cache<K : Any, V> {
             underlying.put(key, value)
         }
 
+        override suspend fun put(entries: kotlin.collections.Map<K, V>) {
+            entries.forEach { put(it.key, it.value) }
+        }
+
         override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
             underlying.getOrLoad(key, load)?.also {
                 if (!jobs.containsKey(key)) {
@@ -306,5 +328,78 @@ interface Cache<K : Any, V> {
             const val RefreshIntervalOnFailureReduction: Long = 10L
             val MaxRefreshIntervalOnFailure: Duration = Duration.ofSeconds(5)
         }
+    }
+
+    /**
+     * Statistics-tracking cache.
+     *
+     * Statistics about cache hits and misses are kept and provided.
+     *
+     * @param underlying cache that handles the actual data storage
+     */
+    class Tracking<K : Any, V>(
+        private val underlying: Cache<K, V>,
+    ) : Cache<K, V> {
+        private val stats: Statistics = Statistics()
+
+        /**
+         * Provides the current number of cache hits.
+         */
+        val hits: Long
+            get() = stats.hits
+
+        /**
+         * Provides the current number of cache misses.
+         */
+        val misses: Long
+            get() = stats.misses
+
+        override suspend fun get(key: K): V? {
+            val result = underlying.get(key = key)
+
+            when (result) {
+                null -> stats.miss()
+                else -> stats.hit()
+            }
+
+            return result
+        }
+
+        override suspend fun put(key: K, value: V) =
+            underlying.put(key = key, value = value)
+
+        override suspend fun put(entries: kotlin.collections.Map<K, V>) =
+            underlying.put(entries = entries)
+
+        override suspend fun getOrLoad(key: K, load: suspend (K) -> V?): V? =
+            get(key) ?: load(key)?.also { put(key, it) }
+
+        override suspend fun remove(key: K) =
+            underlying.remove(key = key)
+
+        override suspend fun all(): kotlin.collections.Map<K, V> =
+            underlying.all()
+
+        override suspend fun clear() =
+            underlying.clear()
+    }
+
+    private class Statistics {
+        private val hitsRef: AtomicLong = AtomicLong(0)
+        private val missesRef: AtomicLong = AtomicLong(0)
+
+        fun hit() {
+            hitsRef.incrementAndGet()
+        }
+
+        fun miss() {
+            missesRef.incrementAndGet()
+        }
+
+        val hits: Long
+            get() = hitsRef.get()
+
+        val misses: Long
+            get() = missesRef.get()
     }
 }

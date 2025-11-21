@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/cache_statistics_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawablePadding="4dp"
+        android:padding="16dp"
+        android:text="@string/cache_statistics_title"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:drawableStartCompat="@drawable/ic_cache_statistics"
+        app:layout_constraintBottom_toTopOf="@id/cache_statistics_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:id="@+id/cache_statistics_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cache_statistics_title">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/cache_statistics_caches_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="@string/cache_title"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                app:drawableStartCompat="@drawable/ic_cache" />
+
+            <stasis.client_android.activities.views.ExpandingListView
+                android:id="@+id/cache_statistics_caches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fadeScrollbars="false" />
+
+            <TextView
+                android:id="@+id/cache_statistics_refresh_targets_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:drawablePadding="4dp"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="@string/cache_refresh_target_title"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                app:drawableStartCompat="@drawable/ic_cache_refresh_target" />
+
+            <stasis.client_android.activities.views.ExpandingListView
+                android:id="@+id/cache_statistics_refresh_targets"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fadeScrollbars="false" />
+
+            <TextView
+                android:id="@+id/cache_statistics_refresh_targets_last_refresh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="16dp"
+                android:textAppearance="?attr/textAppearanceSubtitle2" />
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

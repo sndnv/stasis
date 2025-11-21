@@ -77,7 +77,7 @@ open class MockServerApiEndpointClient(
 
     override suspend fun datasetDefinition(definition: DatasetDefinitionId): Try<DatasetDefinition> {
         stats[Statistic.DatasetDefinitionRetrieved]?.getAndIncrement()
-        return Success(Generators.generateDefinition())
+        return Success(Generators.generateDefinition().copy(id = definition))
     }
 
     override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
@@ -105,13 +105,13 @@ open class MockServerApiEndpointClient(
                 Generators.generateEntry(),
                 Generators.generateEntry(),
                 Generators.generateEntry()
-            )
+            ).map { it.copy(definition = definition) }
         )
     }
 
     override suspend fun datasetEntry(entry: DatasetEntryId): Try<DatasetEntry> {
         stats[Statistic.DatasetEntryRetrieved]?.getAndIncrement()
-        return Success(Generators.generateEntry())
+        return Success(Generators.generateEntry().copy(id = entry))
     }
 
     override suspend fun latestEntry(
@@ -119,7 +119,7 @@ open class MockServerApiEndpointClient(
         until: Instant?
     ): Try<DatasetEntry?> {
         stats[Statistic.DatasetEntryRetrievedLatest]?.getAndIncrement()
-        return Success(Generators.generateEntry())
+        return Success(Generators.generateEntry().copy(definition = definition))
     }
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {

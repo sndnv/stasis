@@ -5,6 +5,8 @@ import io.kotest.matchers.shouldBe
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.api.clients.CachedServerApiEndpointClient
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
+import stasis.client_android.lib.api.clients.caching.DatasetEntriesForDefinition
+import stasis.client_android.lib.api.clients.caching.DefaultCacheRefreshHandler
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetDefinition
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
@@ -22,27 +24,46 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
-@Suppress("LargeClass")
+@Suppress("LargeClass", "MaxLineLength")
 class CachedServerApiEndpointClientSpec : WordSpec({
     "A CachedServerApiEndpointClient" should {
         fun createClient(
             underlying: ServerApiEndpointClient = MockServerApiEndpointClient(),
             datasetDefinitionsCache: Cache<DatasetDefinitionId, DatasetDefinition> = Cache.Map(),
             datasetEntriesCache: Cache<DatasetEntryId, DatasetEntry> = Cache.Map(),
-            datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata> = Cache.Map()
+            datasetEntriesForDefinitionCache: Cache<DatasetDefinitionId, DatasetEntriesForDefinition> = Cache.Map(),
+            datasetMetadataCache: Cache<DatasetEntryId, DatasetMetadata> = Cache.Map(),
         ): CachedServerApiEndpointClient = CachedServerApiEndpointClient(
             underlying = underlying,
             datasetDefinitionsCache = datasetDefinitionsCache,
             datasetEntriesCache = datasetEntriesCache,
-            datasetMetadataCache = datasetMetadataCache
+            datasetEntriesForDefinitionCache = datasetEntriesForDefinitionCache,
+            datasetMetadataCache = datasetMetadataCache,
+            refreshHandler = object : DefaultCacheRefreshHandler(
+                underlying = underlying,
+                datasetDefinitionsCache = datasetDefinitionsCache,
+                datasetEntriesCache = datasetEntriesCache,
+                datasetEntriesForDefinitionCache = datasetEntriesForDefinitionCache,
+                initialDelay = Duration.ofSeconds(1),
+                activeInterval = Duration.ofSeconds(2),
+                pendingInterval = Duration.ofSeconds(3),
+                coroutineScope = testScope
+            ) {
+                override suspend fun start() = Unit
+                override fun stop() = Unit
+            }
         )
 
         "retrieve and cache all dataset definitions" {
             val underlying = MockServerApiEndpointClient()
+            val definitions = Cache.Tracking<DatasetDefinitionId, DatasetDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetDefinitionsCache = definitions)
 
             client.datasetDefinitions()
+
+            definitions.hits shouldBe (0)
+            definitions.misses shouldBe (0) // getting all entries is not a miss
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -81,6 +102,8 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.datasetDefinitions()
             client.datasetDefinitions()
 
+            definitions.hits shouldBe (0)
+            definitions.misses shouldBe (0) // getting all entries is not a miss
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -110,43 +133,17 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "retrieve and cache individual dataset definitions" {
             val underlying = MockServerApiEndpointClient()
+            val definitions = Cache.Tracking<DatasetDefinitionId, DatasetDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetDefinitionsCache = definitions)
 
             val definition1 = UUID.randomUUID()
             val definition2 = UUID.randomUUID()
 
             client.datasetDefinition(definition = definition1)
 
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (1)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.UserSaltReset] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
-
-            client.datasetDefinition(definition = definition1)
-            client.datasetDefinition(definition = definition1)
-            client.datasetDefinition(definition = definition1)
-
+            definitions.hits shouldBe (1)
+            definitions.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -173,9 +170,44 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
+            client.datasetDefinition(definition = definition1)
+            client.datasetDefinition(definition = definition1)
+            client.datasetDefinition(definition = definition1)
+
+            definitions.hits shouldBe (4)
+            definitions.misses shouldBe (1)
+
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (1)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserSaltReset] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.UserPasswordUpdated] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPushed] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyPulled] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DeviceKeyExists] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.Ping] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
+
             client.datasetDefinition(definition = definition2)
             client.datasetDefinition(definition = definition2)
             client.datasetDefinition(definition = definition2)
+
+            definitions.hits shouldBe (7)
+            definitions.misses shouldBe (2)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -205,18 +237,25 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "create dataset definitions and invalidate existing cache" {
             val underlying = MockServerApiEndpointClient()
+            val definitions = Cache.Tracking<DatasetDefinitionId, DatasetDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetDefinitionsCache = definitions)
 
             client.datasetDefinitions()
             client.datasetDefinitions()
             client.datasetDefinitions()
+
+            definitions.hits shouldBe (0)
+            definitions.misses shouldBe (0) // getting all entries is not a miss
 
             val definition = UUID.randomUUID()
 
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
+
+            definitions.hits shouldBe (3)
+            definitions.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -267,6 +306,9 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
 
+            definitions.hits shouldBe (6)
+            definitions.misses shouldBe (1)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
@@ -276,7 +318,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (2)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (2)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
@@ -295,18 +337,25 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "update dataset definitions and invalidate existing cache" {
             val underlying = MockServerApiEndpointClient()
+            val definitions = Cache.Tracking<DatasetDefinitionId, DatasetDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetDefinitionsCache = definitions)
 
             client.datasetDefinitions()
             client.datasetDefinitions()
             client.datasetDefinitions()
+
+            definitions.hits shouldBe (0)
+            definitions.misses shouldBe (0) // getting all entries is not a miss
 
             val definition = UUID.randomUUID()
 
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
+
+            definitions.hits shouldBe (3)
+            definitions.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -357,6 +406,9 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
 
+            definitions.hits shouldBe (6)
+            definitions.misses shouldBe (1)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
@@ -366,7 +418,7 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionRetrieved] shouldBe (2)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (2)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionsRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.PublicSchedulesRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.PublicScheduleRetrieved] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
@@ -385,18 +437,25 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "delete dataset definitions and invalidate existing cache" {
             val underlying = MockServerApiEndpointClient()
+            val definitions = Cache.Tracking<DatasetDefinitionId, DatasetDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetDefinitionsCache = definitions)
 
             client.datasetDefinitions()
             client.datasetDefinitions()
             client.datasetDefinitions()
+
+            definitions.hits shouldBe (0)
+            definitions.misses shouldBe (0) // getting all entries is not a miss
 
             val definition = UUID.randomUUID()
 
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
+
+            definitions.hits shouldBe (3)
+            definitions.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -433,6 +492,9 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.datasetDefinition(definition = definition)
             client.datasetDefinition(definition = definition)
 
+            definitions.hits shouldBe (6)
+            definitions.misses shouldBe (2)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
@@ -459,16 +521,24 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
-        "retrieve dataset entries for a dataset definition (without caching)" {
+        "retrieve dataset entries for a dataset definition" {
             val underlying = MockServerApiEndpointClient()
+            val entriesForDefinition =
+                Cache.Tracking<DatasetDefinitionId, DatasetEntriesForDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(
+                underlying = underlying,
+                datasetEntriesForDefinitionCache = entriesForDefinition
+            )
 
             client.datasetEntries(definition = UUID.randomUUID())
             client.datasetEntries(definition = UUID.randomUUID())
             client.datasetEntries(definition = UUID.randomUUID())
             client.datasetEntries(definition = UUID.randomUUID())
             client.datasetEntries(definition = UUID.randomUUID())
+
+            entriesForDefinition.hits shouldBe (5)
+            entriesForDefinition.misses shouldBe (5)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -498,12 +568,16 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "retrieve and cache individual dataset entries" {
             val underlying = MockServerApiEndpointClient()
+            val entries = Cache.Tracking<DatasetEntryId, DatasetEntry>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetEntriesCache = entries)
 
             val entry = UUID.randomUUID()
 
             client.datasetEntry(entry = entry)
+
+            entries.hits shouldBe (1)
+            entries.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -535,6 +609,9 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.datasetEntry(entry = entry)
             client.datasetEntry(entry = entry)
             client.datasetEntry(entry = entry)
+
+            entries.hits shouldBe (6)
+            entries.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
@@ -564,18 +641,26 @@ class CachedServerApiEndpointClientSpec : WordSpec({
 
         "retrieve and cache latest dataset entry for a dataset definition (when `until` not provided)" {
             val underlying = MockServerApiEndpointClient()
+            val entriesForDefinition =
+                Cache.Tracking<DatasetDefinitionId, DatasetEntriesForDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(
+                underlying = underlying,
+                datasetEntriesForDefinitionCache = entriesForDefinition
+            )
 
             val definition = UUID.randomUUID()
 
             client.latestEntry(definition = definition, until = null)
 
+            entriesForDefinition.hits shouldBe (1)
+            entriesForDefinition.misses shouldBe (1)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (1)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
@@ -602,11 +687,14 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
 
+            entriesForDefinition.hits shouldBe (6)
+            entriesForDefinition.misses shouldBe (1)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (1)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
@@ -668,10 +756,15 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
-        "create dataset entries and invalidate existing cache" {
+        "create dataset entries" {
             val underlying = MockServerApiEndpointClient()
+            val entriesForDefinition =
+                Cache.Tracking<DatasetDefinitionId, DatasetEntriesForDefinition>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(
+                underlying = underlying,
+                datasetEntriesForDefinitionCache = entriesForDefinition
+            )
 
             val definition = UUID.randomUUID()
 
@@ -679,11 +772,14 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
 
+            entriesForDefinition.hits shouldBe (3)
+            entriesForDefinition.misses shouldBe (1)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (1)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
@@ -713,15 +809,21 @@ class CachedServerApiEndpointClientSpec : WordSpec({
                 )
             )
 
+            entriesForDefinition.hits shouldBe (3)
+            entriesForDefinition.misses shouldBe (2)
+
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
 
+            entriesForDefinition.hits shouldBe (6)
+            entriesForDefinition.misses shouldBe (2)
+
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (2)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (1)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
@@ -743,22 +845,25 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
         }
 
-        "delete dataset entries and invalidate existing cache" {
+        "delete dataset entries" {
             val underlying = MockServerApiEndpointClient()
+            val entries = Cache.Tracking<DatasetEntryId, DatasetEntry>(Cache.Map())
 
-            val client = createClient(underlying = underlying)
+            val client = createClient(underlying = underlying, datasetEntriesCache = entries)
 
             val definition = UUID.randomUUID()
 
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
-            val latest = client.latestEntry(definition = definition, until = null)
+
+            entries.hits shouldBe (3 * 2) // 3 hits per request; x2 requests
+            entries.misses shouldBe (0)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (1)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)
@@ -779,17 +884,23 @@ class CachedServerApiEndpointClientSpec : WordSpec({
             underlying.statistics[MockServerApiEndpointClient.Statistic.Commands] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.AnalyticsEntriesSent] shouldBe (0)
 
-            client.deleteDatasetEntry(entry = latest.get()!!.id)
+            client.deleteDatasetEntry(entry = UUID.randomUUID())
+
+            entries.hits shouldBe (3 * 2) // 3 hits per request; x2 requests
+            entries.misses shouldBe (1)
 
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
             client.latestEntry(definition = definition, until = null)
+
+            entries.hits shouldBe (3 * 5) // 3 hits per request; x5 requests
+            entries.misses shouldBe (1)
 
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryDeleted] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrieved] shouldBe (0)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (2)
-            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (0)
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntryRetrievedLatest] shouldBe (0) // always from cache
+            underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved] shouldBe (1)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionCreated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionUpdated] shouldBe (0)
             underlying.statistics[MockServerApiEndpointClient.Statistic.DatasetDefinitionDeleted] shouldBe (0)

@@ -147,6 +147,23 @@
             app:key="discovery_interval"
             app:title="@string/settings_discovery_interval_title" />
 
+        <DropDownPreference
+            app:entries="@array/settings_cache_pending_interval_entries"
+            app:entryValues="@array/settings_cache_pending_interval_values"
+            app:key="cache_pending_interval"
+            app:title="@string/settings_cache_pending_interval_title" />
+
+        <DropDownPreference
+            app:entries="@array/settings_cache_active_interval_entries"
+            app:entryValues="@array/settings_cache_active_interval_values"
+            app:key="cache_active_interval"
+            app:title="@string/settings_cache_active_interval_title" />
+
+        <Preference
+            app:key="show_cache_statistics"
+            app:summary="@string/settings_cache_statistics_summary"
+            app:title="@string/settings_cache_statistics_title" />
+
         <Preference
             app:key="reset_config"
             app:summary="@string/settings_reset_config_summary"

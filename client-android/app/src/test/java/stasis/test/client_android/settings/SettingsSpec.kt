@@ -16,6 +16,8 @@ import stasis.client_android.settings.Settings.getAnalyticsKeepEvents
 import stasis.client_android.settings.Settings.getAnalyticsKeepFailures
 import stasis.client_android.settings.Settings.getAnalyticsPersistenceInterval
 import stasis.client_android.settings.Settings.getAnalyticsTransmissionInterval
+import stasis.client_android.settings.Settings.getCacheActiveInterval
+import stasis.client_android.settings.Settings.getCachePendingInterval
 import stasis.client_android.settings.Settings.getCommandRefreshInterval
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import stasis.client_android.settings.Settings.getDiscoveryInterval
@@ -211,6 +213,34 @@ class SettingsSpec {
     }
 
     @Test
+    fun supportRetrievingDefaultCachePendingInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CachePendingInterval,
+                null
+            )
+        } returns "3600"
+
+        val expectedState = Settings.Defaults.CachePendingInterval
+        assertThat(preferences.getCachePendingInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingDefaultCacheActiveInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CacheActiveInterval,
+                null
+            )
+        } returns "30"
+
+        val expectedState = Settings.Defaults.CacheActiveInterval
+        assertThat(preferences.getCacheActiveInterval(), equalTo(expectedState))
+    }
+
+    @Test
     fun supportRetrievingUserDefinedPingInterval() {
         val preferences = mockk<SharedPreferences>()
         every {
@@ -250,6 +280,34 @@ class SettingsSpec {
 
         val expectedState = Duration.ofSeconds(1234)
         assertThat(preferences.getDiscoveryInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedCacheActiveInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CacheActiveInterval,
+                null
+            )
+        } returns "1234"
+
+        val expectedState = Duration.ofSeconds(1234)
+        assertThat(preferences.getCacheActiveInterval(), equalTo(expectedState))
+    }
+
+    @Test
+    fun supportRetrievingUserDefinedCachePendingInterval() {
+        val preferences = mockk<SharedPreferences>()
+        every {
+            preferences.getString(
+                Settings.Keys.CachePendingInterval,
+                null
+            )
+        } returns "1234"
+
+        val expectedState = Duration.ofSeconds(1234)
+        assertThat(preferences.getCachePendingInterval(), equalTo(expectedState))
     }
 
     @Test

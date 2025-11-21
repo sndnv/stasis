@@ -104,8 +104,10 @@
     <string name="permissions_manage_external_storage_hint">Provides access to manage user files (required)</string>
     <string name="permissions_unrecognized_hint">-</string>
     <string name="permissions_title">Application permissions</string>
-    <string name="permissions_request_button_text">Request</string>
-    <string name="permissions_request_button_hint">Request missing permissions</string>
+    <string name="permissions_request_button_request_action_text">Request</string>
+    <string name="permissions_request_button_request_action_hint">Request missing permissions</string>
+    <string name="permissions_request_button_close_action_text">Close</string>
+    <string name="permissions_request_button_close_action_hint">Close permissions dialog</string>
     <string name="permissions_granted_hint">Denotes if the permission has been granted or not</string>
     <string name="permissions_general_hint">
         Backup and recovery operations require broad access to files stored on this device.\n\n
@@ -118,6 +120,9 @@
         To allow the necessary access, go to the system settings for the application and make the appropriate changes to the permissions there.
     </string>
     <string name="permissions_dialog_not_shown_button_hint">Open Settings</string>
+
+    <!-- Cache Statistics -->
+    <string name="cache_statistics_title">Cache statistics</string>
 
     <!-- Context Help -->
     <string name="context_help_first_time_hint_title">Help</string>
@@ -676,7 +681,10 @@
     <string name="toast_dataset_definition_created">Backup definition [%1$s] created</string>
     <string name="toast_dataset_definition_updated">Backup definition [%1$s] updated</string>
     <string name="toast_dataset_definition_removed">Backup definition removed</string>
+    <string name="toast_dataset_definitions_refreshed">Backup definitions reloaded</string>
     <string name="toast_dataset_entry_removed">Backup entry removed</string>
+    <string name="toast_dataset_entries_refreshed">Backup entries reloaded</string>
+    <string name="toast_data_refreshed">Backup information reloaded</string>
     <string name="toast_rule_created">Rule created</string>
     <string name="toast_rule_updated">Rule updated</string>
     <string name="toast_rule_removed">Rule removed</string>
@@ -738,6 +746,8 @@
     <string name="settings_ping_interval_hint">The client will contact the server every %1$s</string>
     <string name="settings_command_refresh_interval_hint">The client will query the server for new commands every %1$s</string>
     <string name="settings_discovery_interval_hint">The client will query the server for new API endpoints every %1$s</string>
+    <string name="settings_cache_pending_interval_hint">The client will perform a full refresh every %1$s</string>
+    <string name="settings_cache_active_interval_hint">The client will perform a partial refresh every %1$s during a full refresh cycle</string>
     <string name="settings_manage_user_credentials_update_password_title">Update password</string>
     <string name="settings_manage_user_credentials_update_password_summary">Allows updating the password for the current user</string>
     <string name="settings_manage_user_credentials_update_salt_title">Update salt value</string>
@@ -860,10 +870,23 @@
     <string name="settings_command_parameters_title">[%1$s] %2$s</string>
     <string name="settings_command_parameters_info">%1$s</string>
     <string name="settings_discovery_interval_title">Server discovery interval</string>
+    <string name="settings_cache_pending_interval_title">Cache refresh interval (full)</string>
+    <string name="settings_cache_active_interval_title">Cache refresh interval (partial)</string>
+    <string name="settings_cache_statistics_summary">Shows the current cache statistics</string>
+    <string name="settings_cache_statistics_title">Cache Statistics</string>
     <string name="settings_permissions_title">Application permissions</string>
     <string name="settings_reset_config_title">Reset configuration</string>
     <string name="settings_reset_config_summary">Clears the client\'s configuration and device secret</string>
     <string name="settings_reset_config_confirm_title">Clear all configuration and log out?</string>
+
+    <!-- Caches-->
+    <string name="cache_refresh_target_title">Cache refresh targets</string>
+    <string name="cache_refresh_target_last_refresh">Last refresh: %1$s</string>
+    <string name="cache_refresh_target_field_content_name">%1$s</string>
+    <string name="cache_refresh_target_field_content_details">Successful: %1$s, Failed: %2$s</string>
+    <string name="cache_title">Caches</string>
+    <string name="cache_field_content_name">%1$s</string>
+    <string name="cache_field_content_details">Hits: %1$s, Misses: %2$s</string>
 
     <!-- Commands -->
     <string name="command_field_content_info_unprocessed">[%1$s] %2$s (%3$s)</string>

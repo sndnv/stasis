@@ -74,9 +74,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="16dp"
-            android:contentDescription="@string/permissions_request_button_hint"
-            android:text="@string/permissions_request_button_text"
-            android:tooltipText="@string/permissions_request_button_hint"
+            android:contentDescription="@string/permissions_request_button_request_action_hint"
+            android:text="@string/permissions_request_button_request_action_text"
+            android:tooltipText="@string/permissions_request_button_request_action_hint"
             app:borderWidth="0dp"
             app:icon="@drawable/ic_add_permissions"
             app:useCompatPadding="true" />

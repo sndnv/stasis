@@ -121,7 +121,8 @@ class RecoverFragment : Fragment() {
                     .show(childFragmentManager, PermissionsDialogFragment.DialogTag)
             } else {
                 liveData { providerContext.executor.active().isNotEmpty() }
-                    .observe(viewLifecycleOwner) { operationsPending ->
+                    .observeOnce(viewLifecycleOwner)
+                    { operationsPending ->
                         if (operationsPending) {
                             InformationDialogFragment()
                                 .withIcon(R.drawable.ic_warning)
@@ -197,7 +198,7 @@ class RecoverFragment : Fragment() {
                 .show(childFragmentManager)
         }
 
-        datasets.nonEmptyDefinitions().observe(viewLifecycleOwner) { definitions ->
+        datasets.nonEmptyDefinitions().observeOnce(viewLifecycleOwner) { definitions ->
             latestDefinitions = definitions.associate { definition ->
                 val info = requireContext().getString(
                     R.string.recovery_pick_definition_info,
