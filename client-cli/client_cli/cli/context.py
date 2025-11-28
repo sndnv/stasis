@@ -12,3 +12,4 @@ class Context:
         self.filtering = None
         self.sorting = None
         self.rendering = None
+        self.is_configured = False
