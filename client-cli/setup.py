@@ -12,6 +12,7 @@ install_requires = [
     'cryptography==46.0.3',
     'sseclient-py==1.8.0',
     'tqdm==4.67.1',
+    'pexpect==4.9.0'
 ]
 
 tests_require = []

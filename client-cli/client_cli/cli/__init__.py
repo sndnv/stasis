@@ -13,6 +13,17 @@ import click
 from pyhocon import ConfigFactory
 
 
+def is_client_configured(application_name, config_file_name):
+    """
+    Checks if the client configuration is available.
+
+    :param application_name: client application name
+    :param config_file_name: config file name
+    :return: `True` if the configuration is available
+    """
+    return os.path.isfile(os.path.join(get_app_dir(application_name), config_file_name))
+
+
 def load_client_config(application_name, config_file_name):
     """
     Loads the client config based on the supplied application and config file names.
@@ -133,3 +144,13 @@ def get_app_dir(application_name):
         else:
             logging.error('Unsupported operating system: [{}]'.format(sys.platform))
             raise click.Abort()
+
+
+def get_top_level_command(args, commands):
+    """Returns the main/top-level command"""
+    if len(args) > 1:
+        existing = list(commands.keys())
+        provided = args[1].lower()
+        return provided if provided in existing else None
+    else:
+        return None

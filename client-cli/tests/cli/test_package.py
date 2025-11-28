@@ -12,11 +12,24 @@ from client_cli.cli import (
     load_client_config,
     validate_duration,
     capture_failures,
-    get_app_dir
+    get_app_dir,
+    get_top_level_command, is_client_configured,
 )
 
 
 class CliPackageSpec(unittest.TestCase):
+
+    @patch('os.path.isfile')
+    def test_should_check_if_client_is_configured(self, mock_isfile):
+        mock_isfile.return_value = True
+
+        result = is_client_configured(
+            application_name="test-app",
+            config_file_name="test.conf"
+        )
+
+        mock_isfile.assert_called_once()
+        self.assertTrue(result)
 
     @patch('client_cli.cli.load_config_from_file')
     def test_should_retrieve_client_config(self, mock_load_config_from_file):
@@ -176,6 +189,37 @@ class CliPackageSpec(unittest.TestCase):
     def test_should_fail_to_retrieve_app_dir_for_invalid_platforms(self):
         with self.assertRaises(Abort):
             get_app_dir(application_name='test')
+
+    def test_should_get_top_level_commands(self):
+        self.assertEqual(
+            get_top_level_command(args=['cmd', 'service', 'a', 'b'], commands={'service': {}, 'backup': {}}),
+            'service'
+        )
+
+        self.assertEqual(
+            get_top_level_command(args=['cmd', 'service'], commands={'service': {}, 'backup': {}}),
+            'service'
+        )
+
+        self.assertEqual(
+            get_top_level_command(args=['cmd', 'backup'], commands={'service': {}, 'backup': {}}),
+            'backup'
+        )
+
+        self.assertEqual(
+            get_top_level_command(args=['cmd'], commands={'service': {}, 'backup': {}}),
+            None
+        )
+
+        self.assertEqual(
+            get_top_level_command(args=[], commands={'service': {}, 'backup': {}}),
+            None
+        )
+
+        self.assertEqual(
+            get_top_level_command(args=['cmd', 'other'], commands={'service': {}, 'backup': {}}),
+            None
+        )
 
 
 class MockLogger:
