@@ -1,9 +1,10 @@
+import datetime
 import unittest
 from unittest.mock import patch, mock_open
 
 from click import Abort
 
-from client_cli.api.endpoint_context import DefaultHttpsContext, CustomHttpsContext
+from client_cli.api.endpoint_context import DefaultHttpsContext, CustomHttpsContext, InvalidCertificateFailure
 
 
 class EndpointContextSpec(unittest.TestCase):
@@ -151,10 +152,43 @@ class EndpointContextSpec(unittest.TestCase):
                 certificate_password='test-password'
             )
 
+    def test_should_validate_certificates(self):
+        valid = MockCertificate(content=b'')
+        expired = MockCertificate(
+            content=b'',
+            created=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=3650)
+        )
+        future = MockCertificate(
+            content=b'',
+            created=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=3650)
+        )
+
+        CustomHttpsContext.validate_pkcs12_certificate(
+            pkcs12_certificate_path='abc',
+            pkcs12_certificate=valid
+        )  # no exception expected
+
+        with self.assertRaises(InvalidCertificateFailure) as expired_failure:
+            CustomHttpsContext.validate_pkcs12_certificate(pkcs12_certificate_path='abc', pkcs12_certificate=expired)
+        self.assertTrue('API certificate [abc] not valid after' in str(expired_failure.exception))
+
+        with self.assertRaises(InvalidCertificateFailure) as future_failure:
+            CustomHttpsContext.validate_pkcs12_certificate(pkcs12_certificate_path='abc', pkcs12_certificate=future)
+        self.assertTrue('API certificate [abc] not valid before' in str(future_failure.exception))
+
 
 class MockCertificate:
-    def __init__(self, content):
+    def __init__(self, content, created=datetime.datetime.now(datetime.UTC)):
+        self.created = created
         self._content = content
+
+    @property
+    def not_valid_before_utc(self):
+        return self.created
+
+    @property
+    def not_valid_after_utc(self):
+        return self.created + datetime.timedelta(days=30)
 
     def public_bytes(self, encoding):
         # pylint: disable=unused-argument

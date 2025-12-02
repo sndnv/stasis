@@ -29,11 +29,7 @@ def regenerate_api_certificate(ctx, force):
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
-            ctx.obj.service_binary,
-            args=['maintenance', 'regenerate-api-certificate'],
-            env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
-        )
+        process = spawn_regenerate_api_certificate(service_binary=ctx.obj.service_binary)
         progress.update()
 
         process.expect('Generating a new client API certificate')
@@ -53,6 +49,33 @@ def regenerate_api_certificate(ctx, force):
     _render_failed_response(ctx, process, response)
 
     click.echo(ctx.obj.rendering.render_operation_response(response))
+
+
+def spawn_regenerate_api_certificate(service_binary):
+    """
+    Spawns the API certificate generation process by calling the stasis-client service.
+
+    :param service_binary: the binary used for calling the service
+    :return: the spawned process
+    """
+    return pexpect.spawn(
+        service_binary,
+        args=['maintenance', 'regenerate-api-certificate'],
+        env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
+    )
+
+
+def handle_regenerate_api_certificate_result(process):
+    """
+    Waits for the API certificate regeneration to complete and processes the result.
+
+    If the process failed, the output is printed to the console.
+
+    :param process: the process used for the certificate regeneration
+    """
+    result = process.expect([pexpect.EOF, 'Client startup failed: '])
+    if result != 0:
+        print(process.before.decode('utf-8'))
 
 
 @click.command(name='reset')
