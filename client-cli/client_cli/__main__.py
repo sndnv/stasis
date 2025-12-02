@@ -60,8 +60,26 @@ def cli(ctx, verbose, insecure, json, timeout):
         api_token = load_api_token(application_name=application_name, api_token_file_name=api_token_file_name)
         context.is_configured = True
 
-        context.api = create_client_api(config=config, timeout=timeout, api_token=api_token, insecure=insecure)
-        context.init = create_init_api(config=config, timeout=timeout, insecure=insecure, client_api=context.api)
+        def regenerate_api_certificate():
+            logging.warning('Invalid or expired API certificate found; re-generating...')
+            process = maintenance.spawn_regenerate_api_certificate(service_binary=context.service_binary)
+            maintenance.handle_regenerate_api_certificate_result(process)
+
+        context.api = create_client_api(
+            config=config,
+            timeout=timeout,
+            api_token=api_token,
+            insecure=insecure,
+            on_custom_cert_expired=regenerate_api_certificate
+        )
+
+        context.init = create_init_api(
+            config=config,
+            timeout=timeout,
+            insecure=insecure,
+            client_api=context.api,
+            on_custom_cert_expired=regenerate_api_certificate
+        )
 
     context.rendering = JsonWriter() if json else DefaultWriter()
 

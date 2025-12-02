@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock
 import pexpect
 
 from client_cli.cli.context import Context
-from client_cli.cli.maintenance import cli
+from client_cli.cli.maintenance import cli, spawn_regenerate_api_certificate, handle_regenerate_api_certificate_result
 from client_cli.render.default_writer import DefaultWriter
 from client_cli.render.json_writer import JsonWriter
 from tests.cli.cli_runner import Runner
@@ -591,6 +591,17 @@ class MaintenanceSpec(unittest.TestCase):
 
             mock_spawn.return_value.expect.assert_any_call('Generating a new client API certificate')
             mock_spawn.return_value.expect.assert_any_call([pexpect.EOF, 'Client startup failed: '])
+
+    def test_should_spawn_regenerate_api_certificate_processes(self):
+        with patch('pexpect.spawn') as mock_spawn:
+            spawn_regenerate_api_certificate(service_binary='test')
+            mock_spawn.assert_called()
+
+    def test_should_handle_regenerate_api_certificate_result(self):
+        mock_process = Mock()
+        mock_process.expect.return_value = 1
+        handle_regenerate_api_certificate_result(process=mock_process)
+        mock_process.expect.assert_called()
 
 
 def assert_no_call(self, *args, **kwargs):

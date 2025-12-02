@@ -1,5 +1,5 @@
 """Configuration for verifying backend (API) TLS connections."""
-
+import datetime
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -59,6 +59,11 @@ class CustomHttpsContext(EndpointContext):
         pkcs12_certificate = CustomHttpsContext.load_pkcs12_certificate(
             certificate_path=pkcs12_certificate_path,
             certificate_password=pkcs12_certificate_password
+        )
+
+        CustomHttpsContext.validate_pkcs12_certificate(
+            pkcs12_certificate_path=pkcs12_certificate_path,
+            pkcs12_certificate=pkcs12_certificate
         )
 
         pem_certificate_content = pkcs12_certificate.public_bytes(encoding=Encoding.PEM)
@@ -127,6 +132,34 @@ class CustomHttpsContext(EndpointContext):
         return pkcs12_certificate
 
     @staticmethod
+    def validate_pkcs12_certificate(pkcs12_certificate_path, pkcs12_certificate):
+        """
+        Checks if the provided certificate is currently valid and raises an
+        exception if either it is not valid yet or has expired.
+
+        :param pkcs12_certificate_path: path to certificate file
+        :param pkcs12_certificate: actual loaded certificate
+        :raises InvalidCertificateFailure if an invalid certificate is provided
+        """
+        now = datetime.datetime.now(datetime.UTC)
+
+        if pkcs12_certificate.not_valid_before_utc > now:
+            raise InvalidCertificateFailure(
+                'API certificate [{}] not valid before [{}]'.format(
+                    pkcs12_certificate_path,
+                    pkcs12_certificate.not_valid_before_utc
+                )
+            )
+
+        if now > pkcs12_certificate.not_valid_after_utc:
+            raise InvalidCertificateFailure(
+                'API certificate [{}] not valid after [{}]'.format(
+                    pkcs12_certificate_path,
+                    pkcs12_certificate.not_valid_after_utc
+                )
+            )
+
+    @staticmethod
     def read_pem_certificate_file(certificate_path):
         """
         Reads the content of the specified PEM certificate file.
@@ -151,3 +184,9 @@ class CustomHttpsContext(EndpointContext):
 
         with open(certificate_path, 'wb') as pem_certificate_file:
             pem_certificate_file.write(certificate_content)
+
+
+class InvalidCertificateFailure(Exception):
+    """
+    Raised when certificates validation issues are encountered.
+    """

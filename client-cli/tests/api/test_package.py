@@ -4,7 +4,7 @@ from unittest.mock import patch
 from click import Abort
 from pyhocon import ConfigFactory
 
-from client_cli.api import create_client_api, create_init_api
+from client_cli.api import create_client_api, create_init_api, InvalidCertificateFailure
 from client_cli.api.default_client_api import DefaultClientApi
 from client_cli.api.default_init_api import DefaultInitApi
 from client_cli.api.endpoint_context import CustomHttpsContext, DefaultHttpsContext
@@ -24,7 +24,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=True),
             timeout=10,
             api_token='test-token',
-            insecure=False
+            insecure=False,
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultClientApi))
@@ -42,7 +43,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=False),
             timeout=10,
             api_token='test-token',
-            insecure=False
+            insecure=False,
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultClientApi))
@@ -58,7 +60,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=False),
             timeout=10,
             api_token='test-token',
-            insecure=True
+            insecure=True,
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultClientApi))
@@ -71,7 +74,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=True),
             timeout=10,
             api_token=None,
-            insecure=False
+            insecure=False,
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, InactiveClientApi))
@@ -81,7 +85,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=False),
             timeout=10,
             api_token='test-token',
-            insecure=False
+            insecure=False,
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, InactiveClientApi))
@@ -98,7 +103,8 @@ class ApiPackageSpec(unittest.TestCase):
                 ),
                 timeout=10,
                 api_token='test-token',
-                insecure=False
+                insecure=False,
+                on_custom_cert_expired=lambda: None
             )
 
     @patch('client_cli.api.endpoint_context.CustomHttpsContext._create_context_pem_file')
@@ -107,7 +113,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=True),
             timeout=10,
             insecure=False,
-            client_api=InactiveClientApi()
+            client_api=InactiveClientApi(),
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultInitApi))
@@ -122,7 +129,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=False),
             timeout=10,
             insecure=False,
-            client_api=InactiveClientApi()
+            client_api=InactiveClientApi(),
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultInitApi))
@@ -135,7 +143,8 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=False),
             timeout=10,
             insecure=True,
-            client_api=InactiveClientApi()
+            client_api=InactiveClientApi(),
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, DefaultInitApi))
@@ -148,10 +157,55 @@ class ApiPackageSpec(unittest.TestCase):
             config=ApiPackageSpec.create_config(with_context=True),
             timeout=10,
             insecure=False,
-            client_api=MockClientApi()
+            client_api=MockClientApi(),
+            on_custom_cert_expired=lambda: None
         )
 
         self.assertTrue(isinstance(api, InactiveInitApi))
+
+    def test_should_handle_invalid_certificates_for_init_api(self):
+        with patch('client_cli.api.endpoint_context.CustomHttpsContext.__init__') as mock_init:
+            mock_init.side_effect = InvalidCertificateFailure('Test failure')
+            cert_expired_handler_calls = 0
+
+            def expired_handler():
+                nonlocal cert_expired_handler_calls
+                cert_expired_handler_calls += 1
+
+            self.assertEqual(cert_expired_handler_calls, 0)
+
+            with self.assertRaises(InvalidCertificateFailure):
+                create_init_api(
+                    config=ApiPackageSpec.create_config(with_context=True),
+                    timeout=10,
+                    insecure=False,
+                    client_api=InactiveClientApi(),
+                    on_custom_cert_expired=expired_handler
+                )
+
+            self.assertEqual(cert_expired_handler_calls, 1)
+
+    def test_should_handle_invalid_certificates_for_client_api(self):
+        with patch('client_cli.api.endpoint_context.CustomHttpsContext.__init__') as mock_init:
+            mock_init.side_effect = InvalidCertificateFailure('Test failure')
+            cert_expired_handler_calls = 0
+
+            def expired_handler():
+                nonlocal cert_expired_handler_calls
+                cert_expired_handler_calls += 1
+
+            self.assertEqual(cert_expired_handler_calls, 0)
+
+            with self.assertRaises(InvalidCertificateFailure):
+                create_client_api(
+                    config=ApiPackageSpec.create_config(with_context=True),
+                    timeout=10,
+                    api_token='test-token',
+                    insecure=False,
+                    on_custom_cert_expired=expired_handler
+                )
+
+            self.assertEqual(cert_expired_handler_calls, 1)
 
     @staticmethod
     def create_config(with_context: bool):
