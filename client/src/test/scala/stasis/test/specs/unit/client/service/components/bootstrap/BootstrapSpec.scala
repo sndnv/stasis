@@ -49,7 +49,8 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     for {
@@ -85,7 +86,8 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     val result = for {

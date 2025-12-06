@@ -49,7 +49,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -84,7 +85,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -114,7 +116,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -141,7 +144,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory()
@@ -170,7 +174,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     Secrets(
@@ -207,7 +212,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val filesystem = Jimfs.newFileSystem()
@@ -262,7 +268,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -301,7 +308,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -339,7 +347,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(
@@ -373,7 +382,8 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword
+      userPasswordConfirm = userPassword,
+      recreateFiles = false
     )
 
     val directory = createCustomApplicationDirectory(

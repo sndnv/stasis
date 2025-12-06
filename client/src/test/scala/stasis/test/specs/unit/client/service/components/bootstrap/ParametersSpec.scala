@@ -41,7 +41,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
@@ -53,14 +54,115 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
     for {
       base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
       params <- Parameters(base, bootstrap)
+      beforeConfig = directory.findFile(components.Files.ConfigOverride)
+      beforeRules = directory.findFile(components.Files.Default.ClientRules)
+      beforeSchedules = directory.findFile(components.Files.Default.ClientSchedules)
       _ <- params.apply()
-      config <- directory.pullFile[ByteString](components.Files.ConfigOverride)
-      rules <- directory.pullFile[ByteString](components.Files.Default.ClientRules)
-      schedules <- directory.pullFile[ByteString](components.Files.Default.ClientSchedules)
+      afterConfig <- directory.pullFile[ByteString](components.Files.ConfigOverride)
+      afterRules <- directory.pullFile[ByteString](components.Files.Default.ClientRules)
+      afterSchedules <- directory.pullFile[ByteString](components.Files.Default.ClientSchedules)
     } yield {
-      config.nonEmpty should be(true)
-      rules.nonEmpty should be(true)
-      schedules.nonEmpty should be(false)
+      beforeConfig should be(None)
+      beforeRules should be(None)
+      beforeSchedules should be(None)
+
+      afterConfig.nonEmpty should be(true)
+      afterRules.nonEmpty should be(true)
+      afterSchedules.nonEmpty should be(false)
+
+      directory.findFile(components.Files.TrustStores.Authentication) should be(None)
+      directory.findFile(components.Files.TrustStores.ServerApi) should be(None)
+      directory.findFile(components.Files.TrustStores.ServerCore) should be(None)
+    }
+  }
+
+  it should "not re-create config files if they already exist" in {
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = "",
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
+    )
+
+    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
+
+    val bootstrap = new Bootstrap {
+      override def execute(): Future[DeviceBootstrapParameters] = Future.successful(testParams)
+    }
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      params <- Parameters(base, bootstrap)
+      _ <- directory.pushFile(components.Files.ConfigOverride, ByteString.fromString("test-config"))
+      _ <- directory.pushFile(components.Files.Default.ClientRules, ByteString.fromString("test-rules"))
+      _ <- directory.pushFile(components.Files.Default.ClientSchedules, ByteString.fromString("test-schedules"))
+      beforeConfig = directory.findFile(components.Files.ConfigOverride)
+      beforeRules = directory.findFile(components.Files.Default.ClientRules)
+      beforeSchedules = directory.findFile(components.Files.Default.ClientSchedules)
+      _ <- params.apply()
+      afterConfig <- directory.pullFile[ByteString](components.Files.ConfigOverride)
+      afterRules <- directory.pullFile[ByteString](components.Files.Default.ClientRules)
+      afterSchedules <- directory.pullFile[ByteString](components.Files.Default.ClientSchedules)
+    } yield {
+      beforeConfig should not be None
+      beforeRules should not be None
+      beforeSchedules should not be None
+
+      afterConfig.utf8String should be("test-config")
+      afterRules.utf8String should be("test-rules")
+      afterSchedules.utf8String should be("test-schedules")
+
+      directory.findFile(components.Files.TrustStores.Authentication) should be(None)
+      directory.findFile(components.Files.TrustStores.ServerApi) should be(None)
+      directory.findFile(components.Files.TrustStores.ServerCore) should be(None)
+    }
+  }
+
+  it should "support forcing config file creation even if they already exist" in {
+    val modeArguments = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = "",
+      userPassword = Array.emptyCharArray,
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = true
+    )
+
+    val directory = createApplicationDirectory(init = dir => Files.createDirectories(dir.config.get))
+
+    val bootstrap = new Bootstrap {
+      override def execute(): Future[DeviceBootstrapParameters] = Future.successful(testParams)
+    }
+
+    for {
+      base <- Base(modeArguments = modeArguments, applicationDirectory = directory)
+      params <- Parameters(base, bootstrap)
+      _ <- directory.pushFile(components.Files.ConfigOverride, ByteString.fromString("test-config"))
+      _ <- directory.pushFile(components.Files.Default.ClientRules, ByteString.fromString("test-rules"))
+      _ <- directory.pushFile(components.Files.Default.ClientSchedules, ByteString.fromString("test-schedules"))
+      beforeConfig = directory.findFile(components.Files.ConfigOverride)
+      beforeRules = directory.findFile(components.Files.Default.ClientRules)
+      beforeSchedules = directory.findFile(components.Files.Default.ClientSchedules)
+      _ <- params.apply()
+      afterConfig <- directory.pullFile[ByteString](components.Files.ConfigOverride)
+      afterRules <- directory.pullFile[ByteString](components.Files.Default.ClientRules)
+      afterSchedules <- directory.pullFile[ByteString](components.Files.Default.ClientSchedules)
+    } yield {
+      beforeConfig should not be None
+      beforeRules should not be None
+      beforeSchedules should not be None
+
+      afterConfig.nonEmpty should be(true)
+      afterRules.nonEmpty should be(true)
+      afterSchedules.nonEmpty should be(false)
+
+      afterConfig.utf8String should not be "test-config"
+      afterRules.utf8String should not be "test-rules"
+      afterSchedules.utf8String should not be "test-schedules"
 
       directory.findFile(components.Files.TrustStores.Authentication) should be(None)
       directory.findFile(components.Files.TrustStores.ServerApi) should be(None)
@@ -75,7 +177,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     val directory =
@@ -111,7 +214,8 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     val directory = ApplicationDirectory.Default(
