@@ -8,5 +8,5 @@ import org.apache.pekko.util.ByteString
 object Gzip extends Encoder with Decoder {
   override val name: String = "gzip"
   override def compress: Flow[ByteString, ByteString, NotUsed] = PekkoCompression.gzip
-  override def decompress: Flow[ByteString, ByteString, NotUsed] = PekkoCompression.gunzip()
+  override def decompress: Flow[ByteString, ByteString, NotUsed] = PekkoCompression.gzipDecompress()
 }
