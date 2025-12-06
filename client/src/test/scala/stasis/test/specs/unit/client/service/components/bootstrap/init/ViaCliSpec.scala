@@ -12,7 +12,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     ViaCli
@@ -29,7 +30,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     ViaCli
@@ -47,7 +49,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     ViaCli
@@ -65,7 +68,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "test-user",
       userPassword = "test-password".toCharArray,
-      userPasswordConfirm = "test-password".toCharArray
+      userPasswordConfirm = "test-password".toCharArray,
+      recreateFiles = false
     )
 
     ViaCli
@@ -83,7 +87,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = "test-password".toCharArray,
-      userPasswordConfirm = "test-password".toCharArray
+      userPasswordConfirm = "test-password".toCharArray,
+      recreateFiles = false
     )
 
     ViaCli
@@ -100,7 +105,8 @@ class ViaCliSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = false,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     ViaCli

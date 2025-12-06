@@ -29,7 +29,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = "test-password".toCharArray,
-      userPasswordConfirm = "test-password".toCharArray
+      userPasswordConfirm = "test-password".toCharArray,
+      recreateFiles = true
     )
 
     ApplicationArguments(
@@ -44,7 +45,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         "--user-name",
         expectedMode.userName,
         "--user-password",
-        expectedMode.userPassword.mkString
+        expectedMode.userPassword.mkString,
+        "--recreate-files"
       )
     ).map {
       case ApplicationArguments(mode: ApplicationArguments.Mode.Bootstrap) =>
@@ -53,6 +55,7 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
         mode.acceptSelfSignedCertificates should be(expectedMode.acceptSelfSignedCertificates)
         mode.userName should be(expectedMode.userName)
         mode.userPassword.mkString should be(expectedMode.userPassword.mkString)
+        mode.recreateFiles should be(true)
 
       case other =>
         fail(s"Unexpected result received: [$other]")
@@ -332,7 +335,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     noException should be thrownBy {
@@ -347,7 +351,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     an[IllegalArgumentException] should be thrownBy {
@@ -362,7 +367,8 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray
+      userPasswordConfirm = Array.emptyCharArray,
+      recreateFiles = false
     )
 
     an[IllegalArgumentException] should be thrownBy {

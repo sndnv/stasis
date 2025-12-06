@@ -19,7 +19,8 @@ object ApplicationArguments {
       acceptSelfSignedCertificates: Boolean,
       userName: String,
       userPassword: Array[Char],
-      userPasswordConfirm: Array[Char]
+      userPasswordConfirm: Array[Char],
+      recreateFiles: Boolean
     ) extends Mode {
       def validate(): Unit = {
         require(
@@ -42,7 +43,8 @@ object ApplicationArguments {
           acceptSelfSignedCertificates = false,
           userName = "",
           userPassword = Array.emptyCharArray,
-          userPasswordConfirm = Array.emptyCharArray
+          userPasswordConfirm = Array.emptyCharArray,
+          recreateFiles = false
         )
     }
 
@@ -199,7 +201,15 @@ object ApplicationArguments {
               }
             }
             .optional()
-            .text("User password (for encrypting new device secret).")
+            .text("User password (for encrypting new device secret)."),
+          opt[Unit]("recreate-files")
+            .action { case (_, args) =>
+              (args.mode: @unchecked) match {
+                case mode: Mode.Bootstrap => args.copy(mode = mode.copy(recreateFiles = true))
+              }
+            }
+            .optional()
+            .text("Force the bootstrap process to recreate all configuration files, even if they already exist.")
         )
 
       cmd("maintenance")

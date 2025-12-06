@@ -46,7 +46,7 @@ object Parameters {
         override def apply(): Future[Done] =
           for {
             params <- bootstrap.execute()
-            _ <- Future.fromTry(process(directory, templates, params))
+            _ <- Future.fromTry(process(directory, templates, params, args.recreateFiles))
           } yield {
             Done
           }
@@ -57,7 +57,8 @@ object Parameters {
   def process(
     directory: ApplicationDirectory,
     templates: ApplicationTemplates,
-    bootstrapParams: DeviceBootstrapParameters
+    bootstrapParams: DeviceBootstrapParameters,
+    recreateFiles: Boolean
   )(implicit log: Logger): Try[Done] =
     for {
       parent <- directory.configDirectory match {
@@ -109,9 +110,9 @@ object Parameters {
       config <- templates.config.expand(bootstrapParams, trustStoreParams, keyStoreParams)
       rules <- templates.rules.expand()
       schedules = ""
-      _ <- storeExpandedTemplate(config, parent, components.Files.ConfigOverride)
-      _ <- storeExpandedTemplate(rules, parent, components.Files.Default.ClientRules)
-      _ <- storeExpandedTemplate(schedules, parent, components.Files.Default.ClientSchedules)
+      _ <- storeExpandedTemplate(config, parent, components.Files.ConfigOverride, recreateFiles)
+      _ <- storeExpandedTemplate(rules, parent, components.Files.Default.ClientRules, recreateFiles)
+      _ <- storeExpandedTemplate(schedules, parent, components.Files.Default.ClientSchedules, recreateFiles)
     } yield {
       Done
     }
@@ -119,21 +120,26 @@ object Parameters {
   def storeExpandedTemplate(
     template: String,
     parent: Path,
-    file: String
+    file: String,
+    force: Boolean
   )(implicit log: Logger): Try[Done] =
     Try {
       val path = parent.resolve(file)
-      log.info("Creating [{}] from template...", path)
 
-      val _ = Files.deleteIfExists(path)
-      val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
-      val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
+      if (force || !Files.exists(path)) {
+        log.info("Creating [{}] from template...", path)
+        val _ = Files.deleteIfExists(path)
+        val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
+        val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
 
-      val out = Files.newOutputStream(path)
-      try {
-        out.write(template.getBytes(StandardCharsets.UTF_8))
-      } finally {
-        out.close()
+        val out = Files.newOutputStream(path)
+        try {
+          out.write(template.getBytes(StandardCharsets.UTF_8))
+        } finally {
+          out.close()
+        }
+      } else {
+        log.warn("File [{}] already exists; skipping creation from template...", path)
       }
 
       Done
