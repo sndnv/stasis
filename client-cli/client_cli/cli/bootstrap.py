@@ -20,11 +20,13 @@ from client_cli.render.json_writer import JsonWriter
               help='User password (verify).')
 @click.option('--accept-self-signed', is_flag=True, default=False,
               help='Accept any self-signed server TLS certificate (NOT recommended).')
+@click.option('--recreate-files', is_flag=True, default=False,
+              help='Force the bootstrap process to recreate all configuration files, even if they already exist.')
 @click.option('--force', is_flag=True, default=False,
               help='Run the bootstrap process even if the client is already active or configured.')
-def bootstrap(ctx, server, code, username, password, verify_password, accept_self_signed, force):
+def bootstrap(ctx, server, code, username, password, verify_password, accept_self_signed, recreate_files, force):
     """Starting the client in bootstrap mode for device setup."""
-    # pylint: disable=too-many-arguments, too-many-positional-arguments, too-many-statements
+    # pylint: disable=too-many-arguments, too-many-positional-arguments, too-many-statements, too-many-locals
 
     if not server or not server.startswith('https://'):
         failure = {'successful': False, 'failure': 'Server bootstrap URL must be provided and must use HTTPS'}
@@ -63,7 +65,8 @@ def bootstrap(ctx, server, code, username, password, verify_password, accept_sel
     ) as progress:
         process = pexpect.spawn(
             ctx.obj.service_binary,
-            args=['bootstrap', '--accept-self-signed'] if accept_self_signed else ['bootstrap']
+            args=['bootstrap'] + (['--accept-self-signed'] if accept_self_signed else []) + (
+                ['--recreate-files'] if recreate_files else [])
         )
         progress.update()
 

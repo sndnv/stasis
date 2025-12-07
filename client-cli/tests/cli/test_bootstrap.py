@@ -36,7 +36,9 @@ class BootstrapSpec(unittest.TestCase):
                       '--code', code,
                       '--username', username,
                       '--password', password,
-                      '--verify-password', password],
+                      '--verify-password', password,
+                      '--accept-self-signed',
+                      '--recreate-files'],
                 obj=context
             )
 
