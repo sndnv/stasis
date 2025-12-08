@@ -65,6 +65,7 @@ class _DevicesState extends State<Devices> {
                 device.node.contains(filter);
           },
           header: const Text('Devices'),
+          defaultSortColumn: 6,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Name', sortBy: (e) => e.name),

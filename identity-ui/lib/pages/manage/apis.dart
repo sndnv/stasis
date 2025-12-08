@@ -28,13 +28,9 @@ class _ApisState extends State<Apis> {
           padding: const EdgeInsets.all(16),
           children: [
             EntityTable<Api>(
-              entities: apis..sort((a, b) => a.id.compareTo(b.id)),
+              entities: apis..sort((a, b) => a.created.compareTo(b.created)),
               actions: [
-                IconButton(
-                  tooltip: 'Create New API',
-                  onPressed: () => _createApi(),
-                  icon: const Icon(Icons.add),
-                ),
+                IconButton(tooltip: 'Create New API', onPressed: () => _createApi(), icon: const Icon(Icons.add)),
               ],
               header: const Text('APIs'),
               columns: const [
@@ -57,7 +53,7 @@ class _ApisState extends State<Apis> {
                           tooltip: widget.client.audience == api.id ? 'Cannot remove the current API' : 'Remove API',
                           onPressed: widget.client.audience == api.id ? null : () => _removeApi(api.id),
                           icon: const Icon(Icons.delete),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -71,11 +67,7 @@ class _ApisState extends State<Apis> {
   }
 
   void _createApi() async {
-    final idField = formField(
-      title: 'ID',
-      errorMessage: 'API ID cannot be empty',
-      controller: TextEditingController(),
-    );
+    final idField = formField(title: 'ID', errorMessage: 'API ID cannot be empty', controller: TextEditingController());
 
     showDialog(
       context: context,
@@ -92,16 +84,20 @@ class _ApisState extends State<Apis> {
 
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.postApi(request).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('API created...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to create API: [$e]')));
-                }).whenComplete(() {
-                  if (context.mounted) Navigator.pop(context);
-                });
+                widget.client
+                    .postApi(request)
+                    .then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('API created...')));
+                      setState(() {});
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to create API: [$e]')));
+                    })
+                    .whenComplete(() {
+                      if (context.mounted) Navigator.pop(context);
+                    });
               },
-            )
+            ),
           ],
         );
       },
@@ -125,14 +121,18 @@ class _ApisState extends State<Apis> {
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.deleteApi(id).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('API removed...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to remove API: [$e]')));
-                }).whenComplete(() {
-                  if (context.mounted) Navigator.pop(context);
-                });
+                widget.client
+                    .deleteApi(id)
+                    .then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('API removed...')));
+                      setState(() {});
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to remove API: [$e]')));
+                    })
+                    .whenComplete(() {
+                      if (context.mounted) Navigator.pop(context);
+                    });
               },
               child: const Text('Remove'),
             ),

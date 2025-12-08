@@ -62,6 +62,7 @@ class _CommandsState extends State<Commands> {
             return (command.target?.contains(filter) ?? false) || int.tryParse(filter) == command.sequenceId;
           },
           header: widget.forDevice != null ? Text('Commands for Device [${widget.forDevice}]') : const Text('Commands'),
+          defaultSortColumn: 4,
           columns: [
             EntityTableColumn(label: 'Sequence ID', sortBy: (e) => e.sequenceId),
             EntityTableColumn(label: 'Source', sortBy: (e) => e.source),

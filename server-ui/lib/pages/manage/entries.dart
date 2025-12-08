@@ -44,6 +44,7 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                 entry.data.any((crate) => crate.contains(filter)) ||
                 entry.metadata.contains(filter);
           },
+          defaultSortColumn: 3,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Crates', sortBy: (e) => e.data.length),

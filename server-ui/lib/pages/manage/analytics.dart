@@ -10,10 +10,7 @@ import 'package:server_ui/pages/manage/components/extensions.dart';
 import 'package:server_ui/pages/manage/components/rendering.dart';
 
 class Analytics extends StatefulWidget {
-  const Analytics({
-    super.key,
-    required this.client,
-  });
+  const Analytics({super.key, required this.client});
 
   final AnalyticsApiClient client;
 
@@ -44,6 +41,7 @@ class _AnalyticsState extends State<Analytics> {
                 entry.runtime.os.contains(filter));
           },
           header: const Text('Analytics'),
+          defaultSortColumn: 6,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Application', sortBy: (e) => e.runtime.app, size: ColumnSize.L),
@@ -75,7 +73,8 @@ class _AnalyticsState extends State<Analytics> {
               DataCell(entry.id.asShortId()),
               DataCell(
                 Tooltip(
-                  message: 'Name: $appName\n'
+                  message:
+                      'Name: $appName\n'
                       'Version: $appVersion\n'
                       'Build Time: ${appBuildTime.render()}',
                   child: Text('$appName@$appVersion', overflow: TextOverflow.ellipsis),
@@ -83,14 +82,16 @@ class _AnalyticsState extends State<Analytics> {
               ),
               DataCell(
                 Tooltip(
-                  message: 'Version: $jreVersion\n'
+                  message:
+                      'Version: $jreVersion\n'
                       'Vendor: $jreVendor',
                   child: Text(jreVersion, overflow: TextOverflow.ellipsis),
                 ),
               ),
               DataCell(
                 Tooltip(
-                  message: 'Name: $osName\n'
+                  message:
+                      'Name: $osName\n'
                       'Version: $osVersion\n'
                       'Architecture: $osArch',
                   child: Text('$osName@$osVersion', overflow: TextOverflow.ellipsis),
@@ -98,12 +99,15 @@ class _AnalyticsState extends State<Analytics> {
               ),
               DataCell(Text(entry.events.toString())),
               DataCell(Text(entry.failures.toString())),
-              DataCell(Tooltip(
-                message: 'Created: ${entry.created.render()}\n'
-                    'Updated: ${entry.updated.render()}\n'
-                    'Received: ${entry.received.render()}',
-                child: Text(entry.received.render(), overflow: TextOverflow.ellipsis),
-              )),
+              DataCell(
+                Tooltip(
+                  message:
+                      'Created: ${entry.created.render()}\n'
+                      'Updated: ${entry.updated.render()}\n'
+                      'Received: ${entry.received.render()}',
+                  child: Text(entry.received.render(), overflow: TextOverflow.ellipsis),
+                ),
+              ),
               DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -120,7 +124,7 @@ class _AnalyticsState extends State<Analytics> {
                     ),
                   ],
                 ),
-              )
+              ),
             ];
           },
         );
@@ -140,11 +144,7 @@ class _AnalyticsState extends State<Analytics> {
           return SimpleDialog(
             title: Text('Details for Analytics Entry [$entry]'),
             contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 48.0),
-            children: [
-              SelectionArea(
-                child: Text(JsonEncoder.withIndent('    ').convert(actualEntry)),
-              )
-            ],
+            children: [SelectionArea(child: Text(JsonEncoder.withIndent('    ').convert(actualEntry)))],
           );
         },
       ),
@@ -158,22 +158,25 @@ class _AnalyticsState extends State<Analytics> {
         return AlertDialog(
           title: Text('Remove analytics entry [$entry]?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             TextButton(
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.deleteAnalyticsEntry(entry: entry).then((_) {
-                  messenger.showSnackBar(SnackBar(content: Text('Analytics entry [$entry] removed...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to remove analytics entry [$entry]: [$e]')));
-                }).whenComplete(() {
-                  if (context.mounted) Navigator.pop(context);
-                });
+                widget.client
+                    .deleteAnalyticsEntry(entry: entry)
+                    .then((_) {
+                      messenger.showSnackBar(SnackBar(content: Text('Analytics entry [$entry] removed...')));
+                      setState(() {});
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('Failed to remove analytics entry [$entry]: [$e]')),
+                      );
+                    })
+                    .whenComplete(() {
+                      if (context.mounted) Navigator.pop(context);
+                    });
               },
               child: const Text('Remove'),
             ),

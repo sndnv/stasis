@@ -39,6 +39,7 @@ class _CrateStorageReservationsState extends State<CrateStorageReservations> {
                 reservation.target.contains(filter);
           },
           header: const Text('Crate Storage Reservations'),
+          defaultSortColumn: 6,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Crate', sortBy: (e) => (e.crate as String).toMinimizedString()),
