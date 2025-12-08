@@ -170,19 +170,25 @@ class CliPackageSpec(unittest.TestCase):
         self.assertEqual(get_app_dir(application_name='test'), '/x/y/z/.config/test')
 
     @patch('sys.platform', 'linux')
+    @patch('os.path.expanduser')
     @patch.dict(os.environ, {}, clear=True)
-    def test_should_retrieve_app_dir_when_no_env_var_is_set(self):
-        self.assertEqual(get_app_dir(application_name='test'), '~/.config/test')
+    def test_should_retrieve_app_dir_when_no_env_var_is_set(self, mock_expanduser):
+        mock_expanduser.return_value = 'TEST_HOME'
+        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/.config/test')
 
     @patch('sys.platform', 'linux')
+    @patch('os.path.expanduser')
     @patch.dict(os.environ, {}, clear=True)
-    def test_should_retrieve_linux_app_dir(self):
-        self.assertEqual(get_app_dir(application_name='test'), '~/.config/test')
+    def test_should_retrieve_linux_app_dir(self, mock_expanduser):
+        mock_expanduser.return_value = 'TEST_HOME'
+        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/.config/test')
 
     @patch('sys.platform', 'darwin')
+    @patch('os.path.expanduser')
     @patch.dict(os.environ, {}, clear=True)
-    def test_should_retrieve_macos_app_dir(self, ):
-        self.assertEqual(get_app_dir(application_name='test'), '~/Library/Preferences/test')
+    def test_should_retrieve_macos_app_dir(self, mock_expanduser):
+        mock_expanduser.return_value = 'TEST_HOME'
+        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/Library/Preferences/test')
 
     @patch('sys.platform', 'other')
     @patch.dict(os.environ, {}, clear=True)

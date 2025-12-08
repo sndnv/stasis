@@ -108,6 +108,6 @@ def bootstrap(ctx, server, code, username, password, verify_password, accept_sel
             response = {'successful': False, 'failure': 'Client bootstrap failed'}
 
     if not response['successful'] and not isinstance(ctx.obj.rendering, JsonWriter):
-        print(process.before.decode('utf-8'))
+        click.echo(process.before.decode('utf-8'))
 
     click.echo(ctx.obj.rendering.render_operation_response(response))

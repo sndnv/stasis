@@ -136,7 +136,7 @@ def get_app_dir(application_name):
     if xdg_config_home is not None:
         return '{}{}{}'.format(xdg_config_home, os.sep, application_name)
     else:
-        user_home = os.environ.get('HOME', '~').rstrip(os.sep)
+        user_home = os.path.expanduser(os.environ.get('HOME', '~').rstrip(os.sep))
         if sys.platform.startswith('linux'):
             return '{}/.config/{}'.format(user_home, application_name)
         elif sys.platform == "darwin":

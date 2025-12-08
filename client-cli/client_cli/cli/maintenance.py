@@ -75,7 +75,7 @@ def handle_regenerate_api_certificate_result(process):
     """
     result = process.expect([pexpect.EOF, 'Client startup failed: '])
     if result != 0:
-        print(process.before.decode('utf-8'))
+        click.echo(process.before.decode('utf-8'))
 
 
 @click.command(name='reset')
@@ -384,4 +384,4 @@ def _require_configured(ctx, force):
 
 def _render_failed_response(ctx, process, response):
     if not response['successful'] and not isinstance(ctx.obj.rendering, JsonWriter):
-        print(process.before.decode('utf-8'))
+        click.echo(process.before.decode('utf-8'))

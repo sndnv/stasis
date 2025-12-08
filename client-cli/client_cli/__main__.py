@@ -7,7 +7,7 @@ import click
 import urllib3
 
 from client_cli.api import create_client_api, create_init_api
-from client_cli.cli import bootstrap, service, backup, recover, schedules, operations, maintenance
+from client_cli.cli import backup, bootstrap, logs, maintenance, operations, recover, schedules, service
 from client_cli.cli import (
     load_api_token,
     load_client_config,
@@ -50,7 +50,7 @@ def cli(ctx, verbose, insecure, json, timeout):
     context.service_main_class = application_main_class
 
     command = get_top_level_command(sys.argv, cli.commands)
-    if command in ('bootstrap', 'maintenance'):
+    if command in ('bootstrap', 'maintenance', 'logs'):
         context.is_configured = is_client_configured(
             application_name=application_name,
             config_file_name=config_file_name
@@ -91,6 +91,7 @@ cli.add_command(recover.cli)
 cli.add_command(schedules.cli)
 cli.add_command(bootstrap.bootstrap)
 cli.add_command(maintenance.cli)
+cli.add_command(logs.cli)
 
 
 def main():
