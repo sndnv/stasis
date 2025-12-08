@@ -255,7 +255,7 @@ analytics.add_command(analytics_send)
 
 @click.group(name='service')
 def cli():
-    """Showing and managing the client's state."""
+    """Showing and managing the state of the client."""
 
 
 cli.add_command(start)
