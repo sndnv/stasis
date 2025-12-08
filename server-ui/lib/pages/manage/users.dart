@@ -55,6 +55,7 @@ class _UsersState extends State<Users> {
                 user.permissions.toList().join().contains(filter);
           },
           header: const Text('Users'),
+          defaultSortColumn: 5,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Salt', size: ColumnSize.S),

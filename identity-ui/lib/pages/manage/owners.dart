@@ -36,7 +36,7 @@ class _OwnersState extends State<Owners> {
           padding: const EdgeInsets.all(16),
           children: [
             EntityTable<ResourceOwner>(
-              entities: owners..sort((a, b) => a.username.compareTo(b.username)),
+              entities: owners..sort((a, b) => a.created.compareTo(b.created)),
               actions: [
                 IconButton(
                   tooltip: 'Create New Resource Owner',

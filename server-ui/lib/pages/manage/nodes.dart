@@ -44,8 +44,8 @@ class _NodesState extends State<Nodes> {
             final node = entity as Node;
             return node.id().contains(filter) || node.nodeType().contains(filter) || node.address().contains(filter);
           },
-          defaultSortColumn: 1,
           header: const Text('Nodes'),
+          defaultSortColumn: 4,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Type', sortBy: (e) => (e as Node).nodeType(), size: ColumnSize.S),

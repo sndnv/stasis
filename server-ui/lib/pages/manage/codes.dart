@@ -8,11 +8,7 @@ import 'package:server_ui/pages/manage/components/rendering.dart';
 import 'package:server_ui/pages/page_destinations.dart';
 
 class BootstrapCodes extends StatefulWidget {
-  const BootstrapCodes({
-    super.key,
-    required this.client,
-    required this.privileged,
-  });
+  const BootstrapCodes({super.key, required this.client, required this.privileged});
 
   final DeviceBootstrapCodesApiClient client;
   final bool privileged;
@@ -41,6 +37,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
             return code.owner.contains(filter) || info.contains(filter) || code.value.contains(filter);
           },
           header: const Text('Device Bootstrap Codes'),
+          defaultSortColumn: 3,
           columns: [
             EntityTableColumn(label: 'Device', sortBy: (e) => (DeviceBootstrapCode.extractDeviceInfo(e))),
             EntityTableColumn(label: 'Device Type', sortBy: (e) => (e.target.type as String)),
@@ -55,11 +52,7 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
             final Widget device;
             if (code.target.type == 'existing') {
               device = info.asShortId(
-                link: Link(
-                  buildContext: context,
-                  destination: PageRouterDestination.devices,
-                  withFilter: info,
-                ),
+                link: Link(buildContext: context, destination: PageRouterDestination.devices, withFilter: info),
               );
             } else {
               device = Text(info);
@@ -68,15 +61,13 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
             return [
               DataCell(device),
               DataCell(Text(code.target.type)),
-              DataCell(code.owner.asShortId(
-                link: widget.privileged
-                    ? Link(
-                        buildContext: context,
-                        destination: PageRouterDestination.users,
-                        withFilter: code.owner,
-                      )
-                    : null,
-              )),
+              DataCell(
+                code.owner.asShortId(
+                  link: widget.privileged
+                      ? Link(buildContext: context, destination: PageRouterDestination.users, withFilter: code.owner)
+                      : null,
+                ),
+              ),
               DataCell(Text(code.expiresAt.render())),
               DataCell(
                 Row(
@@ -104,22 +95,23 @@ class _BootstrapCodesState extends State<BootstrapCodes> {
         return AlertDialog(
           title: Text('Remove bootstrap code for device [$deviceInfo]?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             TextButton(
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
 
-                widget.client.deleteBootstrapCode(privileged: widget.privileged, code: code).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Bootstrap code removed...')));
-                  setState(() {});
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to remove bootstrap code: [$e]')));
-                }).whenComplete(() {
-                  if (context.mounted) Navigator.pop(context);
-                });
+                widget.client
+                    .deleteBootstrapCode(privileged: widget.privileged, code: code)
+                    .then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('Bootstrap code removed...')));
+                      setState(() {});
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to remove bootstrap code: [$e]')));
+                    })
+                    .whenComplete(() {
+                      if (context.mounted) Navigator.pop(context);
+                    });
               },
               child: const Text('Remove'),
             ),

@@ -26,7 +26,7 @@ class _CodesState extends State<Codes> {
           padding: const EdgeInsets.all(16),
           children: [
             EntityTable<StoredAuthorizationCode>(
-              entities: codes..sort((a, b) => a.owner.compareTo(b.owner)),
+              entities: codes..sort((a, b) => a.created.compareTo(b.created)),
               actions: const [],
               header: const Text('Authorization Codes'),
               columns: const [

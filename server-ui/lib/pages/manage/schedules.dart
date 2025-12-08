@@ -51,6 +51,7 @@ class _SchedulesState extends State<Schedules> {
             return schedule.id.contains(filter) || schedule.info.contains(filter);
           },
           header: const Text('Schedules'),
+          defaultSortColumn: 6,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Info', sortBy: (e) => e.info, size: ColumnSize.L),

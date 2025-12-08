@@ -60,6 +60,7 @@ class _DatasetDefinitionsState extends State<DatasetDefinitions> {
                 definition.device.contains(filter);
           },
           header: const Text('Dataset Definitions'),
+          defaultSortColumn: 6,
           columns: [
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Info', sortBy: (e) => e.info),

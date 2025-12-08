@@ -26,7 +26,7 @@ class _TokensState extends State<Tokens> {
           padding: const EdgeInsets.all(16),
           children: [
             EntityTable<StoredRefreshToken>(
-              entities: tokens..sort((a, b) => a.owner.compareTo(b.owner)),
+              entities: tokens..sort((a, b) => a.created.compareTo(b.created)),
               actions: const [],
               header: const Text('Refresh Tokens'),
               columns: const [

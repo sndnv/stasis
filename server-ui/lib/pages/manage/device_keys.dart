@@ -40,6 +40,7 @@ class _DeviceKeysState extends State<DeviceKeys> {
             return key.owner.contains(filter) || key.device.contains(filter);
           },
           header: const Text('Device Keys'),
+          defaultSortColumn: 2,
           columns: [
             EntityTableColumn(label: 'Device', sortBy: (e) => (e.device as String).toMinimizedString()),
             EntityTableColumn(label: 'Owner', sortBy: (e) => (e.owner as String).toMinimizedString()),

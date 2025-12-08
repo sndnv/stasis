@@ -30,7 +30,7 @@ class _ClientsState extends State<Clients> {
           padding: const EdgeInsets.all(16),
           children: [
             EntityTable<Client>(
-              entities: clients..sort((a, b) => a.id.compareTo(b.id)),
+              entities: clients..sort((a, b) => a.created.compareTo(b.created)),
               actions: [
                 IconButton(
                   tooltip: 'Create New Client',
