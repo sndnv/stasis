@@ -49,7 +49,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -85,7 +84,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -116,7 +114,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -144,7 +141,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -174,7 +170,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -212,7 +207,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -268,7 +262,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -308,7 +301,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -347,7 +339,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 
@@ -382,7 +373,6 @@ class SecretsSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = userName,
       userPassword = userPassword,
-      userPasswordConfirm = userPassword,
       recreateFiles = false
     )
 

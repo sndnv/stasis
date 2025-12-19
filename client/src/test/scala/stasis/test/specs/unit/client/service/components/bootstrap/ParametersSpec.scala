@@ -41,7 +41,6 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -83,7 +82,6 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -128,7 +126,6 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = true
     )
 
@@ -177,7 +174,6 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = true,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -214,7 +210,6 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = false,
       userName = "",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 

@@ -29,7 +29,6 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = "test-password".toCharArray,
-      userPasswordConfirm = "test-password".toCharArray,
       recreateFiles = true
     )
 
@@ -328,6 +327,56 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       }
   }
 
+  they should "expand bootstrap mode arguments from provided env vars" in {
+    val mode = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = "test-user",
+      userPassword = Array.emptyCharArray,
+      recreateFiles = false
+    )
+
+    val expanded = mode.expand(
+      env = Map(
+        "A" -> "B",
+        "C" -> "2",
+        "D" -> "",
+        "STASIS_CLIENT_BOOTSTRAP_SERVER_URL" -> "https://new-server-url",
+        "STASIS_CLIENT_BOOTSTRAP_CODE" -> "new-code",
+        "STASIS_CLIENT_BOOTSTRAP_USER_NAME" -> "new-user",
+        "STASIS_CLIENT_BOOTSTRAP_USER_PASSWORD" -> "new-password"
+      )
+    )
+
+    expanded.serverBootstrapUrl should be("https://new-server-url")
+    expanded.bootstrapCode should be("new-code")
+    expanded.acceptSelfSignedCertificates should be(mode.acceptSelfSignedCertificates)
+    expanded.userName should be("new-user")
+    expanded.userPassword.mkString should be("new-password")
+    expanded.recreateFiles should be(mode.recreateFiles)
+  }
+
+  they should "expand bootstrap mode arguments from system env vars" in {
+    val mode = ApplicationArguments.Mode.Bootstrap(
+      serverBootstrapUrl = "https://test-url",
+      bootstrapCode = "test-code",
+      acceptSelfSignedCertificates = true,
+      userName = "test-user",
+      userPassword = Array.emptyCharArray,
+      recreateFiles = false
+    )
+
+    val expanded = mode.expand()
+
+    expanded.serverBootstrapUrl should be(mode.serverBootstrapUrl)
+    expanded.bootstrapCode should be(mode.bootstrapCode)
+    expanded.acceptSelfSignedCertificates should be(mode.acceptSelfSignedCertificates)
+    expanded.userName should be(mode.userName)
+    expanded.userPassword should be(mode.userPassword)
+    expanded.recreateFiles should be(mode.recreateFiles)
+  }
+
   they should "validate bootstrap mode arguments" in {
     val mode = ApplicationArguments.Mode.Bootstrap(
       serverBootstrapUrl = "https://test-url",
@@ -335,7 +384,6 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -351,7 +399,6 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -367,13 +414,196 @@ class ApplicationArgumentsSpec extends AsyncUnitSpec {
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
     an[IllegalArgumentException] should be thrownBy {
       mode.validate()
     }
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (Empty)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.Empty
+
+    mode.expand(env = Map("a" -> "b")) should be(mode)
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (RegenerateApiCertificate)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
+
+    mode.expand(env = Map("a" -> "b")) should be(mode)
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (PushDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      remotePassword = Some("other-password".toCharArray)
+    )
+
+    val expanded = mode
+      .expand(
+        env = Map(
+          "A" -> "B",
+          "C" -> "2",
+          "D" -> "",
+          "STASIS_CLIENT_PUSH_DEVICE_SECRET_CURRENT_USER_NAME" -> "new-user",
+          "STASIS_CLIENT_PUSH_DEVICE_SECRET_CURRENT_USER_PASSWORD" -> "new-password",
+          "STASIS_CLIENT_PUSH_DEVICE_SECRET_REMOTE_PASSWORD" -> "new-remote-password"
+        )
+      )
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.PushDeviceSecret]
+
+    expanded.currentUserName should be("new-user")
+    expanded.currentUserPassword.mkString should be("new-password")
+    expanded.remotePassword.map(_.mkString) should be(Some("new-remote-password"))
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (PullDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      remotePassword = Some("other-password".toCharArray)
+    )
+
+    val expanded = mode
+      .expand(
+        env = Map(
+          "A" -> "B",
+          "C" -> "2",
+          "D" -> "",
+          "STASIS_CLIENT_PULL_DEVICE_SECRET_CURRENT_USER_NAME" -> "new-user",
+          "STASIS_CLIENT_PULL_DEVICE_SECRET_CURRENT_USER_PASSWORD" -> "new-password",
+          "STASIS_CLIENT_PULL_DEVICE_SECRET_REMOTE_PASSWORD" -> "new-remote-password"
+        )
+      )
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.PullDeviceSecret]
+
+    expanded.currentUserName should be("new-user")
+    expanded.currentUserPassword.mkString should be("new-password")
+    expanded.remotePassword.map(_.mkString) should be(Some("new-remote-password"))
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (ReEncryptDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val expanded = mode
+      .expand(
+        env = Map(
+          "A" -> "B",
+          "C" -> "2",
+          "D" -> "",
+          "STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_CURRENT_USER_NAME" -> "new-user",
+          "STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_CURRENT_USER_PASSWORD" -> "new-password",
+          "STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_OLD_USER_PASSWORD" -> "new-old-password"
+        )
+      )
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret]
+
+    expanded.currentUserName should be("new-user")
+    expanded.currentUserPassword.mkString should be("new-password")
+    expanded.oldUserPassword.mkString should be("new-old-password")
+  }
+
+  they should "expand maintenance mode arguments from provided env vars (ResetUserCredentials)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.ResetUserCredentials(
+      currentUserPassword = "test-password".toCharArray,
+      newUserPassword = "other-password".toCharArray,
+      newUserSalt = "test-salt"
+    )
+
+    val expanded = mode
+      .expand(
+        env = Map(
+          "A" -> "B",
+          "C" -> "2",
+          "D" -> "",
+          "STASIS_CLIENT_RESET_USER_CREDENTIALS_CURRENT_USER_PASSWORD" -> "new-password",
+          "STASIS_CLIENT_RESET_USER_CREDENTIALS_NEW_USER_PASSWORD" -> "new-other-password",
+          "STASIS_CLIENT_RESET_USER_CREDENTIALS_NEW_USER_SALT" -> "new-salt"
+        )
+      )
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.ResetUserCredentials]
+
+    expanded.currentUserPassword.mkString should be("new-password")
+    expanded.newUserPassword.mkString should be("new-other-password")
+    expanded.newUserSalt should be("new-salt")
+  }
+
+  they should "expand maintenance mode arguments from system env vars (Empty)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.Empty
+
+    mode.expand() should be(mode)
+  }
+
+  they should "expand maintenance mode arguments from system env vars (RegenerateApiCertificate)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.RegenerateApiCertificate
+
+    mode.expand() should be(mode)
+  }
+
+  they should "expand maintenance mode arguments from system env vars (PushDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.PushDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      remotePassword = Some("other-password".toCharArray)
+    )
+
+    val expanded = mode.expand().asInstanceOf[ApplicationArguments.Mode.Maintenance.PushDeviceSecret]
+
+    expanded.currentUserName should be(mode.currentUserName)
+    expanded.currentUserPassword should be(mode.currentUserPassword)
+    expanded.remotePassword should be(mode.remotePassword)
+  }
+
+  they should "expand maintenance mode arguments from system env vars (PullDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.PullDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      remotePassword = Some("other-password".toCharArray)
+    )
+
+    val expanded = mode.expand().asInstanceOf[ApplicationArguments.Mode.Maintenance.PullDeviceSecret]
+
+    expanded.currentUserName should be(mode.currentUserName)
+    expanded.currentUserPassword should be(mode.currentUserPassword)
+    expanded.remotePassword should be(mode.remotePassword)
+  }
+
+  they should "expand maintenance mode arguments from system env vars (ReEncryptDeviceSecret)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret(
+      currentUserName = "test-user",
+      currentUserPassword = "test-password".toCharArray,
+      oldUserPassword = "other-password".toCharArray
+    )
+
+    val expanded = mode
+      .expand()
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.ReEncryptDeviceSecret]
+
+    expanded.currentUserName should be(mode.currentUserName)
+    expanded.currentUserPassword should be(mode.currentUserPassword)
+    expanded.oldUserPassword should be(mode.oldUserPassword)
+  }
+
+  they should "expand maintenance mode arguments from system env vars (ResetUserCredentials)" in {
+    val mode = ApplicationArguments.Mode.Maintenance.ResetUserCredentials(
+      currentUserPassword = "test-password".toCharArray,
+      newUserPassword = "other-password".toCharArray,
+      newUserSalt = "test-salt"
+    )
+
+    val expanded = mode
+      .expand()
+      .asInstanceOf[ApplicationArguments.Mode.Maintenance.ResetUserCredentials]
+
+    expanded.currentUserPassword should be(mode.currentUserPassword)
+    expanded.newUserPassword should be(mode.newUserPassword)
+    expanded.newUserSalt should be(mode.newUserSalt)
   }
 
   they should "validate maintenance mode arguments" in {

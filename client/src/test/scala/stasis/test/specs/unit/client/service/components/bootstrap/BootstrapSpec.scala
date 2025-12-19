@@ -49,7 +49,6 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 
@@ -86,7 +85,6 @@ class BootstrapSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockito
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 

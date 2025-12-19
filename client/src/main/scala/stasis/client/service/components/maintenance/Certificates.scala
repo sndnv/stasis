@@ -61,6 +61,7 @@ object Certificates {
             .future
           _ <- replacePassword(parent = parent, config = configOverride, newPassword = newPassword)
         } yield {
+          log.infoN("Client API certificate generation completed")
           Done
         }
 

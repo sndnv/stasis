@@ -53,6 +53,7 @@ trait Service { _: Service.Arguments =>
 
       for {
         _ <- ApplicationRuntimeRequirements.validate()
+        _ = log.info("Starting client in bootstrap mode...")
         base <- components.bootstrap.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         init <- components.bootstrap.Init(base, console)
         bootstrap <- components.bootstrap.Bootstrap(base, init)
@@ -69,6 +70,7 @@ trait Service { _: Service.Arguments =>
 
       for {
         _ <- ApplicationRuntimeRequirements.validate()
+        _ = log.info("Starting client as a service...")
         base <- components.Base(applicationDirectory = applicationDirectory, applicationTray = applicationTray, terminate = stop)
         tracking <- components.Tracking(base)
         init <- components.Init(base, startup = startupPromise.future, console = console)
@@ -87,6 +89,7 @@ trait Service { _: Service.Arguments =>
 
       for {
         _ <- ApplicationRuntimeRequirements.validate()
+        _ = log.info("Starting client in maintenance mode...")
         base <- components.maintenance.Base(modeArguments = mode, applicationDirectory = applicationDirectory)
         init <- components.maintenance.Init(base, console = console)
         mode <- init.retrieveCredentials()
@@ -147,8 +150,8 @@ object Service {
   sealed trait State
   object State {
     case object Starting extends State
-    final object Started extends State
-    final object Completed extends State
+    object Started extends State
+    object Completed extends State
     final case class StartupFailed(throwable: Throwable) extends State
   }
 
