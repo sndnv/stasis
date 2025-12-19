@@ -47,7 +47,6 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           acceptSelfSignedCertificates = true,
           userName = "",
           userPassword = Array.emptyCharArray,
-          userPasswordConfirm = Array.emptyCharArray,
           recreateFiles = false
         ),
         applicationDirectory = createApplicationDirectory(init = _ => ())
@@ -95,7 +94,6 @@ class InitSpec extends AsyncUnitSpec with ResourceHelpers with AsyncMockitoSugar
           acceptSelfSignedCertificates = true,
           userName = expectedUserName,
           userPassword = expectedUserPassword,
-          userPasswordConfirm = expectedUserPassword,
           recreateFiles = false
         ),
         applicationDirectory = createApplicationDirectory(init = _ => ())

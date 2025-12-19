@@ -11,9 +11,10 @@ object ViaCli {
   ): Future[ApplicationArguments.Mode.Bootstrap] =
     Future.fromTry(
       for {
-        _ <- Try(args.validate())
+        expanded <- Try(args.expand())
+        _ <- Try(expanded.validate())
       } yield {
-        args
+        expanded
       }
     )
 

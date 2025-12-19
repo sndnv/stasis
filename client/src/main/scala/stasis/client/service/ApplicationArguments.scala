@@ -1,6 +1,7 @@
 package stasis.client.service
 
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 import scopt.OptionParser
 
@@ -11,7 +12,7 @@ final case class ApplicationArguments(
 object ApplicationArguments {
   sealed trait Mode
   object Mode {
-    final case object Service extends Mode
+    case object Service extends Mode
 
     final case class Bootstrap(
       serverBootstrapUrl: String,
@@ -19,9 +20,19 @@ object ApplicationArguments {
       acceptSelfSignedCertificates: Boolean,
       userName: String,
       userPassword: Array[Char],
-      userPasswordConfirm: Array[Char],
       recreateFiles: Boolean
     ) extends Mode {
+      def expand(): Bootstrap =
+        expand(env = System.getenv().asScala.toMap)
+
+      def expand(env: Map[String, String]): Bootstrap =
+        copy(
+          serverBootstrapUrl = env.getOrElse("STASIS_CLIENT_BOOTSTRAP_SERVER_URL", serverBootstrapUrl),
+          bootstrapCode = env.getOrElse("STASIS_CLIENT_BOOTSTRAP_CODE", bootstrapCode),
+          userName = env.getOrElse("STASIS_CLIENT_BOOTSTRAP_USER_NAME", userName),
+          userPassword = env.get("STASIS_CLIENT_BOOTSTRAP_USER_PASSWORD").map(_.toCharArray).getOrElse(userPassword)
+        )
+
       def validate(): Unit = {
         require(
           serverBootstrapUrl.startsWith("https://"),
@@ -43,12 +54,16 @@ object ApplicationArguments {
           acceptSelfSignedCertificates = false,
           userName = "",
           userPassword = Array.emptyCharArray,
-          userPasswordConfirm = Array.emptyCharArray,
           recreateFiles = false
         )
     }
 
     sealed trait Maintenance extends Mode {
+      def expand(): Maintenance =
+        expand(env = System.getenv().asScala.toMap)
+
+      def expand(env: Map[String, String]): Maintenance = this
+
       def validate(): Unit =
         require(this != Maintenance.Empty, "At least one maintenance flag must be set")
     }
@@ -61,15 +76,28 @@ object ApplicationArguments {
         def currentUserPassword: Array[Char]
       }
 
-      final case object Empty extends Maintenance
+      case object Empty extends Maintenance
 
-      final case object RegenerateApiCertificate extends Maintenance
+      case object RegenerateApiCertificate extends Maintenance
 
       final case class PushDeviceSecret(
         override val currentUserName: String,
         override val currentUserPassword: Array[Char],
         remotePassword: Option[Array[Char]]
-      ) extends DeviceSecretOperation
+      ) extends DeviceSecretOperation {
+        override def expand(env: Map[String, String]): Maintenance =
+          copy(
+            currentUserName = env.getOrElse("STASIS_CLIENT_PUSH_DEVICE_SECRET_CURRENT_USER_NAME", currentUserName),
+            currentUserPassword = env
+              .get("STASIS_CLIENT_PUSH_DEVICE_SECRET_CURRENT_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(currentUserPassword),
+            remotePassword = env
+              .get("STASIS_CLIENT_PUSH_DEVICE_SECRET_REMOTE_PASSWORD")
+              .map(_.toCharArray)
+              .orElse(remotePassword)
+          )
+      }
 
       object PushDeviceSecret {
         def empty: PushDeviceSecret =
@@ -84,7 +112,20 @@ object ApplicationArguments {
         override val currentUserName: String,
         override val currentUserPassword: Array[Char],
         remotePassword: Option[Array[Char]]
-      ) extends DeviceSecretOperation
+      ) extends DeviceSecretOperation {
+        override def expand(env: Map[String, String]): Maintenance =
+          copy(
+            currentUserName = env.getOrElse("STASIS_CLIENT_PULL_DEVICE_SECRET_CURRENT_USER_NAME", currentUserName),
+            currentUserPassword = env
+              .get("STASIS_CLIENT_PULL_DEVICE_SECRET_CURRENT_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(currentUserPassword),
+            remotePassword = env
+              .get("STASIS_CLIENT_PULL_DEVICE_SECRET_REMOTE_PASSWORD")
+              .map(_.toCharArray)
+              .orElse(remotePassword)
+          )
+      }
 
       object PullDeviceSecret {
         def empty: PullDeviceSecret =
@@ -99,7 +140,20 @@ object ApplicationArguments {
         override val currentUserName: String,
         override val currentUserPassword: Array[Char],
         oldUserPassword: Array[Char]
-      ) extends DeviceSecretOperation
+      ) extends DeviceSecretOperation {
+        override def expand(env: Map[String, String]): Maintenance =
+          copy(
+            currentUserName = env.getOrElse("STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_CURRENT_USER_NAME", currentUserName),
+            currentUserPassword = env
+              .get("STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_CURRENT_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(currentUserPassword),
+            oldUserPassword = env
+              .get("STASIS_CLIENT_REENCRYPT_DEVICE_SECRET_OLD_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(oldUserPassword)
+          )
+      }
 
       object ReEncryptDeviceSecret {
         def empty: ReEncryptDeviceSecret =
@@ -114,7 +168,20 @@ object ApplicationArguments {
         currentUserPassword: Array[Char],
         newUserPassword: Array[Char],
         newUserSalt: String
-      ) extends UserCredentialsOperation
+      ) extends UserCredentialsOperation {
+        override def expand(env: Map[String, String]): Maintenance =
+          copy(
+            currentUserPassword = env
+              .get("STASIS_CLIENT_RESET_USER_CREDENTIALS_CURRENT_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(currentUserPassword),
+            newUserPassword = env
+              .get("STASIS_CLIENT_RESET_USER_CREDENTIALS_NEW_USER_PASSWORD")
+              .map(_.toCharArray)
+              .getOrElse(newUserPassword),
+            newUserSalt = env.getOrElse("STASIS_CLIENT_RESET_USER_CREDENTIALS_NEW_USER_SALT", newUserSalt)
+          )
+      }
 
       object ResetUserCredentials {
         def empty: ResetUserCredentials =
@@ -238,7 +305,7 @@ object ApplicationArguments {
                       }
                     }
                     .optional()
-                    .text("Current user password (for re-encrypting device secret after resetting the credentials)."),
+                    .text("Current user password (for decrypting the device secret before resetting the credentials)."),
                   opt[String]("new-user-password")
                     .valueName("<password>")
                     .action { case (password, args) =>

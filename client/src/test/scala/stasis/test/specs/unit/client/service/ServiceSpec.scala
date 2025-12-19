@@ -296,7 +296,6 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
       acceptSelfSignedCertificates = true,
       userName = "test-user",
       userPassword = "test-password".toCharArray,
-      userPasswordConfirm = "test-password".toCharArray,
       recreateFiles = false
     )
 

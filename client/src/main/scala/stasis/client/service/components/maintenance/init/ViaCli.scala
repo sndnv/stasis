@@ -11,7 +11,8 @@ object ViaCli {
   ): Future[ApplicationArguments.Mode.Maintenance] =
     Future.fromTry(
       Try {
-        args match {
+        val expanded = args.expand()
+        expanded match {
           case args: ApplicationArguments.Mode.Maintenance.ResetUserCredentials =>
             require(args.currentUserPassword.nonEmpty, "Current user password cannot be empty")
             require(args.newUserPassword.nonEmpty, "New user password cannot be empty")
@@ -34,7 +35,7 @@ object ViaCli {
             require(args.oldUserPassword.nonEmpty, "Old user password cannot be empty")
             args
 
-          case _ => args // do nothing
+          case _ => expanded // do nothing
         }
       }
     )

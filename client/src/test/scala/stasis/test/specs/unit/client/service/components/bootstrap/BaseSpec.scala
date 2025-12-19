@@ -18,7 +18,6 @@ class BaseSpec extends AsyncUnitSpec with ResourceHelpers {
       acceptSelfSignedCertificates = false,
       userName = "test-user",
       userPassword = Array.emptyCharArray,
-      userPasswordConfirm = Array.emptyCharArray,
       recreateFiles = false
     )
 

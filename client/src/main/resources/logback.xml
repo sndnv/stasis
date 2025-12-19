@@ -34,18 +34,13 @@
     </appender>
 
     <variable name="PEKKO_LOGLEVEL" value="${STASIS_CLIENT_PEKKO_LOGLEVEL:-WARN}"/>
-    <variable name="SYSTEM_TRAY_LOGLEVEL" value="${STASIS_CLIENT_SYSTEM_TRAY_LOGLEVEL:-ERROR}"/>
+    <variable name="SYSTEM_TRAY_LOGLEVEL" value="${STASIS_CLIENT_SYSTEM_TRAY_LOGLEVEL:-OFF}"/>
     <variable name="CLIENT_LOGLEVEL" value="${STASIS_CLIENT_LOGLEVEL:-INFO}"/>
     <variable name="CLIENT_LOG_TARGET" value="${STASIS_CLIENT_LOG_TARGET:-FILE}"/>
 
     <logger name="org.apache.pekko" level="${PEKKO_LOGLEVEL}"/>
 
     <logger name="dorkbox.systemTray" level="${SYSTEM_TRAY_LOGLEVEL}"/>
-
-    <logger name="stasis.client.bootstrap" level="${CLIENT_LOGLEVEL}">
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
 
     <root level="${CLIENT_LOGLEVEL}">
         <appender-ref ref="${CLIENT_LOG_TARGET}"/>

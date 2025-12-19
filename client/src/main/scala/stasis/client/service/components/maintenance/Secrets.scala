@@ -139,6 +139,7 @@ object Secrets {
                   encryptedDeviceSecret <- getKeyStoreEncryptionSecret(remotePassword).encryptDeviceSecret(secret = secret)
                   _ <- apiClient.pushDeviceKey(encryptedDeviceSecret).transformFailureTo(ServiceStartupFailure.api)
                 } yield {
+                  log.info("Device secret successfully pushed")
                   Done
                 }
 
@@ -171,6 +172,7 @@ object Secrets {
               .pushFile[ByteString](file = Files.DeviceSecret, content = encryptedDeviceSecret)
               .transformFailureTo(ServiceStartupFailure.file)
           } yield {
+            log.info("Device secret successfully pulled")
             Done
           }
 
@@ -208,6 +210,7 @@ object Secrets {
                   Future.successful(Done)
                 }
             } yield {
+              log.info("Device secret successfully re-encrypted")
               Done
             }
 
