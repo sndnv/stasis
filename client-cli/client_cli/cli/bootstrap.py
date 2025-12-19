@@ -1,4 +1,5 @@
 """CLI commands for bootstrapping the client."""
+import os
 
 import click
 import pexpect
@@ -66,7 +67,8 @@ def bootstrap(ctx, server, code, username, password, verify_password, accept_sel
         process = pexpect.spawn(
             ctx.obj.service_binary,
             args=['bootstrap'] + (['--accept-self-signed'] if accept_self_signed else []) + (
-                ['--recreate-files'] if recreate_files else [])
+                ['--recreate-files'] if recreate_files else []),
+            env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
         )
         progress.update()
 

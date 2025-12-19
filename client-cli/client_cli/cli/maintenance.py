@@ -81,7 +81,7 @@ def handle_regenerate_api_certificate_result(process):
 @click.command(name='reset')
 @click.pass_context
 @click.option('-cp', '--current-password', prompt=True, hide_input=True,
-              help='Current user password (for re-encrypting device secret after resetting the credentials).')
+              help='Current user password (for decrypting device secret before resetting the credentials).')
 @click.option('-np', '--new-password', prompt=True, hide_input=True,
               help='New user password (for re-encrypting device secret after resetting the credentials).')
 @click.option('-vnp', '--verify-new-password', prompt=True, hide_input=True,
@@ -167,10 +167,17 @@ credentials.add_command(credentials_reset)
               help='Current user password (for connection to the server).')
 @click.option('-rp', '--remote-password', prompt=False, hide_input=True,
               help='Password override if the remote secret should have a different password.')
+@click.option('-vrp', '--verify-remote-password', prompt=False, hide_input=True,
+              help='Remote password override (verify).')
 @click.option('--force', is_flag=True, default=False,
               help='Run the maintenance process even if the client is already active or not configured.')
-def secret_push(ctx, current_username, current_password, remote_password, force):
+def secret_push(ctx, current_username, current_password, remote_password, verify_remote_password, force):
     """Send the current client secret to the server."""
+
+    if remote_password != verify_remote_password:
+        failure = {'successful': False, 'failure': 'Provided remote passwords do not match'}
+        click.echo(ctx.obj.rendering.render_operation_response(failure))
+        raise click.Abort()
 
     _require_not_active(ctx, force)
     _require_configured(ctx, force)
@@ -251,7 +258,7 @@ def secret_pull(ctx, current_username, current_password, remote_password, force)
     ) as progress:
         process = pexpect.spawn(
             ctx.obj.service_binary,
-            args=['maintenance', 'secret', 'push'],
+            args=['maintenance', 'secret', 'pull'],
             env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
         )
         progress.update()

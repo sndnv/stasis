@@ -221,7 +221,8 @@ class MaintenanceSpec(unittest.TestCase):
                 args=['secret', 'push',
                       '--current-username', current_username,
                       '--current-password', current_password,
-                      '--remote-password', remote_password],
+                      '--remote-password', remote_password,
+                      '--verify-remote-password', remote_password],
                 obj=context
             )
 
@@ -273,6 +274,36 @@ class MaintenanceSpec(unittest.TestCase):
             mock_spawn.return_value.sendline.assert_any_call()
 
     @patch('psutil.process_iter')
+    def test_should_fail_to_push_client_secret_when_mismatched_remote_passwords_provided(self, mock_process_iter):
+        with patch('pexpect.spawn') as mock_spawn:
+            context = Context()
+            context.rendering = JsonWriter()
+            context.service_binary = 'test-name'
+            context.service_main_class = 'test.name.Main'
+            context.is_configured = True
+
+            mock_process_iter.return_value = []
+            mock_spawn.return_value.expect.return_value = 1
+
+            current_username = "username"
+            current_password = 'current'
+            remote_password = 'remote'
+
+            runner = Runner(cli)
+            result = runner.invoke(
+                args=['secret', 'push',
+                      '--current-username', current_username,
+                      '--current-password', current_password,
+                      '--remote-password', remote_password,
+                      '--verify-remote-password', 'other'],
+                obj=context
+            )
+
+            self.assertEqual(result.exit_code, 1)
+            self.assertIn('Aborted!', result.output)
+            self.assertIn('Provided remote passwords do not match', result.output)
+
+    @patch('psutil.process_iter')
     def test_should_handle_client_secret_push_failures(self, mock_process_iter):
         with patch('pexpect.spawn') as mock_spawn:
             context = Context()
@@ -293,7 +324,8 @@ class MaintenanceSpec(unittest.TestCase):
                 args=['secret', 'push',
                       '--current-username', current_username,
                       '--current-password', current_password,
-                      '--remote-password', remote_password],
+                      '--remote-password', remote_password,
+                      '--verify-remote-password', remote_password],
                 obj=context
             )
 
