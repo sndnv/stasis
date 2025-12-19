@@ -1,15 +1,24 @@
 import 'package:flutter/gestures.dart';
-import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:flutter/material.dart';
+import 'package:stasis_client_ui/api/api_client.dart';
+import 'package:stasis_client_ui/api/app_processes.dart';
+import 'package:stasis_client_ui/pages/common/components.dart';
+import 'package:stasis_client_ui/pages/components/client_bootstrap_form.dart';
+import 'package:stasis_client_ui/pages/components/client_credentials_reset_form.dart';
+import 'package:stasis_client_ui/pages/components/client_logs.dart';
+import 'package:stasis_client_ui/pages/components/client_pull_device_secret_form.dart';
+import 'package:stasis_client_ui/pages/components/client_push_device_secret_form.dart';
+import 'package:stasis_client_ui/pages/components/client_reencrypt_device_secret_form.dart';
+import 'package:stasis_client_ui/pages/components/client_regenerate_api_certificate_form.dart';
 
 class CredentialsForm extends StatefulWidget {
   const CredentialsForm({
     super.key,
-    required this.applicationName,
+    required this.processes,
     required this.loginHandler,
   });
 
-  final String applicationName;
+  final AppProcesses processes;
   final Future<void> Function(String, String) loginHandler;
 
   @override
@@ -93,7 +102,18 @@ class _CredentialsFormState extends State<CredentialsForm> {
               vertical: VisualDensity.minimumDensity,
             );
 
+            Widget renderOptionSection({required String title}) {
+              return Padding(
+                padding: EdgeInsetsGeometry.only(left: 8.0),
+                child: Text(
+                  title,
+                  style: theme.textTheme.labelMedium?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              );
+            }
+
             Widget renderOption({
+              required IconData icon,
               required String title,
               required String subtitle,
               void Function()? onTap,
@@ -102,46 +122,35 @@ class _CredentialsFormState extends State<CredentialsForm> {
                 dense: true,
                 enabled: onTap != null,
                 visualDensity: density,
+                leading: Icon(icon),
                 title: Text(title, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
                 subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
                 onTap: onTap,
               );
             }
 
-            void showCommandHintDialog({required String title, required String hint, required String command}) {
+            void showCommandDialog({required Widget child}) {
               showDialog(
                 context: context,
-                builder: (_) => SimpleDialog(
-                  title: Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(hint),
-                          const Padding(padding: EdgeInsets.only(top: 12.0)),
-                          SelectionArea(
-                            child: Text(
-                              command,
-                              style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
+                barrierDismissible: false,
+                builder: (context) {
+                  return SimpleDialog(
+                    contentPadding: const EdgeInsets.all(16.0),
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        child: child,
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               );
             }
 
             showDialog(
               context: context,
               builder: (_) => SimpleDialog(
+                contentPadding: EdgeInsetsGeometry.all(8),
                 title: Row(
                   children: [
                     const Icon(Icons.settings),
@@ -150,38 +159,134 @@ class _CredentialsFormState extends State<CredentialsForm> {
                   ],
                 ),
                 children: [
+                  renderOptionSection(title: 'Secrets'),
                   renderOption(
+                    icon: Icons.lock,
                     title: 'Re-encrypt device secret',
-                    subtitle: 'If your password was changed on a different device, this allows decrypting the '
+                    subtitle:
+                        'If your password was changed on a different device, this allows decrypting the '
                         'secret of this device using the old password and re-encrypting it using the new one.',
                     onTap: () {
-                      showCommandHintDialog(
-                        title: 'Re-encrypt device secret',
-                        hint: 'This device secret can be re-encrypted via the CLI by running:',
-                        command: '${widget.applicationName} maintenance secret re-encrypt',
+                      showCommandDialog(
+                        child: ClientReEncryptDeviceSecretForm(
+                          title: 'Re-encrypt device secret',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
                       );
                     },
                   ),
                   renderOption(
-                    title: 'Re-initialize device',
-                    subtitle: 'Allows re-running the bootstrap process for this device.',
+                    icon: Icons.cloud_upload,
+                    title: 'Push device secret',
+                    subtitle:
+                        'Send the current client secret to the server; '
+                        'the secret is always encrypted locally before being sent.',
                     onTap: () {
-                      showCommandHintDialog(
-                        title: 'Re-initialize device',
-                        hint: 'This device can be re-initialized via the CLI by running:',
-                        command: '${widget.applicationName} bootstrap',
+                      showCommandDialog(
+                        child: ClientPushDeviceSecretForm(
+                          title: 'Push device secret',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
                       );
                     },
                   ),
                   renderOption(
+                    icon: Icons.cloud_download,
+                    title: 'Pull device secret',
+                    subtitle: 'Retrieve the client secret from the server.',
+                    onTap: () {
+                      showCommandDialog(
+                        child: ClientPullDeviceSecretForm(
+                          title: 'Pull device secret',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
+                      );
+                    },
+                  ),
+                  renderOptionSection(title: 'Credentials'),
+                  renderOption(
+                    icon: Icons.password,
                     title: 'Reset user password',
-                    subtitle: 'Allows reset the current user\'s password; '
-                        'if that is not possible, contact your system administrator.',
+                    subtitle:
+                        'Reset the current user\'s password; if that is not possible, contact your system administrator.',
                     onTap: () {
-                      showCommandHintDialog(
-                        title: 'Reset user password',
-                        hint: 'The user\'s password can be reset via the CLI by running:',
-                        command: '${widget.applicationName} maintenance credentials reset',
+                      showCommandDialog(
+                        child: ClientCredentialsResetForm(
+                          title: 'Reset user password',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
+                      );
+                    },
+                  ),
+                  renderOptionSection(title: 'Maintenance'),
+                  renderOption(
+                    icon: Icons.restart_alt,
+                    title: 'Reinitialize device',
+                    subtitle: 'Re-run the bootstrap process for this device.',
+                    onTap: () {
+                      showCommandDialog(
+                        child: ClientBootstrapForm(
+                          title: 'Reinitialize device',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
+                      );
+                    },
+                  ),
+                  renderOption(
+                    icon: Icons.security,
+                    title: 'Regenerate API certificate',
+                    subtitle: 'Regenerate the TLS certificate used by the client\'s local API.',
+                    onTap: () {
+                      showCommandDialog(
+                        child: ClientRegenerateApiCertificateForm(
+                          title: 'Regenerate API certificate',
+                          processes: widget.processes,
+                          callback: (isSuccessful) {
+                            if (isSuccessful) Navigator.pop(context);
+                          },
+                          onCancelled: () => Navigator.pop(context),
+                        ),
+                      );
+                    },
+                  ),
+                  renderOption(
+                    icon: Icons.terminal,
+                    title: 'View client logs',
+                    subtitle: 'Show the latest client logs.',
+                    onTap: () {
+                      final logsDir = ClientLogs.getLogsDir();
+                      showDialog(
+                        context: context,
+                        builder: (context) => buildPage<List<String>>(
+                          of: () => ClientLogs.loadLogsFromFile(path: logsDir),
+                          builder: (context, logs) {
+                            return SimpleDialog(
+                              title: Text('Logs from [${logsDir ?? 'none'}]', style: theme.textTheme.titleSmall),
+                              contentPadding: const EdgeInsets.all(16),
+                              children: [ClientLogs(stdout: logs)],
+                            );
+                          },
+                        ),
                       );
                     },
                   ),
@@ -195,9 +300,12 @@ class _CredentialsFormState extends State<CredentialsForm> {
     return Form(
       key: _key,
       child: Column(
-        children: [usernameField, passwordField, button, moreOptions]
-            .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e))
-            .toList(),
+        children: [
+          usernameField,
+          passwordField,
+          button,
+          moreOptions,
+        ].map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)).toList(),
       ),
     );
   }
