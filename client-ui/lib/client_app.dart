@@ -75,9 +75,9 @@ class _ClientAppState extends State<ClientApp> {
 
     final configDir = AppDirs.getUserConfigDir(applicationName: applicationName);
 
-    try {
-      const processes = AppProcesses(serviceBinary: applicationName, serviceMainClass: applicationMainClass);
+    const processes = AppProcesses(serviceBinary: applicationName, serviceMainClass: applicationMainClass);
 
+    try {
       final mockEnabled = bool.tryParse(
         Platform.environment['STASIS_CLIENT_UI_MOCK_ENABLED'] ?? '',
         caseSensitive: false,
@@ -134,7 +134,18 @@ class _ClientAppState extends State<ClientApp> {
         }
       }
     } on ConfigFileNotAvailableException catch (e) {
-      return appWithContent(content: ClientNotConfiguredCard.build(context, applicationName, e));
+      return appWithContent(
+        content: ClientNotConfiguredCard(
+          applicationName: applicationName,
+          processes: processes,
+          e: e,
+          bootstrapCallback: (isSuccessful) {
+            if (isSuccessful) {
+              _reload();
+            }
+          },
+        ),
+      );
     } on InvalidConfigFileException catch (e) {
       return appWithContent(content: InvalidConfigFileCard.build(context, e));
     }

@@ -23,11 +23,12 @@ import 'package:stasis_client_ui/model/operations/rule.dart';
 import 'package:stasis_client_ui/model/operations/specification_rules.dart';
 import 'package:stasis_client_ui/model/schedules/active_schedule.dart';
 import 'package:stasis_client_ui/model/schedules/schedule.dart';
+import 'package:stasis_client_ui/model/service/init_state.dart';
 import 'package:stasis_client_ui/model/users/user.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
 import 'package:uuid/uuid.dart';
 
-class MockApiClient extends ApiClient implements ClientApi {
+class MockApiClient extends ApiClient implements ClientApi, InitApi {
   static const String tokenApi = 'https://mock:4241';
   static const String serverApi = 'https://mock:4242';
   static const String serverCore = 'https://mock:4243';
@@ -219,9 +220,17 @@ class MockApiClient extends ApiClient implements ClientApi {
       excluded: ['/other'],
       explanation: {
         '/some/path/01': [
-          const Explanation(operation: 'include', original: OriginalRule(line: '+ /some/path *', lineNumber: 0))
+          const Explanation(
+            operation: 'include',
+            original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
+          ),
         ],
-        '/other': [const Explanation(operation: 'exclude', original: OriginalRule(line: '- / other', lineNumber: 1))],
+        '/other': [
+          const Explanation(
+            operation: 'exclude',
+            original: OriginalRule(line: '- / other', lineNumber: 1),
+          ),
+        ],
       },
       unmatched: [
         Pair(const OriginalRule(line: '+ /test_01 *', lineNumber: 2), 'Not found'),
@@ -290,7 +299,7 @@ class MockApiClient extends ApiClient implements ClientApi {
       ActiveSchedule(
         assignment: KeyRotationAssignment(assignmentType: 'key-rotation', schedule: defaultSchedule.id),
         schedule: null,
-      )
+      ),
     ]);
   }
 
@@ -331,13 +340,29 @@ class MockApiClient extends ApiClient implements ClientApi {
     return Future.value();
   }
 
+  @override
+  Future<InitState> state() {
+    return Future.value(InitState.empty());
+  }
+
+  @override
+  Future<void> provideCredentials({required String username, required String password}) {
+    return Future.value();
+  }
+
   static final defaultDefinition = DatasetDefinition(
     id: const Uuid().v4(),
     info: 'test-definition',
     device: device,
     redundantCopies: 42,
-    existingVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 12)),
-    removedVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 366)),
+    existingVersions: const Retention(
+      policy: Policy(policyType: 'all', versions: null),
+      duration: Duration(hours: 12),
+    ),
+    removedVersions: const Retention(
+      policy: Policy(policyType: 'all', versions: null),
+      duration: Duration(hours: 366),
+    ),
     created: DateTime.now().subtract(const Duration(days: 3871)),
     updated: DateTime.now().subtract(const Duration(hours: 39)),
   );
@@ -347,8 +372,14 @@ class MockApiClient extends ApiClient implements ClientApi {
     info: 'other-definition',
     device: device,
     redundantCopies: 9999,
-    existingVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 12)),
-    removedVersions: const Retention(policy: Policy(policyType: 'all', versions: null), duration: Duration(hours: 366)),
+    existingVersions: const Retention(
+      policy: Policy(policyType: 'all', versions: null),
+      duration: Duration(hours: 12),
+    ),
+    removedVersions: const Retention(
+      policy: Policy(policyType: 'all', versions: null),
+      duration: Duration(hours: 366),
+    ),
     created: DateTime.now(),
     updated: DateTime.now(),
   );
@@ -373,8 +404,11 @@ class MockApiClient extends ApiClient implements ClientApi {
     updated: DateTime.now(),
   );
 
-  static const defaultMetadata =
-      DatasetMetadata(contentChanged: {}, metadataChanged: {}, filesystem: FilesystemMetadata(entities: {}));
+  static const defaultMetadata = DatasetMetadata(
+    contentChanged: {},
+    metadataChanged: {},
+    filesystem: FilesystemMetadata(entities: {}),
+  );
 
   static final currentUser = User(
     id: user,

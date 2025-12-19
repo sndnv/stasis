@@ -6,6 +6,9 @@ linter:
     always_use_package_imports: true
     avoid_type_to_string: true
 
+formatter:
+  trailing_commas: preserve
+
 analyzer:
   exclude:
     - "**/*.g.dart"

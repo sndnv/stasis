@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/api/app_processes.dart';
 import 'package:stasis_client_ui/model/service/init_state.dart';
@@ -5,7 +6,6 @@ import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/background_processes.dart';
 import 'package:stasis_client_ui/pages/components/credentials_form.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
-import 'package:flutter/material.dart';
 
 class Login extends StatefulWidget {
   const Login({
@@ -57,7 +57,7 @@ class _LoginState extends State<Login> {
             );
           } else {
             content = CredentialsForm(
-              applicationName: widget.processes.serviceBinary,
+              processes: widget.processes,
               loginHandler: (u, p) async {
                 if (activeProcesses.isEmpty) {
                   await widget.processes.start();
@@ -95,7 +95,7 @@ class _LoginState extends State<Login> {
           return centerContent(
             content: [
               createBasicCard(theme, [title, content]),
-              Padding(padding: const EdgeInsets.all(16.0), child: logo)
+              Padding(padding: const EdgeInsets.all(16.0), child: logo),
             ],
           );
         } else if (snapshot.error != null) {
@@ -104,7 +104,7 @@ class _LoginState extends State<Login> {
               createBasicCard(
                 theme,
                 [errorInfo(title: 'Error', description: snapshot.error.toString())],
-              )
+              ),
             ],
           );
         } else {

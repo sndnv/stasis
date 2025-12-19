@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/pages/components/forms/boolean_field.dart';
@@ -7,8 +9,6 @@ import 'package:stasis_client_ui/pages/components/forms/duration_field.dart';
 import 'package:stasis_client_ui/pages/components/forms/policy_field.dart';
 import 'package:stasis_client_ui/pages/components/forms/retention_field.dart';
 import 'package:stasis_client_ui/utils/pair.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class EntityForm extends StatefulWidget {
   const EntityForm({
@@ -50,7 +50,11 @@ class _EntityFormState extends State<EntityForm> {
     } else {
       buttons = Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: [cancelButton, const Padding(padding: EdgeInsets.only(left: 8.0, right: 8.0)), submitButton],
+        children: [
+          cancelButton,
+          const Padding(padding: EdgeInsets.only(left: 8.0, right: 8.0)),
+          submitButton,
+        ],
       );
     }
 
@@ -59,8 +63,9 @@ class _EntityFormState extends State<EntityForm> {
       child: SizedBox(
         width: 480,
         child: Column(
-          children:
-              (widget.fields + [buttons]).map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e)).toList(),
+          children: (widget.fields + [buttons])
+              .map((e) => Padding(padding: const EdgeInsets.all(8.0), child: e))
+              .toList(),
         ),
       ),
     );
@@ -132,10 +137,12 @@ DropdownButtonFormField dropdownField({
 }) {
   return DropdownButtonFormField<String>(
     items: items
-        .map((e) => DropdownMenuItem<String>(
-              value: e.a,
-              child: Text(e.b),
-            ))
+        .map(
+          (e) => DropdownMenuItem<String>(
+            value: e.a,
+            child: Text(e.b),
+          ),
+        )
         .toList(),
     initialValue: selected,
     decoration: InputDecoration(
@@ -173,10 +180,11 @@ DateTimeField dateTimeField({
 
 BooleanField booleanField({
   required String title,
-  required bool initialValue,
-  required void Function(bool) onChange,
+  required BooleanController controller,
+  String? hint,
+  bool enabled = false,
 }) {
-  return BooleanField(title: title, onChange: onChange, initialValue: initialValue);
+  return BooleanField(title: title, hint: hint, controller: controller, enabled: enabled);
 }
 
 DatasetEntryField datasetEntryField({

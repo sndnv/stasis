@@ -10,6 +10,7 @@ import 'package:stasis_client_ui/model/analytics/analytics_state.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_password.dart';
 import 'package:stasis_client_ui/model/api/requests/update_user_salt.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
+import 'package:stasis_client_ui/pages/components/client_logs.dart';
 import 'package:stasis_client_ui/pages/components/update_user_credentials_form.dart';
 import 'package:stasis_client_ui/utils/debouncer.dart';
 
@@ -61,11 +62,15 @@ class Settings extends StatelessWidget {
               ),
               onConfirm: () {
                 final messenger = ScaffoldMessenger.of(context);
-                client.stop().then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Background service stopped...')));
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to stop background service: [$e]')));
-                }).then((_) => Future.delayed(const Duration(seconds: 1), () => exit(0)));
+                client
+                    .stop()
+                    .then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('Background service stopped...')));
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to stop background service: [$e]')));
+                    })
+                    .then((_) => Future.delayed(const Duration(seconds: 1), () => exit(0)));
               },
             );
           },
@@ -86,6 +91,7 @@ class Settings extends StatelessWidget {
                     _buildCredentialsCard(context),
                     _buildConfigCard(context, tree),
                     _buildAnalyticsCard(context, client),
+                    _buildLogsCard(context),
                   ],
                 ),
               ),
@@ -209,7 +215,7 @@ class Settings extends StatelessWidget {
                   children: [
                     Icon(Icons.lock),
                     Padding(padding: EdgeInsets.only(right: 4.0)),
-                    Text('Manage Credentials'),
+                    Text('Manage credentials'),
                   ],
                 ),
                 Text('Update current user password and salt value', style: theme.textTheme.bodySmall),
@@ -275,11 +281,14 @@ class Settings extends StatelessWidget {
           onPressed: () {
             sendDebouncer.run(() {
               final messenger = ScaffoldMessenger.of(context);
-              client.sendAnalyticsState().then((_) {
-                messenger.showSnackBar(const SnackBar(content: Text('Request sent...')));
-              }).onError((e, stackTrace) {
-                messenger.showSnackBar(SnackBar(content: Text('Failed to send analytics data: [$e]')));
-              });
+              client
+                  .sendAnalyticsState()
+                  .then((_) {
+                    messenger.showSnackBar(const SnackBar(content: Text('Request sent...')));
+                  })
+                  .onError((e, stackTrace) {
+                    messenger.showSnackBar(SnackBar(content: Text('Failed to send analytics data: [$e]')));
+                  });
             });
           },
           icon: const Icon(Icons.upload),
@@ -291,8 +300,9 @@ class Settings extends StatelessWidget {
           tooltip: 'Copy analytics data',
           onPressed: () {
             Clipboard.setData(ClipboardData(text: encodedData));
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('Analytics data copied to clipboard...')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Analytics data copied to clipboard...')));
           },
           icon: const Icon(Icons.copy),
         );
@@ -315,7 +325,7 @@ class Settings extends StatelessWidget {
                           children: [
                             Icon(Icons.analytics),
                             Padding(padding: EdgeInsets.only(right: 4.0)),
-                            Text('Analytics')
+                            Text('Analytics'),
                           ],
                         ),
                         Text(
@@ -329,7 +339,7 @@ class Settings extends StatelessWidget {
                         copyButton,
                         sendButton,
                       ],
-                    )
+                    ),
                   ],
                 ),
                 children: analyticsEnabled
@@ -346,6 +356,56 @@ class Settings extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLogsCard(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            title: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.terminal),
+                        Padding(padding: EdgeInsets.only(right: 4.0)),
+                        Text('View client logs'),
+                      ],
+                    ),
+                    Text('Show the latest client logs', style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ],
+            ),
+            onTap: () {
+              final logsDir = ClientLogs.getLogsDir();
+              showDialog(
+                context: context,
+                builder: (context) => buildPage<List<String>>(
+                  of: () => ClientLogs.loadLogsFromFile(path: logsDir),
+                  builder: (context, logs) {
+                    return SimpleDialog(
+                      title: Text('Logs from [${logsDir ?? 'none'}]', style: theme.textTheme.titleSmall),
+                      contentPadding: const EdgeInsets.all(16),
+                      children: [ClientLogs(stdout: logs)],
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -380,7 +440,7 @@ class Settings extends StatelessWidget {
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
