@@ -42,7 +42,7 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.57.2")
     ksp("androidx.room:room-compiler:2.8.4")
 
-    testImplementation("io.mockk:mockk:1.14.6")
+    testImplementation("io.mockk:mockk:1.14.7")
     testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.7.0")
@@ -53,7 +53,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.room:room-testing:2.8.4")
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("io.mockk:mockk-android:1.14.6")
+    androidTestImplementation("io.mockk:mockk-android:1.14.7")
 
     debugImplementation("androidx.fragment:fragment-testing:1.8.9") {
         exclude(group = "androidx.test", module = "monitor")
