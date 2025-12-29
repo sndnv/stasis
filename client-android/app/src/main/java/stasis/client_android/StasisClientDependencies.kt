@@ -197,7 +197,11 @@ object StasisClientDependencies {
                                 mocksEnabled(server = apiConfig.url) -> MockServerCoreEndpointClient()
                                 else -> DefaultServerCoreEndpointClient(
                                     serverCoreUrl = address,
-                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.core.get().access_token) },
+                                    credentials = {
+                                        HttpCredentials.OAuth2BearerToken(
+                                            token = credentials.core().get().access_token
+                                        )
+                                    },
                                     self = nodeId
                                 )
                             }
@@ -210,7 +214,11 @@ object StasisClientDependencies {
                                     mocksEnabled(server = apiConfig.url) -> MockServerApiEndpointClient()
                                     else -> DefaultServerApiEndpointClient(
                                         serverApiUrl = uri,
-                                        credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
+                                        credentials = {
+                                            HttpCredentials.OAuth2BearerToken(
+                                                token = credentials.api().get().access_token
+                                            )
+                                        },
                                         decryption = DefaultServerApiEndpointClient.DecryptionContext.Default(
                                             core = coreClient,
                                             deviceSecret = { credentials.deviceSecret.get() },
@@ -245,7 +253,11 @@ object StasisClientDependencies {
                                 mocksEnabled(server = apiConfig.url) -> MockServiceDiscoveryClient()
                                 else -> HttpServiceDiscoveryClient(
                                     apiUrl = uri,
-                                    credentials = { HttpCredentials.OAuth2BearerToken(token = credentials.api.get().access_token) },
+                                    credentials = {
+                                        HttpCredentials.OAuth2BearerToken(
+                                            token = credentials.api().get().access_token
+                                        )
+                                    },
                                     attributes = ClientDiscoveryAttributes(
                                         user = userId,
                                         device = deviceId,

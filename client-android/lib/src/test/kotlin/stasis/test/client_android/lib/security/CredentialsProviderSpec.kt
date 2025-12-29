@@ -132,10 +132,10 @@ class CredentialsProviderSpec : WordSpec({
                     Success(apiToken)
                 ))
 
-                provider.core.map { token -> token.copy(expires_in = 1) } shouldBe (Success(
+                provider.core().map { token -> token.copy(expires_in = 1) } shouldBe (Success(
                     coreToken
                 ))
-                provider.api.map { token -> token.copy(expires_in = 1) } shouldBe (Success(apiToken))
+                provider.api().map { token -> token.copy(expires_in = 1) } shouldBe (Success(apiToken))
 
                 provider.deviceSecret shouldBe (Success(secret))
             }
@@ -192,8 +192,8 @@ class CredentialsProviderSpec : WordSpec({
                 coreUpdates shouldBe (listOf(Success(response)))
                 apiUpdates shouldBe (listOf(Success(response)))
 
-                provider.core shouldBe (Success(response))
-                provider.api shouldBe (Success(response))
+                provider.core() shouldBe (Success(response))
+                provider.api() shouldBe (Success(response))
                 provider.deviceSecret shouldBe (Success(secret))
             }
 
@@ -251,8 +251,8 @@ class CredentialsProviderSpec : WordSpec({
                 shouldThrow<TokenExpired> { coreUpdates[0].get() }
                 shouldThrow<TokenExpired> { apiUpdates[0].get() }
 
-                shouldThrow<TokenExpired> { provider.core.get() }
-                shouldThrow<TokenExpired> { provider.api.get() }
+                shouldThrow<TokenExpired> { provider.core().get() }
+                shouldThrow<TokenExpired> { provider.api().get() }
                 shouldThrow<MissingDeviceSecret> { provider.deviceSecret.get() }
             }
 
@@ -297,23 +297,19 @@ class CredentialsProviderSpec : WordSpec({
             )
 
             eventually {
-                requested.get() shouldBe (6)
-                coreUpdates.size shouldBe (3)
-                apiUpdates.size shouldBe (3)
+                requested.get() shouldBe (2)
+                coreUpdates.size shouldBe (1)
+                apiUpdates.size shouldBe (1)
 
                 coreUpdates shouldBe (listOf(
-                    Success(response),
-                    Success(response),
                     Success(response)
                 ))
                 apiUpdates shouldBe (listOf(
-                    Success(response),
-                    Success(response),
                     Success(response)
                 ))
 
-                provider.core shouldBe (Success(response))
-                provider.api shouldBe (Success(response))
+                provider.core() shouldBe (Success(response))
+                provider.api() shouldBe (Success(response))
                 provider.deviceSecret shouldBe (Success(secret))
             }
 
@@ -361,24 +357,20 @@ class CredentialsProviderSpec : WordSpec({
             }
 
             eventually {
-                requested.get() shouldBe (6)
+                requested.get() shouldBe (2)
                 initCompleted.get() shouldBe (true)
-                coreUpdates.size shouldBe (3)
-                apiUpdates.size shouldBe (3)
+                coreUpdates.size shouldBe (1)
+                apiUpdates.size shouldBe (1)
 
                 coreUpdates shouldBe (listOf(
-                    Success(response),
-                    Success(response),
                     Success(response)
                 ))
                 apiUpdates shouldBe (listOf(
-                    Success(response),
-                    Success(response),
                     Success(response)
                 ))
 
-                provider.core shouldBe (Success(response))
-                provider.api shouldBe (Success(response))
+                provider.core() shouldBe (Success(response))
+                provider.api() shouldBe (Success(response))
                 provider.deviceSecret shouldBe (Success(secret))
             }
 
@@ -433,12 +425,6 @@ class CredentialsProviderSpec : WordSpec({
                 initCompleted.get() shouldBe (true)
                 coreUpdates.size shouldBe (0)
                 apiUpdates.size shouldBe (0)
-
-                provider.core.failed()
-                    .map { it.message } shouldBe (Success("No access token found"))
-
-                provider.api.failed()
-                    .map { it.message } shouldBe (Success("No access token found"))
 
                 provider.deviceSecret.failed()
                     .map { it.message } shouldBe (Success("Test failure"))

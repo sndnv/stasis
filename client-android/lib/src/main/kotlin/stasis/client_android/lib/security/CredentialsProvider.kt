@@ -51,7 +51,6 @@ class CredentialsProvider(
             onCoreTokenUpdatedHandlers.values.forEach { handler -> handler(response) }
         },
         expirationTolerance = config.expirationTolerance,
-        coroutineScope = coroutineScope
     )
 
     private val apiTokenManager: OAuthTokenManager = OAuthTokenManager(
@@ -60,15 +59,14 @@ class CredentialsProvider(
             onApiTokenUpdatedHandlers.values.forEach { handler -> handler(response) }
         },
         expirationTolerance = config.expirationTolerance,
-        coroutineScope = coroutineScope
     )
 
-    val core: Try<AccessTokenResponse>
-        get() = coreTokenManager.token
+    suspend fun core(): Try<AccessTokenResponse> =
+        coreTokenManager.token()
 
 
-    val api: Try<AccessTokenResponse>
-        get() = apiTokenManager.token
+    suspend fun api(): Try<AccessTokenResponse> =
+        apiTokenManager.token()
 
     val deviceSecret: Try<DeviceSecret>
         get() = latestDeviceSecret.get()
@@ -83,16 +81,16 @@ class CredentialsProvider(
             val coreExpiresIn = extractor.process(coreToken.access_token).expiresIn()
             val apiExpiresIn = extractor.process(apiToken.access_token).expiresIn()
 
-            coreTokenManager.scheduleWithClientCredentials(Success(coreToken.copy(expires_in = coreExpiresIn)))
-            apiTokenManager.scheduleWithRefreshToken(Success(apiToken.copy(expires_in = apiExpiresIn)))
+            coreTokenManager.configureWithClientCredentials(Success(coreToken.copy(expires_in = coreExpiresIn)))
+            apiTokenManager.configureWithRefreshToken(Success(apiToken.copy(expires_in = apiExpiresIn)))
 
             latestDeviceSecret.set(Success(bridge.initDeviceSecret(plaintextDeviceSecret)))
             bridge.initDigestedUserPassword(digestedUserPassword)
         } catch (_: InvalidJwtException) {
             when (val apiRefreshToken = apiToken.refresh_token) {
                 null -> {
-                    coreTokenManager.scheduleWithClientCredentials(Failure(TokenExpired()))
-                    apiTokenManager.scheduleWithRefreshToken(Failure(TokenExpired()))
+                    coreTokenManager.configureWithClientCredentials(Failure(TokenExpired()))
+                    apiTokenManager.configureWithRefreshToken(Failure(TokenExpired()))
                     latestDeviceSecret.set(Failure(MissingDeviceSecret()))
                 }
 
@@ -121,8 +119,8 @@ class CredentialsProvider(
                 parameters = OAuthClient.GrantParameters.RefreshToken(apiRefreshToken)
             )
 
-            coreTokenManager.scheduleWithClientCredentials(coreTokenResponse)
-            apiTokenManager.scheduleWithRefreshToken(apiTokenResponse)
+            coreTokenManager.configureWithClientCredentials(coreTokenResponse)
+            apiTokenManager.configureWithRefreshToken(apiTokenResponse)
             latestDeviceSecret.set(Success(bridge.initDeviceSecret(plaintextDeviceSecret)))
             bridge.initDigestedUserPassword(digestedUserPassword)
         }
@@ -150,8 +148,8 @@ class CredentialsProvider(
 
                     val digestedUserPassword = authenticationPassword.digested()
 
-                    coreTokenManager.scheduleWithClientCredentials(coreTokenResponse)
-                    apiTokenManager.scheduleWithRefreshToken(apiTokenResponse)
+                    coreTokenManager.configureWithClientCredentials(coreTokenResponse)
+                    apiTokenManager.configureWithRefreshToken(apiTokenResponse)
                     latestDeviceSecret.set(deviceSecretResult)
                     bridge.initDigestedUserPassword(digestedUserPassword)
 
