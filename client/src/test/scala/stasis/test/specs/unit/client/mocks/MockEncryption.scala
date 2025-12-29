@@ -12,7 +12,7 @@ import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.test.specs.unit.client.mocks.MockEncryption.Statistic
 
-class MockEncryption() extends Encoder with Decoder {
+class MockEncryption extends Encoder with Decoder {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.FileEncrypted -> new AtomicInteger(0),
     Statistic.MetadataEncrypted -> new AtomicInteger(0),

@@ -325,7 +325,7 @@ object Service {
   object State {
     case object Starting extends State
     final case class Started(apiServices: ApiServices, coreServices: CoreServices) extends State
-    final case object BootstrapComplete extends State
+    case object BootstrapComplete extends State
     final case class BootstrapFailed(throwable: Throwable) extends State
     final case class StartupFailed(throwable: Throwable) extends State
   }

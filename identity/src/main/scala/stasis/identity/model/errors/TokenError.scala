@@ -6,7 +6,7 @@ sealed abstract class TokenError(
 )
 
 object TokenError {
-  final case object InvalidRequest
+  case object InvalidRequest
       extends TokenError(
         error = "invalid_request",
         error_description = s"""
@@ -18,7 +18,7 @@ object TokenError {
            """.stripMargin.replaceAll("\n", " ").trim
       )
 
-  final case object InvalidClient
+  case object InvalidClient
       extends TokenError(
         error = "invalid_client",
         error_description = s"""
@@ -27,7 +27,7 @@ object TokenError {
            """.stripMargin.replaceAll("\n", " ").trim
       )
 
-  final case object InvalidGrant
+  case object InvalidGrant
       extends TokenError(
         error = "invalid_grant",
         error_description = s"""
@@ -39,7 +39,7 @@ object TokenError {
            """.stripMargin.replaceAll("\n", " ").trim
       )
 
-  final case object UnauthorizedClient
+  case object UnauthorizedClient
       extends TokenError(
         error = "unauthorized_client",
         error_description = s"""
@@ -48,7 +48,7 @@ object TokenError {
            """.stripMargin.replaceAll("\n", " ").trim
       )
 
-  final case object UnsupportedGrantType
+  case object UnsupportedGrantType
       extends TokenError(
         error = "unsupported_grant_type",
         error_description = s"""
@@ -57,7 +57,7 @@ object TokenError {
            """.stripMargin.replaceAll("\n", " ").trim
       )
 
-  final case object InvalidScope
+  case object InvalidScope
       extends TokenError(
         error = "invalid_scope",
         error_description = s"""

@@ -5,7 +5,7 @@ sealed trait ServiceDiscoveryResult {
 }
 
 object ServiceDiscoveryResult {
-  final case object KeepExisting extends ServiceDiscoveryResult {
+  case object KeepExisting extends ServiceDiscoveryResult {
     override lazy val asString: String = "result=keep-existing"
   }
 

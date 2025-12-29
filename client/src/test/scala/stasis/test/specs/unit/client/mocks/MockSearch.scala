@@ -12,7 +12,7 @@ import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.client.mocks.MockSearch.Statistic
 
-class MockSearch() extends Search {
+class MockSearch extends Search {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.SearchExecuted -> new AtomicInteger(0)
   )

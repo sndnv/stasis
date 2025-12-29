@@ -10,7 +10,7 @@ ThisBuild / scalaVersion := "2.13.18"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.3.0"
+  val pekko         = "1.4.0"
   val pekkoHttp     = "1.3.0"
   val pekkoHttpCors = "1.3.0"
   val pekkoJson     = "3.7.0"
@@ -18,7 +18,7 @@ lazy val versions = new {
   // persistence
   val slick    = "3.6.1"
   val postgres = "42.7.8"
-  val mariadb  = "3.5.6"
+  val mariadb  = "3.5.7"
   val sqlite   = "3.51.1.0"
   val h2       = "2.4.240"
 
@@ -30,7 +30,7 @@ lazy val versions = new {
   // testing
   val scalaCheck    = "1.19.0"
   val scalaTest     = "3.2.19"
-  val wiremock      = "3.0.1"
+  val wiremock      = "3.13.2"
   val mockito       = "2.0.0"
   val mockitoInline = "5.2.0"
   val jimfs         = "1.3.1"
@@ -41,10 +41,10 @@ lazy val versions = new {
   val hkdf         = "2.0.0"
   val appdirs      = "1.5.0"
   val scopt        = "4.1.0"
-  val logback      = "1.5.21"
+  val logback      = "1.5.23"
   val systemTray   = "4.4"
   val bouncycastle = "1.83"
-  val layers       = "1.1.2"
+  val layers       = "1.1.3"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:25-noble"
@@ -141,35 +141,35 @@ lazy val core = (project in file("./core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.apache.pekko"      %% "pekko-actor"                       % versions.pekko,
-      "org.apache.pekko"      %% "pekko-actor-typed"                 % versions.pekko,
-      "org.apache.pekko"      %% "pekko-stream"                      % versions.pekko,
-      "org.apache.pekko"      %% "pekko-discovery"                   % versions.pekko,
-      "org.apache.pekko"      %% "pekko-slf4j"                       % versions.pekko,
-      "org.apache.pekko"      %% "pekko-http"                        % versions.pekkoHttp,
-      "org.apache.pekko"      %% "pekko-http-core"                   % versions.pekkoHttp,
-      "com.typesafe.play"     %% "play-json"                         % versions.playJson,
-      "com.github.pjfanning"  %% "pekko-http-play-json"              % versions.pekkoJson,
-      "org.bitbucket.b_c"      % "jose4j"                            % versions.jose4j,
-      "io.opentelemetry"       % "opentelemetry-api"                 % versions.openTelemetry,
-      "ch.qos.logback"         % "logback-classic"                   % versions.logback,
-      "io.opentelemetry"       % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
-      "io.opentelemetry"       % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
-      "io.prometheus"          % "simpleclient"                      % versions.prometheus              % Provided,
-      "com.typesafe.slick"    %% "slick"                             % versions.slick                   % Provided,
-      "io.github.sndnv"       %% "layers"                            % versions.layers                  % Provided,
-      "io.github.sndnv"       %% "layers-testing"                    % versions.layers                  % Test,
-      "com.h2database"         % "h2"                                % versions.h2                      % Test,
-      "org.scalacheck"        %% "scalacheck"                        % versions.scalaCheck              % Test,
-      "org.scalatest"         %% "scalatest"                         % versions.scalaTest               % Test,
-      "org.apache.pekko"      %% "pekko-testkit"                     % versions.pekko                   % Test,
-      "org.apache.pekko"      %% "pekko-stream-testkit"              % versions.pekko                   % Test,
-      "org.apache.pekko"      %% "pekko-http-testkit"                % versions.pekkoHttp               % Test,
-      "com.github.tomakehurst" % "wiremock-jre8"                     % versions.wiremock                % Test,
-      "org.mockito"           %% "mockito-scala"                     % versions.mockito                 % Test,
-      "org.mockito"           %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
-      "org.mockito"            % "mockito-inline"                    % versions.mockitoInline           % Test,
-      "com.google.jimfs"       % "jimfs"                             % versions.jimfs                   % Test
+      "org.apache.pekko"     %% "pekko-actor"                       % versions.pekko,
+      "org.apache.pekko"     %% "pekko-actor-typed"                 % versions.pekko,
+      "org.apache.pekko"     %% "pekko-stream"                      % versions.pekko,
+      "org.apache.pekko"     %% "pekko-discovery"                   % versions.pekko,
+      "org.apache.pekko"     %% "pekko-slf4j"                       % versions.pekko,
+      "org.apache.pekko"     %% "pekko-http"                        % versions.pekkoHttp,
+      "org.apache.pekko"     %% "pekko-http-core"                   % versions.pekkoHttp,
+      "com.typesafe.play"    %% "play-json"                         % versions.playJson,
+      "com.github.pjfanning" %% "pekko-http-play-json"              % versions.pekkoJson,
+      "org.bitbucket.b_c"     % "jose4j"                            % versions.jose4j,
+      "io.opentelemetry"      % "opentelemetry-api"                 % versions.openTelemetry,
+      "ch.qos.logback"        % "logback-classic"                   % versions.logback,
+      "io.opentelemetry"      % "opentelemetry-sdk"                 % versions.openTelemetry           % Provided,
+      "io.opentelemetry"      % "opentelemetry-exporter-prometheus" % versions.openTelemetryPrometheus % Provided,
+      "io.prometheus"         % "simpleclient"                      % versions.prometheus              % Provided,
+      "com.typesafe.slick"   %% "slick"                             % versions.slick                   % Provided,
+      "io.github.sndnv"      %% "layers"                            % versions.layers                  % Provided,
+      "io.github.sndnv"      %% "layers-testing"                    % versions.layers                  % Test,
+      "com.h2database"        % "h2"                                % versions.h2                      % Test,
+      "org.scalacheck"       %% "scalacheck"                        % versions.scalaCheck              % Test,
+      "org.scalatest"        %% "scalatest"                         % versions.scalaTest               % Test,
+      "org.apache.pekko"     %% "pekko-testkit"                     % versions.pekko                   % Test,
+      "org.apache.pekko"     %% "pekko-stream-testkit"              % versions.pekko                   % Test,
+      "org.apache.pekko"     %% "pekko-http-testkit"                % versions.pekkoHttp               % Test,
+      "org.wiremock"          % "wiremock"                          % versions.wiremock                % Test,
+      "org.mockito"          %% "mockito-scala"                     % versions.mockito                 % Test,
+      "org.mockito"          %% "mockito-scala-scalatest"           % versions.mockito                 % Test,
+      "org.mockito"           % "mockito-inline"                    % versions.mockitoInline           % Test,
+      "com.google.jimfs"      % "jimfs"                             % versions.jimfs                   % Test
     )
   )
   .dependsOn(proto)

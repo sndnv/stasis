@@ -11,7 +11,7 @@ import stasis.client.staging.FileStaging
 import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks.MockFileStaging.Statistic
 
-class MockFileStaging() extends FileStaging with ResourceHelpers {
+class MockFileStaging extends FileStaging with ResourceHelpers {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.TemporaryCreated -> new AtomicInteger(0),
     Statistic.TemporaryDiscarded -> new AtomicInteger(0),

@@ -300,7 +300,7 @@ object Service {
     case object Starting extends State
     final case class Started(persistence: Persistence, endpoint: IdentityEndpoint) extends State
 
-    final case object BootstrapComplete extends State
+    case object BootstrapComplete extends State
 
     final case class BootstrapFailed(throwable: Throwable) extends State
 

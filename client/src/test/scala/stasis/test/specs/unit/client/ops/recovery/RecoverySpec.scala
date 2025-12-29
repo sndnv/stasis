@@ -235,7 +235,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     recovery.start().map { _ =>
       eventually[Assertion] {
-        // data pulled for source-file-1, source-file-2; source-file-3 has not data and will fail
+        // data pulled for source-file-1, source-file-2; source-file-3 has no data and will fail
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePulled) should be(2)
         mockCoreClient.statistics(MockServerCoreEndpointClient.Statistic.CratePushed) should be(0)
 

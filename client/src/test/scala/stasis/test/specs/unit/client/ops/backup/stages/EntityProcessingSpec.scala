@@ -437,7 +437,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
   it should "fail processing a file if processing for a part fails" in {
     val failures = new AtomicInteger(0)
 
-    // using resuming supervision to replicate behaviour of ops/Backup
+    // using resuming supervision to replicate behavior of ops/Backup
     val supervision: Supervision.Decider = { e =>
       system.log.error(e, "Test failure: [{}]; resuming", e.getMessage)
       val _ = failures.incrementAndGet()
