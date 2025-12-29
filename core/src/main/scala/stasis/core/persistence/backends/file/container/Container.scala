@@ -243,8 +243,8 @@ object Container {
       )
 
     sealed trait Event
-    final case object Add extends Event
-    final case object Remove extends Event
+    case object Add extends Event
+    case object Remove extends Event
 
     object Event {
       def toByte(event: Event): Byte =

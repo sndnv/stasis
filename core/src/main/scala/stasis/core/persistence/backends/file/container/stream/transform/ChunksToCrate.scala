@@ -12,7 +12,7 @@ import org.apache.pekko.util.ByteString
 
 import stasis.core.persistence.backends.file.container.CrateChunk
 
-class ChunksToCrate() extends GraphStage[FlowShape[CrateChunk, ByteString]] {
+class ChunksToCrate extends GraphStage[FlowShape[CrateChunk, ByteString]] {
   val in: Inlet[CrateChunk] = Inlet[CrateChunk]("ChunksToCrate.in")
   val out: Outlet[ByteString] = Outlet[ByteString]("ChunksToCrate.out")
 

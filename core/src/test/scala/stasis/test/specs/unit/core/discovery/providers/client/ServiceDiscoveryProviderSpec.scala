@@ -234,7 +234,9 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
 
     await(delay = 300.millis)
 
-    clientCalls.get() should be >= 5 // the interval is reduced so more requests should be made
+    eventually {
+      clientCalls.get() should be >= 5 // the interval is reduced so more requests should be made
+    }
   }
 
   private def createClients(

@@ -22,7 +22,7 @@ class ServiceApiEndpointSpec extends UnitSpec {
       )
       .id should be("core_grpc__test-host:1234")
 
-    an[IllegalArgumentException] should be thrownBy (ServiceApiEndpoint.Core(address = new EndpointAddress {}).id)
+    an[IllegalArgumentException] should be thrownBy ServiceApiEndpoint.Core(address = new EndpointAddress {}).id
 
     ServiceApiEndpoint.Discovery(uri = "test-uri").id should be("discovery__test-uri")
   }

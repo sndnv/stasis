@@ -17,7 +17,7 @@ import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.client.mocks.MockOperationExecutor.Statistic
 
-class MockOperationExecutor() extends OperationExecutor {
+class MockOperationExecutor extends OperationExecutor {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.GetActiveOperations -> new AtomicInteger(0),
     Statistic.GetCompletedOperations -> new AtomicInteger(0),

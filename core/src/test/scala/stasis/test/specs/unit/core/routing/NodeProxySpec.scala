@@ -243,7 +243,7 @@ class NodeProxySpec extends AsyncUnitSpec {
 object NodeProxySpec {
   private final case class ExpectedFailure[A <: EndpointAddress](address: A) extends Exception
 
-  private class FailingEndpointClient[A <: EndpointAddress]() extends EndpointClient[A, String] {
+  private class FailingEndpointClient[A <: EndpointAddress] extends EndpointClient[A, String] {
     override protected def credentials: NodeCredentialsProvider[A, String] =
       (_: A) => Future.successful("test-credentials")
 

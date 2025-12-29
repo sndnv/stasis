@@ -83,7 +83,7 @@ class CreateDatasetDefinitionActionSpec extends UnitSpec {
           )
 
         case None =>
-          fail("Expected an event but none was founf")
+          fail("Expected an event but none was found")
       }
 
       after.toList match {

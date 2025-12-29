@@ -14,7 +14,7 @@ import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.client.mocks.MockCompression.Statistic
 
-class MockCompression() extends Compression with Encoder with Decoder {
+class MockCompression extends Compression with Encoder with Decoder {
   override val name: String = "mock"
 
   override val defaultCompression: Encoder with Decoder = this

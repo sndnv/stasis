@@ -7,7 +7,7 @@ import javax.net.ssl.X509TrustManager
 
 import stasis.test.specs.unit.client.mocks.MockX509TrustManager.Statistic
 
-class MockX509TrustManager() extends X509TrustManager {
+class MockX509TrustManager extends X509TrustManager {
   private val stats: Map[Statistic, AtomicInteger] = Map(
     Statistic.CheckClientTrusted -> new AtomicInteger(0),
     Statistic.CheckServerTrusted -> new AtomicInteger(0),
