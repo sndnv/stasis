@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 read -p "Param1:" param1
 echo "Received param1=${param1}"
