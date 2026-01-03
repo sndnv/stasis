@@ -12,7 +12,6 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import stasis.client_android.R
-import stasis.client_android.activities.fragments.rules.RuleTreeDialogFragment.Companion.Arguments
 import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.databinding.DialogOperationStageStepsBinding
@@ -34,6 +33,15 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
         val binding = DialogOperationStageStepsBinding.inflate(inflater)
 
         pullArguments<Arguments>().observe(viewLifecycleOwner) { arguments ->
+            binding.operationStageTitle.text = arguments.title
+
+            if (arguments.description != null) {
+                binding.operationStageDescription.isVisible = true
+                binding.operationStageDescription.text = arguments.description
+            } else {
+                binding.operationStageDescription.isVisible = false
+            }
+
             if (arguments.steps.isEmpty()) {
                 binding.operationStageStepsListEmpty.isVisible = true
                 binding.operationStageStepsList.isVisible = false
@@ -48,6 +56,14 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
         }
 
         return binding.root
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     class StepsListItemAdapter(
@@ -119,7 +135,8 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
     )
 
     companion object {
-        data class Arguments(val steps: List<StageStep>) : DynamicArguments.ArgumentSet
+        data class Arguments(val title: String, val description: String?, val steps: List<StageStep>) :
+            DynamicArguments.ArgumentSet
 
         private const val ArgumentsKey: String =
             "stasis.client_android.activities.fragments.operations.OperationStageStepsDialogFragment.arguments.key"

@@ -300,7 +300,8 @@ class HomeFragment : Fragment() {
             findNavController().navigate(
                 HomeFragmentDirections.actionHomeFragmentToOperationDetailsFragment(
                     operation = operation,
-                    operationType = operationType?.toString()
+                    operationType = operationType?.toString(),
+                    isActive = false
                 )
             )
         }

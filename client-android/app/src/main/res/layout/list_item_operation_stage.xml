@@ -10,11 +10,33 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/stage_info"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxLines="1" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/stage_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_weight="1"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/stage_info"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:textAlignment="viewEnd" />
+        </LinearLayout>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/stage_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 
