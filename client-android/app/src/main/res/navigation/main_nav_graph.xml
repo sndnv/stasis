@@ -200,6 +200,10 @@
             android:name="operationType"
             app:argType="string"
             app:nullable="true" />
+
+        <argument
+            android:name="isActive"
+            app:argType="boolean" />
     </fragment>
 
     <fragment

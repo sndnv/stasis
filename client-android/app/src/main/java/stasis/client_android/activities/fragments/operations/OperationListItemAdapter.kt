@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
@@ -28,7 +29,7 @@ import stasis.client_android.lib.tracking.state.OperationState
 import java.util.Locale
 
 class OperationListItemAdapter(
-    private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
+    private val onOperationDetailsRequested: (View, OperationId, Operation.Type, Boolean) -> Unit,
     private val onOperationStopRequested: (OperationId) -> Unit,
     private val onOperationResumeRequested: (OperationId) -> Unit,
     private val onOperationRemoveRequested: (Operation.Type, OperationId) -> Unit
@@ -59,13 +60,32 @@ class OperationListItemAdapter(
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemOperationBinding,
-        private val onOperationDetailsRequested: (View, OperationId, Operation.Type) -> Unit,
+        private val onOperationDetailsRequested: (View, OperationId, Operation.Type, Boolean) -> Unit,
         private val onOperationStopRequested: (OperationId) -> Unit,
         private val onOperationResumeRequested: (OperationId) -> Unit,
         private val onOperationRemoveRequested: (Operation.Type, OperationId) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(operation: OperationId, state: OperationState, isActive: Boolean) {
             val progress = state.asProgress()
+
+            val (operationIndicator, operationIndicatorTint) = if (progress.completed == null) {
+                if (isActive) {
+                    R.drawable.ic_operation_active to R.color.primary
+                } else {
+                    R.drawable.ic_operation_stopped to R.color.design_default_color_error
+                }
+            } else {
+                R.drawable.ic_operation_completed to R.color.launcher_tertiary_1
+            }
+
+            binding.operationInfo.setCompoundDrawablesWithIntrinsicBounds(
+                AppCompatResources.getDrawable(context, operationIndicator)?.apply {
+                    setTint(context.getColor(operationIndicatorTint))
+                },
+                null,
+                null,
+                null
+            )
 
             binding.operationInfo.text = context.getString(R.string.operation_field_content_info)
                 .renderAsSpannable(
@@ -165,7 +185,7 @@ class OperationListItemAdapter(
                             name = context.getString(R.string.operation_show_button_title),
                             description = context.getString(R.string.operation_show_button_hint),
                             handler = {
-                                onOperationDetailsRequested(binding.root, operation, state.type)
+                                onOperationDetailsRequested(binding.root, operation, state.type, isActive)
                             }
                         ),
                         if (state.type == Operation.Type.Backup && progress.completed == null && !isActive) EntryAction(
@@ -250,7 +270,7 @@ class OperationListItemAdapter(
             }
 
             binding.root.setOnClickListener { view ->
-                onOperationDetailsRequested(view, operation, state.type)
+                onOperationDetailsRequested(view, operation, state.type, isActive)
             }
         }
     }

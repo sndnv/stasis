@@ -11,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asChangedString
 import stasis.client_android.activities.helpers.Common.asChronoUnit
@@ -30,6 +31,8 @@ import stasis.client_android.activities.helpers.Common.toAssignmentTypeKey
 import stasis.client_android.activities.helpers.Common.toAssignmentTypeString
 import stasis.client_android.activities.helpers.Common.toFields
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.helpers.Common.toOperationStageColor
+import stasis.client_android.activities.helpers.Common.toOperationStageDescriptionString
 import stasis.client_android.activities.helpers.Common.toOperationStageString
 import stasis.client_android.activities.helpers.Common.toPolicyTypeString
 import stasis.client_android.lib.model.EntityMetadata
@@ -374,6 +377,61 @@ class CommonSpec {
         assertThat("processed".toOperationStageString(context), equalTo("Processed"))
         assertThat("metadata-applied".toOperationStageString(context), equalTo("Metadata Applied"))
         assertThat("other".toOperationStageString(context), equalTo("other"))
+    }
+
+    @Test
+    fun convertOperationStageDescriptionStrings() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat(
+            "discovered".toOperationStageDescriptionString(context),
+            equalTo("Files and directories found based on the configured backup rules or recovery options.")
+        )
+        assertThat(
+            "examined".toOperationStageDescriptionString(context),
+            equalTo("Discovered files and directories that have been checked for inclusion in the operation - they will be either skipped or collected for further processing.")
+        )
+        assertThat(
+            "skipped".toOperationStageDescriptionString(context),
+            equalTo("Examined files and directories that do not need to be processed because they have not changed since the last backup or they do not need to be recovered.")
+        )
+        assertThat(
+            "collected".toOperationStageDescriptionString(context),
+            equalTo("Examined files and directories that need to be backed up or recovered.")
+        )
+        assertThat(
+            "pending".toOperationStageDescriptionString(context),
+            equalTo("Collected files or folders that are being processed.")
+        )
+        assertThat(
+            "processed".toOperationStageDescriptionString(context),
+            equalTo("Files and directories that have been processed.")
+        )
+        assertThat(
+            "metadata-applied".toOperationStageDescriptionString(context),
+            equalTo("Recovered files and directories that have had their metadata changes applied.")
+        )
+        assertThat("other".toOperationStageDescriptionString(context), equalTo(null))
+    }
+
+    @Test
+    fun convertOperationStageColors() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat("discovered".toOperationStageColor(context), equalTo(context.getColor(R.color.secondary_light)))
+        assertThat("examined".toOperationStageColor(context), equalTo(context.getColor(R.color.secondary_light)))
+        assertThat("skipped".toOperationStageColor(context), equalTo(context.getColor(R.color.secondary_light)))
+        assertThat("collected".toOperationStageColor(context), equalTo(context.getColor(R.color.launcher_tertiary_2)))
+        assertThat("pending".toOperationStageColor(context), equalTo(context.getColor(R.color.primary)))
+        assertThat("processed".toOperationStageColor(context), equalTo(context.getColor(R.color.launcher_tertiary_1)))
+        assertThat(
+            "metadata-applied".toOperationStageColor(context),
+            equalTo(context.getColor(R.color.launcher_tertiary_1))
+        )
+        assertThat(
+            "other".toOperationStageColor(context),
+            equalTo(context.getColor(R.color.design_default_color_error))
+        )
     }
 
     @Test

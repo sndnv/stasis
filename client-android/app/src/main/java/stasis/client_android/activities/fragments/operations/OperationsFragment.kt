@@ -66,11 +66,12 @@ class OperationsFragment : Fragment() {
             activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val adapter = OperationListItemAdapter(
-            onOperationDetailsRequested = { itemView, operation, operationType ->
+            onOperationDetailsRequested = { itemView, operation, operationType, isActive ->
                 findNavController().navigate(
                     OperationsFragmentDirections.actionOperationsFragmentToOperationDetailsFragment(
                         operation = operation,
-                        operationType = operationType.toString()
+                        operationType = operationType.toString(),
+                        isActive = isActive
                     ),
                     FragmentNavigatorExtras(
                         itemView to getString(OperationDetailsFragment.TargetTransitionId)

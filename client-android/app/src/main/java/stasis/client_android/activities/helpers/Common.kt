@@ -190,6 +190,28 @@ object Common {
         else -> context.getString(R.string.operation_stage_unknown, this)
     }
 
+    fun String.toOperationStageDescriptionString(context: Context): String? = when (this) {
+        "discovered" -> context.getString(R.string.operation_stage_discovered_description)
+        "examined" -> context.getString(R.string.operation_stage_examined_description)
+        "skipped" -> context.getString(R.string.operation_stage_skipped_description)
+        "collected" -> context.getString(R.string.operation_stage_collected_description)
+        "pending" -> context.getString(R.string.operation_stage_pending_description)
+        "processed" -> context.getString(R.string.operation_stage_processed_description)
+        "metadata-applied" -> context.getString(R.string.operation_stage_metadata_applied_description)
+        else -> null
+    }
+
+    fun String.toOperationStageColor(context: Context): Int = when (this) {
+        "discovered" -> context.getColor(R.color.secondary_light)
+        "examined" -> context.getColor(R.color.secondary_light)
+        "skipped" -> context.getColor(R.color.secondary_light)
+        "collected" -> context.getColor(R.color.launcher_tertiary_2)
+        "pending" -> context.getColor(R.color.primary)
+        "processed" -> context.getColor(R.color.launcher_tertiary_1)
+        "metadata-applied" -> context.getColor(R.color.launcher_tertiary_1)
+        else -> context.getColor(R.color.design_default_color_error)
+    }
+
     fun EntityMetadata.size(): Long? =
         (this as? EntityMetadata.File)?.size
 

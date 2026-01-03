@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -50,6 +51,7 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
         val args: OperationDetailsFragmentArgs by navArgs()
         val operation = args.operation
         val operationType = args.operationType?.let { Operation.Type.fromString(it) }
+        val isActive = args.isActive
 
         postponeEnterTransition()
 
@@ -87,6 +89,25 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
 
         updates?.observe(viewLifecycleOwner) { state ->
             val progress = state.asProgress()
+
+            val (operationIndicator, operationIndicatorTint) = if (progress.completed == null) {
+                if (isActive) {
+                    R.drawable.ic_operation_active to R.color.primary
+                } else {
+                    R.drawable.ic_operation_stopped to R.color.design_default_color_error
+                }
+            } else {
+                R.drawable.ic_operation_completed to R.color.launcher_tertiary_1
+            }
+
+            binding.operationInfo.setCompoundDrawablesWithIntrinsicBounds(
+                AppCompatResources.getDrawable(context, operationIndicator)?.apply {
+                    setTint(context.getColor(operationIndicatorTint))
+                },
+                null,
+                null,
+                null
+            )
 
             binding.operationStart.text = getString(
                 R.string.operation_field_content_started

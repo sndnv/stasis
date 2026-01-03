@@ -188,7 +188,7 @@
         Files that are going to be included in the backups are shown in green, those that are explicitly excluded are
         shown in red and gray is used for files that are not affected by the rules.\n\n
         Only explicitly included files will be considered when performing backups!\n\n
-        To show more details and suggested rules, long-press a file or folder entry.
+        To show more details and suggested rules, long-press a file or directory entry.
     </string>
     <string name="context_help_schedules">
         Showing and managing client scheduling.\n\n
@@ -572,7 +572,9 @@
     <string name="operation_field_content_details_with_failures">Processed: %1$s of %2$s, Errors: %3$s</string>
     <string name="operation_field_content_completed">Completed: %1$s</string>
     <string name="operation_field_content_completed_progress">Completed: %1$s%</string>
-    <string name="operation_field_content_stage_info">%1$s (steps: %2$s)</string>
+    <string name="operation_field_content_stage_name">%1$s</string>
+    <string name="operation_field_content_stage_info_with_max_steps">%1$s of %2$s</string>
+    <string name="operation_field_content_stage_info_without_max_steps">%1$s</string>
     <string name="operation_field_content_failure_info">%1$s</string>
     <string name="operation_stop_confirm_title">Stop operation [%1$s]?</string>
     <string name="operation_resume_confirm_title">Resume operation [%1$s]?</string>
@@ -586,7 +588,7 @@
     <string name="operation_metadata_pushed_message">Pushed: %1$s</string>
     <string name="operation_failure_title">Error</string>
     <string name="operation_failure_message">%1$s</string>
-    <string name="operation_stage_steps_list_empty">No Data</string>
+    <string name="operation_stage_steps_list_empty">None</string>
     <string name="operation_stage_step_name_with_progress">%1$s (%2$s of %3$s)</string>
     <string name="operation_stage_step_name_without_progress">%1$s</string>
     <string name="operation_stage_step_parent">%1$s/</string>
@@ -600,6 +602,13 @@
     <string name="operation_stage_processed">Processed</string>
     <string name="operation_stage_metadata_applied">Metadata Applied</string>
     <string name="operation_stage_unknown">%1$s</string>
+    <string name="operation_stage_discovered_description">Files and directories found based on the configured backup rules or recovery options.</string>
+    <string name="operation_stage_examined_description">Discovered files and directories that have been checked for inclusion in the operation - they will be either skipped or collected for further processing.</string>
+    <string name="operation_stage_skipped_description">Examined files and directories that do not need to be processed because they have not changed since the last backup or they do not need to be recovered.</string>
+    <string name="operation_stage_collected_description">Examined files and directories that need to be backed up or recovered.</string>
+    <string name="operation_stage_pending_description">Collected files or folders that are being processed.</string>
+    <string name="operation_stage_processed_description">Files and directories that have been processed.</string>
+    <string name="operation_stage_metadata_applied_description">Recovered files and directories that have had their metadata changes applied.</string>
 
     <!-- Status -->
     <string name="status_entry_operation_hint">Expand or collapse status information</string>
@@ -719,7 +728,7 @@
     <string name="assignment_type_key_rotation">Key Rotation</string>
     <string name="assignment_field_content_backup">Backup for (%1$s)</string>
     <string name="assignment_field_content_backup_entities">Include only: %1$s</string>
-    <string name="assignment_field_content_backup_entities_any">Include all matching files and folders</string>
+    <string name="assignment_field_content_backup_entities_any">Include all matching files and directories</string>
     <string name="assignment_field_content_expiration">Expiration</string>
     <string name="assignment_field_content_validation">Validation</string>
     <string name="assignment_field_content_key_rotation">Key Rotation</string>

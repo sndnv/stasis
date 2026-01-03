@@ -10,9 +10,13 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.FragmentManager
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
+import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
+import stasis.client_android.activities.helpers.Common.toOperationStageColor
+import stasis.client_android.activities.helpers.Common.toOperationStageDescriptionString
 import stasis.client_android.activities.helpers.Common.toOperationStageString
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
@@ -27,32 +31,69 @@ class OperationStageListItemAdapter(
 ) : ArrayAdapter<Pair<String, List<Triple<Path, Int, Int>>>>(context, resource, stages) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val (name, steps) = stages[position]
-        val stageName = name.toOperationStageString(context)
+
+        val maxSteps = when (name) {
+            "examined", "skipped", "collected", "processed", "metadata-applied" -> {
+                stages.find { it.first == "discovered" }?.second?.size
+            }
+
+            else -> null
+        }
+
+        val title = name.toOperationStageString(context)
+        val description = name.toOperationStageDescriptionString(context)
+        val color = name.toOperationStageColor(context)
 
         val layout = (convertView ?: LayoutInflater.from(parent.context).inflate(resource, parent, false))
 
         val stageContainer: LinearLayout = layout.findViewById(R.id.stage_container)
         val stageInfo: TextView = layout.findViewById(R.id.stage_info)
+        val stageName: TextView = layout.findViewById(R.id.stage_name)
+        val stageProgress: LinearProgressIndicator = layout.findViewById(R.id.stage_progress)
 
-        stageInfo.text = context.getString(R.string.operation_field_content_stage_info)
+        if (maxSteps != null && maxSteps > 0) {
+            stageProgress.setMax(maxSteps)
+            stageProgress.setProgress(steps.size)
+        } else {
+            stageProgress.setMax(1)
+            stageProgress.setProgress(if (steps.isEmpty()) 0 else 1)
+        }
+
+        stageProgress.setIndicatorColor(color)
+
+        stageName.text = context.getString(R.string.operation_field_content_stage_name)
             .renderAsSpannable(
                 StyledString(
                     placeholder = "%1\$s",
-                    content = stageName,
-                    style = StyleSpan(Typeface.BOLD)
-                ),
-                StyledString(
-                    placeholder = "%2\$s",
-                    content = steps.size.toString(),
+                    content = title,
                     style = StyleSpan(Typeface.BOLD)
                 )
             )
+        stageName.setTextColor(color)
+
+        stageInfo.text = context.getString(
+            if (maxSteps != null) R.string.operation_field_content_stage_info_with_max_steps
+            else R.string.operation_field_content_stage_info_without_max_steps
+        ).renderAsSpannable(
+            StyledString(
+                placeholder = "%1\$s",
+                content = steps.size.toLong().asString(),
+                style = StyleSpan(Typeface.BOLD)
+            ),
+            StyledString(
+                placeholder = "%2\$s",
+                content = (maxSteps ?: 0).toLong().asString(),
+                style = StyleSpan(Typeface.BOLD)
+            )
+        )
 
         val argsId = "for-stage-$position"
 
         provider.providedArguments.put(
             key = "$argsId-OperationStageStepsDialogFragment",
             arguments = OperationStageStepsDialogFragment.Companion.Arguments(
+                title = title,
+                description = description,
                 steps = steps.map { (entity, processed, total) ->
                     OperationStageStepsDialogFragment.StageStep(
                         entity = entity,
@@ -64,11 +105,9 @@ class OperationStageListItemAdapter(
         )
 
         stageContainer.setOnClickListener {
-            if (steps.isNotEmpty()) {
-                OperationStageStepsDialogFragment()
-                    .withArgumentsId<OperationStageStepsDialogFragment>(id = "$argsId-OperationStageStepsDialogFragment")
-                    .show(fragmentManager, OperationStageStepsDialogFragment.Tag)
-            }
+            OperationStageStepsDialogFragment()
+                .withArgumentsId<OperationStageStepsDialogFragment>(id = "$argsId-OperationStageStepsDialogFragment")
+                .show(fragmentManager, OperationStageStepsDialogFragment.Tag)
         }
 
         return layout
