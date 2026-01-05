@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
@@ -7,7 +9,6 @@ import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/operation_summary.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
 import 'package:stasis_client_ui/utils/triple.dart';
-import 'package:flutter/material.dart';
 
 class OperationDetails extends StatefulWidget {
   const OperationDetails({
@@ -56,15 +57,17 @@ class _OperationDetailsState extends State<OperationDetails> {
           if (snapshot.data is BackupState) {
             final state = snapshot.data as BackupState;
 
-            summary = OperationSummary.build(context,
-                operation: OperationProgress(
-                  operation: widget.operation.operation,
-                  isActive: widget.operation.isActive,
-                  type: operation.Type.backup,
-                  progress: state.asProgress(),
-                ),
-                client: widget.client,
-                onChange: onOperationStateChange);
+            summary = OperationSummary.build(
+              context,
+              operation: OperationProgress(
+                operation: widget.operation.operation,
+                isActive: widget.operation.isActive,
+                type: operation.Type.backup,
+                progress: state.asProgress(),
+              ),
+              client: widget.client,
+              onChange: onOperationStateChange,
+            );
 
             metadata = ListTile(
               title: Text('Metadata', style: mediumBold),
@@ -80,9 +83,10 @@ class _OperationDetailsState extends State<OperationDetails> {
               ),
             );
 
-            final errorMessages = state.entities.unmatched +
-                state.failures +
-                state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
+            final errorMessages =
+                state.entities.unmatched +
+                    state.failures +
+                    state.entities.failed.entries.map((e) => '[${e.key}] - ${e.value}').toList();
 
             final stageValues = {
               'discovered': state.entities.discovered.map((e) => Triple(e, 1, 1)).toList(),
@@ -94,7 +98,7 @@ class _OperationDetailsState extends State<OperationDetails> {
               }).toList(),
               'processed': state.entities.processed.entries.map((e) {
                 return Triple(e.key, e.value.processedParts, e.value.expectedParts);
-              }).toList()
+              }).toList(),
             };
 
             failures = _renderFailures(mediumBold, smallError, errorMessages);
@@ -126,7 +130,7 @@ class _OperationDetailsState extends State<OperationDetails> {
               'processed': state.entities.processed.entries.map((e) {
                 return Triple(e.key, e.value.processedParts, e.value.expectedParts);
               }).toList(),
-              'metadata-applied': state.entities.metadataApplied.map((e) => Triple(e, 1, 1)).toList()
+              'metadata-applied': state.entities.metadataApplied.map((e) => Triple(e, 1, 1)).toList(),
             };
 
             failures = _renderFailures(mediumBold, smallError, errorMessages);
@@ -140,9 +144,10 @@ class _OperationDetailsState extends State<OperationDetails> {
             );
           }
 
-          details = (metadata != null ? [metadata] : <Widget>[]) +
-              (failures != null ? [failures] : []) +
-              (stages != null ? [stages] : []);
+          details =
+              (metadata != null ? [metadata] : <Widget>[]) +
+                  (failures != null ? [failures] : []) +
+                  (stages != null ? [stages] : []);
         } else if (snapshot.error is BadRequest) {
           summary = OperationSummary.build(
             context,
@@ -207,12 +212,10 @@ class _OperationDetailsState extends State<OperationDetails> {
     }
   }
 
-  Widget? _renderStages(
-    TextStyle? titleStyle,
-    TextStyle? textStyle,
-    TextStyle? highlightStyle,
-    Map<String, List<Triple<String, int, int>>> stages,
-  ) {
+  Widget? _renderStages(TextStyle? titleStyle,
+      TextStyle? textStyle,
+      TextStyle? highlightStyle,
+      Map<String, List<Triple<String, int, int>>> stages,) {
     if (stages.isNotEmpty) {
       const density = VisualDensity(
         horizontal: VisualDensity.minimumDensity,
@@ -225,49 +228,92 @@ class _OperationDetailsState extends State<OperationDetails> {
         children: ListTile.divideTiles(
           context: context,
           tiles: stages.entries.map((e) {
+            final name = e.key;
+            final title = name.toOperationStageString();
+            final color = name.toOperationStageColor(Theme.of(context));
+
+            final int? maxSteps;
+            switch (name) {
+              case 'examined':
+              case 'skipped':
+              case 'collected':
+              case 'processed':
+              case 'metadata-applied':
+                maxSteps = stages['discovered']?.length;
+              default:
+                maxSteps = null;
+            }
+
+            final double stageProgress;
+            if (maxSteps != null && maxSteps > 0) {
+              stageProgress = e.value.length / maxSteps;
+            } else {
+              stageProgress = e.value.isEmpty ? 0 : 1;
+            }
+
             return ListTile(
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
               visualDensity: density,
               title: RichText(
                 text: TextSpan(
-                  children: [
-                    TextSpan(text: e.key.toOperationStageString(), style: highlightStyle),
-                    TextSpan(text: ' (steps: ', style: textStyle),
-                    TextSpan(text: e.value.length.toString(), style: highlightStyle),
+                  children: maxSteps != null
+                      ? [
+                    TextSpan(
+                      text: title,
+                      style: highlightStyle?.copyWith(color: color),
+                    ),
+                    TextSpan(text: ' (', style: textStyle),
+                    TextSpan(text: NumberFormat().format(e.value.length), style: highlightStyle),
+                    TextSpan(text: ' of ', style: textStyle),
+                    TextSpan(text: NumberFormat().format(maxSteps), style: highlightStyle),
+                    TextSpan(text: ')', style: textStyle),
+                  ]
+                      : [
+                    TextSpan(
+                      text: title,
+                      style: highlightStyle?.copyWith(color: color),
+                    ),
+                    TextSpan(text: ' (', style: textStyle),
+                    TextSpan(text: NumberFormat().format(e.value.length), style: highlightStyle),
                     TextSpan(text: ')', style: textStyle),
                   ],
                 ),
               ),
+              subtitle: LinearProgressIndicator(value: stageProgress, color: color),
               onTap: () {
                 showDialog(
                   context: context,
-                  builder: (_) => SimpleDialog(
-                    title: Text(e.key.toOperationStageString()),
-                    children: e.value.isNotEmpty
+                  builder: (_) {
+                    final entries = e.value.isNotEmpty
                         ? e.value.map(
-                            (e) {
-                              final split = e.a.toSplitPath();
+                          (e) {
+                        final split = e.a.toSplitPath();
 
-                              return ListTile(
-                                dense: true,
-                                visualDensity: density,
-                                title: (e.c > 1)
-                                    ? RichText(
-                                        text: TextSpan(
-                                          children: [
-                                            TextSpan(text: split.b, style: highlightStyle),
-                                            TextSpan(text: ' (${e.b} of ${e.c})', style: textStyle),
-                                          ],
-                                        ),
-                                      )
-                                    : Text(split.b, style: highlightStyle),
-                                subtitle: Text(split.a, style: textStyle),
-                              );
-                            },
-                          ).toList()
-                        : [const Center(child: Text('No Data'))],
-                  ),
+                        return ListTile(
+                          dense: true,
+                          visualDensity: density,
+                          title: (e.c > 1)
+                              ? RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(text: split.b, style: highlightStyle),
+                                TextSpan(text: ' (${e.b} of ${e.c})', style: textStyle),
+                              ],
+                            ),
+                          )
+                              : Text(split.b, style: highlightStyle),
+                          subtitle: Text(split.a, style: textStyle),
+                        );
+                      },
+                    ).toList()
+                        : [const Center(child: Text('No Data'))];
+
+                    return SimpleDialog(
+                      title: Text(title),
+                      children: entries,
+                    );
+                  },
                 );
               },
             );
