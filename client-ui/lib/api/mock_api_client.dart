@@ -126,7 +126,44 @@ class MockApiClient extends ApiClient implements ClientApi, InitApi {
 
   @override
   Future<List<OperationProgress>> getOperations({required State? state}) {
-    return Future.value([]);
+    return Future.value([
+      OperationProgress(
+        operation: '191c45a9-f2cf-4abd-9043-02626cded80e',
+        isActive: true,
+        type: Type.backup,
+        progress: Progress(
+          started: DateTime.now(),
+          total: 100,
+          processed: 50,
+          failures: 0,
+          completed: null,
+        ),
+      ),
+      OperationProgress(
+        operation: '0a56a979-52b1-4401-bf26-bb3f360eadaf',
+        isActive: false,
+        type: Type.recovery,
+        progress: Progress(
+          started: DateTime.now().subtract(const Duration(minutes: 99)),
+          total: 100,
+          processed: 99,
+          failures: 1,
+          completed: DateTime.now().subtract(const Duration(minutes: 30)),
+        ),
+      ),
+      OperationProgress(
+        operation: '7f5286c6-a59d-4f3e-a620-6c826f27123b',
+        isActive: false,
+        type: Type.backup,
+        progress: Progress(
+          started: DateTime.now().subtract(const Duration(days: 99)),
+          total: 100,
+          processed: 15,
+          failures: 10,
+          completed: DateTime.now().subtract(const Duration(days: 30)),
+        ),
+      ),
+    ]);
   }
 
   @override
@@ -161,7 +198,30 @@ class MockApiClient extends ApiClient implements ClientApi, InitApi {
 
   @override
   Stream<OperationState> followOperation({required String operation}) {
-    return const Stream.empty();
+    return Stream.periodic(Duration(seconds: 2), (count) {
+      return BackupState(
+        operation: operation,
+        type: 'backup',
+        definition: 'test-definition',
+        started: DateTime.now(),
+        entities: const BackupStateEntities(
+          discovered: ['/tmp/file/one', '/tmp/file/two', '/tmp/file/three', 'x', 'y', 'z'],
+          unmatched: ['a', 'b', 'c'],
+          examined: ['/tmp/file/two', 'x', 'y'],
+          skipped: ['/tmp/file/three', 'x'],
+          collected: ['/tmp/file/one', 'y'],
+          pending: {'/tmp/file/one': PendingSourceEntity(expectedParts: 1, processedParts: 1)},
+          processed: {'/tmp/file/one': ProcessedSourceEntity(expectedParts: 1, processedParts: 1)},
+          failed: {
+            '/tmp/file/four': 'x',
+          },
+        ),
+        metadataCollected: null,
+        metadataPushed: null,
+        failures: ['y', 'z'],
+        completed: null,
+      );
+    });
   }
 
   @override

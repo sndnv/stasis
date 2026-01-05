@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as op;
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
-import 'package:flutter/material.dart';
 
 class OperationSummary {
   static ListTile build(
@@ -24,7 +24,18 @@ class OperationSummary {
       color: theme.colorScheme.error,
     );
 
-    final title = RichText(
+    final Icon titleIcon;
+    if (operation.progress.completed == null) {
+      if (operation.isActive) {
+        titleIcon = Icon(Icons.sync, color: theme.colorScheme.primary);
+      } else {
+        titleIcon = Icon(Icons.sync_problem, color: theme.colorScheme.error);
+      }
+    } else {
+      titleIcon = Icon(Icons.check, color: theme.colorScheme.tertiary);
+    }
+
+    final titleText = RichText(
       text: TextSpan(
         children: [
           TextSpan(text: operation.type.render(), style: mediumBold),
@@ -35,11 +46,20 @@ class OperationSummary {
       ),
     );
 
+    final title = Row(
+      children: [
+        titleIcon,
+        Padding(padding: EdgeInsetsGeometry.only(right: 4.0)),
+        titleText,
+      ],
+    );
+
     final subtitle = Padding(
       padding: const EdgeInsets.all(4.0),
       child: RichText(
         text: TextSpan(
-          children: [
+          children:
+              [
                 TextSpan(text: 'Started: ', style: theme.textTheme.bodyMedium),
                 TextSpan(text: operation.progress.started.render(), style: mediumBold),
               ] +
@@ -83,11 +103,15 @@ class OperationSummary {
                 title: 'Resume operation [${operation.operation.toMinimizedString()}]?',
                 onConfirm: () {
                   final messenger = ScaffoldMessenger.of(context);
-                  client.resumeOperation(operation: operation.operation).then((_) {
-                    messenger.showSnackBar(const SnackBar(content: Text('Operation resumed...')));
-                  }).onError((e, stackTrace) {
-                    messenger.showSnackBar(SnackBar(content: Text('Failed to resume operation: [$e]')));
-                  }).whenComplete(() => onChange(removed: false));
+                  client
+                      .resumeOperation(operation: operation.operation)
+                      .then((_) {
+                        messenger.showSnackBar(const SnackBar(content: Text('Operation resumed...')));
+                      })
+                      .onError((e, stackTrace) {
+                        messenger.showSnackBar(SnackBar(content: Text('Failed to resume operation: [$e]')));
+                      })
+                      .whenComplete(() => onChange(removed: false));
                 },
               );
             },
@@ -103,11 +127,15 @@ class OperationSummary {
                 title: 'Stop operation [${operation.operation.toMinimizedString()}]?',
                 onConfirm: () {
                   final messenger = ScaffoldMessenger.of(context);
-                  client.stopOperation(operation: operation.operation).then((_) {
-                    messenger.showSnackBar(const SnackBar(content: Text('Operation stopped...')));
-                  }).onError((e, stackTrace) {
-                    messenger.showSnackBar(SnackBar(content: Text('Failed to stop operation: [$e]')));
-                  }).whenComplete(() => onChange(removed: false));
+                  client
+                      .stopOperation(operation: operation.operation)
+                      .then((_) {
+                        messenger.showSnackBar(const SnackBar(content: Text('Operation stopped...')));
+                      })
+                      .onError((e, stackTrace) {
+                        messenger.showSnackBar(SnackBar(content: Text('Failed to stop operation: [$e]')));
+                      })
+                      .whenComplete(() => onChange(removed: false));
                 },
               );
             },
@@ -123,11 +151,15 @@ class OperationSummary {
                 title: 'Remove operation [${operation.operation.toMinimizedString()}]?',
                 onConfirm: () {
                   final messenger = ScaffoldMessenger.of(context);
-                  client.removeOperation(operation: operation.operation).then((_) {
-                    messenger.showSnackBar(const SnackBar(content: Text('Operation removed...')));
-                  }).onError((e, stackTrace) {
-                    messenger.showSnackBar(SnackBar(content: Text('Failed to remove operation: [$e]')));
-                  }).whenComplete(() => onChange(removed: true));
+                  client
+                      .removeOperation(operation: operation.operation)
+                      .then((_) {
+                        messenger.showSnackBar(const SnackBar(content: Text('Operation removed...')));
+                      })
+                      .onError((e, stackTrace) {
+                        messenger.showSnackBar(SnackBar(content: Text('Failed to remove operation: [$e]')));
+                      })
+                      .whenComplete(() => onChange(removed: true));
                 },
               );
             },
@@ -140,10 +172,11 @@ class OperationSummary {
       leading: operation.isActive ? const CircularProgressIndicator() : null,
       subtitle: subtitle,
       trailing: Wrap(
-        children: [resumeButton, stopButton, removeButton]
-            .nonNulls
-            .map((e) => Padding(padding: const EdgeInsets.all(2.0), child: e))
-            .toList(),
+        children: [
+          resumeButton,
+          stopButton,
+          removeButton,
+        ].nonNulls.map((e) => Padding(padding: const EdgeInsets.all(2.0), child: e)).toList(),
       ),
       onTap: onTap,
     );

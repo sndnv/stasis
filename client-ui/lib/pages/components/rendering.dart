@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
@@ -198,6 +199,27 @@ extension ExtendedOperationStageName on String {
         return 'Metadata Applied';
       default:
         return this;
+    }
+  }
+
+  Color? toOperationStageColor(ThemeData theme) {
+    switch (this) {
+      case 'discovered':
+        return theme.colorScheme.secondary;
+      case 'examined':
+        return theme.colorScheme.secondary;
+      case 'skipped':
+        return theme.colorScheme.secondary;
+      case 'collected':
+        return theme.colorScheme.tertiary;
+      case 'pending':
+        return theme.colorScheme.primary;
+      case 'processed':
+        return theme.colorScheme.tertiary;
+      case 'metadata-applied':
+        return theme.colorScheme.tertiary;
+      default:
+        return null;
     }
   }
 }
