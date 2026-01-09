@@ -2,9 +2,11 @@ package stasis.client_android.lib.utils
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import stasis.client_android.lib.utils.NonFatal.nonFatal
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import java.nio.file.Files
@@ -112,12 +114,16 @@ interface Cache<K : Any, V> {
         private val inMemory = Map<K, V>()
 
         override suspend fun get(key: K): V? = inMemory.get(key) ?: Try {
-            key.asStateFile().readBytes()
+            withContext(Dispatchers.IO) {
+                key.asStateFile().readBytes()
+            }
         }.flatMap { serdes.deserializeValue(it) }.toOption()?.also { inMemory.put(key, it) }
 
         override suspend fun put(key: K, value: V) {
             inMemory.put(key, value)
-            key.asStateFile().writeBytes(serdes.serializeValue(value))
+            withContext(Dispatchers.IO) {
+                key.asStateFile().writeBytes(serdes.serializeValue(value))
+            }
         }
 
         override suspend fun put(entries: kotlin.collections.Map<K, V>) =
@@ -128,7 +134,9 @@ interface Cache<K : Any, V> {
 
         override suspend fun remove(key: K) {
             inMemory.remove(key)
-            key.asStateFile().deleteIfExists()
+            withContext(Dispatchers.IO) {
+                key.asStateFile().deleteIfExists()
+            }
         }
 
         override suspend fun all(): kotlin.collections.Map<K, V> =
