@@ -14,6 +14,8 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
+import stasis.client_android.activities.helpers.Common.asMillisecondsString
+import stasis.client_android.activities.helpers.Common.asSizeString
 import stasis.client_android.activities.helpers.Common.asString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
@@ -153,7 +155,10 @@ class CacheStatisticsDialogFragment : DialogFragment(), DynamicArguments.Receive
             val layout = (convertView ?: LayoutInflater.from(parent.context).inflate(resource, parent, false))
 
             val cacheName: TextView = layout.findViewById(R.id.cache_name)
-            val cacheDetails: TextView = layout.findViewById(R.id.cache_details)
+            val cacheHits: TextView = layout.findViewById(R.id.cache_hits)
+            val cacheIo: TextView = layout.findViewById(R.id.cache_io)
+            val cacheDurationRead: TextView = layout.findViewById(R.id.cache_duration_read)
+            val cacheDurationWrite: TextView = layout.findViewById(R.id.cache_duration_write)
 
             cacheName.text = context.getString(R.string.cache_field_content_name)
                 .renderAsSpannable(
@@ -164,7 +169,7 @@ class CacheStatisticsDialogFragment : DialogFragment(), DynamicArguments.Receive
                     )
                 )
 
-            cacheDetails.text = context.getString(R.string.cache_field_content_details)
+            cacheHits.text = context.getString(R.string.cache_field_content_hits)
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
@@ -174,6 +179,58 @@ class CacheStatisticsDialogFragment : DialogFragment(), DynamicArguments.Receive
                     StyledString(
                         placeholder = "%2\$s",
                         content = stats.misses.asString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
+            cacheIo.text = context.getString(R.string.cache_field_content_io)
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = stats.readStatistics.bytesProcessed.asSizeString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = stats.writeStatistics.bytesProcessed.asSizeString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
+            cacheDurationRead.text = context.getString(R.string.cache_field_content_duration_read)
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = stats.readStatistics.minDuration.asMillisecondsString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = stats.readStatistics.maxDuration.asMillisecondsString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%3\$s",
+                        content = stats.readStatistics.operations.asString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
+            cacheDurationWrite.text = context.getString(R.string.cache_field_content_duration_write)
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = stats.writeStatistics.minDuration.asMillisecondsString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = stats.writeStatistics.maxDuration.asMillisecondsString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%3\$s",
+                        content = stats.writeStatistics.operations.asString(),
                         style = StyleSpan(Typeface.BOLD)
                     )
                 )

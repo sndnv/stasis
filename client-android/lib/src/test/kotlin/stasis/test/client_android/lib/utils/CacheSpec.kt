@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import okio.utf8Size
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.ResourceHelpers.FileSystemSetup
@@ -25,6 +26,38 @@ class CacheSpec : WordSpec({
     val key = "test-key"
     val value = "test-initial-value"
 
+    "Cache OperationStatistics" should {
+        "support updating" {
+            val empty = Cache.OperationStatistics.empty()
+
+            empty.bytesProcessed shouldBe (0)
+            empty.minDuration shouldBe (Long.MAX_VALUE)
+            empty.maxDuration shouldBe (Long.MIN_VALUE)
+            empty.operations shouldBe (0)
+
+            val firstUpdate = empty.updateWith(amount = 50, duration = 100)
+
+            firstUpdate.bytesProcessed shouldBe (50)
+            firstUpdate.minDuration shouldBe (100)
+            firstUpdate.maxDuration shouldBe (100)
+            firstUpdate.operations shouldBe (1)
+
+            val secondUpdate = firstUpdate.updateWith(amount = 30, duration = 150)
+
+            secondUpdate.bytesProcessed shouldBe (80)
+            secondUpdate.minDuration shouldBe (100)
+            secondUpdate.maxDuration shouldBe (150)
+            secondUpdate.operations shouldBe (2)
+
+            val thirdUpdate = secondUpdate.updateWith(amount = 30, duration = 50)
+
+            thirdUpdate.bytesProcessed shouldBe (110)
+            thirdUpdate.minDuration shouldBe (50)
+            thirdUpdate.maxDuration shouldBe (150)
+            thirdUpdate.operations shouldBe (3)
+        }
+    }
+
     "A Map Cache" should {
         "support caching data" {
             val loadedValues = AtomicInteger(0)
@@ -36,6 +69,9 @@ class CacheSpec : WordSpec({
 
             val cache = Cache.Map<String, String>()
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             loadedValues.get() shouldBe (0)
             cache.get(key) shouldBe (null)
 
@@ -44,6 +80,9 @@ class CacheSpec : WordSpec({
             cache.getOrLoad(key, load) shouldBe (value)
 
             loadedValues.get() shouldBe (1)
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // tracking data size is not supported
+            cache.writeStatistics.bytesProcessed shouldBe (0) // tracking data size is not supported
         }
 
         "support explicitly adding data (individual)" {
@@ -176,6 +215,9 @@ class CacheSpec : WordSpec({
 
             val cache = Cache.File(target, serdes)
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             loadedValues.get() shouldBe (0)
             cache.get(key) shouldBe (null)
 
@@ -193,6 +235,39 @@ class CacheSpec : WordSpec({
             val content = cachedPath.content()
             val deserialized = serdes.deserializeValue(content.toByteArray())
             deserialized shouldBe (Try.Success(value))
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (value.utf8Size())
+        }
+
+        "support reading cached data from storage" {
+            val (filesystem, _) = createMockFileSystem(setup)
+
+            val target = filesystem.getPath("/cache")
+
+            val loadedValues = AtomicInteger(0)
+
+            val primaryCache = Cache.File(target, serdes)
+            val secondaryCache = Cache.File(target, serdes)
+
+            primaryCache.readStatistics.bytesProcessed shouldBe (0)
+            primaryCache.writeStatistics.bytesProcessed shouldBe (0)
+
+            secondaryCache.readStatistics.bytesProcessed shouldBe (0)
+            secondaryCache.writeStatistics.bytesProcessed shouldBe (0)
+
+            loadedValues.get() shouldBe (0)
+            primaryCache.get(key) shouldBe (null)
+            secondaryCache.get(key) shouldBe (null)
+
+            primaryCache.put(key, value)
+            secondaryCache.get(key) shouldBe (value)
+
+            primaryCache.readStatistics.bytesProcessed shouldBe (0) // no data read
+            primaryCache.writeStatistics.bytesProcessed shouldBe (value.utf8Size())
+
+            secondaryCache.readStatistics.bytesProcessed shouldBe (value.utf8Size())
+            secondaryCache.writeStatistics.bytesProcessed shouldBe (0) // no data written
         }
 
         "support explicitly adding data (individual)" {
@@ -201,6 +276,9 @@ class CacheSpec : WordSpec({
             val target = filesystem.getPath("/cache")
 
             val cache = Cache.File(target, serdes)
+
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
 
             cache.get(key) shouldBe (null)
             cache.put(key, value)
@@ -214,6 +292,9 @@ class CacheSpec : WordSpec({
             val content = cachedPath.content()
             val deserialized = serdes.deserializeValue(content.toByteArray())
             deserialized shouldBe (Try.Success(value))
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (value.utf8Size())
         }
 
         "support explicitly adding data (bulk)" {
@@ -222,6 +303,9 @@ class CacheSpec : WordSpec({
             val target = filesystem.getPath("/cache")
 
             val cache = Cache.File(target, serdes)
+
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
 
             val key1 = "test-key-1"
             val key2 = "test-key-2"
@@ -243,6 +327,9 @@ class CacheSpec : WordSpec({
                 val deserialized = serdes.deserializeValue(content.toByteArray())
                 deserialized shouldBe (Try.Success(value))
             }
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (3 * value.utf8Size())
         }
 
         "support removing data" {
@@ -259,6 +346,9 @@ class CacheSpec : WordSpec({
 
             val cache = Cache.File(target, serdes)
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             loadedValues.get() shouldBe (0)
             cache.get(key) shouldBe (null)
 
@@ -271,6 +361,9 @@ class CacheSpec : WordSpec({
             cache.getOrLoad(key, load) shouldBe (value)
 
             loadedValues.get() shouldBe (2)
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (2 * value.utf8Size())
         }
 
         "not update the cache if the load operation fails" {
@@ -287,6 +380,9 @@ class CacheSpec : WordSpec({
 
             val cache = Cache.File(target, serdes)
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             loadedValues.get() shouldBe (0)
             cache.get(key) shouldBe (null)
 
@@ -298,6 +394,9 @@ class CacheSpec : WordSpec({
 
             loadedValues.get() shouldBe (1)
             cache.get(key) shouldBe (null)
+
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
         }
 
         "support retrieving all cached data" {
@@ -306,6 +405,9 @@ class CacheSpec : WordSpec({
             val target = filesystem.getPath("/cache")
 
             val cache = Cache.File(target, serdes)
+
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
 
             cache.put("k1", "v1")
             cache.put("k2", "v2")
@@ -322,6 +424,9 @@ class CacheSpec : WordSpec({
             )
 
             cache.all() shouldBe (expected)
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (10)
         }
 
         "support clearing all cached data" {
@@ -330,6 +435,9 @@ class CacheSpec : WordSpec({
             val target = filesystem.getPath("/cache")
 
             val cache = Cache.File(target, serdes)
+
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
 
             cache.put("k1", "v1")
             cache.put("k2", "v2")
@@ -340,6 +448,9 @@ class CacheSpec : WordSpec({
             cache.clear()
 
             cache.all() shouldBe (emptyMap())
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // read from memory
+            cache.writeStatistics.bytesProcessed shouldBe (6)
         }
 
         "handle failures when retrieving all cache entries" {
@@ -371,6 +482,9 @@ class CacheSpec : WordSpec({
                 scope = CoroutineScope(Dispatchers.IO)
             )
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             cache.registerOnEntryExpiredListener { expiredValues.incrementAndGet() }
 
             loadedValues.get() shouldBe (0)
@@ -392,6 +506,9 @@ class CacheSpec : WordSpec({
                 cache.getOrLoad(key, load) shouldBe (value)
                 loadedValues.get() shouldBe (2)
             }
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
+            cache.writeStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
         }
 
         "support explicitly adding data (individual)" {
@@ -578,6 +695,9 @@ class CacheSpec : WordSpec({
                 scope = CoroutineScope(Dispatchers.IO)
             )
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             cache.registerOnEntryRefreshedListener { _, _ -> refreshedValues.incrementAndGet() }
 
             loadedValues.get() shouldBe (0)
@@ -594,6 +714,9 @@ class CacheSpec : WordSpec({
                 refreshedValues.get() shouldBe (3)
                 loadedValues.get() shouldBe (4)
             }
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
+            cache.writeStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
         }
 
         "support explicitly adding data (individual)" {
@@ -828,6 +951,9 @@ class CacheSpec : WordSpec({
             val underlying = Cache.Map<String, String>()
             val cache = Cache.Tracking(underlying)
 
+            cache.readStatistics.bytesProcessed shouldBe (0)
+            cache.writeStatistics.bytesProcessed shouldBe (0)
+
             cache.hits shouldBe (0)
             cache.misses shouldBe (0)
 
@@ -845,6 +971,9 @@ class CacheSpec : WordSpec({
             cache.misses shouldBe (2)
 
             loadedValues.get() shouldBe (1)
+
+            cache.readStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
+            cache.writeStatistics.bytesProcessed shouldBe (0) // underlying cache doesn't track bytes
         }
 
         "support explicitly adding data (individual)" {

@@ -16,10 +16,31 @@
             android:textAppearance="?attr/textAppearanceBody2" />
 
         <TextView
-            android:id="@+id/cache_details"
+            android:id="@+id/cache_hits"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:maxLines="1"
+            android:paddingHorizontal="4dp"
+            android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+        <TextView
+            android:id="@+id/cache_io"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="4dp"
+            android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+        <TextView
+            android:id="@+id/cache_duration_read"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="4dp"
+            android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+        <TextView
+            android:id="@+id/cache_duration_write"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:paddingHorizontal="4dp"
             android:textAppearance="?attr/textAppearanceSubtitle2" />
 
