@@ -15,6 +15,7 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
@@ -73,6 +74,16 @@ interface Cache<K : Any, V> {
     suspend fun clear()
 
     /**
+     * Provides the current read statistics for this cache.
+     */
+    val readStatistics: OperationStatistics
+
+    /**
+     * Provides the current write statistics for this cache.
+     */
+    val writeStatistics: OperationStatistics
+
+    /**
      * Simple in-memory cache backed by [ConcurrentHashMap].
      */
     class Map<K : Any, V> : Cache<K, V> {
@@ -99,6 +110,10 @@ interface Cache<K : Any, V> {
 
         override suspend fun clear() =
             map.clear()
+
+        override val readStatistics: OperationStatistics = OperationStatistics.empty()
+
+        override val writeStatistics: OperationStatistics = OperationStatistics.empty()
     }
 
     /**
@@ -111,18 +126,30 @@ interface Cache<K : Any, V> {
         private val target: Path,
         private val serdes: Serdes<K, V>
     ) : Cache<K, V> {
+        private val stats: IoStatistics = IoStatistics()
+
         private val inMemory = Map<K, V>()
 
         override suspend fun get(key: K): V? = inMemory.get(key) ?: Try {
             withContext(Dispatchers.IO) {
-                key.asStateFile().readBytes()
+                val start = System.currentTimeMillis()
+                val bytes = key.asStateFile().readBytes()
+                val duration = System.currentTimeMillis() - start
+                bytes to duration
             }
-        }.flatMap { serdes.deserializeValue(it) }.toOption()?.also { inMemory.put(key, it) }
+        }.flatMap { (bytes, duration) ->
+            stats.bytesRead(amount = bytes.size, duration = duration)
+            serdes.deserializeValue(bytes)
+        }.toOption()?.also { inMemory.put(key, it) }
 
         override suspend fun put(key: K, value: V) {
             inMemory.put(key, value)
             withContext(Dispatchers.IO) {
-                key.asStateFile().writeBytes(serdes.serializeValue(value))
+                val start = System.currentTimeMillis()
+                val bytes = serdes.serializeValue(value)
+                key.asStateFile().writeBytes(bytes)
+                val duration = System.currentTimeMillis() - start
+                stats.bytesWritten(amount = bytes.size, duration = duration)
             }
         }
 
@@ -146,6 +173,12 @@ interface Cache<K : Any, V> {
 
         override suspend fun clear() =
             keys().forEach { remove(it) }
+
+        override val readStatistics: OperationStatistics
+            get() = stats.readStatistics
+
+        override val writeStatistics: OperationStatistics
+            get() = stats.writeStatistics
 
         private fun K.asStateFile(): Path {
             Files.createDirectories(target)
@@ -211,6 +244,12 @@ interface Cache<K : Any, V> {
             jobs.clear()
             underlying.clear()
         }
+
+        override val readStatistics: OperationStatistics
+            get() = underlying.readStatistics
+
+        override val writeStatistics: OperationStatistics
+            get() = underlying.writeStatistics
 
         fun registerOnEntryExpiredListener(listener: (K) -> Unit) {
             listeners.add(listener)
@@ -291,6 +330,12 @@ interface Cache<K : Any, V> {
             underlying.clear()
         }
 
+        override val readStatistics: OperationStatistics
+            get() = underlying.readStatistics
+
+        override val writeStatistics: OperationStatistics
+            get() = underlying.writeStatistics
+
         fun registerOnEntryRefreshedListener(listener: (K, V?) -> Unit) {
             listeners.add(listener)
         }
@@ -348,7 +393,7 @@ interface Cache<K : Any, V> {
     class Tracking<K : Any, V>(
         private val underlying: Cache<K, V>,
     ) : Cache<K, V> {
-        private val stats: Statistics = Statistics()
+        private val stats: HitStatistics = HitStatistics()
 
         /**
          * Provides the current number of cache hits.
@@ -361,6 +406,12 @@ interface Cache<K : Any, V> {
          */
         val misses: Long
             get() = stats.misses
+
+        override val readStatistics: OperationStatistics
+            get() = underlying.readStatistics
+
+        override val writeStatistics: OperationStatistics
+            get() = underlying.writeStatistics
 
         override suspend fun get(key: K): V? {
             val result = underlying.get(key = key)
@@ -392,7 +443,7 @@ interface Cache<K : Any, V> {
             underlying.clear()
     }
 
-    private class Statistics {
+    private class HitStatistics {
         private val hitsRef: AtomicLong = AtomicLong(0)
         private val missesRef: AtomicLong = AtomicLong(0)
 
@@ -409,5 +460,51 @@ interface Cache<K : Any, V> {
 
         val misses: Long
             get() = missesRef.get()
+    }
+
+    private class IoStatistics {
+        private val readStatsRef: AtomicReference<OperationStatistics> =
+            AtomicReference(OperationStatistics.empty())
+
+        private val writeStatsRef: AtomicReference<OperationStatistics> =
+            AtomicReference(OperationStatistics.empty())
+
+        fun bytesRead(amount: Int, duration: Long) {
+            readStatsRef.accumulateAndGet(null) { stats, _ -> stats.updateWith(amount, duration) }
+        }
+
+        fun bytesWritten(amount: Int, duration: Long) {
+            writeStatsRef.accumulateAndGet(null) { stats, _ -> stats.updateWith(amount, duration) }
+        }
+
+        val readStatistics: OperationStatistics
+            get() = readStatsRef.get()
+
+        val writeStatistics: OperationStatistics
+            get() = writeStatsRef.get()
+    }
+
+    data class OperationStatistics(
+        val bytesProcessed: Long,
+        val minDuration: Long,
+        val maxDuration: Long,
+        val operations: Long,
+    ) {
+        fun updateWith(amount: Int, duration: Long): OperationStatistics =
+            OperationStatistics(
+                bytesProcessed = bytesProcessed + amount,
+                minDuration = if (duration > minDuration) minDuration else duration,
+                maxDuration = if (duration < maxDuration) maxDuration else duration,
+                operations = operations + 1
+            )
+
+        companion object {
+            fun empty(): OperationStatistics = OperationStatistics(
+                bytesProcessed = 0,
+                minDuration = Long.MAX_VALUE,
+                maxDuration = Long.MIN_VALUE,
+                operations = 0
+            )
+        }
     }
 }

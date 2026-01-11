@@ -895,7 +895,10 @@
     <string name="cache_refresh_target_field_content_details">Successful: %1$s, Failed: %2$s</string>
     <string name="cache_title">Caches</string>
     <string name="cache_field_content_name">%1$s</string>
-    <string name="cache_field_content_details">Hits: %1$s, Misses: %2$s</string>
+    <string name="cache_field_content_hits">Hits: %1$s, Misses: %2$s</string>
+    <string name="cache_field_content_io">Read: %1$s, Written: %2$s</string>
+    <string name="cache_field_content_duration_read">Read: %1$s (min), %2$s (max), %3$s (count)</string>
+    <string name="cache_field_content_duration_write">Write: %1$s (min), %2$s (max), %3$s (count)</string>
 
     <!-- Commands -->
     <string name="command_field_content_info_unprocessed">[%1$s] %2$s (%3$s)</string>
@@ -958,6 +961,8 @@
     <string name="date_time_format_yesterday">Yesterday</string>
     <string name="date_time_format_today">Today</string>
     <string name="date_time_format_tomorrow">Tomorrow</string>
+    <string name="duration_short_seconds">%1$s s</string>
+    <string name="duration_short_milliseconds">%1$s ms</string>
     <string name="duration">%1$s %2$s</string>
     <plurals name="duration_days">
         <item quantity="one">day</item>

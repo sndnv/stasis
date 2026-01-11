@@ -68,6 +68,20 @@ object Common {
         return NumberFormat.getInstance().format(this)
     }
 
+    fun Long.asMillisecondsString(context: Context): String {
+        if (this > Long.MIN_VALUE && this < Long.MAX_VALUE) {
+            val format = NumberFormat.getInstance()
+            if (this >= 10000) {
+                val seconds = this / 1000
+                return context.getString(R.string.duration_short_seconds, format.format(seconds))
+            } else {
+                return context.getString(R.string.duration_short_milliseconds, format.format(this))
+            }
+        } else {
+            return context.getString(R.string.empty_value)
+        }
+    }
+
     fun BigInteger.asSizeString(context: Context): String {
         return this.toLong().asSizeString(context)
     }

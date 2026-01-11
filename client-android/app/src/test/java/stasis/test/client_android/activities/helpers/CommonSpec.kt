@@ -15,6 +15,7 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.asChangedString
 import stasis.client_android.activities.helpers.Common.asChronoUnit
+import stasis.client_android.activities.helpers.Common.asMillisecondsString
 import stasis.client_android.activities.helpers.Common.asQuantityString
 import stasis.client_android.activities.helpers.Common.asRestrictionsHintString
 import stasis.client_android.activities.helpers.Common.asRestrictionsString
@@ -96,6 +97,20 @@ class CommonSpec {
         assertThat(100L.asString(), equalTo("100"))
         assertThat(1000L.asString(), equalTo("1,000"))
         assertThat(10000L.asString(), equalTo("10,000"))
+    }
+
+    @Test
+    fun convertLongsToMillisecondStrings() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertThat(0L.asMillisecondsString(context), equalTo("0 ms"))
+        assertThat((-1L).asMillisecondsString(context), equalTo("-1 ms"))
+        assertThat(1L.asMillisecondsString(context), equalTo("1 ms"))
+        assertThat(9999L.asMillisecondsString(context), equalTo("9,999 ms"))
+        assertThat(10000L.asMillisecondsString(context), equalTo("10 s"))
+        assertThat(123456L.asMillisecondsString(context), equalTo("123 s"))
+        assertThat(Long.MIN_VALUE.asMillisecondsString(context), equalTo("-"))
+        assertThat(Long.MAX_VALUE.asMillisecondsString(context), equalTo("-"))
     }
 
     @Test
