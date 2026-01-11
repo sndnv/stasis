@@ -225,6 +225,11 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                         binding.entriesListEmpty.isVisible = true
                     }
 
+                    binding.datasetEntriesTitle?.text = context.getString(
+                        R.string.dataset_definition_entries_list_label,
+                        entries.size.toLong().asString()
+                    )
+
                     binding.entriesList.adapter = DatasetEntryListItemAdapter(
                         entries = entries,
                         onEntryDetailsRequested = { itemView, entry ->
