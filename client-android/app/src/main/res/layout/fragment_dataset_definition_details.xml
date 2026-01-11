@@ -106,10 +106,10 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/dataset_entries_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="8dp"
-                    android:text="@string/dataset_definition_entries_list_label"
                     android:textAppearance="?attr/textAppearanceCaption" />
 
                 <androidx.recyclerview.widget.RecyclerView

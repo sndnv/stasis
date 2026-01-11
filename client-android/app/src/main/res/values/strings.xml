@@ -351,7 +351,7 @@
     <string name="dataset_definition_start_backup_hint">Start a new backup process using this definition</string>
     <string name="dataset_definition_start_backup_disabled_title">Cannot start backup</string>
     <string name="dataset_definition_start_backup_disabled_content">A new backup operation cannot be started while other operations are running.</string>
-    <string name="dataset_definition_entries_list_label">Backup Entries</string>
+    <string name="dataset_definition_entries_list_label">Backup Entries (%1$s)</string>
     <string name="dataset_definition_entries_list_empty">No Existing Entries</string>
     <string name="dataset_definition_remove_confirm_title">Remove backup definition?</string>
     <string name="dataset_definition_remove_confirm_content">Removing backup definition [%1$s] will make all associated backups inaccessible!</string>
