@@ -23,5 +23,13 @@
             android:paddingHorizontal="4dp"
             android:textAppearance="?attr/textAppearanceSubtitle2" />
 
+        <TextView
+            android:id="@+id/cache_refresh_target_duration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:paddingHorizontal="4dp"
+            android:textAppearance="?attr/textAppearanceSubtitle2" />
+
     </LinearLayout>
 </layout>

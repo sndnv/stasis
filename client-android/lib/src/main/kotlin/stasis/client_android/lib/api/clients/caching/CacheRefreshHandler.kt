@@ -51,8 +51,8 @@ interface CacheRefreshHandler {
         val lastRefresh: Instant?
             get() = lastRefreshRef.get()
 
-        fun withRefreshResult(target: RefreshTarget, result: Try<*>) {
-            targets["refreshed_${target.name}"]?.withResult(result)
+        fun withRefreshResult(target: RefreshTarget, result: Try<*>, duration: Long) {
+            targets["refreshed_${target.name}"]?.withResult(result, duration)
             lastRefreshRef.set(Instant.now())
         }
     }
@@ -60,12 +60,22 @@ interface CacheRefreshHandler {
     class RefreshTargetStatistic {
         private val successfulRef = AtomicLong(0)
         private val failedRef = AtomicLong(0)
+        private val minDurationRef = AtomicLong(Long.MAX_VALUE)
+        private val maxDurationRef = AtomicLong(Long.MIN_VALUE)
 
-        fun withResult(result: Try<*>) {
+        fun withResult(result: Try<*>, duration: Long) {
             if (result.isSuccess) {
                 successfulRef.incrementAndGet()
             } else {
                 failedRef.incrementAndGet()
+            }
+
+            minDurationRef.accumulateAndGet(duration) { min, last ->
+                if (last > min) min else last
+            }
+
+            maxDurationRef.accumulateAndGet(duration) { max, last ->
+                if (last < max) max else last
             }
         }
 
@@ -74,6 +84,12 @@ interface CacheRefreshHandler {
 
         val failed: Long
             get() = failedRef.get()
+
+        val minDuration: Long
+            get() = minDurationRef.get()
+
+        val maxDuration: Long
+            get() = maxDurationRef.get()
     }
 
     companion object {
