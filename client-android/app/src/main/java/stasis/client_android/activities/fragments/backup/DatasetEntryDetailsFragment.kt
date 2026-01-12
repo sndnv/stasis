@@ -107,7 +107,7 @@ class DatasetEntryDetailsFragment : Fragment() {
                         )
 
                 binding.datasetEntryDetailsInfo.text =
-                    context.getString(R.string.dataset_entry_field_content_info)
+                    context.getString(R.string.dataset_entry_field_content_info_successful)
                         .renderAsSpannable(
                             StyledString(
                                 placeholder = "%1\$s",

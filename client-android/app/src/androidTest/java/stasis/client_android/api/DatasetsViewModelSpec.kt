@@ -289,26 +289,6 @@ class DatasetsViewModelSpec {
     }
 
     @Test
-    fun provideDatasetMetadataForDatasetDefinitions() {
-        val mockApiClient = MockServerApiEndpointClient()
-        val model = createModel(mockApiClient)
-
-        runBlocking {
-            model.metadata(forDefinition = UUID.randomUUID()).await()
-
-            assertThat(
-                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetEntriesRetrieved],
-                equalTo(1)
-            )
-
-            assertThat(
-                mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved],
-                equalTo(3)
-            )
-        }
-    }
-
-    @Test
     fun provideSearchResults() {
         val mockApiClient = MockServerApiEndpointClient()
         val model = createModel(mockApiClient)

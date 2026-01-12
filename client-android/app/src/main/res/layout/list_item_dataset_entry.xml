@@ -26,4 +26,12 @@
         android:paddingEnd="4dp"
         android:textAppearance="?attr/textAppearanceBody2" />
 
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/dataset_entry_summary_loading_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/dataset_entry_summary_info"
+        android:indeterminate="true"
+        android:paddingHorizontal="16dp" />
+
 </RelativeLayout>

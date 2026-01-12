@@ -137,20 +137,6 @@ class DatasetsViewModel @Inject constructor(
         }.getOrRenderFailure(withContext = getApplication())
     }
 
-    fun metadata(forDefinition: DatasetDefinitionId): LiveData<List<Pair<DatasetEntry, DatasetMetadata>>> =
-        liveData {
-            val entries = providerContext.api.datasetEntries(definition = forDefinition)
-                .getOrRenderFailure(withContext = getApplication()) ?: emptyList()
-
-            entries
-                .sortedByDescending { it.created }
-                .mapNotNull { entry ->
-                    val metadata = providerContext.api.datasetMetadata(entry = entry)
-                        .getOrRenderFailure(withContext = getApplication())
-                    metadata?.let { entry to it }
-                }
-        }
-
     fun search(query: Regex, until: Instant?): LiveData<Search.Result> = liveData {
         providerContext.search.search(query, until)
             .getOrRenderFailure(withContext = getApplication())

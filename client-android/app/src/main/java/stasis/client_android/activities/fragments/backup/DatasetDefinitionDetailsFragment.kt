@@ -33,6 +33,7 @@ import stasis.client_android.activities.helpers.Transitions.setTargetTransitionN
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentDatasetDefinitionDetailsBinding
+import stasis.client_android.lib.utils.Try
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.persistence.rules.RuleViewModel
 import stasis.client_android.providers.ProviderContext
@@ -208,7 +209,7 @@ class DatasetDefinitionDetailsFragment : Fragment() {
                 )
             }
 
-            fun loadEntries() = datasets.metadata(forDefinition = definition.id)
+            fun loadEntries() = datasets.entries(forDefinition = definition.id)
                 .observeOnce(viewLifecycleOwner) { entries ->
                     providerContext.analytics.recordEvent(
                         name = "get_dataset_entries",
@@ -232,6 +233,10 @@ class DatasetDefinitionDetailsFragment : Fragment() {
 
                     binding.entriesList.adapter = DatasetEntryListItemAdapter(
                         entries = entries,
+                        loadMetadataForEntry = { entry, f ->
+                            datasets.metadata(forEntry = entry) { e -> f(Try.Failure(e)) }
+                                .observeOnce(viewLifecycleOwner) { metadata -> f(Try.Success(metadata)) }
+                        },
                         onEntryDetailsRequested = { itemView, entry ->
                             controller.navigate(
                                 DatasetDefinitionDetailsFragmentDirections

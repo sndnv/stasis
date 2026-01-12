@@ -90,7 +90,32 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
     override suspend fun datasetEntries(definition: DatasetDefinitionId): Try<List<DatasetEntry>> {
         delay(nextDelay)
         return when (definition) {
-            defaultDefinition.id -> Success(listOf(defaultEntry))
+            defaultDefinition.id -> Success(
+                listOf(
+                    defaultEntry,
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID(), data = emptySet()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID(), data = setOf(CrateId.randomUUID())),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID()),
+                    defaultEntry.copy(id = DatasetEntryId.randomUUID())
+                )
+            )
+
             else -> Failure(RuntimeException("Invalid definition requested: [$definition]"))
         }
     }

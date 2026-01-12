@@ -2,10 +2,12 @@ package stasis.client_android.activities.fragments.backup
 
 import android.content.Context
 import android.graphics.Typeface
+import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import stasis.client_android.R
@@ -22,9 +24,11 @@ import stasis.client_android.databinding.ListItemDatasetEntryBinding
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
+import stasis.client_android.lib.utils.Try
 
 class DatasetEntryListItemAdapter(
-    private val entries: List<Pair<DatasetEntry, DatasetMetadata>>,
+    private val entries: List<DatasetEntry>,
+    private val loadMetadataForEntry: (DatasetEntry, (Try<DatasetMetadata>) -> Unit) -> Unit,
     private val onEntryDetailsRequested: (View, DatasetEntryId) -> Unit,
     private val onEntryDeleteRequested: (DatasetEntryId) -> Unit,
 ) : RecyclerView.Adapter<DatasetEntryListItemAdapter.ItemViewHolder>() {
@@ -32,24 +36,34 @@ class DatasetEntryListItemAdapter(
         val inflater = LayoutInflater.from(parent.context)
         val binding = ListItemDatasetEntryBinding.inflate(inflater, parent, false)
 
-        return ItemViewHolder(parent.context, binding, onEntryDetailsRequested, onEntryDeleteRequested)
+        return ItemViewHolder(
+            context = parent.context,
+            binding = binding,
+            loadMetadataForEntry = loadMetadataForEntry,
+            onEntryDetailsRequested = onEntryDetailsRequested,
+            onEntryDeleteRequested = onEntryDeleteRequested
+        )
     }
 
     override fun getItemCount(): Int = entries.size
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val (entry, metadata) = entries[position]
-        holder.bind(entry, metadata)
+        val entry = entries[position]
+        holder.bind(entry)
     }
 
     class ItemViewHolder(
         private val context: Context,
         private val binding: ListItemDatasetEntryBinding,
+        private val loadMetadataForEntry: (DatasetEntry, (Try<DatasetMetadata>) -> Unit) -> Unit,
         private val onEntryDetailsRequested: (View, DatasetEntryId) -> Unit,
         private val onEntryDeleteRequested: (DatasetEntryId) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(entry: DatasetEntry, metadata: DatasetMetadata) {
+        fun bind(entry: DatasetEntry) {
             val (creationDate, creationTime) = entry.created.formatAsDateTime(context)
+
+            binding.root.isClickable = false
+            binding.datasetEntrySummaryLoadingProgress.isVisible = true
 
             binding.datasetEntrySummaryTitle.text =
                 context.getString(R.string.dataset_entry_field_content_title)
@@ -72,26 +86,64 @@ class DatasetEntryListItemAdapter(
                     )
 
             binding.datasetEntrySummaryInfo.text =
-                context.getString(R.string.dataset_entry_field_content_info)
+                context.getString(R.string.dataset_entry_field_content_info_loading)
                     .renderAsSpannable(
                         StyledString(
                             placeholder = "%1\$s",
                             content = entry.data.size.toString(),
                             style = StyleSpan(Typeface.BOLD)
-                        ),
-                        StyledString(
-                            placeholder = "%2\$s",
-                            content = (metadata.contentChanged.size + metadata.metadataChanged.size).toString(),
-                            style = StyleSpan(Typeface.BOLD)
-                        ),
-                        StyledString(
-                            placeholder = "%3\$s",
-                            content = metadata.contentChangedBytes.asSizeString(context),
-                            style = StyleSpan(Typeface.BOLD)
                         )
                     )
 
             binding.root.setSourceTransitionName(R.string.dataset_entry_summary_transition_name, entry.id)
+
+            loadMetadataForEntry(entry) {
+                binding.root.isClickable = true
+                binding.datasetEntrySummaryLoadingProgress.isVisible = false
+
+                when (it) {
+                    is Try.Success -> {
+                        val metadata = it.value
+
+                        binding.datasetEntrySummaryInfo.text =
+                            context.getString(R.string.dataset_entry_field_content_info_successful)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = entry.data.size.toString(),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    ),
+                                    StyledString(
+                                        placeholder = "%2\$s",
+                                        content = (metadata.contentChanged.size + metadata.metadataChanged.size).toString(),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    ),
+                                    StyledString(
+                                        placeholder = "%3\$s",
+                                        content = metadata.contentChangedBytes.asSizeString(context),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    )
+                                )
+                    }
+
+                    is Try.Failure -> {
+                        binding.datasetEntrySummaryInfo.text =
+                            context.getString(R.string.dataset_entry_field_content_info_failed)
+                                .renderAsSpannable(
+                                    StyledString(
+                                        placeholder = "%1\$s",
+                                        content = entry.data.size.toString(),
+                                        style = StyleSpan(Typeface.BOLD)
+                                    ),
+                                    StyledString(
+                                        placeholder = "%2\$s",
+                                        content = context.getString(R.string.dataset_entry_field_content_info_failed_message),
+                                        style = ForegroundColorSpan(context.getColor(R.color.design_default_color_error))
+                                    )
+                                )
+                    }
+                }
+            }
 
             binding.root.setOnLongClickListener {
                 EntryActionsContextDialogFragment(
