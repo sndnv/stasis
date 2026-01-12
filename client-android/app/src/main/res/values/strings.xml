@@ -365,7 +365,10 @@
     <string name="dataset_entry_remove_confirm_content">Removing backup entry [%1$s] will make all of its data inaccessible!</string>
     <string name="dataset_entry_info">%1$s, %2$s</string>
     <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)</string>
-    <string name="dataset_entry_field_content_info">Crates: %1$s, Changes: %2$s, Size: %3$s</string>
+    <string name="dataset_entry_field_content_info_loading">Crates: %1$s</string>
+    <string name="dataset_entry_field_content_info_successful">Crates: %1$s, Changes: %2$s, Size: %3$s</string>
+    <string name="dataset_entry_field_content_info_failed">Crates: %1$s, %2$s</string>
+    <string name="dataset_entry_field_content_info_failed_message">Failed to load metadata</string>
     <string name="dataset_entry_field_content_filters">Showing %1$s of %2$s entries</string>
     <string name="dataset_entry_field_content_filters_updates_only">Show updates only</string>
     <string name="dataset_entry_field_content_filters_files_only">Show files only</string>
