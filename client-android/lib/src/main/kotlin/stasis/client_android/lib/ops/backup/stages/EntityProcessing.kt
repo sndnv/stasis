@@ -3,10 +3,11 @@ package stasis.client_android.lib.ops.backup.stages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withContext
 import okio.buffer
 import okio.source
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.encryption.secrets.DeviceFileSecret
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.EntityMetadata
@@ -17,12 +18,12 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.internal.PartitionedSource
-import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
 import stasis.client_android.lib.utils.NonFatal.isNonFatal
 import stasis.client_android.lib.utils.NonFatal.nonFatal
+import stasis.client_android.lib.utils.Try
 import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
@@ -44,33 +45,51 @@ interface EntityProcessing {
         operation: OperationId,
         flow: Flow<SourceEntity>
     ): Flow<Either<EntityMetadata, EntityMetadata>> =
-        flow
-            .map { entity ->
+        flow.map { entity ->
+            entity to Try {
                 val metadata: Either<EntityMetadata, EntityMetadata> = when {
                     entity.hasContentChanged -> Left(processContentChanged(operation, entity))
                     else -> Right(processMetadataChanged(operation, entity))
                 }
 
                 metadata
-            }.onEach { metadata ->
-                providers.track.entityProcessed(
-                    operation = operation,
-                    entity = metadata.fold(EntityMetadata::path, EntityMetadata::path),
-                    metadata = metadata
-                )
             }
+        }.mapNotNull { (entity, result) ->
+            when (result) {
+                is Try.Success -> {
+                    providers.track.entityProcessed(
+                        operation = operation,
+                        entity = entity.path,
+                        metadata = result.value
+                    )
+
+                    result.value
+                }
+
+                is Try.Failure -> {
+                    providers.track.failureEncountered(
+                        operation = operation,
+                        entity = entity.path,
+                        failure = result.exception.nonFatal()
+                    )
+
+                    if (result.exception is EndpointFailure) {
+                        throw result.exception
+                    } else {
+                        null
+                    }
+                }
+            }
+        }
 
     suspend fun processContentChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {
-        try {
-            val file = expectFileMetadata(entity)
-            val staged = stage(operation, entity, file.checksum)
-            val crates = push(staged)
+        val file = expectFileMetadata(entity)
+        val staged = stage(operation, entity, file.checksum)
+        val crates = push(staged)
 
-            discard(staged)
-            return file.copy(crates = crates.toMap())
-        } catch (e: Throwable) {
-            throw EntityProcessingFailure(entity = entity.path, cause = e.nonFatal())
-        }
+        discard(staged)
+
+        return file.copy(crates = crates.toMap())
     }
 
     suspend fun processMetadataChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {

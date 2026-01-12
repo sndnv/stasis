@@ -3,20 +3,21 @@ package stasis.client_android.lib.ops.recovery.stages
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.mapNotNull
 import okio.Source
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.ops.OperationId
-import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.internal.DecompressedSource.decompress
 import stasis.client_android.lib.ops.recovery.stages.internal.DecryptedCrates.decrypt
 import stasis.client_android.lib.ops.recovery.stages.internal.DestagedByteStringSource.destage
 import stasis.client_android.lib.ops.recovery.stages.internal.MergedCrates.merged
 import stasis.client_android.lib.utils.NonFatal.nonFatal
+import stasis.client_android.lib.utils.Try
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileAttribute
@@ -49,14 +50,37 @@ interface EntityProcessing {
             }
         }.filterNotNull()
             .map { createEntityDirectory(it) }
-            .map {
-                when {
-                    it.hasContentChanged -> processContentChanged(operation, it)
-                    else -> processMetadataChanged(operation, it)
+            .map { entity ->
+                entity to Try {
+                    when {
+                        entity.hasContentChanged -> processContentChanged(operation, entity)
+                        else -> processMetadataChanged(operation, entity)
+                    }
                 }
             }
-            .onEach { targetEntity ->
-                providers.track.entityProcessed(operation, entity = targetEntity.destinationPath)
+            .mapNotNull { (entity, result) ->
+                when (result) {
+                    is Try.Success -> {
+                        providers.track.entityProcessed(
+                            operation = operation,
+                            entity = entity.destinationPath
+                        )
+                        entity
+                    }
+
+                    is Try.Failure -> {
+                        providers.track.failureEncountered(
+                            operation = operation,
+                            entity = entity.path,
+                            failure = result.exception.nonFatal()
+                        )
+                        if (result.exception is EndpointFailure) {
+                            throw result.exception
+                        } else {
+                            null
+                        }
+                    }
+                }
             }
 
     private fun createEntityDirectory(entity: TargetEntity): TargetEntity {
@@ -83,15 +107,11 @@ interface EntityProcessing {
         fun recordPartProcessed(): Unit =
             providers.track.entityPartProcessed(operation, entity = entity.path)
 
-        try {
-            pull(crates, entity.originalPath)
-                .decrypt(withPartSecret = { deviceSecret.toFileSecret(it, file.checksum) }, providers = providers)
-                .merged(onPartProcessed = ::recordPartProcessed)
-                .decompress(decompressor = providers.compression.decoderFor(entity))
-                .destage(to = entity.destinationPath, providers = providers)
-        } catch (e: Throwable) {
-            throw EntityProcessingFailure(entity = entity.path, cause = e.nonFatal())
-        }
+        pull(crates, entity.originalPath)
+            .decrypt(withPartSecret = { deviceSecret.toFileSecret(it, file.checksum) }, providers = providers)
+            .merged(onPartProcessed = ::recordPartProcessed)
+            .decompress(decompressor = providers.compression.decoderFor(entity))
+            .destage(to = entity.destinationPath, providers = providers)
 
         return entity
     }
@@ -113,7 +133,7 @@ interface EntityProcessing {
             Triple(partIdFromPath(partPath), partPath, source)
         }
 
-        val lastPartId = sources.map { it.first }.maxOrNull() ?: 0
+        val lastPartId = sources.maxOfOrNull { it.first } ?: 0
         require(lastPartId + 1 == crates.size) {
             "Unexpected last part ID [$lastPartId] encountered for an entity with [${crates.size}] crate(s)"
         }

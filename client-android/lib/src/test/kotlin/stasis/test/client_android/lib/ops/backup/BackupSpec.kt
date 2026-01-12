@@ -4,7 +4,6 @@ import io.kotest.assertions.fail
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import okio.ByteString
@@ -436,7 +435,7 @@ class BackupSpec : WordSpec({
         }
 
         "handle failures of backups for individual files" {
-            val operationResult = AtomicReference<Throwable>()
+            val operationCompleted = AtomicBoolean(false)
 
             val sourceFile1Metadata =
                 "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
@@ -446,7 +445,6 @@ class BackupSpec : WordSpec({
                 "/ops/source-file-3".asTestResource().extractFileMetadata(checksum)
 
             val pushFailed = AtomicBoolean(false)
-
 
             val mockApiClient = MockServerApiEndpointClient()
 
@@ -496,11 +494,11 @@ class BackupSpec : WordSpec({
             )
 
             backup.start(withScope = operationScope) { e ->
-                operationResult.set(e)
+                operationCompleted.set(true)
             }
 
             eventually {
-                operationResult.get()?.message shouldContain ("Test failure")
+                operationCompleted.get() shouldBe (true)
             }
 
             // dataset entry for backup created; metadata crate pushed
@@ -545,7 +543,7 @@ class BackupSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
-            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (1)
         }
 
         "handle general backup failures" {

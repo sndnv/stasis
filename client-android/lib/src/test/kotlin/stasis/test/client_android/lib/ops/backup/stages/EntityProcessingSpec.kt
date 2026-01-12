@@ -5,12 +5,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import okio.Source
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
+import stasis.client_android.lib.compression.Encoder
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.SourceEntity
@@ -19,7 +20,6 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
-import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class EntityProcessingSpec : WordSpec({
     "A Backup EntityProcessing stage" should {
-        "extract and expect file metadata"  {
+        "extract and expect file metadata" {
             val entity = SourceEntity(
                 path = Fixtures.Metadata.FileOneMetadata.path,
                 existingMetadata = null,
@@ -307,7 +307,7 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
         }
 
-        "handle core push failures" {
+        "fail on push failures" {
             val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("1"),
                 withCrate = UUID.randomUUID()
@@ -350,13 +350,13 @@ class EntityProcessingSpec : WordSpec({
                 override val maxPartSize: Long = 16384
             }
 
-            val e = shouldThrow<EntityProcessingFailure> {
+            val e = shouldThrow<EndpointFailure> {
                 stage
                     .entityProcessing(operation = Operation.generateId(), flow = listOf(sourceFile1).asFlow())
                     .toList()
             }
 
-            e.message shouldContain ("[pushDisabled] is set to [true]")
+            e.message shouldBe ("[pushDisabled] is set to [true]")
 
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (1)
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (1)
@@ -382,7 +382,82 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
-            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
+            mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+        }
+
+        "handle generic entity processing failures" {
+            val sourceFile1Metadata = "/ops/source-file-1".asTestResource().extractFileMetadata(
+                withChecksum = BigInteger("1"),
+                withCrate = UUID.randomUUID()
+            )
+
+            val sourceFile1 = SourceEntity(
+                path = sourceFile1Metadata.path,
+                existingMetadata = null,
+                currentMetadata = sourceFile1Metadata
+            )
+
+            val mockStaging = MockFileStaging()
+            val mockCompression = object : MockCompression() {
+                override fun encoderFor(entity: SourceEntity): Encoder {
+                    throw RuntimeException("Test failure")
+                }
+            }
+            val mockEncryption = MockEncryption()
+            val mockCoreClient = MockServerCoreEndpointClient()
+            val mockTracker = MockBackupTracker()
+
+            val stage = object : EntityProcessing {
+                override val targetDataset: DatasetDefinition = Fixtures.Datasets.Default
+
+                override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.MD5,
+                    staging = mockStaging,
+                    compression = mockCompression,
+                    encryptor = mockEncryption,
+                    decryptor = mockEncryption,
+                    clients = Clients(
+                        api = MockServerApiEndpointClient(),
+                        core = mockCoreClient
+                    ),
+                    track = mockTracker
+                )
+
+                override val maxPartSize: Long = 16384
+            }
+
+            stage
+                .entityProcessing(operation = Operation.generateId(), flow = listOf(sourceFile1).asFlow())
+                .toList()
+
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
+
+            mockCompression.statistics[MockCompression.Statistic.Compressed] shouldBe (0)
+            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (0)
+
+            mockEncryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataDecrypted] shouldBe (0)
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
+
+            mockTracker.statistics[MockBackupTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityDiscovered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.SpecificationProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntitySkipped] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
         }
 
@@ -439,13 +514,9 @@ class EntityProcessingSpec : WordSpec({
                 override val maxPartSize: Long = 10
             }
 
-            val e = shouldThrow<EntityProcessingFailure> {
-                stage
-                    .entityProcessing(operation = Operation.generateId(), flow = listOf(largeSourceFile).asFlow())
-                    .toList()
-            }
-
-            e.message shouldContain ("Test failure")
+            stage
+                .entityProcessing(operation = Operation.generateId(), flow = listOf(largeSourceFile).asFlow())
+                .toList()
 
             val expectedParts = 4
 
@@ -472,7 +543,7 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataCollected] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
-            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
         }
     }
