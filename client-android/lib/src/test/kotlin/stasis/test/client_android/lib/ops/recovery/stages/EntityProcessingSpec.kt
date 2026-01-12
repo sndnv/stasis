@@ -3,17 +3,17 @@ package stasis.test.client_android.lib.ops.recovery.stages
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
+import stasis.client_android.lib.compression.Decoder
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
-import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.test.client_android.lib.Fixtures
@@ -199,7 +199,7 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
 
-        "fail if crates could not be pulled" {
+        "handle generic entity processing failures" {
             val targetFile1Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(
                 withChecksum = BigInteger("2"),
                 withCrate = UUID.randomUUID()
@@ -213,7 +213,11 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val mockStaging = MockFileStaging()
-            val mockCompression = MockCompression()
+            val mockCompression = object : MockCompression() {
+                override fun decoderFor(entity: TargetEntity): Decoder {
+                    throw RuntimeException()
+                }
+            }
             val mockEncryption = MockEncryption()
             val mockApiClient = MockServerApiEndpointClient()
             val mockCoreClient = MockServerCoreEndpointClient()
@@ -232,14 +236,82 @@ class EntityProcessingSpec : WordSpec({
                 )
             }
 
-            val e = shouldThrow<EntityProcessingFailure> {
+            stage.entityProcessing(
+                operation = Operation.generateId(),
+                flow = listOf(targetFile1).asFlow()
+            ).collect()
+
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
+
+            mockCompression.statistics[MockCompression.Statistic.Compressed] shouldBe (0)
+            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (0)
+
+            mockEncryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataDecrypted] shouldBe (0)
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
+        }
+
+        "fail if crates could not be pulled" {
+            val targetFile1Metadata = "/ops/source-file-2".asTestResource().extractFileMetadata(
+                withChecksum = BigInteger("2"),
+                withCrate = UUID.randomUUID()
+            )
+
+            val targetFile1 = TargetEntity(
+                path = targetFile1Metadata.path,
+                destination = TargetEntity.Destination.Default,
+                existingMetadata = targetFile1Metadata,
+                currentMetadata = targetFile1Metadata.copy(checksum = BigInteger("9999"))
+            )
+
+            val mockStaging = MockFileStaging()
+            val mockCompression = MockCompression()
+            val mockEncryption = MockEncryption()
+            val mockApiClient = MockServerApiEndpointClient()
+            val mockCoreClient = MockServerCoreEndpointClient(
+                self = UUID.randomUUID(),
+                crates = emptyMap(),
+                pullDisabled = true
+            )
+            val mockTracker = MockRecoveryTracker()
+
+            val stage = object : EntityProcessing {
+                override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.MD5,
+                    staging = mockStaging,
+                    compression = mockCompression,
+                    decryptor = mockEncryption,
+                    clients = Clients(api = mockApiClient, core = mockCoreClient),
+                    track = mockTracker
+                )
+            }
+
+            val e = shouldThrow<EndpointFailure> {
                 stage.entityProcessing(
                     operation = Operation.generateId(),
                     flow = listOf(targetFile1).asFlow()
                 ).collect()
             }
 
-            e.message shouldContain ("Failed to pull crate")
+            e.message shouldBe ("[pullDisabled] is set to [true]")
 
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (1)
             mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (1)
@@ -263,7 +335,7 @@ class EntityProcessingSpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
-            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
 
@@ -304,27 +376,55 @@ class EntityProcessingSpec : WordSpec({
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
             )
 
+            val mockStaging = MockFileStaging()
+            val mockCompression = MockCompression()
+            val mockEncryption = MockEncryption()
+            val mockApiClient = MockServerApiEndpointClient()
+            val mockCoreClient = MockServerCoreEndpointClient()
+            val mockTracker = MockRecoveryTracker()
+
             val stage = object : EntityProcessing {
                 override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
 
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
-                    staging = MockFileStaging(),
-                    compression = MockCompression(),
-                    decryptor = MockEncryption(),
-                    clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-                    track = MockRecoveryTracker()
+                    staging = mockStaging,
+                    compression = mockCompression,
+                    decryptor = mockEncryption,
+                    clients = Clients(api = mockApiClient, core = mockCoreClient),
+                    track = mockTracker
                 )
             }
 
-            val e = shouldThrow<EntityProcessingFailure> {
-                stage.entityProcessing(
-                    operation = Operation.generateId(),
-                    flow = listOf(targetFile4).asFlow()
-                ).collect()
-            }
+            stage.entityProcessing(
+                operation = Operation.generateId(),
+                flow = listOf(targetFile4).asFlow()
+            ).collect()
 
-            e.message shouldContain ("Unexpected last part ID [5] encountered for an entity with [4] crate(s)")
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
+
+            mockCompression.statistics[MockCompression.Statistic.Compressed] shouldBe (0)
+            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (0)
+
+            mockEncryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataDecrypted] shouldBe (0)
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
 
         "fail if no crates are provided" {
@@ -342,27 +442,56 @@ class EntityProcessingSpec : WordSpec({
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
             )
 
+            val mockStaging = MockFileStaging()
+            val mockCompression = MockCompression()
+            val mockEncryption = MockEncryption()
+            val mockApiClient = MockServerApiEndpointClient()
+            val mockCoreClient = MockServerCoreEndpointClient()
+            val mockTracker = MockRecoveryTracker()
+
             val stage = object : EntityProcessing {
                 override val deviceSecret: DeviceSecret = Fixtures.Secrets.Default
 
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
-                    staging = MockFileStaging(),
-                    compression = MockCompression(),
-                    decryptor = MockEncryption(),
-                    clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-                    track = MockRecoveryTracker()
+                    staging = mockStaging,
+                    compression = mockCompression,
+                    decryptor = mockEncryption,
+                    clients = Clients(api = mockApiClient, core = mockCoreClient),
+                    track = mockTracker
                 )
             }
 
-            val e = shouldThrow<EntityProcessingFailure> {
-                stage.entityProcessing(
-                    operation = Operation.generateId(),
-                    flow = listOf(targetFile4).asFlow()
-                ).collect()
-            }
+            stage.entityProcessing(
+                operation = Operation.generateId(),
+                flow = listOf(targetFile4).asFlow()
+            ).collect()
 
-            e.message shouldContain ("Unexpected last part ID [0] encountered for an entity with [0] crate(s)")
+
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryCreated] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.TemporaryDiscarded] shouldBe (0)
+            mockStaging.statistics[MockFileStaging.Statistic.Destaged] shouldBe (0)
+
+            mockCompression.statistics[MockCompression.Statistic.Compressed] shouldBe (0)
+            mockCompression.statistics[MockCompression.Statistic.Decompressed] shouldBe (0)
+
+            mockEncryption.statistics[MockEncryption.Statistic.FileEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.FileDecrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataEncrypted] shouldBe (0)
+            mockEncryption.statistics[MockEncryption.Statistic.MetadataDecrypted] shouldBe (0)
+
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (0)
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePushed] shouldBe (0)
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessingStarted] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
         }
     }
 })

@@ -20,7 +20,6 @@ import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
-import stasis.client_android.lib.ops.exceptions.EntityProcessingFailure
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
@@ -57,9 +56,6 @@ class Backup(
                     .collect()
 
                 providers.track.completed(id)
-            } catch (e: EntityProcessingFailure) {
-                providers.track.failureEncountered(id, e.entity, e.cause)
-                throw e
             } catch (e: Throwable) {
                 providers.track.failureEncountered(id, e)
                 throw e

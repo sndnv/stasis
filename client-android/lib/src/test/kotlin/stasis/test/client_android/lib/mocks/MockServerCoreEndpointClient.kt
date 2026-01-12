@@ -5,6 +5,7 @@ import okio.ByteString
 import okio.Source
 import okio.buffer
 import stasis.client_android.lib.api.clients.ServerCoreEndpointClient
+import stasis.client_android.lib.api.clients.exceptions.EndpointFailure
 import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.core.Manifest
 import stasis.client_android.lib.model.core.NodeId
@@ -29,7 +30,7 @@ open class MockServerCoreEndpointClient(
             content.buffer().readByteArray()
             stats[Statistic.CratePushed]?.getAndIncrement()
         } else {
-            throw RuntimeException("[pushDisabled] is set to [true]")
+            throw EndpointFailure("[pushDisabled] is set to [true]")
         }
     }
 
@@ -40,7 +41,7 @@ open class MockServerCoreEndpointClient(
                 Buffer().write(it)
             }
         } else {
-            throw RuntimeException("[pullDisabled] is set to [true]")
+            throw EndpointFailure("[pullDisabled] is set to [true]")
         }
     }
 

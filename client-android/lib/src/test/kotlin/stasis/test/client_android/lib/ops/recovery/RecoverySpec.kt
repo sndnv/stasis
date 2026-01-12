@@ -177,9 +177,7 @@ class RecoverySpec : WordSpec({
                 crates = (originalSourceFile1Metadata.crates
                         + originalSourceFile2Metadata.crates
                         + originalSourceFile3Metadata.crates)
-                    .values
-                    .map { Pair(it, "dummy-encrypted-data".toByteArray().toByteString()) }
-                    .toMap()
+                    .values.associateWith { "dummy-encrypted-data".toByteArray().toByteString() }
             )
             val mockTracker = MockRecoveryTracker()
 
@@ -274,9 +272,7 @@ class RecoverySpec : WordSpec({
                                 + sourceFile3Metadata.crates
                                 + sourceFile4Metadata.crates
                                 + sourceFile5Metadata.crates
-                        ).values
-                    .map { Pair(it, "dummy-encrypted-data".toByteArray().toByteString()) }
-                    .toMap()
+                        ).values.associateWith { "dummy-encrypted-data".toByteArray().toByteString() }
             )
 
             val mockTracker = MockRecoveryTracker()
@@ -317,7 +313,7 @@ class RecoverySpec : WordSpec({
         }
 
         "handle failures of specific files" {
-            val operationResult = AtomicReference<Throwable>()
+            val operationCompleted = AtomicBoolean(false)
 
             val currentSourceFile1Metadata =
                 "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
@@ -354,9 +350,9 @@ class RecoverySpec : WordSpec({
 
             val mockCoreClient = MockServerCoreEndpointClient(
                 self = UUID.randomUUID(),
-                crates = (originalSourceFile1Metadata.crates + originalSourceFile2Metadata.crates).values
-                    .map { Pair(it, "dummy-encrypted-data".toByteArray().toByteString()) }
-                    .toMap()
+                crates = (originalSourceFile1Metadata.crates + originalSourceFile2Metadata.crates).values.associateWith {
+                    "dummy-encrypted-data".toByteArray().toByteString()
+                }
             )
             val mockTracker = MockRecoveryTracker()
 
@@ -366,12 +362,12 @@ class RecoverySpec : WordSpec({
                 tracker = mockTracker
             )
 
-            recovery.start(withScope = operationScope) { e ->
-                operationResult.set(e)
+            recovery.start(withScope = operationScope) {
+                operationCompleted.set(true)
             }
 
             eventually {
-                operationResult.get()?.message shouldContain ("Failed to pull crate")
+                operationCompleted.get() shouldBe (true)
             }
 
             // data pulled for source-file-1, source-file-2; source-file-3 has not data and will fail
@@ -386,7 +382,7 @@ class RecoverySpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (1)
-            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
         }
 
         "handle general recovery failures" {
@@ -464,10 +460,9 @@ class RecoverySpec : WordSpec({
 
             val mockCoreClient = MockServerCoreEndpointClient(
                 self = UUID.randomUUID(),
-                crates = originalSourceFile1Metadata.crates.values.map {
-                    Pair(it, "dummy-encrypted-data".toByteArray().toByteString())
+                crates = originalSourceFile1Metadata.crates.values.associateWith {
+                    "dummy-encrypted-data".toByteArray().toByteString()
                 }
-                    .toMap()
             )
             val mockTracker = MockRecoveryTracker()
 
