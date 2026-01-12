@@ -116,6 +116,7 @@ class CacheStatisticsDialogFragment : DialogFragment(), DynamicArguments.Receive
 
             val targetName: TextView = layout.findViewById(R.id.cache_refresh_target_name)
             val targetDetails: TextView = layout.findViewById(R.id.cache_refresh_target_details)
+            val targetDuration: TextView = layout.findViewById(R.id.cache_refresh_target_duration)
 
             targetName.text = context.getString(R.string.cache_refresh_target_field_content_name)
                 .renderAsSpannable(
@@ -136,6 +137,20 @@ class CacheStatisticsDialogFragment : DialogFragment(), DynamicArguments.Receive
                     StyledString(
                         placeholder = "%2\$s",
                         content = stats.failed.asString(),
+                        style = StyleSpan(Typeface.BOLD)
+                    )
+                )
+
+            targetDuration.text = context.getString(R.string.cache_refresh_target_field_content_duration)
+                .renderAsSpannable(
+                    StyledString(
+                        placeholder = "%1\$s",
+                        content = stats.minDuration.asMillisecondsString(context),
+                        style = StyleSpan(Typeface.BOLD)
+                    ),
+                    StyledString(
+                        placeholder = "%2\$s",
+                        content = stats.maxDuration.asMillisecondsString(context),
                         style = StyleSpan(Typeface.BOLD)
                     )
                 )

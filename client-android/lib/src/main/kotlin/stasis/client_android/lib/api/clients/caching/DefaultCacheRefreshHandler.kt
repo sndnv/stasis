@@ -73,6 +73,8 @@ open class DefaultCacheRefreshHandler(
     }
 
     private suspend fun refreshTarget(target: CacheRefreshHandler.RefreshTarget): Try<Unit> {
+        val start = System.currentTimeMillis()
+
         val result = when (target) {
             is CacheRefreshHandler.RefreshTarget.AllDatasetDefinitions -> {
                 underlying.datasetDefinitions().map { refreshed ->
@@ -124,7 +126,11 @@ open class DefaultCacheRefreshHandler(
             }
         }
 
-        stats.withRefreshResult(target, result)
+        stats.withRefreshResult(
+            target = target,
+            result = result,
+            duration = System.currentTimeMillis() - start
+        )
 
         return result
     }
