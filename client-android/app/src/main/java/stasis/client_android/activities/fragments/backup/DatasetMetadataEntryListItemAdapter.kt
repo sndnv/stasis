@@ -65,6 +65,7 @@ class DatasetMetadataEntryListItemAdapter(
 
     fun filter(by: Map<String, Filter>) {
         fun keep(
+            entity: Path,
             state: FilesystemMetadata.EntityState?,
             metadata: EntityMetadata?
         ): Boolean = by.values.all {
@@ -73,26 +74,27 @@ class DatasetMetadataEntryListItemAdapter(
                     state == FilesystemMetadata.EntityState.New || state == FilesystemMetadata.EntityState.Updated
                 }
 
-                is Filter.ShowFilesOnly -> {
+                is Filter.ShowUpdatedFilesOnly -> {
                     metadata is EntityMetadata.File
                 }
 
                 is Filter.KeepPath -> {
-                    metadata?.path?.toString()?.let { path -> it.withRegex.matches(path) } ?: false
+                    entity.toString().let { path -> it.withRegex.matches(path) }
                 }
 
                 is Filter.DropPath -> {
-                    !(metadata?.path?.toString()?.let { path -> it.withRegex.matches(path) } ?: false)
+                    !entity.toString().let { path -> it.withRegex.matches(path) }
                 }
 
                 is Filter.KeepPathName -> {
-                    metadata?.path?.toString()?.contains(it.name) ?: false
+                    entity.toString().contains(it.name)
                 }
             }
         }
 
         val filtered = originalEntities.filter { entity ->
             keep(
+                entity = entity,
                 state = metadata.filesystem.entities[entity],
                 metadata = metadata.contentChanged[entity] ?: metadata.metadataChanged[entity]
             )
@@ -288,7 +290,7 @@ class DatasetMetadataEntryListItemAdapter(
     companion object {
         sealed class Filter {
             object ShowUpdatesOnly : Filter()
-            object ShowFilesOnly : Filter()
+            object ShowUpdatedFilesOnly : Filter()
             data class KeepPath(val withRegex: Regex) : Filter()
             data class DropPath(val withRegex: Regex) : Filter()
             data class KeepPathName(val name: String) : Filter()

@@ -93,6 +93,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
             defaultDefinition.id -> Success(
                 listOf(
                     defaultEntry,
+                    extraEntry,
                     defaultEntry.copy(id = DatasetEntryId.randomUUID(), data = emptySet()),
                     defaultEntry.copy(id = DatasetEntryId.randomUUID(), data = setOf(CrateId.randomUUID())),
                     defaultEntry.copy(id = DatasetEntryId.randomUUID()),
@@ -276,6 +277,15 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
         created = Instant.now()
     )
 
+    private val extraEntry = DatasetEntry(
+        id = DatasetEntryId.randomUUID(),
+        definition = defaultDefinition.id,
+        device = self,
+        data = setOf(CrateId.randomUUID()),
+        metadata = CrateId.randomUUID(),
+        created = Instant.now()
+    )
+
     private val defaultSchedule = Schedule(
         id = ScheduleId.randomUUID(),
         info = "test-schedule-1",
@@ -288,6 +298,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
 
     private val metadataFileOnePath = Paths.get("/tmp/file/one")
     private val metadataFileTwoPath = Paths.get("/tmp/file/.two")
+    private val metadataFileFourPath = Paths.get("/tmp/other/four")
 
     private val defaultMetadata = DatasetMetadata(
         contentChanged = mapOf(
@@ -330,6 +341,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
             entities = mapOf(
                 metadataFileOnePath to FilesystemMetadata.EntityState.New,
                 metadataFileTwoPath to FilesystemMetadata.EntityState.Updated,
+                metadataFileFourPath to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
             )
         )
     )
