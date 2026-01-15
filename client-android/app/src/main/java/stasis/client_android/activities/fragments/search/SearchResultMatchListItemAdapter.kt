@@ -14,7 +14,6 @@ import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.lib.model.FilesystemMetadata
-import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import java.nio.file.Path
 
@@ -34,13 +33,13 @@ class SearchResultMatchListItemAdapter(
         val matchName: TextView = layout.findViewById(R.id.search_result_match_name)
         val matchPath: TextView = layout.findViewById(R.id.search_result_match_parent)
 
-        matchStateIcon.setImageResource(
-            when (state) {
-                is FilesystemMetadata.EntityState.New -> R.drawable.ic_entity_state_new
-                is FilesystemMetadata.EntityState.Updated -> R.drawable.ic_entity_state_updated
-                is FilesystemMetadata.EntityState.Existing -> R.drawable.ic_entity_state_existing
-            }
-        )
+        val (targetEntry, stateImage) = when (state) {
+            is FilesystemMetadata.EntityState.New -> entry to R.drawable.ic_entity_state_new
+            is FilesystemMetadata.EntityState.Updated -> entry to R.drawable.ic_entity_state_updated
+            is FilesystemMetadata.EntityState.Existing -> state.entry to R.drawable.ic_entity_state_existing
+        }
+
+        matchStateIcon.setImageResource(stateImage)
 
         matchName.text =
             context.getString(R.string.dataset_metadata_field_content_summary_file_name)
@@ -65,7 +64,7 @@ class SearchResultMatchListItemAdapter(
         layout.setOnClickListener {
             parent.findNavController().navigate(
                 SearchFragmentDirections.actionSearchFragmentToDatasetEntryDetailsFragment(
-                    entry = entry,
+                    entry = targetEntry,
                     filter = path.toAbsolutePath().toString()
                 )
             )

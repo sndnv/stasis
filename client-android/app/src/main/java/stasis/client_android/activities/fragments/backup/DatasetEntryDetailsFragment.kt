@@ -251,7 +251,7 @@ class DatasetEntryDetailsFragment : Fragment() {
                 "updates-only" to DatasetMetadataEntryListItemAdapter.Companion.Filter.ShowUpdatesOnly
 
             val FilesOnly: Pair<String, DatasetMetadataEntryListItemAdapter.Companion.Filter> =
-                "files-only" to DatasetMetadataEntryListItemAdapter.Companion.Filter.ShowFilesOnly
+                "updated-files-only" to DatasetMetadataEntryListItemAdapter.Companion.Filter.ShowUpdatedFilesOnly
 
             val NoHidden: Pair<String, DatasetMetadataEntryListItemAdapter.Companion.Filter> =
                 "no-hidden" to DatasetMetadataEntryListItemAdapter.Companion.Filter.DropPath(
