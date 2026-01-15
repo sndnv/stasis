@@ -151,18 +151,16 @@ tasks.register("qa") {
 }
 
 fun getBuildTime(): String {
-    val mainBranch = "master"
+    val existingTags = providers.exec {
+        commandLine("git", "tag", "--points-at", "HEAD")
+    }.standardOutput.asText.get().trim()
 
-    val currentBranch = providers.exec {
-        commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
-    }.standardOutput.asText.get()
+    val buildTime = if (existingTags.isNotBlank()) {
+        val commitTimestamp = providers.exec {
+            commandLine("git", "show", "-s", "--format=%at")
+        }.standardOutput.asText.get().trim()
 
-    val gitTime = providers.exec {
-        commandLine("git", "show", "-s", "--format=%at")
-    }.standardOutput.asText.get()
-
-    val buildTime = if (currentBranch == mainBranch) {
-        gitTime.trim().toLongOrNull()?.let { it * 1000 } ?: System.currentTimeMillis()
+        commitTimestamp.toLongOrNull()?.let { it * 1000 } ?: System.currentTimeMillis()
     } else {
         System.currentTimeMillis()
     }
