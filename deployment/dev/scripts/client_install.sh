@@ -73,6 +73,7 @@ CLIENT_CLI_ARCHIVE="${REPO_DIR}/client-cli/dist/stasis-client-cli-${CLIENT_CLI_V
 CLIENT_CLI_ARCHIVE_NAME=$(file_name_from_path ${CLIENT_CLI_ARCHIVE})
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
+CLIENT_VENV_PATH="${CLIENT_PATH}/.venv"
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
@@ -130,9 +131,15 @@ mv -f ${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}/* ${CLIENT_PATH} || failed
 rm -r "${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}" || failed
 ln -s "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client" || failed
 
+echo "[$(now)] Setting up python venv in [${CLIENT_VENV_PATH}]..."
+python3 -m venv "${CLIENT_VENV_PATH}" || failed
+source "${CLIENT_VENV_PATH}/bin/activate"
+
 echo "[$(now)] Installing [stasis-client-cli]..."
 pip3 install ${CLIENT_CLI_ARCHIVE} || failed
 ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
+
+deactivate || failed
 
 echo "[$(now)] Installing [stasis-client-ui]..."
 

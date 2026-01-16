@@ -15,6 +15,10 @@ function log_info() {
     echo "[$(now)] [ INFO] $1"
 }
 
+function log_warn() {
+    echo "[$(now)] [ WARN] $1"
+}
+
 function log_error() {
     echo "[$(now)] [ERROR] $1"
 }
@@ -23,6 +27,10 @@ function log_debug() {
     if [[ "${VERBOSE_FLAG}" == "YES" ]]; then
       echo "[$(now)] [DEBUG] $1"
     fi
+}
+
+function log_requires_sudo() {
+    log_warn "This action requires elevated privileges; you may be prompted for your credentials..."
 }
 
 function failed() {
@@ -64,6 +72,14 @@ if [ "$HELP_FLAG" == "YES" ]; then
   echo -e "${HELP}"
   echo -e "${USAGE}"
   exit 0
+fi
+
+PYTHON3_VERSION_MIN=13
+PYTHON3_VERSION_ACTUAL=$(python3 -c 'import sys; print(sys.version_info[1:2][0])')
+
+if [ "${PYTHON3_VERSION_MIN}" -ge "${PYTHON3_VERSION_ACTUAL}" ]; then
+    log_error "The minimum required Python version is [3.${PYTHON3_VERSION_MIN}] but [3.${PYTHON3_VERSION_ACTUAL}] was found"
+    exit 1
 fi
 
 if ! command -v jq &> /dev/null; then
@@ -198,6 +214,7 @@ CLIENT_CLI_ARCHIVE="${DOWNLOAD_DIR}/stasis_client_cli-${ACTUAL_VERSION}-py3-none
 CLIENT_UI_BINARY="${DOWNLOAD_DIR}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}"
 
 CLIENT_PATH="${CLIENT_USER_HOME}/stasis-client"
+CLIENT_VENV_PATH="${CLIENT_PATH}/.venv"
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/.config/stasis-client"
@@ -206,7 +223,7 @@ if [[ "${OSTYPE}" == "linux"* ]]; then
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   CLIENT_CONFIG_PATH="${CLIENT_USER_HOME}/Library/Preferences/stasis-client"
   TARGET_BIN_PATH="/usr/local/bin"
-  CLIENT_UI_PATH="${CLIENT_USER_HOME}/Applications/stasis.app"
+  CLIENT_UI_PATH="/Applications/stasis.app"
 else
   log_error "Operating system [${OSTYPE}] is not supported."
   exit 1
@@ -223,6 +240,7 @@ log_debug "    CLIENT_ARCHIVE = ${CLIENT_ARCHIVE}"
 log_debug "    CLIENT_ARCHIVE_NAME = ${CLIENT_ARCHIVE_NAME}"
 log_debug "    CLIENT_CLI_ARCHIVE = ${CLIENT_CLI_ARCHIVE}"
 log_debug "    CLIENT_PATH = ${CLIENT_PATH}"
+log_debug "    CLIENT_VENV_PATH = ${CLIENT_VENV_PATH}"
 log_debug "    CLIENT_CONFIG_PATH = ${CLIENT_CONFIG_PATH}"
 log_debug "    TARGET_BIN_PATH = ${TARGET_BIN_PATH}"
 log_debug "    CLIENT_UI_PATH = ${CLIENT_UI_PATH}"
@@ -251,6 +269,21 @@ if [[ "${OSTYPE}" == "linux"* ]]; then
   chmod +w ${CLIENT_UI_PATH} || failed
 fi
 
+if [[ "${OSTYPE}" == "darwin"* ]]; then
+  if [ ! -d "${TARGET_BIN_PATH}" ]; then
+    log_info "Creating missing target binary path [${TARGET_BIN_PATH}]..."
+    log_requires_sudo
+    echo sudo mkdir -p "${TARGET_BIN_PATH}"
+
+    if [[ ! ":$PATH:" == *":${TARGET_BIN_PATH}:"* ]]; then
+      NEW_PATHS_FILE="/etc/paths.d/99-stasis"
+      log_info "Adding target binary path [${TARGET_BIN_PATH}] to [${NEW_PATHS_FILE}]..."
+      sudo bash -c "printf \"${TARGET_BIN_PATH}\n\" > \"${NEW_PATHS_FILE}\""
+      log_warn "You might have to restart your terminal session for these changes to take effect"
+    fi
+  fi
+fi
+
 log_debug "Setting up client config directory [${CLIENT_CONFIG_PATH}]..."
 mkdir -p ${CLIENT_CONFIG_PATH} || failed
 chown -R ${CLIENT_USER} ${CLIENT_PATH} || failed
@@ -277,21 +310,36 @@ log_debug "Extracting client from [${CLIENT_ARCHIVE}] to [${CLIENT_PATH}]..."
 unzip -o -q -d "${CLIENT_PATH}/" ${CLIENT_ARCHIVE} || failed
 mv -f ${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}/* ${CLIENT_PATH} || failed
 rm -r "${CLIENT_PATH}/${CLIENT_ARCHIVE_NAME}" || failed
-ln -s "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client" || failed
+
+log_debug "Setting up new python venv in [${CLIENT_VENV_PATH}]..."
+python3 -m venv "${CLIENT_VENV_PATH}" || failed
+source "${CLIENT_VENV_PATH}/bin/activate"
 
 log_info "Installing [stasis-client-cli]..."
 pip3 install ${CLIENT_CLI_ARCHIVE} || failed
-ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
 
-log_debug "Installing [stasis-client-ui]..."
+deactivate || failed
 
+log_info "Installing [stasis-client-ui]..."
 if [[ "${OSTYPE}" == "linux"* ]]; then
   cp ${CLIENT_UI_BINARY} ${CLIENT_UI_PATH}/ || failed
   chmod u+x "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}"
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  open "${CLIENT_UI_BINARY}"
+  log_info "You can now install the stasis UI by opening Finder and dragging the app to your Applications folder"
+else
+  log_error "Operating system [${OSTYPE}] is not supported."
+  exit 1
+fi
+
+log_info "Linking executables..."
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  ln -s "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client"
+  ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
   ln -s "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}" "${TARGET_BIN_PATH}/stasis-ui"
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
-  open "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}"
-  log_info "You can now install the stasis UI by opening Finder and dragging the app to your Applications folder"
+  log_requires_sudo
+  sudo bash -c "ln -s \"${CLIENT_PATH}/bin/stasis-client\" \"${TARGET_BIN_PATH}/stasis-client\" && ln -s \"$(which stasis-client-cli)\" \"${TARGET_BIN_PATH}/stasis\""
 else
   log_error "Operating system [${OSTYPE}] is not supported."
   exit 1

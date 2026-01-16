@@ -516,7 +516,7 @@ fi
 echo "OK"
 
 echo -n "[$(now)] (PRIMARY) Removing recovery directory... "
-CLIENT_RECOVERY_DIR_RM_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" rm -rf ${CLIENT_RECOVERY_DIR} 2>&1)
+CLIENT_RECOVERY_DIR_RM_RESULT=$(container_executable exec "${PRIMARY_CLIENT_CONTAINER_ID}" rm -rf "${CLIENT_RECOVERY_DIR}" 2>&1)
 if [ $? = 0 ]
 then
   echo "OK"
@@ -599,7 +599,7 @@ fi
 echo -n "[$(now)] (SECONDARY) Ensuring client config is not available... "
 for CONFIG_FILE in "${CLIENT_CONFIG_FILES[@]}"
 do
-  RM_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" rm -rf ${CONFIG_FILE} 2>&1)
+  RM_RESULT=$(container_executable exec "${SECONDARY_CLIENT_CONTAINER_ID}" rm -rf "${CONFIG_FILE}" 2>&1)
   if [ $? != 0 ]
   then
     echo "failed removing config file [${CONFIG_FILE}]: [${RM_RESULT}]"
