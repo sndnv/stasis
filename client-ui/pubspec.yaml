@@ -1,6 +1,6 @@
 name: stasis_client_ui
 description: Desktop user interface for the `stasis` client.
-version: 1.6.1-SNAPSHOT
+version: 1.6.1
 
 publish_to: 'none'
 
