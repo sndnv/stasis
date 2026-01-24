@@ -183,7 +183,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileOneFailure
-                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] not found")
+                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] not found")
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
                 metadata.collect(
@@ -193,7 +193,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileTwoFailure
-                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath()}] not found")
+                .message shouldBe ("Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] not found")
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryRetrieved] shouldBe (0)
@@ -281,7 +281,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileOneFailure.message shouldBe (
-                    "Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] " +
+                    "Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] " +
                             "but none was found in metadata for entry [$previousEntry]"
                     )
 
@@ -293,7 +293,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileTwoFailure.message shouldBe (
-                    "Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath()}] " +
+                    "Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] " +
                             "but none was found in metadata for entry [$previousEntry]"
                     )
 
@@ -348,7 +348,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileOneFailure.message shouldBe (
-                    "Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath()}] not found"
+                    "Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] not found"
                     )
 
             val fileTwoFailure = shouldThrow<IllegalArgumentException> {
@@ -359,7 +359,7 @@ class DatasetMetadataSpec : WordSpec({
             }
 
             fileTwoFailure.message shouldBe (
-                    "Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath()}] not found"
+                    "Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] not found"
                     )
 
             mockApiClient.statistics[MockServerApiEndpointClient.Statistic.DatasetMetadataWithEntryIdRetrieved] shouldBe (0)

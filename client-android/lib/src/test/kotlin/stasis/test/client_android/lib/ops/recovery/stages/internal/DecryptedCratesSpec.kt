@@ -17,8 +17,6 @@ import stasis.test.client_android.lib.mocks.MockFileStaging
 import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 class DecryptedCratesSpec : WordSpec({
@@ -40,25 +38,25 @@ class DecryptedCratesSpec : WordSpec({
             val secondInvoked = AtomicBoolean(false)
             val thirdInvoked = AtomicBoolean(false)
 
-            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
+            val original: List<Triple<Int, String, suspend () -> Source>> = listOf(
                 Triple(
                     0,
-                    Paths.get("/tmp/file/one__part=0"),
+                    "/tmp/file/one__part=0",
                     suspend { firstInvoked.set(true); Buffer().write("original".toByteArray()) }),
                 Triple(
                     1,
-                    Paths.get("/tmp/file/one__part=1"),
+                    "/tmp/file/one__part=1",
                     suspend { secondInvoked.set(true); Buffer().write("original".toByteArray()) }),
                 Triple(
                     2,
-                    Paths.get("/tmp/file/one__part=2"),
+                    "/tmp/file/one__part=2",
                     suspend { thirdInvoked.set(true); Buffer().write("original".toByteArray()) })
             )
 
             val crates = original.decrypt(
                 withPartSecret = { partId ->
                     DeviceFileSecret(
-                        file = Paths.get("/tmp/file/one__part=$partId"),
+                        file = "/tmp/file/one__part=$partId",
                         iv = ByteString.EMPTY,
                         key = ByteString.EMPTY
                     )

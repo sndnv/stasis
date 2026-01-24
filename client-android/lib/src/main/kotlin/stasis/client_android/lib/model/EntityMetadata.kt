@@ -4,14 +4,12 @@ import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import java.math.BigInteger
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
 sealed class EntityMetadata {
-    abstract val path: Path
-    abstract val link: Path?
+    abstract val path: String
+    abstract val link: String?
     abstract val isHidden: Boolean
     abstract val created: Instant
     abstract val updated: Instant
@@ -25,8 +23,8 @@ sealed class EntityMetadata {
     }
 
     data class File(
-        override val path: Path,
-        override val link: Path?,
+        override val path: String,
+        override val link: String?,
         override val isHidden: Boolean,
         override val created: Instant,
         override val updated: Instant,
@@ -35,13 +33,13 @@ sealed class EntityMetadata {
         override val permissions: String,
         val size: Long,
         val checksum: BigInteger,
-        val crates: Map<Path, UUID>,
+        val crates: Map<String, UUID>,
         val compression: String
     ) : EntityMetadata()
 
     data class Directory(
-        override val path: Path,
-        override val link: Path?,
+        override val path: String,
+        override val link: String?,
         override val isHidden: Boolean,
         override val created: Instant,
         override val updated: Instant,
@@ -55,9 +53,9 @@ sealed class EntityMetadata {
             when (this) {
                 is File -> {
                     val metadata = stasis.client_android.lib.model.proto.FileMetadata(
-                        path = path.toAbsolutePath().toString(),
+                        path = path,
                         size = size,
-                        link = link?.toAbsolutePath()?.toString() ?: "",
+                        link = link ?: "",
                         isHidden = isHidden,
                         created = created.epochSecond,
                         updated = updated.epochSecond,
@@ -74,8 +72,8 @@ sealed class EntityMetadata {
 
                 is Directory -> {
                     val metadata = stasis.client_android.lib.model.proto.DirectoryMetadata(
-                        path = path.toAbsolutePath().toString(),
-                        link = link?.toAbsolutePath()?.toString() ?: "",
+                        path = path,
+                        link = link ?: "",
                         isHidden = isHidden,
                         created = created.epochSecond,
                         updated = updated.epochSecond,
@@ -92,9 +90,9 @@ sealed class EntityMetadata {
             when (file_) {
                 is stasis.client_android.lib.model.proto.FileMetadata -> Try {
                     File(
-                        path = Paths.get(file_.path),
+                        path = file_.path,
                         size = file_.size,
-                        link = if (file_.link.isNotEmpty()) Paths.get(file_.link) else null,
+                        link = file_.link.ifEmpty { null },
                         isHidden = file_.isHidden,
                         created = Instant.ofEpochSecond(file_.created),
                         updated = Instant.ofEpochSecond(file_.updated),
@@ -110,8 +108,8 @@ sealed class EntityMetadata {
                 else -> when (directory) {
                     is stasis.client_android.lib.model.proto.DirectoryMetadata -> Try {
                         Directory(
-                            path = Paths.get(directory.path),
-                            link = if (directory.link.isNotEmpty()) Paths.get(directory.link) else null,
+                            path = directory.path,
+                            link = directory.link.ifEmpty { null },
                             isHidden = directory.isHidden,
                             created = Instant.ofEpochSecond(directory.created),
                             updated = Instant.ofEpochSecond(directory.updated),
@@ -125,13 +123,13 @@ sealed class EntityMetadata {
                 }
             }
 
-        private fun Map.Entry<Path, UUID>.toProto(): Pair<String, stasis.client_android.lib.model.proto.Uuid> =
-            key.toAbsolutePath().toString() to stasis.client_android.lib.model.proto.Uuid(
+        private fun Map.Entry<String, UUID>.toProto(): Pair<String, stasis.client_android.lib.model.proto.Uuid> =
+            key to stasis.client_android.lib.model.proto.Uuid(
                 mostSignificantBits = value.mostSignificantBits,
                 leastSignificantBits = value.leastSignificantBits
             )
 
-        private fun Map.Entry<String, stasis.client_android.lib.model.proto.Uuid>.toModel(): Pair<Path, UUID> =
-            Paths.get(key) to UUID(value.mostSignificantBits, value.leastSignificantBits)
+        private fun Map.Entry<String, stasis.client_android.lib.model.proto.Uuid>.toModel(): Pair<String, UUID> =
+            key to UUID(value.mostSignificantBits, value.leastSignificantBits)
     }
 }

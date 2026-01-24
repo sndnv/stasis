@@ -34,7 +34,6 @@ import stasis.core.commands.proto.Command
 import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.LogoutUser
 import java.math.BigInteger
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -125,6 +124,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
         delay(nextDelay)
         return when (entry) {
             defaultEntry.id -> Success(defaultEntry)
+            extraEntry.id -> Success(extraEntry)
             else -> Failure(RuntimeException("Invalid entry requested: [$entry]"))
         }
     }
@@ -171,12 +171,20 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
 
     override suspend fun datasetMetadata(entry: DatasetEntryId): Try<DatasetMetadata> {
         delay(nextDelay)
-        return Success(defaultMetadata)
+        return if (entry == extraEntry.id) {
+            Success(extraMetadata)
+        } else {
+            Success(defaultMetadata)
+        }
     }
 
     override suspend fun datasetMetadata(entry: DatasetEntry): Try<DatasetMetadata> {
         delay(nextDelay)
-        return Success(defaultMetadata)
+        return if (entry.id == extraEntry.id) {
+            Success(extraMetadata)
+        } else {
+            Success(defaultMetadata)
+        }
     }
 
     override suspend fun user(): Try<User> {
@@ -296,9 +304,11 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
         updated = Instant.now(),
     )
 
-    private val metadataFileOnePath = Paths.get("/tmp/file/one")
-    private val metadataFileTwoPath = Paths.get("/tmp/file/.two")
-    private val metadataFileFourPath = Paths.get("/tmp/other/four")
+    private val metadataFileOnePath = "/tmp/file/one"
+    private val metadataFileTwoPath = "/tmp/file/.two"
+    private val metadataFileFourPath = "/tmp/other/four"
+
+    private val maxEntities: Int = 25000
 
     private val defaultMetadata = DatasetMetadata(
         contentChanged = mapOf(
@@ -314,16 +324,34 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
                 crates = mapOf(
-                    Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+                    "/tmp/file/one_0" to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
                 ),
                 compression = "none"
             )
-        ),
+        ) + (0 until maxEntities).map { i ->
+            val path = "/tmp/file/generated_cc_$i"
+            path to EntityMetadata.File(
+                path = path,
+                size = i.toLong(),
+                link = null,
+                isHidden = false,
+                created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                owner = "root",
+                group = "root",
+                permissions = "rwxrwxrwx",
+                checksum = BigInteger("1"),
+                crates = mapOf(
+                    "/tmp/file/generated_cc_${i}_0" to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+                ),
+                compression = "none"
+            )
+        },
         metadataChanged = mapOf(
             metadataFileTwoPath to EntityMetadata.File(
                 path = metadataFileTwoPath,
                 size = 2,
-                link = Paths.get("/tmp/file/three"),
+                link = "/tmp/file/three",
                 isHidden = false,
                 created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
                 updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
@@ -332,7 +360,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("42"),
                 crates = mapOf(
-                    Paths.get("/tmp/file/.two_0") to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+                    "/tmp/file/.two_0" to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
                 ),
                 compression = "gzip"
             ),
@@ -342,7 +370,57 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
                 metadataFileOnePath to FilesystemMetadata.EntityState.New,
                 metadataFileTwoPath to FilesystemMetadata.EntityState.Updated,
                 metadataFileFourPath to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
+            ) + (0 until maxEntities).map { i ->
+                "/tmp/file/generated_lu_$i" to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
+            }
+        )
+    )
+
+    private val extraMetadata = DatasetMetadata(
+        contentChanged = mapOf(
+            metadataFileOnePath to EntityMetadata.File(
+                path = metadataFileOnePath,
+                size = 1,
+                link = null,
+                isHidden = false,
+                created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                owner = "root",
+                group = "root",
+                permissions = "rwxrwxrwx",
+                checksum = BigInteger("1"),
+                crates = mapOf(
+                    "/tmp/file/one_0" to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+                ),
+                compression = "none"
             )
+        ),
+        metadataChanged = mapOf(
+            metadataFileTwoPath to EntityMetadata.File(
+                path = metadataFileTwoPath,
+                size = 2,
+                link = "/tmp/file/three",
+                isHidden = false,
+                created = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                updated = Instant.EPOCH.truncatedTo(ChronoUnit.SECONDS),
+                owner = "root",
+                group = "root",
+                permissions = "rwxrwxrwx",
+                checksum = BigInteger("42"),
+                crates = mapOf(
+                    "/tmp/file/.two_0" to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
+                ),
+                compression = "gzip"
+            ),
+        ),
+        filesystem = FilesystemMetadata(
+            entities = mapOf(
+                metadataFileOnePath to FilesystemMetadata.EntityState.New,
+                metadataFileTwoPath to FilesystemMetadata.EntityState.Updated,
+                metadataFileFourPath to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
+            ) + (0 until maxEntities).map { i ->
+                "/tmp/file/generated_fs_$i" to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
+            }
         )
     )
 

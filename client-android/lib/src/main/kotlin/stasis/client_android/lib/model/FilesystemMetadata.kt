@@ -8,14 +8,12 @@ import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.UUID
 
 data class FilesystemMetadata(
-    val entities: Map<Path, EntityState>
+    val entities: Map<String, EntityState>
 ) {
-    fun updated(changes: Iterable<Path>, latestEntry: DatasetEntryId): FilesystemMetadata {
+    fun updated(changes: Iterable<String>, latestEntry: DatasetEntryId): FilesystemMetadata {
         val newAndUpdated = changes.map { entity ->
             if (entities.contains(entity)) {
                 entity to EntityState.Updated
@@ -88,14 +86,14 @@ data class FilesystemMetadata(
     companion object {
         fun empty(): FilesystemMetadata = FilesystemMetadata(entities = emptyMap())
 
-        operator fun invoke(changes: Iterable<Path>): FilesystemMetadata = FilesystemMetadata(
-            entities = changes.map { it to EntityState.New }.toMap()
+        operator fun invoke(changes: Iterable<String>): FilesystemMetadata = FilesystemMetadata(
+            entities = changes.associateWith { EntityState.New }
         )
 
         fun FilesystemMetadata.toProto(): stasis.client_android.lib.model.proto.FilesystemMetadata =
             stasis.client_android.lib.model.proto.FilesystemMetadata(
                 entities = entities.map { entity ->
-                    entity.key.toAbsolutePath().toString() to entity.value.toProto()
+                    entity.key to entity.value.toProto()
                 }.toMap()
             )
 
@@ -104,7 +102,7 @@ data class FilesystemMetadata(
                 null -> Failure(IllegalArgumentException("No filesystem metadata provided"))
                 else -> foldTryMap(
                     entities.map { entity ->
-                        Paths.get(entity.key) to entity.value.toModel()
+                        entity.key to entity.value.toModel()
                     }
                 ).map { entities ->
                     FilesystemMetadata(entities)

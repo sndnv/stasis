@@ -36,7 +36,7 @@ data class TargetEntity(
         }
     }
 
-    val originalPath: Path = existingMetadata.path
+    val originalPath: Path = path.fileSystem.getPath(existingMetadata.path)
 
     val destinationPath: Path = when (destination) {
         is Destination.Default -> originalPath

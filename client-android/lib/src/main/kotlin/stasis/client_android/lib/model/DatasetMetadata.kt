@@ -21,11 +21,10 @@ import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import java.nio.file.Path
-import java.nio.file.Paths
 
 data class DatasetMetadata(
-    val contentChanged: Map<Path, EntityMetadata>,
-    val metadataChanged: Map<Path, EntityMetadata>,
+    val contentChanged: Map<String, EntityMetadata>,
+    val metadataChanged: Map<String, EntityMetadata>,
     val filesystem: FilesystemMetadata
 ) {
     val contentChangedBytes: Long by lazy {
@@ -40,13 +39,21 @@ data class DatasetMetadata(
     suspend fun collect(
         entity: Path,
         clients: Clients
+    ): EntityMetadata? = collect(
+        entity = entity.toAbsolutePath().toString(),
+        clients = clients
+    )
+
+    suspend fun collect(
+        entity: String,
+        clients: Clients
     ): EntityMetadata? =
         filesystem.entities[entity]?.let { state ->
             when (state) {
                 is FilesystemMetadata.EntityState.New, FilesystemMetadata.EntityState.Updated -> {
                     when (val metadata = contentChanged[entity] ?: metadataChanged[entity]) {
                         null -> throw IllegalArgumentException(
-                            "Metadata for entity [${entity.toAbsolutePath()}] not found"
+                            "Metadata for entity [$entity] not found"
                         )
 
                         else -> metadata
@@ -58,7 +65,7 @@ data class DatasetMetadata(
                     when (val metadata = entryMetadata.contentChanged[entity]
                         ?: entryMetadata.metadataChanged[entity]) {
                         null -> throw IllegalArgumentException(
-                            "Expected metadata for entity [${entity.toAbsolutePath()}] " +
+                            "Expected metadata for entity [$entity] " +
                                     "but none was found in metadata for entry [${state.entry}]"
                         )
 
@@ -69,11 +76,11 @@ data class DatasetMetadata(
         }
 
     suspend fun require(
-        entity: Path,
+        entity: String,
         clients: Clients
     ): EntityMetadata =
         when (val metadata = collect(entity, clients)) {
-            null -> throw IllegalArgumentException("Required metadata for entity [${entity.toAbsolutePath()}] not found")
+            null -> throw IllegalArgumentException("Required metadata for entity [$entity] not found")
             else -> metadata
         }
 
@@ -89,10 +96,10 @@ data class DatasetMetadata(
         fun DatasetMetadata.toByteString(): ByteString {
             val data = stasis.client_android.lib.model.proto.DatasetMetadata(
                 contentChanged = contentChanged.map { entity ->
-                    entity.key.toAbsolutePath().toString() to entity.value.toProto()
+                    entity.key to entity.value.toProto()
                 }.toMap(),
                 metadataChanged = metadataChanged.map { entity ->
-                    entity.key.toAbsolutePath().toString() to entity.value.toProto()
+                    entity.key to entity.value.toProto()
                 }.toMap(),
                 filesystem = filesystem.toProto()
             )
@@ -114,12 +121,12 @@ data class DatasetMetadata(
             }.flatMap { data ->
                 foldTryMap(
                     data.contentChanged.map { entity ->
-                        Paths.get(entity.key) to entity.value.toModel()
+                        entity.key to entity.value.toModel()
                     }
                 ).flatMap { contentChanged ->
                     foldTryMap(
                         data.metadataChanged.map { entity ->
-                            Paths.get(entity.key) to entity.value.toModel()
+                            entity.key to entity.value.toModel()
                         }
                     ).flatMap { metadataChanged ->
                         data.filesystem.toModel().map { filesystem ->

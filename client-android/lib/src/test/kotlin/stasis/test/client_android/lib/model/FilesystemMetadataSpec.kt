@@ -11,7 +11,6 @@ import stasis.client_android.lib.model.FilesystemMetadata.EntityState.Companion.
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.Fixtures
-import java.nio.file.Paths
 import java.util.UUID
 
 class FilesystemMetadataSpec : WordSpec({
@@ -54,9 +53,9 @@ class FilesystemMetadataSpec : WordSpec({
 
         val filesystemMetadataProto = stasis.client_android.lib.model.proto.FilesystemMetadata(
             entities = mapOf(
-                Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath().toString() to protoEntityStateNew(),
-                Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath().toString() to protoEntityStateUpdated(),
-                Fixtures.Metadata.FileThreeMetadata.path.toAbsolutePath().toString() to protoEntityStateExisting(entry)
+                Fixtures.Metadata.FileOneMetadata.path to protoEntityStateNew(),
+                Fixtures.Metadata.FileTwoMetadata.path to protoEntityStateUpdated(),
+                Fixtures.Metadata.FileThreeMetadata.path to protoEntityStateExisting(entry)
             )
         )
 
@@ -96,7 +95,7 @@ class FilesystemMetadataSpec : WordSpec({
         "allow to be updated with new files" {
             val newEntry = UUID.randomUUID()
 
-            val newFile = Paths.get("/tmp/file/five")
+            val newFile = "/tmp/file/five"
 
             val updated = filesystemMetadata.updated(
                 changes = listOf(
@@ -122,7 +121,9 @@ class FilesystemMetadataSpec : WordSpec({
             updated.updated(changes = emptyList(), latestEntry = latestEntry) shouldBe (
                     FilesystemMetadata(
                         entities = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path to FilesystemMetadata.EntityState.Existing(latestEntry),
+                            Fixtures.Metadata.FileOneMetadata.path to FilesystemMetadata.EntityState.Existing(
+                                latestEntry
+                            ),
                             Fixtures.Metadata.FileTwoMetadata.path to FilesystemMetadata.EntityState.Existing(newEntry),
                             Fixtures.Metadata.FileThreeMetadata.path to FilesystemMetadata.EntityState.Existing(entry),
                             newFile to FilesystemMetadata.EntityState.Existing(latestEntry)

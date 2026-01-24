@@ -8,7 +8,6 @@ import okio.Sink
 import okio.Source
 import okio.buffer
 import stasis.client_android.lib.encryption.secrets.DeviceFileSecret
-import java.nio.file.Paths
 
 class DeviceFileSecretSpec : WordSpec({
     "A DeviceFileSecret" should {
@@ -19,7 +18,7 @@ class DeviceFileSecretSpec : WordSpec({
         val encryptedData = "coKEpIHZVHZtPcYuojvMPcOD8S6a2sH4Xg0gPX8UTKz75Ts="
 
         val fileSecret = DeviceFileSecret(
-            file = Paths.get("/tmp/some/file"),
+            file = "/tmp/some/file",
             iv = encryptionIv.decodeBase64()!!,
             key = encryptionKey.decodeBase64()!!
         )

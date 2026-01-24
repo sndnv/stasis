@@ -18,6 +18,7 @@ import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.mocks.MockBackupTracker
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
@@ -208,7 +209,7 @@ class MetadataCollectionSpec : WordSpec({
                 .copy(
                     entities = Fixtures.State.BackupOneState.entities.copy(
                         processed = mapOf(
-                            Fixtures.Metadata.FileThreeMetadata.path to BackupState.ProcessedSourceEntity(
+                            Fixtures.Metadata.FileThreeMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
                                 expectedParts = 1,
                                 processedParts = 1,
                                 metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed

@@ -5,12 +5,13 @@ import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import stasis.client_android.lib.model.SourceEntity
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import java.math.BigInteger
 
 class SourceEntitySpec : WordSpec({
     "A SourceEntity" should {
         val fileEntity = SourceEntity(
-            path = Fixtures.Metadata.FileOneMetadata.path,
+            path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
             existingMetadata = null,
             currentMetadata = Fixtures.Metadata.FileOneMetadata
         )
@@ -33,7 +34,7 @@ class SourceEntitySpec : WordSpec({
             )
 
         val directoryEntity = SourceEntity(
-            path = Fixtures.Metadata.DirectoryOneMetadata.path,
+            path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
             existingMetadata = null,
             currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
         )
@@ -52,7 +53,7 @@ class SourceEntitySpec : WordSpec({
         "fail if different entity types provided for current and existing metadata" {
             shouldThrow<IllegalArgumentException> {
                 SourceEntity(
-                    path = Fixtures.Metadata.FileOneMetadata.path,
+                    path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                     existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
                     currentMetadata = Fixtures.Metadata.FileOneMetadata
                 )
@@ -60,7 +61,7 @@ class SourceEntitySpec : WordSpec({
 
             shouldThrow<IllegalArgumentException> {
                 SourceEntity(
-                    path = Fixtures.Metadata.FileOneMetadata.path,
+                    path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                     existingMetadata = Fixtures.Metadata.FileOneMetadata,
                     currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
                 )

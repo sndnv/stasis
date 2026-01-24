@@ -14,7 +14,6 @@ import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Success
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.model.Generators
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
@@ -36,14 +35,14 @@ class DefaultSearchSpec : WordSpec({
             )
 
             val matchingFiles = mapOf(
-                Paths.get("$searchTerm-01") to FilesystemMetadata.EntityState.New,
-                Paths.get("$searchTerm-02") to FilesystemMetadata.EntityState.Updated,
-                Paths.get("other-$searchTerm") to FilesystemMetadata.EntityState.Existing(UUID.randomUUID()),
-                Paths.get(searchTerm) to FilesystemMetadata.EntityState.New
+                "$searchTerm-01" to FilesystemMetadata.EntityState.New,
+                "$searchTerm-02" to FilesystemMetadata.EntityState.Updated,
+                "other-$searchTerm" to FilesystemMetadata.EntityState.Existing(UUID.randomUUID()),
+                searchTerm to FilesystemMetadata.EntityState.New
             )
 
             val nonMatchingFiles = mapOf(
-                Paths.get("other-name") to FilesystemMetadata.EntityState.New
+                "other-name" to FilesystemMetadata.EntityState.New
             )
 
             val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {

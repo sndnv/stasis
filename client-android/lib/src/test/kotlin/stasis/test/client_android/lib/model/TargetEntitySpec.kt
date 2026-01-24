@@ -5,13 +5,14 @@ import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import stasis.client_android.lib.model.TargetEntity
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import java.math.BigInteger
 import java.nio.file.Paths
 
 class TargetEntitySpec : WordSpec({
     "A TargetEntity" should {
         val targetFile = TargetEntity(
-            path = Fixtures.Metadata.FileOneMetadata.path,
+            path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
             destination = TargetEntity.Destination.Default,
             existingMetadata = Fixtures.Metadata.FileOneMetadata,
             currentMetadata = null
@@ -33,7 +34,7 @@ class TargetEntitySpec : WordSpec({
             targetFile.copy(currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(checksum = BigInteger("0")))
 
         val targetDirectory = TargetEntity(
-            path = Fixtures.Metadata.DirectoryOneMetadata.path,
+            path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
             destination = TargetEntity.Destination.Default,
             existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
             currentMetadata = null
@@ -84,7 +85,7 @@ class TargetEntitySpec : WordSpec({
         }
 
         "provide its original file path" {
-            targetFile.originalPath shouldBe (targetFile.existingMetadata.path)
+            targetFile.originalPath.toString() shouldBe (targetFile.existingMetadata.path)
         }
 
         "provide its destination file path" {

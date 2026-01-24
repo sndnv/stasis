@@ -65,16 +65,16 @@ class DefaultBackupCollectorSpec : WordSpec({
             val mockApiClient = MockServerApiEndpointClient()
 
             val file1 = "/collection/file-1".asTestResource()
-            val file1Metadata = Fixtures.Metadata.FileOneMetadata.copy(path = file1)
+            val file1Metadata = Fixtures.Metadata.FileOneMetadata.copy(path = file1.toString())
 
             val file2 = "/collection/file-2".asTestResource()
 
             val collectedFiles = DefaultBackupCollector.collectEntityMetadata(
                 entities = listOf(file1, file2),
                 latestMetadata = DatasetMetadata(
-                    contentChanged = mapOf(file1 to file1Metadata),
+                    contentChanged = mapOf(file1.toString() to file1Metadata),
                     metadataChanged = emptyMap(),
-                    filesystem = FilesystemMetadata(entities = mapOf(file1 to FilesystemMetadata.EntityState.New))
+                    filesystem = FilesystemMetadata(entities = mapOf(file1.toString() to FilesystemMetadata.EntityState.New))
                 ),
                 clients = Clients(api = mockApiClient, core = MockServerCoreEndpointClient())
             ).toList()

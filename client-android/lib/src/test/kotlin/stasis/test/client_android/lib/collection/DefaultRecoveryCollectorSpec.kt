@@ -11,11 +11,13 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.mocks.MockRecoveryMetadataCollector
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
@@ -23,8 +25,8 @@ import java.util.UUID
 class DefaultRecoveryCollectorSpec : WordSpec({
     "A DefaultRecoveryCollector" should {
         "collect recovery files based on dataset metadata" {
-            val file2 = "/collection/file-2".asTestResource()
-            val file3 = "/collection/file-3".asTestResource()
+            val file2 = "/collection/file-2".asTestResource().toString()
+            val file3 = "/collection/file-3".asTestResource().toString()
 
             val file2Metadata = EntityMetadata.File(
                 path = file2,
@@ -38,7 +40,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
                 crates = mapOf(
-                    Paths.get("${file2}_0") to UUID.randomUUID()
+                    "${file2}_0" to UUID.randomUUID()
                 ),
                 compression = "none"
             )
@@ -55,7 +57,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
                 crates = mapOf(
-                    Paths.get("${file3}_0") to UUID.randomUUID()
+                    "${file3}_0" to UUID.randomUUID()
                 ),
                 compression = "none"
             )
@@ -79,27 +81,27 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 destination = TargetEntity.Destination.Default,
                 metadataCollector = MockRecoveryMetadataCollector(
                     metadata = mapOf(
-                        file2Metadata.path to file2Metadata,
-                        file3Metadata.path to file3Metadata
+                        file2Metadata.path.asPath() to file2Metadata,
+                        file3Metadata.path.asPath() to file3Metadata
                     )
                 ),
                 clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient())
             )
 
             val targetFiles = collector
-                .collect()
+                .collect(filesystem = FileSystems.getDefault())
                 .fold(emptyList<TargetEntity>()) { acc, value -> acc + value }
                 .sortedBy { it.path.toAbsolutePath().toString() }
 
             targetFiles.size shouldBe (2)
 
             val targetFile2 = targetFiles[0]
-            targetFile2.path shouldBe (file2Metadata.path)
+            targetFile2.path.toString() shouldBe (file2Metadata.path)
             targetFile2.existingMetadata shouldBe (file2Metadata)
             targetFile2.currentMetadata shouldNotBe (null)
 
             val targetFile3 = targetFiles[1]
-            targetFile3.path shouldBe (file3Metadata.path)
+            targetFile3.path.toString() shouldBe (file3Metadata.path)
             targetFile3.existingMetadata shouldBe (file3Metadata)
             targetFile3.currentMetadata shouldNotBe (null)
         }

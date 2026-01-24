@@ -20,8 +20,8 @@ class PartitionedSource(
     private val onPartStaged: () -> Unit,
     private val withMaximumPartSize: Long
 ) {
-    suspend fun partitionAndStage(): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
-        val parts = mutableListOf<Pair<Path, Path>>()
+    suspend fun partitionAndStage(): List<Pair<String, Path>> = withContext(Dispatchers.IO) {
+        val parts = mutableListOf<Pair<String, Path>>()
 
         var collected: Long = 0L
         var partId: Int = 0

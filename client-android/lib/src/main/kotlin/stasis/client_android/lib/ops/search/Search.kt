@@ -4,7 +4,6 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Try
-import java.nio.file.Path
 import java.time.Instant
 
 interface Search {
@@ -18,6 +17,6 @@ interface Search {
         val definitionInfo: String,
         val entryId: DatasetEntryId,
         val entryCreated: Instant,
-        val matches: Map<Path, FilesystemMetadata.EntityState>
+        val matches: Map<String, FilesystemMetadata.EntityState>
     )
 }

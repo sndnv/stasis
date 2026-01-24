@@ -25,7 +25,9 @@ import stasis.client_android.databinding.ListItemDatasetMetadataEntryBinding
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
-import java.nio.file.Path
+import stasis.client_android.lib.utils.StringPaths.splitParentAndName
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 
 class DatasetMetadataEntryListItemAdapter(
     private val metadata: DatasetMetadata,
@@ -34,6 +36,7 @@ class DatasetMetadataEntryListItemAdapter(
     private val originalEntities = metadata.filesystem.entities.keys.sorted().toList()
     private var shownEntities = originalEntities
     private var latestFilters: Map<String, Filter> = emptyMap()
+    private val filesystem: FileSystem = FileSystems.getDefault()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -59,13 +62,14 @@ class DatasetMetadataEntryListItemAdapter(
             entity = entity,
             state = state,
             metadataChanged = metadataChanged,
-            contentChanged = contentChanged
+            contentChanged = contentChanged,
+            filesystem = filesystem
         )
     }
 
     fun filter(by: Map<String, Filter>) {
         fun keep(
-            entity: Path,
+            entity: String,
             state: FilesystemMetadata.EntityState?,
             metadata: EntityMetadata?
         ): Boolean = by.values.all {
@@ -79,15 +83,15 @@ class DatasetMetadataEntryListItemAdapter(
                 }
 
                 is Filter.KeepPath -> {
-                    entity.toString().let { path -> it.withRegex.matches(path) }
+                    entity.let { path -> it.withRegex.matches(path) }
                 }
 
                 is Filter.DropPath -> {
-                    !entity.toString().let { path -> it.withRegex.matches(path) }
+                    !entity.let { path -> it.withRegex.matches(path) }
                 }
 
                 is Filter.KeepPathName -> {
-                    entity.toString().contains(it.name)
+                    entity.contains(it.name)
                 }
             }
         }
@@ -117,10 +121,11 @@ class DatasetMetadataEntryListItemAdapter(
         private val binding: ListItemDatasetMetadataEntryBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
-            entity: Path,
+            entity: String,
             state: FilesystemMetadata.EntityState,
             metadataChanged: EntityMetadata?,
-            contentChanged: EntityMetadata?
+            contentChanged: EntityMetadata?,
+            filesystem: FileSystem
         ) {
             binding.datasetMetadataEntryStateIcon.setImageResource(
                 when (state) {
@@ -130,10 +135,12 @@ class DatasetMetadataEntryListItemAdapter(
                 }
             )
 
+            val (entityParent, entityName) = entity.splitParentAndName(filesystem)
+
             binding.datasetMetadataEntryParent.text =
                 context.getString(
                     R.string.dataset_metadata_field_content_summary_file_parent,
-                    entity.parent.toString()
+                    entityParent
                 )
 
             binding.datasetMetadataEntryName.text =
@@ -141,7 +148,7 @@ class DatasetMetadataEntryListItemAdapter(
                     .renderAsSpannable(
                         StyledString(
                             placeholder = "%1\$s",
-                            content = entity.fileName.toString(),
+                            content = entityName,
                             style = StyleSpan(Typeface.BOLD)
                         )
                     )

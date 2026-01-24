@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger
 class MergedCratesSpec : WordSpec({
     "MergedCrates" should {
         "support data stream merging (single crate)" {
-            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
-                Triple(0, Paths.get("/tmp/file/one__part=0"), suspend { Buffer().write("original_1".toByteArray()) })
+            val original: List<Triple<Int, String, suspend () -> Source>> = listOf(
+                Triple(0, "/tmp/file/one__part=0", suspend { Buffer().write("original_1".toByteArray()) })
             )
 
             val partsProcessed = AtomicInteger(0)
@@ -28,10 +28,10 @@ class MergedCratesSpec : WordSpec({
         }
 
         "support data stream merging (multiple crates)" {
-            val original: List<Triple<Int, Path, suspend () -> Source>> = listOf(
-                Triple(0, Paths.get("/tmp/file/one__part=0"), suspend { Buffer().write("original_1".toByteArray()) }),
-                Triple(2, Paths.get("/tmp/file/one__part=2"), suspend { Buffer().write("original_3".toByteArray()) }),
-                Triple(1, Paths.get("/tmp/file/one__part=1"), suspend { Buffer().write("original_2".toByteArray()) })
+            val original: List<Triple<Int, String, suspend () -> Source>> = listOf(
+                Triple(0, "/tmp/file/one__part=0", suspend { Buffer().write("original_1".toByteArray()) }),
+                Triple(2, "/tmp/file/one__part=2", suspend { Buffer().write("original_3".toByteArray()) }),
+                Triple(1, "/tmp/file/one__part=1", suspend { Buffer().write("original_2".toByteArray()) })
             )
 
             val partsProcessed = AtomicInteger(0)
@@ -44,7 +44,7 @@ class MergedCratesSpec : WordSpec({
         }
 
         "fail if no crates are provided" {
-            val original: List<Triple<Int, Path, suspend () -> Source>> = emptyList()
+            val original: List<Triple<Int, String, suspend () -> Source>> = emptyList()
 
             val partsProcessed = AtomicInteger(0)
 

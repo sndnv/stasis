@@ -32,7 +32,7 @@ class DefaultSearch(
                             val (entry, metadata) = entryMetadata
 
                             val matches = metadata.filesystem.entities.filter { (path, _) ->
-                                regex.matcher(path.toAbsolutePath().toString()).matches()
+                                regex.matcher(path).matches()
                             }
 
                             val result = Search.DatasetDefinitionResult(
