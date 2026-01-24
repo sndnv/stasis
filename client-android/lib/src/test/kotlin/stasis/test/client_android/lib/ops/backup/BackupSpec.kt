@@ -29,6 +29,7 @@ import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.staging.DefaultFileStaging
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -140,16 +141,14 @@ class BackupSpec : WordSpec({
                         Rule(
                             id = 1,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory1Metadata.path.toAbsolutePath()
-                                .toString(),
+                            directory = sourceDirectory1Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         ),
                         Rule(
                             id = 2,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory2Metadata.path.toAbsolutePath()
-                                .toString(),
+                            directory = sourceDirectory2Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         )
@@ -253,9 +252,9 @@ class BackupSpec : WordSpec({
             val backup = createBackup(
                 collector = Backup.Descriptor.Collector.WithEntities(
                     entities = listOf(
-                        sourceFile1Metadata.path,
-                        sourceFile2Metadata.path,
-                        sourceFile3Metadata.path
+                        sourceFile1Metadata.path.asPath(),
+                        sourceFile2Metadata.path.asPath(),
+                        sourceFile3Metadata.path.asPath()
                     )
                 ),
                 latestMetadata = DatasetMetadata(
@@ -352,9 +351,9 @@ class BackupSpec : WordSpec({
                     state = Fixtures.State.BackupTwoState.copy(
                         entities = Fixtures.State.BackupTwoState.entities.copy(
                             discovered = setOf(
-                                sourceFile1Metadata.path,
-                                sourceFile2Metadata.path,
-                                sourceFile3Metadata.path
+                                sourceFile1Metadata.path.asPath(),
+                                sourceFile2Metadata.path.asPath(),
+                                sourceFile3Metadata.path.asPath()
                             )
                         )
                     )
@@ -467,9 +466,9 @@ class BackupSpec : WordSpec({
             val backup = createBackup(
                 collector = Backup.Descriptor.Collector.WithEntities(
                     entities = listOf(
-                        sourceFile1Metadata.path,
-                        sourceFile2Metadata.path,
-                        sourceFile3Metadata.path,
+                        sourceFile1Metadata.path.asPath(),
+                        sourceFile2Metadata.path.asPath(),
+                        sourceFile3Metadata.path.asPath(),
                         Paths.get("/ops/invalid-file")
                     )
                 ),
@@ -493,7 +492,7 @@ class BackupSpec : WordSpec({
                 tracker = mockTracker
             )
 
-            backup.start(withScope = operationScope) { e ->
+            backup.start(withScope = operationScope) {
                 operationCompleted.set(true)
             }
 
@@ -557,7 +556,7 @@ class BackupSpec : WordSpec({
 
             val backup = createBackup(
                 collector = Backup.Descriptor.Collector.WithEntities(
-                    entities = listOf(sourceFile1Metadata.path)
+                    entities = listOf(sourceFile1Metadata.path.asPath())
                 ),
                 latestMetadata = DatasetMetadata.empty(),
                 clients = Clients(
@@ -678,7 +677,7 @@ class BackupSpec : WordSpec({
             eventually {
                 val backup = createBackup(
                     collector = Backup.Descriptor.Collector.WithEntities(
-                        entities = listOf(sourceFile1Metadata.path)
+                        entities = listOf(sourceFile1Metadata.path.asPath())
                     ),
                     latestMetadata = DatasetMetadata.empty(),
                     clients = Clients(

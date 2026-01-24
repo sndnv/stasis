@@ -15,14 +15,17 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
-import java.nio.file.Path
+import stasis.client_android.lib.utils.StringPaths.splitParentAndName
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 
 class SearchResultMatchListItemAdapter(
     context: Context,
     private val resource: Int,
     private val entry: DatasetEntryId,
-    private val matches: List<Pair<Path, FilesystemMetadata.EntityState>>,
-) : ArrayAdapter<Pair<Path, FilesystemMetadata.EntityState>>(context, resource, matches) {
+    private val matches: List<Pair<String, FilesystemMetadata.EntityState>>,
+) : ArrayAdapter<Pair<String, FilesystemMetadata.EntityState>>(context, resource, matches) {
+    private val filesystem: FileSystem = FileSystems.getDefault()
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val (path, state) = matches[position]
 
@@ -39,6 +42,8 @@ class SearchResultMatchListItemAdapter(
             is FilesystemMetadata.EntityState.Existing -> state.entry to R.drawable.ic_entity_state_existing
         }
 
+        val (entityParent, entityName) = path.splitParentAndName(filesystem)
+
         matchStateIcon.setImageResource(stateImage)
 
         matchName.text =
@@ -46,7 +51,7 @@ class SearchResultMatchListItemAdapter(
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
-                        content = path.fileName.toString(),
+                        content = entityName,
                         style = StyleSpan(Typeface.BOLD)
                     )
                 )
@@ -56,7 +61,7 @@ class SearchResultMatchListItemAdapter(
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
-                        content = path.parent.toAbsolutePath().toString(),
+                        content = entityParent,
                         style = StyleSpan(Typeface.NORMAL)
                     )
                 )
@@ -65,7 +70,7 @@ class SearchResultMatchListItemAdapter(
             parent.findNavController().navigate(
                 SearchFragmentDirections.actionSearchFragmentToDatasetEntryDetailsFragment(
                     entry = targetEntry,
-                    filter = path.toAbsolutePath().toString()
+                    filter = path
                 )
             )
         }

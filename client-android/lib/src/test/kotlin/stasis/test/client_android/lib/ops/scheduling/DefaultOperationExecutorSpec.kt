@@ -38,6 +38,7 @@ import stasis.test.client_android.lib.mocks.MockFileStaging
 import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
+import java.nio.file.FileSystems
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -134,7 +135,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                     compression = compression
                 ),
                 restrictions = { restrictions },
-                operationDispatcher = Dispatchers.IO
+                operationDispatcher = Dispatchers.IO,
+                filesystem = FileSystems.getDefault()
             )
         }
 

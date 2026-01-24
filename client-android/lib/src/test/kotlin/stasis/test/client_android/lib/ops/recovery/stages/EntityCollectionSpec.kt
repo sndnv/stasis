@@ -11,6 +11,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityCollection
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
@@ -18,26 +19,27 @@ import stasis.test.client_android.lib.mocks.MockRecoveryCollector
 import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
+import java.nio.file.FileSystems
 
 class EntityCollectionSpec : WordSpec({
     "A Recovery EntityCollection stage" should {
         "collect and filter files" {
             val targetFile1 = TargetEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path,
+                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileOneMetadata,
                 currentMetadata = null
             )
 
             val targetFile2 = TargetEntity(
-                path = Fixtures.Metadata.FileTwoMetadata.path,
+                path = Fixtures.Metadata.FileTwoMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileTwoMetadata,
                 currentMetadata = Fixtures.Metadata.FileTwoMetadata
             )
 
             val targetFile3 = TargetEntity(
-                path = Fixtures.Metadata.FileThreeMetadata.path,
+                path = Fixtures.Metadata.FileThreeMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileThreeMetadata,
                 currentMetadata = Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)
@@ -63,7 +65,8 @@ class EntityCollectionSpec : WordSpec({
             }
 
             val collectedFiles = stage.entityCollection(
-                operation = Operation.generateId()
+                operation = Operation.generateId(),
+                filesystem = FileSystems.getDefault()
             ).toList()
 
             collectedFiles shouldBe (listOf(targetFile1, targetFile3))

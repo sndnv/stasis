@@ -45,6 +45,7 @@ import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
@@ -128,7 +129,8 @@ class RecoverySpec : WordSpec({
                     targetMetadata = metadata,
                     query = null,
                     destination = destination,
-                    deviceSecret = secret
+                    deviceSecret = secret,
+                    filesystem = FileSystems.getDefault()
                 ),
                 providers = providers
             )
@@ -541,7 +543,8 @@ class RecoverySpec : WordSpec({
                     until = Instant.now()
                 ),
                 deviceSecret = secret,
-                providers = providers
+                providers = providers,
+                filesystem = FileSystems.getDefault()
             ).get()
 
             val descriptorWithEntry = Recovery.Descriptor(
@@ -551,7 +554,8 @@ class RecoverySpec : WordSpec({
                     entry = actualEntry.id
                 ),
                 deviceSecret = secret,
-                providers = providers
+                providers = providers,
+                filesystem = FileSystems.getDefault()
             ).get()
 
             descriptorWithDefinition.targetMetadata shouldBe (metadata)
@@ -595,7 +599,8 @@ class RecoverySpec : WordSpec({
                             until = Instant.now()
                         ),
                         deviceSecret = secret,
-                        providers = providers
+                        providers = providers,
+                        filesystem = FileSystems.getDefault()
                     ).get()
             }
 
@@ -623,7 +628,8 @@ class RecoverySpec : WordSpec({
                 targetMetadata = DatasetMetadata.empty(),
                 query = null,
                 destination = null,
-                deviceSecret = secret
+                deviceSecret = secret,
+                filesystem = FileSystems.getDefault()
             )
 
             descriptor.toRecoveryCollector(providers).shouldBeInstanceOf<DefaultRecoveryCollector>()
@@ -631,12 +637,14 @@ class RecoverySpec : WordSpec({
     }
 
     "Recovery path queries" should {
+        val fs = FileSystems.getDefault()
+
         "support checking for matches in paths" {
             matchingPathRegexes.forEach { regex ->
                 val query = Recovery.PathQuery.ForAbsolutePath(query = Regex(regex))
 
                 withClue("Matching path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath) shouldBe (true)
+                    query.matches(matchingPath.toString(), fs) shouldBe (true)
                 }
             }
         }
@@ -645,14 +653,14 @@ class RecoverySpec : WordSpec({
             matchingFileNameRegexes.forEach { regex ->
                 val query = Recovery.PathQuery.ForFileName(query = Regex(regex))
                 withClue("Matching file name in path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath) shouldBe (true)
+                    query.matches(matchingPath.toString(), fs) shouldBe (true)
                 }
             }
 
             nonMatchingPathRegexes.forEach { regex ->
                 val query = Recovery.PathQuery.ForFileName(query = Regex(regex))
                 withClue("Matching file name in path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath) shouldBe (false)
+                    query.matches(matchingPath.toString(), fs) shouldBe (false)
                 }
             }
         }
@@ -672,18 +680,17 @@ class RecoverySpec : WordSpec({
 
             val recoveryDestination = Recovery.Destination(
                 path = "/tmp/test/path",
-                keepStructure = false,
-                filesystem = filesystem
+                keepStructure = false
             )
 
-            recoveryDestination.toTargetEntityDestination() shouldBe (
+            recoveryDestination.toTargetEntityDestination(filesystem) shouldBe (
                     TargetEntity.Destination.Directory(
                         path = filesystem.getPath(recoveryDestination.path),
                         keepDefaultStructure = recoveryDestination.keepStructure
                     )
                     )
 
-            null.toTargetEntityDestination() shouldBe (TargetEntity.Destination.Default)
+            null.toTargetEntityDestination(filesystem) shouldBe (TargetEntity.Destination.Default)
         }
     }
 })

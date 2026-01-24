@@ -17,6 +17,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.clear
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
@@ -29,22 +30,23 @@ import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
-import java.nio.file.Paths
+import java.nio.file.FileSystems
 import java.util.UUID
 
 class EntityProcessingSpec : WordSpec({
     "A Recovery EntityProcessing stage" should {
         "extract part IDs from a path" {
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=1")) shouldBe (1)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=12324")) shouldBe (12324)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=0")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=-1")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a_")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a")) shouldBe (0)
-            EntityProcessing.partIdFromPath(Paths.get("/tmp/a__part=other")) shouldBe (0)
+            val fs = FileSystems.getDefault()
+            EntityProcessing.partIdFromPath("/tmp/a__part=1", fs) shouldBe (1)
+            EntityProcessing.partIdFromPath("/tmp/a__part=12324", fs) shouldBe (12324)
+            EntityProcessing.partIdFromPath("/tmp/a__part=0", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a__part=-1", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a__part=", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a__part", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a__", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a_", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a", fs) shouldBe (0)
+            EntityProcessing.partIdFromPath("/tmp/a__part=other", fs) shouldBe (0)
         }
 
         "process files and directories with changed content and metadata" {
@@ -66,10 +68,10 @@ class EntityProcessingSpec : WordSpec({
                 )
                 .copy(
                     crates = mapOf(
-                        Paths.get("${targetFile4Path}__part=0") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=1") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=2") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=3") to UUID.randomUUID()
+                        "${targetFile4Path}__part=0" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=1" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=2" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=3" to UUID.randomUUID()
                     )
                 )
 
@@ -81,14 +83,14 @@ class EntityProcessingSpec : WordSpec({
             targetDirectoryDestination.clear()
 
             val targetFile2 = TargetEntity(
-                path = targetFile2Metadata.path,
+                path = targetFile2Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile2Metadata,
                 currentMetadata = targetFile2Metadata.copy(isHidden = true)
             )
 
             val targetFile3 = TargetEntity(
-                path = targetFile3Metadata.path,
+                path = targetFile3Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
                     keepDefaultStructure = false
@@ -98,14 +100,14 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path,
+                path = targetFile4Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
             )
 
             val targetDirectory = TargetEntity(
-                path = targetDirectoryMetadata.path,
+                path = targetDirectoryMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
                     keepDefaultStructure = true
@@ -115,7 +117,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val ignoredDirectory = TargetEntity(
-                path = ignoredDirectoryMetadata.path,
+                path = ignoredDirectoryMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
                     keepDefaultStructure = false
@@ -206,7 +208,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val targetFile1 = TargetEntity(
-                path = targetFile1Metadata.path,
+                path = targetFile1Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile1Metadata,
                 currentMetadata = targetFile1Metadata.copy(checksum = BigInteger("9999"))
@@ -274,7 +276,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val targetFile1 = TargetEntity(
-                path = targetFile1Metadata.path,
+                path = targetFile1Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile1Metadata,
                 currentMetadata = targetFile1Metadata.copy(checksum = BigInteger("9999"))
@@ -341,7 +343,7 @@ class EntityProcessingSpec : WordSpec({
 
         "fail if unexpected target entity metadata is provided" {
             val entity = TargetEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path,
+                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
                 currentMetadata = null
@@ -363,14 +365,14 @@ class EntityProcessingSpec : WordSpec({
                 )
                 .copy(
                     crates = mapOf(
-                        Paths.get("${targetFile4Path}__part=0") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=1") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=2") to UUID.randomUUID(),
-                        Paths.get("${targetFile4Path}__part=5") to UUID.randomUUID()
+                        "${targetFile4Path}__part=0" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=1" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=2" to UUID.randomUUID(),
+                        "${targetFile4Path}__part=5" to UUID.randomUUID()
                     )
                 )
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path,
+                path = targetFile4Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
@@ -436,7 +438,7 @@ class EntityProcessingSpec : WordSpec({
                 )
                 .copy(crates = emptyMap())
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path,
+                path = targetFile4Metadata.path.asPath(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))

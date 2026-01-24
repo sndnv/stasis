@@ -20,8 +20,8 @@ class RecoveryMetadataCollectorSpec : WordSpec({
                 checksum = Checksum.Companion.MD5
             )
 
-            val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
-            val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
+            val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2.toString())
+            val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3.toString())
 
             val targetFile2 = collector.collect(
                 entity = file2,

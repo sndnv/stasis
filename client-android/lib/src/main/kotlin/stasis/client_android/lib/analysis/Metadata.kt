@@ -75,12 +75,12 @@ object Metadata {
     suspend fun collectEntityMetadata(
         currentMetadata: BaseEntityMetadata,
         checksum: Checksum,
-        collectCrates: (BigInteger) -> Map<Path, CrateId>,
+        collectCrates: (BigInteger) -> Map<String, CrateId>,
         collectCompression: () -> String
     ): EntityMetadata = if (currentMetadata.isDirectory) {
         EntityMetadata.Directory(
-            path = currentMetadata.path,
-            link = currentMetadata.link,
+            path = currentMetadata.path.toAbsolutePath().toString(),
+            link = currentMetadata.link?.toAbsolutePath()?.toString(),
             isHidden = currentMetadata.isHidden,
             created = currentMetadata.created,
             updated = currentMetadata.updated,
@@ -93,9 +93,9 @@ object Metadata {
         val crates = collectCrates(currentChecksum)
 
         EntityMetadata.File(
-            path = currentMetadata.path,
+            path = currentMetadata.path.toAbsolutePath().toString(),
             size = currentMetadata.attributes.size(),
-            link = currentMetadata.link,
+            link = currentMetadata.link?.toAbsolutePath()?.toString(),
             isHidden = currentMetadata.isHidden,
             created = currentMetadata.created,
             updated = currentMetadata.updated,
@@ -111,7 +111,7 @@ object Metadata {
     fun collectCratesForSourceFile(
         existingMetadata: EntityMetadata?,
         currentChecksum: BigInteger
-    ): Map<Path, CrateId> = when (existingMetadata) {
+    ): Map<String, CrateId> = when (existingMetadata) {
         is EntityMetadata.File -> if (existingMetadata.checksum == currentChecksum) {
             existingMetadata.crates
         } else {
@@ -125,7 +125,7 @@ object Metadata {
 
     fun collectCratesForTargetFile(
         existingMetadata: EntityMetadata
-    ): Map<Path, CrateId> = when (existingMetadata) {
+    ): Map<String, CrateId> = when (existingMetadata) {
         is EntityMetadata.File -> existingMetadata.crates
         is EntityMetadata.Directory -> throw IllegalArgumentException(
             "Expected metadata for file but directory metadata for [${existingMetadata.path}] provided"

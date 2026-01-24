@@ -14,6 +14,7 @@ import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -59,14 +60,14 @@ class EntityDiscoverySpec : WordSpec({
                         Rule(
                             id = 0,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory1Metadata.path.toAbsolutePath().toString(),
+                            directory = sourceDirectory1Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         ),
                         Rule(
                             id = 1,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory2Metadata.path.toAbsolutePath().toString(),
+                            directory = sourceDirectory2Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         )
@@ -198,10 +199,10 @@ class EntityDiscoverySpec : WordSpec({
                             discovered = setOf(
                                 sourceFile1,
                                 sourceFile2,
-                                Fixtures.Metadata.FileThreeMetadata.path
+                                Fixtures.Metadata.FileThreeMetadata.path.asPath()
                             ),
                             processed = mapOf(
-                                Fixtures.Metadata.FileThreeMetadata.path to BackupState.ProcessedSourceEntity(
+                                Fixtures.Metadata.FileThreeMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
                                     expectedParts = 1,
                                     processedParts = 1,
                                     metadata = Either.Left(Fixtures.Metadata.FileThreeMetadata)

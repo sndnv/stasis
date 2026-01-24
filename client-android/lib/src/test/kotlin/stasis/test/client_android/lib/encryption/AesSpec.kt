@@ -28,7 +28,7 @@ class AesSpec : WordSpec({
         val encryptionKey = "QBqEu8Kh6iFGpbgYUWADXRfkVa6wUy5w"
 
         val fileSecret = DeviceFileSecret(
-            file = plaintextFile,
+            file = plaintextFile.toString(),
             iv = encryptionIv.decodeBase64()!!,
             key = encryptionKey.decodeBase64()!!
         )

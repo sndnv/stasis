@@ -13,7 +13,6 @@ import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.server.devices.DeviceId
 import stasis.client_android.lib.model.server.users.UserId
 import java.math.BigInteger
-import java.nio.file.Path
 
 data class DeviceSecret(
     val user: UserId,
@@ -28,14 +27,13 @@ data class DeviceSecret(
             ).buffer().use { it.readByteString() }
         }
 
-    fun toFileSecret(forFile: Path, checksum: BigInteger): DeviceFileSecret {
-        val filePath = forFile.toAbsolutePath().toString()
+    fun toFileSecret(forFile: String, checksum: BigInteger): DeviceFileSecret {
         val checksumInfo = checksum.toString(ChecksumInfoRadix)
 
-        val salt = user.toBytes() + device.toBytes() + filePath.encodeToByteArray()
+        val salt = user.toBytes() + device.toBytes() + forFile.encodeToByteArray()
 
-        val keyInfo = "$user-$device-$filePath-$checksumInfo-key".encodeUtf8()
-        val ivInfo = "$user-$device-$filePath-$checksumInfo-iv".encodeUtf8()
+        val keyInfo = "$user-$device-$forFile-$checksumInfo-key".encodeUtf8()
+        val ivInfo = "$user-$device-$forFile-$checksumInfo-iv".encodeUtf8()
 
         val hkdf = HKDF.fromHmacSha512()
 

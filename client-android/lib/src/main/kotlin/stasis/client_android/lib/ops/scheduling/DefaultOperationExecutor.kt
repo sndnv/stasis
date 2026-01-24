@@ -13,6 +13,7 @@ import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.tracking.state.OperationState
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -27,6 +28,7 @@ class DefaultOperationExecutor(
     private val backupProviders: BackupProviders,
     private val recoveryProviders: RecoveryProviders,
     private val restrictions: (Operation.Type) -> List<Operation.Restriction>,
+    private val filesystem: FileSystem,
     operationDispatcher: CoroutineDispatcher
 ) : OperationExecutor {
     private val operationScope = CoroutineScope(operationDispatcher)
@@ -175,7 +177,8 @@ class DefaultOperationExecutor(
             query = query,
             destination = destination,
             deviceSecret = deviceSecret(),
-            providers = recoveryProviders
+            providers = recoveryProviders,
+            filesystem = filesystem
         )
 
         val operationId = when (descriptor) {
@@ -213,7 +216,8 @@ class DefaultOperationExecutor(
             query = query,
             destination = destination,
             deviceSecret = deviceSecret(),
-            providers = recoveryProviders
+            providers = recoveryProviders,
+            filesystem = filesystem
         )
 
         val operationId = when (descriptor) {
