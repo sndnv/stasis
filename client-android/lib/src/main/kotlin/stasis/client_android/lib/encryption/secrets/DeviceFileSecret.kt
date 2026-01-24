@@ -4,10 +4,9 @@ import okio.ByteString
 import okio.Sink
 import okio.Source
 import stasis.client_android.lib.encryption.Aes
-import java.nio.file.Path
 
 data class DeviceFileSecret(
-    val file: Path,
+    val file: String,
     val iv: ByteString,
     private val key: ByteString
 ) : Secret() {

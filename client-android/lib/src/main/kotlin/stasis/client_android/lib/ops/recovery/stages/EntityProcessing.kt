@@ -17,7 +17,9 @@ import stasis.client_android.lib.ops.recovery.stages.internal.DecryptedCrates.de
 import stasis.client_android.lib.ops.recovery.stages.internal.DestagedByteStringSource.destage
 import stasis.client_android.lib.ops.recovery.stages.internal.MergedCrates.merged
 import stasis.client_android.lib.utils.NonFatal.nonFatal
+import stasis.client_android.lib.utils.StringPaths.extractName
 import stasis.client_android.lib.utils.Try
+import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileAttribute
@@ -121,7 +123,7 @@ interface EntityProcessing {
         return entity
     }
 
-    private suspend fun pull(crates: Map<Path, CrateId>, entity: Path): List<Triple<Int, Path, suspend () -> Source>> {
+    private suspend fun pull(crates: Map<String, CrateId>, entity: Path): List<Triple<Int, String, suspend () -> Source>> {
         val sources = crates.map { (partPath, crate) ->
             val source = suspend {
                 when (val source = providers.clients.core.pull(crate)) {
@@ -130,7 +132,7 @@ interface EntityProcessing {
                 }
             }
 
-            Triple(partIdFromPath(partPath), partPath, source)
+            Triple(partIdFromPath(partPath, entity.fileSystem), partPath, source)
         }
 
         val lastPartId = sources.maxOfOrNull { it.first } ?: 0
@@ -144,8 +146,8 @@ interface EntityProcessing {
     companion object {
         private val pathPartId: Regex = ".*__part=(\\d+)".toRegex()
 
-        fun partIdFromPath(path: Path): Int =
-            pathPartId.find(path.fileName.toString())?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+        fun partIdFromPath(path: String, fs: FileSystem): Int =
+            pathPartId.find(path.extractName(fs))?.groups?.get(1)?.value?.toIntOrNull() ?: 0
 
         fun expectFileMetadata(entity: TargetEntity): EntityMetadata.File {
             return when (entity.existingMetadata) {

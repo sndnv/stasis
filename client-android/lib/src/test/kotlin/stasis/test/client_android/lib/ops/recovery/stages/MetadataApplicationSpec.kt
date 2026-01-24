@@ -22,7 +22,6 @@ import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.LinkOption
-import java.nio.file.Paths
 import java.nio.file.attribute.PosixFileAttributes
 import java.time.Instant
 import java.util.UUID
@@ -33,10 +32,11 @@ class MetadataApplicationSpec : WordSpec({
             val targetFile = Files.createTempFile("metadata-target-file", "")
             targetFile.toFile().deleteOnExit()
 
-            val attributes = Files.readAttributes(targetFile, PosixFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+            val attributes =
+                Files.readAttributes(targetFile, PosixFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
 
             val metadata = EntityMetadata.File(
-                path = targetFile,
+                path = targetFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -46,7 +46,7 @@ class MetadataApplicationSpec : WordSpec({
                 group = attributes.group().name,
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${targetFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 
@@ -64,7 +64,7 @@ class MetadataApplicationSpec : WordSpec({
             }
 
             val target = TargetEntity(
-                path = metadata.path,
+                path = targetFile,
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = metadata,
                 currentMetadata = null

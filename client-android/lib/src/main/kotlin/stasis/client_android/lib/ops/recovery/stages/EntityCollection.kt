@@ -7,14 +7,15 @@ import stasis.client_android.lib.collection.RecoveryCollector
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.recovery.Providers
+import java.nio.file.FileSystem
 
 interface EntityCollection {
     val collector: RecoveryCollector
     val providers: Providers
 
-    fun entityCollection(operation: OperationId): Flow<TargetEntity> =
+    fun entityCollection(operation: OperationId, filesystem: FileSystem): Flow<TargetEntity> =
         collector
-            .collect()
+            .collect(filesystem)
             .onEach { entity ->
                 providers.track.entityExamined(
                     operation = operation,

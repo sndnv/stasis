@@ -614,7 +614,7 @@ class CommonSpec {
     }
 
     private val fileMetadata = EntityMetadata.File(
-        path = Paths.get("/tmp/file/one"),
+        path = "/tmp/file/one",
         size = 15 * 1024L,
         link = null,
         isHidden = false,
@@ -625,13 +625,13 @@ class CommonSpec {
         permissions = "rwxrwxrwx",
         checksum = BigInteger("1"),
         crates = mapOf(
-            Paths.get("/tmp/file/one_0") to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+            "/tmp/file/one_0" to UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
         ),
         compression = "none"
     )
 
     private val directoryMetadata = EntityMetadata.Directory(
-        path = Paths.get("/tmp/directory/one"),
+        path = "/tmp/directory/one",
         link = null,
         isHidden = false,
         created = Instant.now().minusSeconds(42).truncatedTo(ChronoUnit.SECONDS),

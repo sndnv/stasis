@@ -17,8 +17,8 @@ class BackupMetadataCollectorSpec : WordSpec({
             val file2 = "/collection/file-2".asTestResource()
             val file3 = "/collection/file-3".asTestResource()
 
-            val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
-            val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
+            val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2.toString())
+            val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3.toString())
 
             val collector = BackupMetadataCollector.Default(
                 checksum = Checksum.Companion.MD5,

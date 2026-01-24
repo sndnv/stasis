@@ -12,6 +12,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityCollection
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.mocks.MockBackupCollector
 import stasis.test.client_android.lib.mocks.MockBackupTracker
 import stasis.test.client_android.lib.mocks.MockCompression
@@ -24,19 +25,19 @@ class EntityCollectionSpec : WordSpec({
     "A Backup EntityCollection stage" should {
         "collect and filter files" {
             val sourceFile1 = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path,
+                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata
             )
 
             val sourceFile2 = SourceEntity(
-                path = Fixtures.Metadata.FileTwoMetadata.path,
+                path = Fixtures.Metadata.FileTwoMetadata.path.asPath(),
                 existingMetadata = Fixtures.Metadata.FileTwoMetadata,
                 currentMetadata = Fixtures.Metadata.FileTwoMetadata
             )
 
             val sourceFile3 = SourceEntity(
-                path = Fixtures.Metadata.FileThreeMetadata.path,
+                path = Fixtures.Metadata.FileThreeMetadata.path.asPath(),
                 existingMetadata = Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true),
                 currentMetadata = Fixtures.Metadata.FileThreeMetadata
             )

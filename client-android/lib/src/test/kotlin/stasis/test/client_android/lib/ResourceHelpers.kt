@@ -16,14 +16,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID
-import kotlin.streams.toList
 
 object ResourceHelpers {
+    fun String.asPath(): Path =
+        Paths.get(this)
+
     fun String.asTestResource(): Path {
-        return Paths.get(ResourceHelpers.javaClass.getResource(this).path)
+        return Paths.get(ResourceHelpers.javaClass.getResource(this)!!.path)
     }
 
-    fun Path.write(content: String): Unit {
+    fun Path.write(content: String) {
         require(!Files.isDirectory(this)) { "Expected [$this] to be a file" }
 
         this.sink().buffer().use { sink ->
@@ -39,7 +41,7 @@ object ResourceHelpers {
         }
     }
 
-    suspend fun Path.clear(): Unit {
+    suspend fun Path.clear() {
         require(Files.isDirectory(this)) { "Expected [$this] to be a directory" }
 
         val resourcePathAsString = this.toAbsolutePath().toString()
@@ -86,9 +88,9 @@ object ResourceHelpers {
         require(!baseMetadata.isDirectory) { "Expected [$this] to be a file" }
 
         return EntityMetadata.File(
-            path = baseMetadata.path,
+            path = baseMetadata.path.toAbsolutePath().toString(),
             size = baseMetadata.attributes.size(),
-            link = baseMetadata.link,
+            link = baseMetadata.link?.toAbsolutePath().toString(),
             isHidden = baseMetadata.isHidden,
             created = baseMetadata.created,
             updated = baseMetadata.updated,
@@ -96,7 +98,7 @@ object ResourceHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = withChecksum,
-            crates = mapOf(baseMetadata.path to withCrate),
+            crates = mapOf(baseMetadata.path.toAbsolutePath().toString() to withCrate),
             compression = "none"
         )
     }
@@ -106,8 +108,8 @@ object ResourceHelpers {
         require(baseMetadata.isDirectory) { "Expected [$this] to be a directory" }
 
         return EntityMetadata.Directory(
-            path = baseMetadata.path,
-            link = baseMetadata.link,
+            path = baseMetadata.path.toAbsolutePath().toAbsolutePath().toString(),
+            link = baseMetadata.link?.toAbsolutePath()?.toAbsolutePath()?.toString(),
             isHidden = baseMetadata.isHidden,
             created = baseMetadata.created,
             updated = baseMetadata.updated,
@@ -124,9 +126,9 @@ object ResourceHelpers {
         require(!baseMetadata.isDirectory) { "Expected [$this] to be a file" }
 
         return EntityMetadata.File(
-            path = baseMetadata.path,
+            path = baseMetadata.path.toAbsolutePath().toString(),
             size = baseMetadata.attributes.size(),
-            link = baseMetadata.link,
+            link = baseMetadata.link?.toAbsolutePath()?.toString(),
             isHidden = baseMetadata.isHidden,
             created = baseMetadata.created,
             updated = baseMetadata.updated,
@@ -134,30 +136,30 @@ object ResourceHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = calculatedChecksum,
-            crates = mapOf(baseMetadata.path to UUID.randomUUID()),
+            crates = mapOf(baseMetadata.path.toAbsolutePath().toString() to UUID.randomUUID()),
             compression = "gzip"
         )
     }
 
     fun EntityMetadata.File.withFilesystem(filesystem: FileSystem): EntityMetadata.File =
-        this.copy(path = filesystem.getPath(this.path.toAbsolutePath().toString()))
+        this.copy(path = filesystem.getPath(this.path).toAbsolutePath().toString())
 
     fun EntityMetadata.File.withRootAt(path: String): EntityMetadata.File {
-        val originalPath = this.path.toString()
+        val originalPath = this.path
 
         val updatedPath = when (val remainingPath = originalPath.split(path).lastOrNull()) {
             null -> "$path$originalPath"
             else -> "$path$remainingPath"
         }
 
-        return this.copy(path = this.path.fileSystem.getPath(updatedPath))
+        return this.copy(path = updatedPath)
     }
 
     fun EntityMetadata.Directory.withFilesystem(filesystem: FileSystem): EntityMetadata.Directory =
-        this.copy(path = filesystem.getPath(this.path.toAbsolutePath().toString()))
+        this.copy(path = filesystem.getPath(this.path).toAbsolutePath().toString())
 
     fun EntityMetadata.Directory.withRootAt(path: String): EntityMetadata.Directory {
-        val originalPath = this.path.toString()
+        val originalPath = this.path
 
         val updatedPath = if (originalPath.endsWith(path)) {
             path
@@ -168,7 +170,7 @@ object ResourceHelpers {
             }
         }
 
-        return this.copy(path = this.path.fileSystem.getPath(updatedPath))
+        return this.copy(path = updatedPath)
     }
 
     fun createMockFileSystem(setup: FileSystemSetup): Pair<FileSystem, FileSystemObjects> {

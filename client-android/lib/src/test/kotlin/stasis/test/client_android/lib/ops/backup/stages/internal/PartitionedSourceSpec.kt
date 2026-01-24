@@ -54,7 +54,7 @@ class PartitionedSourceSpec : WordSpec({
                 providers = providers,
                 withPartSecret = {
                     Fixtures.Secrets.Default.toFileSecret(
-                        "/ops/source-file-1".asTestResource(),
+                        "/ops/source-file-1".asTestResource().toString(),
                         BigInteger.valueOf(1)
                     )
                 },
@@ -121,7 +121,7 @@ class PartitionedSourceSpec : WordSpec({
                 providers = providers,
                 withPartSecret = {
                     Fixtures.Secrets.Default.toFileSecret(
-                        "/ops/source-file-1".asTestResource(),
+                        "/ops/source-file-1".asTestResource().toString(),
                         BigInteger.valueOf(1)
                     )
                 },

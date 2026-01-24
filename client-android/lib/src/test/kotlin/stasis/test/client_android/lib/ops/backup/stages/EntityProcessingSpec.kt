@@ -21,6 +21,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
 import stasis.test.client_android.lib.mocks.MockBackupTracker
@@ -37,7 +38,7 @@ class EntityProcessingSpec : WordSpec({
     "A Backup EntityProcessing stage" should {
         "extract and expect file metadata" {
             val entity = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path,
+                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata
             )
@@ -47,7 +48,7 @@ class EntityProcessingSpec : WordSpec({
 
         "fail if unexpected target entity metadata is provided" {
             val entity = SourceEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path,
+                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
             )
@@ -61,19 +62,19 @@ class EntityProcessingSpec : WordSpec({
 
         "calculate expected parts for an entity" {
             val fileEntity = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path,
+                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 10)
             )
 
             val directoryEntity = SourceEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path,
+                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
             )
 
             val fileEntityWithoutChanges = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path,
+                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                 existingMetadata = Fixtures.Metadata.FileOneMetadata,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata
             )
@@ -120,19 +121,19 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path,
+                path = sourceFile1Metadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
 
             val sourceFile2 = SourceEntity(
-                path = sourceFile2Metadata.path,
+                path = sourceFile2Metadata.path.asPath(),
                 existingMetadata = sourceFile2Metadata.copy(isHidden = true),
                 currentMetadata = sourceFile2Metadata
             )
 
             val sourceFile3 = SourceEntity(
-                path = sourceFile3Metadata.path,
+                path = sourceFile3Metadata.path.asPath(),
                 existingMetadata = sourceFile3Metadata.copy(checksum = BigInteger("9999")),
                 currentMetadata = sourceFile3Metadata
             )
@@ -229,7 +230,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val largeSourceFile = SourceEntity(
-                path = largeSourceFileMetadata.path,
+                path = largeSourceFileMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = largeSourceFileMetadata
             )
@@ -314,7 +315,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path,
+                path = sourceFile1Metadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
@@ -393,7 +394,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path,
+                path = sourceFile1Metadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
@@ -468,7 +469,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val largeSourceFile = SourceEntity(
-                path = largeSourceFileMetadata.path,
+                path = largeSourceFileMetadata.path.asPath(),
                 existingMetadata = null,
                 currentMetadata = largeSourceFileMetadata
             )

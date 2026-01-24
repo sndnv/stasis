@@ -21,14 +21,13 @@ import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toT
 import stasis.client_android.lib.ops.recovery.stages.EntityCollection
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.client_android.lib.ops.recovery.stages.MetadataApplication
+import stasis.client_android.lib.utils.StringPaths.extractName
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
 import java.nio.file.FileSystem
-import java.nio.file.FileSystems
-import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
@@ -49,7 +48,7 @@ class Recovery(
             try {
                 providers.track.started(operation = id)
 
-                stages.entityCollection(id)
+                stages.entityCollection(id, descriptor.filesystem)
                     .let { flow -> stages.entityProcessing(id, flow) }
                     .let { flow -> stages.metadataApplication(id, flow) }
                     .collect()
@@ -89,13 +88,14 @@ class Recovery(
         val targetMetadata: DatasetMetadata,
         val query: PathQuery?,
         val destination: Destination?,
-        val deviceSecret: DeviceSecret
+        val deviceSecret: DeviceSecret,
+        val filesystem: FileSystem
     ) {
         fun toRecoveryCollector(providers: Providers): RecoveryCollector =
             DefaultRecoveryCollector(
                 targetMetadata = targetMetadata,
-                keep = { entity, _ -> query?.matches(entity.toAbsolutePath()) ?: true },
-                destination = destination.toTargetEntityDestination(),
+                keep = { entity, _ -> query?.matches(entity, filesystem) ?: true },
+                destination = destination.toTargetEntityDestination(filesystem),
                 metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
                 clients = providers.clients
             )
@@ -113,7 +113,8 @@ class Recovery(
                 destination: Destination?,
                 collector: Collector,
                 deviceSecret: DeviceSecret,
-                providers: Providers
+                providers: Providers,
+                filesystem: FileSystem
             ): Try<Descriptor> {
                 val entry = when (collector) {
                     is Collector.WithDefinition -> providers.clients.api.latestEntry(
@@ -139,7 +140,8 @@ class Recovery(
                             targetMetadata = metadata,
                             query = query,
                             destination = destination,
-                            deviceSecret = deviceSecret
+                            deviceSecret = deviceSecret,
+                            filesystem = filesystem
                         )
                     }
             }
@@ -147,7 +149,7 @@ class Recovery(
     }
 
     sealed class PathQuery {
-        abstract fun matches(path: Path): Boolean
+        abstract fun matches(path: String, filesystem: FileSystem): Boolean
 
         companion object {
             operator fun invoke(query: String): PathQuery =
@@ -159,30 +161,22 @@ class Recovery(
         }
 
         data class ForAbsolutePath(val query: Regex) : PathQuery() {
-            override fun matches(path: Path): Boolean =
-                query.toPattern().matcher(path.toAbsolutePath().toString()).find()
+            override fun matches(path: String, filesystem: FileSystem): Boolean =
+                query.toPattern().matcher(path).find()
         }
 
         data class ForFileName(val query: Regex) : PathQuery() {
-            override fun matches(path: Path): Boolean =
-                query.toPattern().matcher(path.fileName.toString()).find()
+            override fun matches(path: String, filesystem: FileSystem): Boolean =
+                query.toPattern().matcher(path.extractName(filesystem)).find()
         }
     }
 
     data class Destination(
         val path: String,
         val keepStructure: Boolean,
-        val filesystem: FileSystem
     ) {
         companion object {
-            operator fun invoke(path: String, keepStructure: Boolean): Destination =
-                Destination(
-                    path = path,
-                    keepStructure = keepStructure,
-                    filesystem = FileSystems.getDefault()
-                )
-
-            fun Destination?.toTargetEntityDestination(): TargetEntity.Destination =
+            fun Destination?.toTargetEntityDestination(filesystem: FileSystem): TargetEntity.Destination =
                 when (this) {
                     null -> TargetEntity.Destination.Default
                     else -> TargetEntity.Destination.Directory(

@@ -11,12 +11,13 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import java.util.UUID
 
 class BackupStateSpec : WordSpec({
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath()
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath()
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath()
 
     val sourceEntity1 = SourceEntity(
         path = entity1,
@@ -123,15 +124,15 @@ class BackupStateSpec : WordSpec({
             val backup = BackupState
                 .start(operation = Operation.generateId(), definition = UUID.randomUUID())
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileOneMetadata.path,
+                    entity = Fixtures.Metadata.FileOneMetadata.path.asPath(),
                     metadata = Either.Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
                 )
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileTwoMetadata.path,
+                    entity = Fixtures.Metadata.FileTwoMetadata.path.asPath(),
                     metadata = Either.Left(Fixtures.Metadata.FileTwoMetadata) // content changed
                 )
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileThreeMetadata.path,
+                    entity = Fixtures.Metadata.FileThreeMetadata.path.asPath(),
                     metadata = Either.Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
                 )
 

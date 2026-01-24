@@ -27,7 +27,6 @@ import stasis.client_android.lib.utils.Try
 import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.UUID
 import kotlin.math.min
 
@@ -89,7 +88,7 @@ interface EntityProcessing {
 
         discard(staged)
 
-        return file.copy(crates = crates.toMap())
+        return file.copy(crates = crates.associate { it.first to it.second })
     }
 
     suspend fun processMetadataChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {
@@ -101,7 +100,7 @@ interface EntityProcessing {
         operation: OperationId,
         entity: SourceEntity,
         checksum: BigInteger
-    ): List<Pair<Path, Path>> = withContext(Dispatchers.IO) {
+    ): List<Pair<String, Path>> = withContext(Dispatchers.IO) {
         providers.track.entityProcessingStarted(
             operation = operation,
             entity = entity.path,
@@ -110,7 +109,7 @@ interface EntityProcessing {
 
         fun createPartSecret(partId: Int): DeviceFileSecret =
             deviceSecret.toFileSecret(
-                forFile = Paths.get("${entity.path.toAbsolutePath()}__part=$partId"),
+                forFile = "${entity.path.toAbsolutePath()}__part=$partId",
                 checksum = checksum
             )
 
@@ -128,7 +127,7 @@ interface EntityProcessing {
         ).partitionAndStage()
     }
 
-    suspend fun push(staged: List<Pair<Path, Path>>): List<Pair<Path, CrateId>> =
+    suspend fun push(staged: List<Pair<String, Path>>): List<Pair<String, CrateId>> =
         try {
             staged
                 .map { (partFile, staged) ->
@@ -155,7 +154,7 @@ interface EntityProcessing {
             throw e
         }
 
-    suspend fun discard(staged: List<Pair<Path, Path>>) {
+    suspend fun discard(staged: List<Pair<String, Path>>) {
         staged.forEach { (_, staged) ->
             providers.staging.discard(staged)
         }

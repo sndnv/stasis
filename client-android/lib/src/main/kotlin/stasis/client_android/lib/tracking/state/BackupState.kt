@@ -109,9 +109,9 @@ data class BackupState(
             else -> emptyList()
         }
 
-    fun asMetadataChanges(): Pair<Map<Path, EntityMetadata>, Map<Path, EntityMetadata>> {
-        val contentChanged = mutableMapOf<Path, EntityMetadata>()
-        val metadataChanged = mutableMapOf<Path, EntityMetadata>()
+    fun asMetadataChanges(): Pair<Map<String, EntityMetadata>, Map<String, EntityMetadata>> {
+        val contentChanged = mutableMapOf<String, EntityMetadata>()
+        val metadataChanged = mutableMapOf<String, EntityMetadata>()
 
         entities.processed.forEach { (_, processed) ->
             when (processed.metadata) {

@@ -23,6 +23,7 @@ data class RecoveryConfig(
                 } else {
                     ValidationResult.MissingEntry
                 }
+
                 is RecoverySource.Until -> ValidationResult.Valid
             }
         }
@@ -38,6 +39,7 @@ data class RecoveryConfig(
                     f = f
                 )
             }
+
             is RecoverySource.Entry -> {
                 withExecutor.startRecoveryWithEntry(
                     entry = recoveryEntry,
@@ -46,6 +48,7 @@ data class RecoveryConfig(
                     f = f
                 )
             }
+
             is RecoverySource.Until -> {
                 withExecutor.startRecoveryWithDefinition(
                     definition = recoveryDefinition,
@@ -71,6 +74,7 @@ data class RecoveryConfig(
                     require(source.entry != null) { "Unexpected empty source entry encountered" }
                     return source.entry
                 }
+
                 else -> throw IllegalArgumentException("Unexpected recovery source encountered: [${source.javaClass.simpleName}]")
             }
         }

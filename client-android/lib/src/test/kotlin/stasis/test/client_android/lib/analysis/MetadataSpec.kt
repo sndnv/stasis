@@ -11,6 +11,7 @@ import stasis.client_android.lib.analysis.Metadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.mocks.MockCompression
 import java.math.BigInteger
@@ -138,7 +139,7 @@ class MetadataSpec : WordSpec({
             val sourceFile = "/$sourceFileResourcesPath".asTestResource()
 
             val expectedCratePart = Paths.get("${sourceFile}_0")
-            val expectedCrateId = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+            val expectedCrateId = UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
             val expectedChecksum = BigInteger("338496524657487844672953225842489206917")
 
             val baseMetadata = Metadata.extractBaseEntityMetadata(
@@ -148,7 +149,7 @@ class MetadataSpec : WordSpec({
             val actualFileMetadata = Metadata.collectEntityMetadata(
                 currentMetadata = baseMetadata,
                 checksum = Checksum.Companion.MD5,
-                collectCrates = { mapOf(expectedCratePart to expectedCrateId) },
+                collectCrates = { mapOf(expectedCratePart.toString() to expectedCrateId) },
                 collectCompression = { "test" }
             )
 
@@ -164,7 +165,7 @@ class MetadataSpec : WordSpec({
 
                     actualFileMetadata.size shouldBe (26)
                     actualFileMetadata.checksum shouldBe (expectedChecksum)
-                    actualFileMetadata.crates shouldBe (mapOf(expectedCratePart to expectedCrateId))
+                    actualFileMetadata.crates shouldBe (mapOf(expectedCratePart.toString() to expectedCrateId))
                     actualFileMetadata.compression shouldBe ("test")
                 }
 
@@ -189,7 +190,7 @@ class MetadataSpec : WordSpec({
             )
             when (actualDirectoryMetadata) {
                 is EntityMetadata.Directory -> {
-                    actualDirectoryMetadata.path.endsWith(sourceDirectoryResourcesPath) shouldBe (true)
+                    actualDirectoryMetadata.path.endsWith(sourceDirectoryResourcesPath.trim('/')) shouldBe (true)
                     actualDirectoryMetadata.link shouldBe (null)
                     actualDirectoryMetadata.isHidden shouldBe (false)
                     actualDirectoryMetadata.updated shouldBeGreaterThan (Instant.MIN)
@@ -212,7 +213,7 @@ class MetadataSpec : WordSpec({
                 Files.readAttributes(targetFile, PosixFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
 
             val metadata = EntityMetadata.File(
-                path = targetFile,
+                path = targetFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -222,12 +223,12 @@ class MetadataSpec : WordSpec({
                 group = attributes.group().name,
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${targetFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 
             val metadataBeforeApplication = Metadata.extractBaseEntityMetadata(entity = targetFile)
-            Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path)
+            Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path.asPath())
 
             val metadataAfterApplication = Metadata.extractBaseEntityMetadata(entity = targetFile)
 
@@ -248,7 +249,7 @@ class MetadataSpec : WordSpec({
                 Files.readAttributes(targetDirectory, PosixFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
 
             val metadata = EntityMetadata.Directory(
-                path = targetDirectory,
+                path = targetDirectory.toString(),
                 link = null,
                 isHidden = false,
                 created = Instant.parse("2020-01-01T00:00:00Z"),
@@ -259,7 +260,7 @@ class MetadataSpec : WordSpec({
             )
 
             val metadataBeforeApplication = Metadata.extractBaseEntityMetadata(entity = targetDirectory)
-            Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path)
+            Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path.asPath())
 
             val metadataAfterApplication = Metadata.extractBaseEntityMetadata(entity = targetDirectory)
 
@@ -277,7 +278,7 @@ class MetadataSpec : WordSpec({
             val sourceFile = "/$sourceFileResourcesPath".asTestResource()
 
             val existingFileMetadata = EntityMetadata.File(
-                path = sourceFile,
+                path = sourceFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -287,7 +288,7 @@ class MetadataSpec : WordSpec({
                 group = "root",
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("338496524657487844672953225842489206917"),
-                crates = mapOf(Paths.get("${sourceFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${sourceFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 
@@ -324,7 +325,7 @@ class MetadataSpec : WordSpec({
             val sourceFile = "/$sourceFileResourcesPath".asTestResource()
 
             val existingFileMetadata = EntityMetadata.File(
-                path = sourceFile,
+                path = sourceFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -334,7 +335,7 @@ class MetadataSpec : WordSpec({
                 group = "root",
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${sourceFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${sourceFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 
@@ -373,7 +374,7 @@ class MetadataSpec : WordSpec({
             val targetFile = "/$targetFileResourcesPath".asTestResource()
 
             val existingFileMetadata = EntityMetadata.File(
-                path = targetFile,
+                path = targetFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -383,7 +384,7 @@ class MetadataSpec : WordSpec({
                 group = "root",
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${targetFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 
@@ -426,7 +427,7 @@ class MetadataSpec : WordSpec({
             val targetFile = Paths.get("/tmp/$targetFileResourcesPath")
 
             val existingFileMetadata = EntityMetadata.File(
-                path = targetFile,
+                path = targetFile.toString(),
                 size = 1,
                 link = null,
                 isHidden = false,
@@ -436,7 +437,7 @@ class MetadataSpec : WordSpec({
                 group = "root",
                 permissions = "rwxrwxrwx",
                 checksum = BigInteger("1"),
-                crates = mapOf(Paths.get("${targetFile}_0") to UUID.randomUUID()),
+                crates = mapOf("${targetFile}_0" to UUID.randomUUID()),
                 compression = "none"
             )
 

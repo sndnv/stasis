@@ -86,6 +86,7 @@ import stasis.client_android.tracking.DefaultTrackers
 import stasis.client_android.tracking.TrackerViews
 import stasis.client_android.utils.Permissions.getOperationRestrictions
 import stasis.core.commands.proto.Command
+import java.nio.file.FileSystems
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -341,6 +342,7 @@ object StasisClientDependencies {
                                         ignoreRestrictions = preferences.getRestrictionsIgnored()
                                     )
                                 },
+                                filesystem = FileSystems.getDefault(),
                                 operationDispatcher = dispatcher
                             )
 
