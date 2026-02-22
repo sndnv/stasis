@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup
 
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
@@ -64,8 +65,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithRules(
         rules = Seq(
-          Rule(line = s"+ ${sourceDirectory1Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get,
-          Rule(line = s"+ ${sourceDirectory2Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get
+          Rule(line = s"+ ${sourceDirectory1Metadata.path} source-file-*", lineNumber = 0).get,
+          Rule(line = s"+ ${sourceDirectory2Metadata.path} source-file-*", lineNumber = 0).get
         )
       ),
       latestMetadata = DatasetMetadata(
@@ -157,9 +158,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
         entities = List(
-          sourceFile1Metadata.path,
-          sourceFile2Metadata.path,
-          sourceFile3Metadata.path
+          sourceFile1Metadata.path.asPath,
+          sourceFile2Metadata.path.asPath,
+          sourceFile3Metadata.path.asPath
         )
       ),
       latestMetadata = DatasetMetadata(
@@ -247,9 +248,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         state = Fixtures.State.BackupTwoState.copy(
           entities = Fixtures.State.BackupTwoState.entities.copy(
             discovered = Set(
-              sourceFile1Metadata.path,
-              sourceFile2Metadata.path,
-              sourceFile3Metadata.path
+              sourceFile1Metadata.path.asPath,
+              sourceFile2Metadata.path.asPath,
+              sourceFile3Metadata.path.asPath
             )
           )
         )
@@ -354,9 +355,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
         entities = List(
-          sourceFile1Metadata.path,
-          sourceFile2Metadata.path,
-          sourceFile3Metadata.path,
+          sourceFile1Metadata.path.asPath,
+          sourceFile2Metadata.path.asPath,
+          sourceFile3Metadata.path.asPath,
           Paths.get("/ops/invalid-file")
         )
       ),
@@ -438,7 +439,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
-        entities = List(sourceFile1Metadata.path)
+        entities = List(sourceFile1Metadata.path.asPath)
       ),
       latestMetadata = DatasetMetadata.empty,
       clients = Clients(
@@ -646,7 +647,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val backup = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(
-        entities = List(sourceFile1Metadata.path)
+        entities = List(sourceFile1Metadata.path.asPath)
       ),
       latestMetadata = DatasetMetadata.empty,
       clients = Clients(
@@ -713,7 +714,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         )
       ),
       track = new MockBackupTracker(),
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
@@ -840,7 +842,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       decryptor = encryption,
       clients = clients,
       track = tracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     new Backup(

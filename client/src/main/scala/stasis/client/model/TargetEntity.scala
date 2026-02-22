@@ -33,7 +33,7 @@ final case class TargetEntity(
         false
     }
 
-  val originalPath: Path = existingMetadata.path
+  val originalPath: Path = path.getFileSystem.getPath(existingMetadata.path)
 
   val destinationPath: Path =
     destination match {

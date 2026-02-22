@@ -1,8 +1,8 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.LinkOption
-import java.nio.file.Paths
 import java.nio.file.attribute.PosixFileAttributes
 import java.time.Instant
 
@@ -23,9 +23,10 @@ import stasis.client.ops.recovery.stages.MetadataApplication
 import stasis.core.packaging.Crate
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
+import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
 
-class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
+class MetadataApplicationSpec extends AsyncUnitSpec with ResourceHelpers { spec =>
   "A Recovery MetadataApplication stage" should "apply metadata to files" in {
     val targetFile = Files.createTempFile("metadata-target-file", "")
     targetFile.toFile.deleteOnExit()
@@ -33,7 +34,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
     val attributes = Files.readAttributes(targetFile, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
 
     val metadata = EntityMetadata.File(
-      path = targetFile,
+      path = targetFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -43,7 +44,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      crates = Map(s"${targetFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 
@@ -61,7 +62,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
           decryptor = new MockEncryption,
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,
-          telemetry = mockTelemetry
+          telemetry = mockTelemetry,
+          filesystem = FileSystems.getDefault
         )
 
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
@@ -70,7 +72,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec { spec =>
     implicit val operationId: Operation.Id = Operation.generateId()
 
     val target = TargetEntity(
-      path = metadata.path,
+      path = metadata.path.asPath,
       destination = TargetEntity.Destination.Default,
       existingMetadata = metadata,
       currentMetadata = None

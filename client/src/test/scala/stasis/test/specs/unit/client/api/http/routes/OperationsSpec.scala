@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -32,6 +33,7 @@ import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.BackupState
 import stasis.client.tracking.state.RecoveryState
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
@@ -976,7 +978,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new Operations().routes()

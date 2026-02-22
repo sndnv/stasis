@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.recovery.stages
 
+import java.nio.file.FileSystems
+
 import org.apache.pekko.actor.ActorSystem
 
 import stasis.client.analysis.Checksum
@@ -11,26 +13,27 @@ import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 import stasis.test.specs.unit.client.mocks._
 
 class EntityCollectionSpec extends AsyncUnitSpec {
   "A Recovery EntityCollection stage" should "collect and filter files" in {
     val targetFile1 = TargetEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path,
+      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None
     )
 
     val targetFile2 = TargetEntity(
-      path = Fixtures.Metadata.FileTwoMetadata.path,
+      path = Fixtures.Metadata.FileTwoMetadata.path.asPath,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileTwoMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileTwoMetadata)
     )
 
     val targetFile3 = TargetEntity(
-      path = Fixtures.Metadata.FileThreeMetadata.path,
+      path = Fixtures.Metadata.FileThreeMetadata.path.asPath,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileThreeMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true))
@@ -51,7 +54,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           decryptor = new MockEncryption(),
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,
-          telemetry = mockTelemetry
+          telemetry = mockTelemetry,
+          filesystem = FileSystems.getDefault
         )
     }
 

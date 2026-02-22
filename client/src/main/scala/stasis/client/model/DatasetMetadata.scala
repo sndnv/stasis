@@ -1,7 +1,6 @@
 package stasis.client.model
 
 import java.nio.file.Path
-import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -22,12 +21,21 @@ import stasis.client.encryption.{Encoder => EncryptionEncoder}
 import stasis.core.packaging.Crate
 
 final case class DatasetMetadata(
-  contentChanged: Map[Path, EntityMetadata],
-  metadataChanged: Map[Path, EntityMetadata],
+  contentChanged: Map[String, EntityMetadata],
+  metadataChanged: Map[String, EntityMetadata],
   filesystem: FilesystemMetadata
 ) {
   def collect(
     entity: Path,
+    clients: Clients
+  )(implicit ec: ExecutionContext): Future[Option[EntityMetadata]] =
+    collect(
+      entity = entity.toAbsolutePath.toString,
+      clients = clients
+    )
+
+  def collect(
+    entity: String,
     clients: Clients
   )(implicit ec: ExecutionContext): Future[Option[EntityMetadata]] = {
     val existingMetadata = filesystem.entities.get(entity).map {
@@ -39,7 +47,7 @@ final case class DatasetMetadata(
           case None =>
             Future.failed(
               new IllegalArgumentException(
-                s"Metadata for entity [${entity.toAbsolutePath.toString}] not found"
+                s"Metadata for entity [$entity] not found"
               )
             )
         }
@@ -57,7 +65,7 @@ final case class DatasetMetadata(
               case None =>
                 Future.failed(
                   new IllegalArgumentException(
-                    s"Expected metadata for entity [${entity.toAbsolutePath.toString}] " +
+                    s"Expected metadata for entity [$entity] " +
                       s"but none was found in metadata for entry [${entry.toString}]"
                   )
                 )
@@ -74,7 +82,7 @@ final case class DatasetMetadata(
   }
 
   def require(
-    entity: Path,
+    entity: String,
     clients: Clients
   )(implicit ec: ExecutionContext): Future[EntityMetadata] =
     collect(entity = entity, clients = clients).flatMap {
@@ -84,7 +92,7 @@ final case class DatasetMetadata(
       case None =>
         Future.failed(
           new IllegalArgumentException(
-            s"Required metadata for entity [${entity.toAbsolutePath.toString}] not found"
+            s"Required metadata for entity [$entity] not found"
           )
         )
     }
@@ -103,10 +111,10 @@ object DatasetMetadata {
   def toByteString(metadata: DatasetMetadata)(implicit mat: Materializer): Future[ByteString] = {
     val data = proto.metadata.DatasetMetadata(
       contentChanged = metadata.contentChanged.map { case (entity, metadata) =>
-        entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
+        entity -> EntityMetadata.toProto(metadata)
       },
       metadataChanged = metadata.metadataChanged.map { case (entity, metadata) =>
-        entity.toAbsolutePath.toString -> EntityMetadata.toProto(metadata)
+        entity -> EntityMetadata.toProto(metadata)
       },
       filesystem = Some(FilesystemMetadata.toProto(metadata.filesystem))
     )
@@ -129,12 +137,12 @@ object DatasetMetadata {
         val result = for {
           contentChanged <- foldTryMap(
             source = data.contentChanged.map { case (entity, metadata) =>
-              Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+              entity -> EntityMetadata.fromProto(metadata)
             }
           )
           metadataChanged <- foldTryMap(
             source = data.metadataChanged.map { case (entity, metadata) =>
-              Paths.get(entity) -> EntityMetadata.fromProto(metadata)
+              entity -> EntityMetadata.fromProto(metadata)
             }
           )
           filesystem <- FilesystemMetadata.fromProto(data.filesystem)

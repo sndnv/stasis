@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.ops.scheduling
 
+import java.nio.file.FileSystems
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.ExecutionException
@@ -407,7 +408,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       decryptor = encryption,
       clients = clients,
       track = backupTracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     implicit val recoveryProviders: recovery.Providers = recovery.Providers(
@@ -417,7 +419,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       decryptor = encryption,
       clients = clients,
       track = recoveryTracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     new DefaultOperationExecutor(

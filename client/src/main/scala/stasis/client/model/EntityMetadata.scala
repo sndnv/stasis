@@ -1,7 +1,5 @@
 package stasis.client.model
 
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 
 import scala.util.Failure
@@ -10,8 +8,8 @@ import scala.util.Try
 import stasis.core.packaging.Crate
 
 sealed trait EntityMetadata {
-  def path: Path
-  def link: Option[Path]
+  def path: String
+  def link: Option[String]
   def isHidden: Boolean
   def created: Instant
   def updated: Instant
@@ -27,8 +25,8 @@ sealed trait EntityMetadata {
 
 object EntityMetadata {
   final case class File private (
-    override val path: Path,
-    override val link: Option[Path],
+    override val path: String,
+    override val link: Option[String],
     override val isHidden: Boolean,
     override val created: Instant,
     override val updated: Instant,
@@ -37,13 +35,13 @@ object EntityMetadata {
     override val permissions: String,
     size: Long,
     checksum: BigInt,
-    crates: Map[Path, Crate.Id],
+    crates: Map[String, Crate.Id],
     compression: String
   ) extends EntityMetadata
 
   final case class Directory(
-    override val path: Path,
-    override val link: Option[Path],
+    override val path: String,
+    override val link: Option[String],
     override val isHidden: Boolean,
     override val created: Instant,
     override val updated: Instant,
@@ -56,9 +54,9 @@ object EntityMetadata {
     entityMetadata match {
       case fileMetadata: File =>
         val metadata = proto.metadata.FileMetadata(
-          path = fileMetadata.path.toAbsolutePath.toString,
+          path = fileMetadata.path,
           size = fileMetadata.size,
-          link = fileMetadata.link.fold("")(_.toAbsolutePath.toString),
+          link = fileMetadata.link.getOrElse(""),
           isHidden = fileMetadata.isHidden,
           created = fileMetadata.created.getEpochSecond,
           updated = fileMetadata.updated.getEpochSecond,
@@ -74,8 +72,8 @@ object EntityMetadata {
 
       case directoryMetadata: Directory =>
         val metadata = proto.metadata.DirectoryMetadata(
-          path = directoryMetadata.path.toAbsolutePath.toString,
-          link = directoryMetadata.link.fold("")(_.toAbsolutePath.toString),
+          path = directoryMetadata.path,
+          link = directoryMetadata.link.getOrElse(""),
           isHidden = directoryMetadata.isHidden,
           created = directoryMetadata.created.getEpochSecond,
           updated = directoryMetadata.updated.getEpochSecond,
@@ -92,9 +90,9 @@ object EntityMetadata {
       case proto.metadata.EntityMetadata.Entity.File(fileMetadata) =>
         Try {
           File(
-            path = Paths.get(fileMetadata.path),
+            path = fileMetadata.path,
             size = fileMetadata.size,
-            link = if (fileMetadata.link.nonEmpty) Some(Paths.get(fileMetadata.link)) else None,
+            link = if (fileMetadata.link.nonEmpty) Some(fileMetadata.link) else None,
             isHidden = fileMetadata.isHidden,
             created = Instant.ofEpochSecond(fileMetadata.created),
             updated = Instant.ofEpochSecond(fileMetadata.updated),
@@ -110,8 +108,8 @@ object EntityMetadata {
       case proto.metadata.EntityMetadata.Entity.Directory(directoryMetadata) =>
         Try {
           Directory(
-            path = Paths.get(directoryMetadata.path),
-            link = if (directoryMetadata.link.nonEmpty) Some(Paths.get(directoryMetadata.link)) else None,
+            path = directoryMetadata.path,
+            link = if (directoryMetadata.link.nonEmpty) Some(directoryMetadata.link) else None,
             isHidden = directoryMetadata.isHidden,
             created = Instant.ofEpochSecond(directoryMetadata.created),
             updated = Instant.ofEpochSecond(directoryMetadata.updated),
@@ -125,11 +123,11 @@ object EntityMetadata {
         Failure(new IllegalArgumentException("Expected entity in metadata but none was found"))
     }
 
-  private def fromProtoCrateData(crateData: (String, proto.metadata.Uuid)): (Path, java.util.UUID) =
+  private def fromProtoCrateData(crateData: (String, proto.metadata.Uuid)): (String, java.util.UUID) =
     crateData match {
       case (path, uuid) =>
         (
-          Paths.get(path),
+          path,
           new java.util.UUID(
             uuid.mostSignificantBits,
             uuid.leastSignificantBits
@@ -137,11 +135,11 @@ object EntityMetadata {
         )
     }
 
-  private def toProtoCrateData(crateData: (Path, java.util.UUID)): (String, proto.metadata.Uuid) =
+  private def toProtoCrateData(crateData: (String, java.util.UUID)): (String, proto.metadata.Uuid) =
     crateData match {
       case (path, uuid) =>
         (
-          path.toAbsolutePath.toString,
+          path,
           proto.metadata.Uuid(
             mostSignificantBits = uuid.getMostSignificantBits,
             leastSignificantBits = uuid.getLeastSignificantBits

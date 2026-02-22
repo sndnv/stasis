@@ -1,6 +1,5 @@
 package stasis.core.persistence.backends.file.state
 
-import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -22,23 +21,20 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class StateStore[S](
-  directory: String,
-  retainedVersions: Int,
-  filesystem: FileSystem
+  directory: Path,
+  retainedVersions: Int
 )(implicit mat: Materializer, serdes: StateStore.Serdes[S]) {
   import mat.executionContext
 
   private val log: Logger = LoggerFactory.getLogger(this.getClass.getName)
-
-  private val target = filesystem.getPath(directory)
 
   def persist(state: S): Future[Done] = {
     val serialized = serdes.serialize(state)
     val timestamp = Instant.now().toEpochMilli.toString
     val suffix = Random.javaRandomToRandom(ThreadLocalRandom.current()).alphanumeric.take(4).mkString
 
-    val _ = Files.createDirectories(target)
-    val path = target.resolve(s"state_${timestamp}_$suffix")
+    val _ = Files.createDirectories(directory)
+    val path = directory.resolve(s"state_${timestamp}_$suffix")
 
     Source
       .single(ByteString.fromArrayUnsafe(serialized))
@@ -96,7 +92,7 @@ class StateStore[S](
 
   private def collectStateFiles(): Future[List[Path]] = Future {
     Files
-      .walk(target)
+      .walk(directory)
       .filter { path =>
         !Files.isDirectory(path) && path.getFileName.toString.startsWith("state_")
       }
@@ -111,24 +107,20 @@ object StateStore {
   final val MinRetainedVersions: Int = 2
 
   def apply[S](
-    directory: String,
-    retainedVersions: Int,
-    filesystem: FileSystem
+    directory: Path,
+    retainedVersions: Int
   )(implicit mat: Materializer, serdes: Serdes[S]): StateStore[S] =
     new StateStore(
       directory = directory,
-      retainedVersions = retainedVersions,
-      filesystem = filesystem
+      retainedVersions = retainedVersions
     )
 
   def apply[S](
-    directory: String,
-    filesystem: FileSystem
+    directory: Path
   )(implicit mat: Materializer, serdes: Serdes[S]): StateStore[S] =
     new StateStore(
       directory = directory,
-      retainedVersions = MinRetainedVersions,
-      filesystem = filesystem
+      retainedVersions = MinRetainedVersions
     )
 
   trait Serdes[S] {

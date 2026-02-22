@@ -79,7 +79,7 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
   private val encryptionKey = "QBqEu8Kh6iFGpbgYUWADXRfkVa6wUy5w"
 
   private val fileSecret = DeviceFileSecret(
-    file = plaintextFile,
+    file = plaintextFile.asString,
     iv = encryptionIv.decodeFromBase64,
     key = encryptionKey.decodeFromBase64
   )

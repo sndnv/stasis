@@ -2,7 +2,6 @@ package stasis.client.ops.backup.stages
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -56,15 +55,17 @@ trait EntityProcessing {
   ): Flow[SourceEntity, Either[EntityMetadata, EntityMetadata], NotUsed] =
     Flow[SourceEntity]
       .mapAsyncUnordered(parallelism.entities) {
-        case entity if entity.hasContentChanged => processContentChanged(entity).map(Left.apply)
-        case entity                             => processMetadataChanged(entity).map(Right.apply)
+        case entity if entity.hasContentChanged => processContentChanged(entity).map(m => entity -> Left(m))
+        case entity                             => processMetadataChanged(entity).map(m => entity -> Right(m))
       }
-      .wireTap { metadata =>
+      .map { case (entity, metadata) =>
         metrics.recordEntityProcessed(metadata = metadata)
         providers.track.entityProcessed(
-          entity = metadata.fold(_.path, _.path),
+          entity = entity.path,
           metadata = metadata
         )
+
+        metadata
       }
 
   private def processContentChanged(
@@ -95,16 +96,17 @@ trait EntityProcessing {
   private def stage(
     entity: SourceEntity,
     checksum: BigInt
-  )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[Seq[(Path, Path)]] = {
+  )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[Seq[(String, Path)]] = {
     providers.track.entityProcessingStarted(
       entity = entity.path,
       expectedParts = EntityProcessing.expectedParts(entity, maximumPartSize)
     )
 
-    def createPartSecret(partId: Int): DeviceFileSecret = {
-      val partPath = Paths.get(s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}")
-      deviceSecret.toFileSecret(forFile = partPath, checksum = checksum)
-    }
+    def createPartSecret(partId: Int): DeviceFileSecret =
+      deviceSecret.toFileSecret(
+        forFile = s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}",
+        checksum = checksum
+      )
 
     def recordPartProcessed(): Unit =
       providers.track.entityPartProcessed(entity = entity.path)
@@ -123,7 +125,7 @@ trait EntityProcessing {
       .stage(withPartSecret = createPartSecret, onPartStaged = recordPartProcessed)
   }
 
-  private def push(staged: Seq[(Path, Path)]): Future[Seq[(Path, Crate.Id)]] =
+  private def push(staged: Seq[(String, Path)]): Future[Seq[(String, Crate.Id)]] =
     Source(staged.toList)
       .mapAsync(parallelism = parallelism.entityParts) { case (partFile, staged) =>
         val crate = Crate.generateId()
@@ -151,11 +153,11 @@ trait EntityProcessing {
       .runWith(Sink.seq)
       .recoverWith(discardOnPushFailure(staged))
 
-  private def discardOnPushFailure[T](staged: Seq[(Path, Path)]): PartialFunction[Throwable, Future[T]] = { case NonFatal(e) =>
+  private def discardOnPushFailure[T](staged: Seq[(String, Path)]): PartialFunction[Throwable, Future[T]] = { case NonFatal(e) =>
     discard(staged).flatMap(_ => Future.failed(e))
   }
 
-  private def discard(staged: Seq[(Path, Path)]): Future[Done] =
+  private def discard(staged: Seq[(String, Path)]): Future[Done] =
     Future
       .sequence(
         staged.map { case (_, staged) =>

@@ -1,7 +1,5 @@
 package stasis.client.ops.backup.stages
 
-import java.nio.file.Path
-
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Flow
 
@@ -25,7 +23,7 @@ trait MetadataCollection {
   ): Flow[Either[EntityMetadata, EntityMetadata], DatasetMetadata, NotUsed] =
     Flow[Either[EntityMetadata, EntityMetadata]]
       .fold(
-        existingState.map(_.asMetadataChanges).getOrElse((Map.empty[Path, EntityMetadata], Map.empty[Path, EntityMetadata]))
+        existingState.map(_.asMetadataChanges).getOrElse((Map.empty[String, EntityMetadata], Map.empty[String, EntityMetadata]))
       ) { case ((contentChanged, metadataChanged), currentMetadata) =>
         currentMetadata match {
           case Left(metadata)  => (contentChanged + (metadata.path -> metadata), metadataChanged)

@@ -126,7 +126,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
 
   they should "convert entity metadata to/from JSON" in withRetry {
     val fileMetadata = EntityMetadata.File(
-      path = Paths.get("/tmp/file/one"),
+      path = "/tmp/file/one",
       size = 1,
       link = None,
       isHidden = false,
@@ -137,13 +137,13 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       permissions = "rwxrwxrwx",
       checksum = 1,
       crates = Map(
-        Paths.get("/tmp/file/one_0") -> java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
+        "/tmp/file/one_0" -> java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
       ),
       compression = "none"
     )
 
     val directoryMetadata = EntityMetadata.Directory(
-      path = Paths.get("/tmp/file/one"),
+      path = "/tmp/file/one",
       link = None,
       isHidden = false,
       created = Instant.now().truncatedTo(ChronoUnit.SECONDS),
@@ -201,9 +201,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
   }
 
   they should "convert backup state to JSON" in withRetry {
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
 
     val sourceEntity = SourceEntity(
       path = entity1,
@@ -271,9 +271,9 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
   }
 
   they should "convert recovery state to JSON" in withRetry {
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
 
     val targetEntity = TargetEntity(
       path = entity1,

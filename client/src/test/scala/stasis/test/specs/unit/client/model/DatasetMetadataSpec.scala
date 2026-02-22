@@ -79,7 +79,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
           .recover { case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              s"Metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] not found"
             )
           }
       _ <-
@@ -90,7 +90,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
           .recover { case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              s"Metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] not found"
             )
           }
     } yield {
@@ -174,14 +174,14 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileOneMetadata.path, clients = clients).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] " +
+            s"Expected metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
       _ <- currentMetadata.collect(entity = Fixtures.Metadata.FileTwoMetadata.path, clients = clients).failed.map {
         case NonFatal(e: IllegalArgumentException) =>
           e.getMessage should be(
-            s"Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] " +
+            s"Expected metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] " +
               s"but none was found in metadata for entry [$previousEntry]"
           )
       }
@@ -237,7 +237,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
           .recover { case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath}] not found"
+              s"Required metadata for entity [${Fixtures.Metadata.FileOneMetadata.path}] not found"
             )
           }
       _ <-
@@ -248,7 +248,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
           }
           .recover { case NonFatal(e: IllegalArgumentException) =>
             e.getMessage should be(
-              s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath}] not found"
+              s"Required metadata for entity [${Fixtures.Metadata.FileTwoMetadata.path}] not found"
             )
           }
     } yield {

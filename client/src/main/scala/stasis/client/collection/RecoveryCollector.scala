@@ -1,6 +1,6 @@
 package stasis.client.collection
 
-import java.nio.file.Path
+import java.nio.file.FileSystem
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -16,19 +16,19 @@ import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 
 trait RecoveryCollector {
-  def collect(): Source[TargetEntity, NotUsed]
+  def collect(filesystem: FileSystem): Source[TargetEntity, NotUsed]
 }
 
 object RecoveryCollector {
   class Default(
     targetMetadata: DatasetMetadata,
-    keep: (Path, FilesystemMetadata.EntityState) => Boolean,
+    keep: (String, FilesystemMetadata.EntityState) => Boolean,
     destination: TargetEntity.Destination,
     metadataCollector: RecoveryMetadataCollector,
     clients: Clients
   )(implicit ec: ExecutionContext, parallelism: ParallelismConfig)
       extends RecoveryCollector {
-    override def collect(): Source[TargetEntity, NotUsed] =
+    override def collect(filesystem: FileSystem): Source[TargetEntity, NotUsed] =
       Source(
         collectEntityMetadata(
           targetMetadata = targetMetadata,
@@ -39,7 +39,7 @@ object RecoveryCollector {
         for {
           entityMetadata <- entityMetadataFuture
           targetEntity <- metadataCollector.collect(
-            entity = entityMetadata.path,
+            entity = filesystem.getPath(entityMetadata.path),
             destination = destination,
             existingMetadata = entityMetadata
           )
@@ -51,7 +51,7 @@ object RecoveryCollector {
 
   def collectEntityMetadata(
     targetMetadata: DatasetMetadata,
-    keep: (Path, FilesystemMetadata.EntityState) => Boolean,
+    keep: (String, FilesystemMetadata.EntityState) => Boolean,
     clients: Clients
   )(implicit ec: ExecutionContext): Seq[Future[EntityMetadata]] =
     targetMetadata.filesystem.entities.collect {

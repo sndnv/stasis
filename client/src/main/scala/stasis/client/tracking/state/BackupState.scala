@@ -109,9 +109,9 @@ final case class BackupState(
           .toSeq
     }
 
-  def asMetadataChanges: (Map[Path, EntityMetadata], Map[Path, EntityMetadata]) =
+  def asMetadataChanges: (Map[String, EntityMetadata], Map[String, EntityMetadata]) =
     entities.processed
-      .foldLeft((Map.empty[Path, EntityMetadata], Map.empty[Path, EntityMetadata])) {
+      .foldLeft((Map.empty[String, EntityMetadata], Map.empty[String, EntityMetadata])) {
         case ((contentChanged, metadataChanged), (_, processed)) =>
           processed.metadata match {
             case Left(metadata)  => (contentChanged + (metadata.path -> metadata), metadataChanged)

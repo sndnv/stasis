@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
+
 import scala.concurrent.Future
 
 import org.apache.pekko.Done
@@ -13,6 +15,7 @@ import stasis.client.api.http.routes.DatasetMetadata
 import stasis.client.model
 import stasis.client.ops.search.Search
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -93,7 +96,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new DatasetMetadata().routes()

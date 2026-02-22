@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.collection
 
-import java.nio.file.Paths
+import java.nio.file.FileSystems
 import java.time.Instant
 
 import scala.concurrent.Future
@@ -27,7 +27,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file3 = "/collection/file-3".asTestResource
 
     val file2Metadata = EntityMetadata.File(
-      path = file2,
+      path = file2.asString,
       size = 0,
       link = None,
       isHidden = false,
@@ -38,13 +38,13 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
       crates = Map(
-        Paths.get(s"${file2}_0") -> Crate.generateId()
+        s"${file2}_0" -> Crate.generateId()
       ),
       compression = "none"
     )
 
     val file3Metadata = EntityMetadata.File(
-      path = file3,
+      path = file3.asString,
       size = 0,
       link = None,
       isHidden = false,
@@ -55,7 +55,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
       crates = Map(
-        Paths.get(s"${file3}_0") -> Crate.generateId()
+        s"${file3}_0" -> Crate.generateId()
       ),
       compression = "none"
     )
@@ -79,24 +79,24 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       destination = TargetEntity.Destination.Default,
       metadataCollector = new MockRecoveryMetadataCollector(
         metadata = Map(
-          file2Metadata.path -> file2Metadata,
-          file3Metadata.path -> file3Metadata
+          file2Metadata.path.asPath -> file2Metadata,
+          file3Metadata.path.asPath -> file3Metadata
         )
       ),
       clients = Clients(api = MockServerApiEndpointClient(), core = null)
     )
 
     collector
-      .collect()
+      .collect(FileSystems.getDefault)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
       .map(_.sortBy(_.path.toAbsolutePath.toString))
       .map {
         case targetFile2 :: targetFile3 :: Nil =>
-          targetFile2.path should be(file2Metadata.path)
+          targetFile2.path.toString should be(file2Metadata.path)
           targetFile2.existingMetadata should be(file2Metadata)
           targetFile2.currentMetadata should not be empty
 
-          targetFile3.path should be(file3Metadata.path)
+          targetFile3.path.toString should be(file3Metadata.path)
           targetFile3.existingMetadata should be(file3Metadata)
           targetFile3.currentMetadata should not be empty
 

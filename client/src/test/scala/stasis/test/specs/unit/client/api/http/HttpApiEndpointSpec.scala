@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.api.http
 
+import java.nio.file.FileSystems
+
 import scala.collection.mutable
 import scala.concurrent.Future
 
@@ -21,6 +23,7 @@ import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
 import io.github.sndnv.layers.api.MessageResponse
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -227,7 +230,8 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new HttpApiEndpoint(

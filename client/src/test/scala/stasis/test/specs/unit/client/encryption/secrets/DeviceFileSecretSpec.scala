@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
-import java.nio.file.Paths
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -44,7 +42,7 @@ class DeviceFileSecretSpec extends AsyncUnitSpec with SecretsConfig with Encodin
   private val encryptedData = "coKEpIHZVHZtPcYuojvMPcOD8S6a2sH4Xg0gPX8UTKz75Ts="
 
   private val fileSecret = DeviceFileSecret(
-    file = Paths.get("/tmp/some/file"),
+    file = "/tmp/some/file",
     iv = encryptionIv.decodeFromBase64,
     key = encryptionKey.decodeFromBase64
   )

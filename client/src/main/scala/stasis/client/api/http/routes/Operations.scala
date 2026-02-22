@@ -31,10 +31,10 @@ import stasis.shared.ops.Operation
 
 class Operations()(implicit context: Context) extends ApiRoutes {
   import com.github.pjfanning.pekkohttpplayjson.PlayJsonSupport._
+  import io.github.sndnv.layers.api.Matchers._
   import org.apache.pekko.http.scaladsl.marshalling.sse.EventStreamMarshalling._
 
   import Operations._
-  import io.github.sndnv.layers.api.Matchers._
 
   def routes(): Route =
     concat(
@@ -107,7 +107,10 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       extractExecutionContext { implicit ec =>
                         val result = for {
                           rules <- context.executor.rules
-                          spec <- Specification.untracked(rules.default())
+                          spec <- Specification.untracked(
+                            rules = rules.default(),
+                            filesystem = context.filesystem
+                          )
                         } yield {
                           spec
                         }
@@ -141,7 +144,10 @@ class Operations()(implicit context: Context) extends ApiRoutes {
                       extractExecutionContext { implicit ec =>
                         val result = for {
                           rules <- context.executor.rules
-                          spec <- Specification.untracked(rules.forDefinitionOrDefault(definition))
+                          spec <- Specification.untracked(
+                            rules = rules.forDefinitionOrDefault(definition),
+                            filesystem = context.filesystem
+                          )
                         } yield {
                           spec
                         }

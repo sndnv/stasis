@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.util.control.NonFatal
@@ -16,7 +15,7 @@ import stasis.test.specs.unit.AsyncUnitSpec
 class MergedCratesSpec extends AsyncUnitSpec {
   "MergedCrates" should "support data stream merging (single crate)" in {
     val original = Seq(
-      (0, Paths.get("/tmp/file/one__part=0"), Source.single(ByteString("original_1")))
+      (0, "/tmp/file/one__part=0", Source.single(ByteString("original_1")))
     )
 
     val extended = new MergedCrates(original)
@@ -41,9 +40,9 @@ class MergedCratesSpec extends AsyncUnitSpec {
 
   it should "support data stream merging (multiple crates)" in {
     val original = Seq(
-      (0, Paths.get("/tmp/file/one__part=0"), Source.single(ByteString("original_1"))),
-      (2, Paths.get("/tmp/file/one__part=2"), Source.single(ByteString("original_3"))),
-      (1, Paths.get("/tmp/file/one__part=1"), Source.single(ByteString("original_2")))
+      (0, "/tmp/file/one__part=0", Source.single(ByteString("original_1"))),
+      (2, "/tmp/file/one__part=2", Source.single(ByteString("original_3"))),
+      (1, "/tmp/file/one__part=1", Source.single(ByteString("original_2")))
     )
 
     val extended = new MergedCrates(original)

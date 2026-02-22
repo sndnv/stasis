@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
-import java.nio.file.Paths
+import java.nio.file.FileSystems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -34,13 +34,14 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockRecoveryTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
     val original = Seq(
-      (0, Paths.get("/tmp/file/one__part=0"), Source.single(ByteString("original"))),
-      (1, Paths.get("/tmp/file/one__part=1"), Source.single(ByteString("original"))),
-      (2, Paths.get("/tmp/file/one__part=2"), Source.single(ByteString("original")))
+      (0, "/tmp/file/one__part=0", Source.single(ByteString("original"))),
+      (1, "/tmp/file/one__part=1", Source.single(ByteString("original"))),
+      (2, "/tmp/file/one__part=2", Source.single(ByteString("original")))
     )
 
     val extended = new DecryptedCrates(original)
@@ -49,7 +50,7 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
       .decrypt(
         withPartSecret = partId =>
           DeviceFileSecret(
-            file = Paths.get(s"/tmp/file/one__part=$partId"),
+            file = s"/tmp/file/one__part=$partId",
             iv = ByteString.empty,
             key = ByteString.empty
           )

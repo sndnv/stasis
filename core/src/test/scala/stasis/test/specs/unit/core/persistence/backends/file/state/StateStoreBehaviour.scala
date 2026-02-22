@@ -22,9 +22,8 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       val target = filesystem.getPath("/store")
 
       val store = StateStore[Map[String, State]](
-        directory = target.toString,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = target,
+        retainedVersions = 10
       )
 
       val state = Map(
@@ -54,9 +53,8 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       val target = filesystem.getPath("/store")
 
       val store = new StateStore[Map[String, State]](
-        directory = target.toString,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = target,
+        retainedVersions = 10
       )
 
       val initialState = Map.empty[String, State]
@@ -113,9 +111,8 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       val target = filesystem.getPath("/store")
 
       val store = new StateStore[Map[String, State]](
-        directory = target.toString,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = target,
+        retainedVersions = 10
       )
 
       val initialState = Map.empty[String, State]
@@ -163,9 +160,8 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       val target = filesystem.getPath("/store")
 
       val store = StateStore[Map[String, State]](
-        directory = target.toString,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = target,
+        retainedVersions = 10
       )
 
       val state = Map(
@@ -188,9 +184,8 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
       val target = filesystem.getPath("/store")
 
       val store = new StateStore[Map[String, State]](
-        directory = target.toString,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = target,
+        retainedVersions = 10
       )
 
       val initialState = Map.empty[String, State]

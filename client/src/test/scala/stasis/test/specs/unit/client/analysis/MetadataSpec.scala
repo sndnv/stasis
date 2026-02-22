@@ -166,7 +166,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val sourceFileResourcesPath = "analysis/metadata-source-file"
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
-    val expectedCratePart = Paths.get(s"${sourceFile}_0")
+    val expectedCratePart = s"${sourceFile}_0"
     val expectedCrateId = java.util.UUID.fromString("329efbeb-80a3-42b8-b1dc-79bc0fea7bca")
     val expectedChecksum = BigInt("338496524657487844672953225842489206917")
 
@@ -219,7 +219,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     } yield {
       actualDirectoryMetadata match {
         case metadata: EntityMetadata.Directory =>
-          metadata.path.endsWith(sourceDirectoryResourcesPath) should be(true)
+          metadata.path.endsWith(sourceDirectoryResourcesPath.stripSuffix("/")) should be(true)
           metadata.link should be(None)
           metadata.isHidden should be(false)
           metadata.updated should be > Instant.MIN
@@ -240,7 +240,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val attributes = Files.readAttributes(targetFile, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
 
     val metadata = EntityMetadata.File(
-      path = targetFile,
+      path = targetFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -250,13 +250,13 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = attributes.group().getName,
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      crates = Map(s"${targetFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 
     for {
       metadataBeforeApplication <- Metadata.extractBaseEntityMetadata(entity = targetFile)
-      _ <- Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path)
+      _ <- Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path.asPath)
       metadataAfterApplication <- Metadata.extractBaseEntityMetadata(entity = targetFile)
     } yield {
       metadataBeforeApplication.permissions should not be metadata.permissions
@@ -276,7 +276,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val attributes = Files.readAttributes(targetDirectory, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
 
     val metadata = EntityMetadata.Directory(
-      path = targetDirectory,
+      path = targetDirectory.asString,
       link = None,
       isHidden = false,
       created = Instant.parse("2020-01-01T00:00:00Z"),
@@ -288,7 +288,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
 
     for {
       metadataBeforeApplication <- Metadata.extractBaseEntityMetadata(entity = targetDirectory)
-      _ <- Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path)
+      _ <- Metadata.applyEntityMetadataTo(metadata = metadata, entity = metadata.path.asPath)
       metadataAfterApplication <- Metadata.extractBaseEntityMetadata(entity = targetDirectory)
     } yield {
       metadataBeforeApplication.permissions should not be metadata.permissions
@@ -306,7 +306,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
     val existingFileMetadata = EntityMetadata.File(
-      path = sourceFile,
+      path = sourceFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -316,7 +316,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt("338496524657487844672953225842489206917"),
-      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId()),
+      crates = Map(s"${sourceFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 
@@ -355,7 +355,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val sourceFile = s"/$sourceFileResourcesPath".asTestResource
 
     val existingFileMetadata = EntityMetadata.File(
-      path = sourceFile,
+      path = sourceFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -365,7 +365,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${sourceFile}_0") -> Crate.generateId()),
+      crates = Map(s"${sourceFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 
@@ -406,7 +406,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val targetFile = s"/$targetFileResourcesPath".asTestResource
 
     val existingFileMetadata = EntityMetadata.File(
-      path = targetFile,
+      path = targetFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -416,7 +416,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      crates = Map(s"${targetFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 
@@ -459,7 +459,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
     val targetFile = Paths.get(s"/tmp/$targetFileResourcesPath")
 
     val existingFileMetadata = EntityMetadata.File(
-      path = targetFile,
+      path = targetFile.asString,
       size = 1,
       link = None,
       isHidden = false,
@@ -469,7 +469,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
       group = "root",
       permissions = "rwxrwxrwx",
       checksum = BigInt(1),
-      crates = Map(Paths.get(s"${targetFile}_0") -> Crate.generateId()),
+      crates = Map(s"${targetFile}_0" -> Crate.generateId()),
       compression = "none"
     )
 

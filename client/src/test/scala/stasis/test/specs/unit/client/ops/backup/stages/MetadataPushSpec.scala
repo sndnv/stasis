@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.nio.file.FileSystems
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.SystemMaterializer
@@ -42,7 +44,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
             core = mockCoreClient
           ),
           track = mockTracker,
-          telemetry = MockClientTelemetryContext()
+          telemetry = MockClientTelemetryContext(),
+          filesystem = FileSystems.getDefault
         )
 
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer

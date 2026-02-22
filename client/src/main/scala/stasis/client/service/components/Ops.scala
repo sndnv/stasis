@@ -60,7 +60,8 @@ object Ops {
         decryptor = encryption,
         clients = clients,
         track = trackers.backup,
-        telemetry = telemetry
+        telemetry = telemetry,
+        filesystem = directory.appDirectory.getFileSystem
       )
 
       implicit val recoveryProviders: ops.recovery.Providers = ops.recovery.Providers(
@@ -70,7 +71,8 @@ object Ops {
         decryptor = encryption,
         clients = clients,
         track = trackers.recovery,
-        telemetry = telemetry
+        telemetry = telemetry,
+        filesystem = directory.appDirectory.getFileSystem
       )
 
       new Ops {

@@ -38,12 +38,12 @@ class StagedSubFlow(
   private implicit val ec: ExecutionContext = mat.executionContext
 
   private val nextPartId = new AtomicInteger(0)
-  private val stagedParts = new ConcurrentLinkedQueue[(Path, Path)]()
+  private val stagedParts = new ConcurrentLinkedQueue[(String, Path)]()
 
   def stage(
     withPartSecret: Int => DeviceFileSecret,
     onPartStaged: () => Unit
-  )(implicit providers: Providers): Future[Seq[(Path, Path)]] =
+  )(implicit providers: Providers): Future[Seq[(String, Path)]] =
     subFlow
       .via(partStaging(withPartSecret))
       .mergeSubstreams
@@ -56,7 +56,7 @@ class StagedSubFlow(
 
   private def partStaging(
     withPartSecret: Int => DeviceFileSecret
-  )(implicit providers: Providers): Flow[ByteString, (Path, Path), Future[Done]] =
+  )(implicit providers: Providers): Flow[ByteString, (String, Path), Future[Done]] =
     Flow
       .lazyFutureFlow { () =>
         val partId = nextPartId.getAndIncrement()
@@ -68,7 +68,7 @@ class StagedSubFlow(
 object StagedSubFlow {
   def createStagingFlow(
     partSecret: DeviceFileSecret
-  )(implicit providers: Providers, ec: ExecutionContext): Future[Flow[ByteString, (Path, Path), Future[IOResult]]] = {
+  )(implicit providers: Providers, ec: ExecutionContext): Future[Flow[ByteString, (String, Path), Future[IOResult]]] = {
     val metrics = providers.telemetry.metrics[Metrics.BackupOperation]
 
     providers.staging
@@ -80,14 +80,14 @@ object StagedSubFlow {
           .viaMat(
             Flow.fromSinkAndSourceMat(
               sink = FileIO.toPath(staged),
-              source = Source.single[(Path, Path)]((partSecret.file, staged))
+              source = Source.single[(String, Path)]((partSecret.file, staged))
             )(Keep.left[Future[IOResult], NotUsed])
           )(Keep.right[NotUsed, Future[IOResult]])
       }
   }
 
   def handleStagingFailure[T](
-    stagedParts: java.util.Queue[(Path, Path)]
+    stagedParts: java.util.Queue[(String, Path)]
   )(implicit providers: Providers, ec: ExecutionContext): PartialFunction[Throwable, Future[T]] = {
     case NonFatal(stagingFailure) =>
       Future

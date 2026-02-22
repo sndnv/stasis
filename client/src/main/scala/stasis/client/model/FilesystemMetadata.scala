@@ -1,8 +1,5 @@
 package stasis.client.model
 
-import java.nio.file.Path
-import java.nio.file.Paths
-
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -11,9 +8,9 @@ import stasis.client.model.FilesystemMetadata.EntityState
 import stasis.shared.model.datasets.DatasetEntry
 
 final case class FilesystemMetadata(
-  entities: Map[Path, EntityState]
+  entities: Map[String, EntityState]
 ) {
-  def updated(changes: Iterable[Path], latestEntry: DatasetEntry.Id): FilesystemMetadata = {
+  def updated(changes: Iterable[String], latestEntry: DatasetEntry.Id): FilesystemMetadata = {
     val newAndUpdated = changes.map {
       case entity if entities.contains(entity) => entity -> (EntityState.Updated: EntityState)
       case entity                              => entity -> (EntityState.New: EntityState)
@@ -32,7 +29,7 @@ final case class FilesystemMetadata(
 object FilesystemMetadata {
   def empty: FilesystemMetadata = FilesystemMetadata(entities = Map.empty)
 
-  def apply(changes: Iterable[Path]): FilesystemMetadata =
+  def apply(changes: Iterable[String]): FilesystemMetadata =
     FilesystemMetadata(
       entities = changes.map(entity => entity -> EntityState.New).toMap
     )
@@ -40,7 +37,7 @@ object FilesystemMetadata {
   def toProto(filesystem: FilesystemMetadata): proto.metadata.FilesystemMetadata =
     proto.metadata.FilesystemMetadata(
       entities = filesystem.entities.map { case (entity, state) =>
-        entity.toAbsolutePath.toString -> EntityState.toProto(state)
+        entity -> EntityState.toProto(state)
       }
     )
 
@@ -49,7 +46,7 @@ object FilesystemMetadata {
       case Some(filesystem) =>
         val entities = foldTryMap(
           filesystem.entities.map { case (entity, state) =>
-            Paths.get(entity) -> EntityState.fromProto(state)
+            entity -> EntityState.fromProto(state)
           }
         )
 

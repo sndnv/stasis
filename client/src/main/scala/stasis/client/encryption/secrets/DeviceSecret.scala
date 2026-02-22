@@ -1,7 +1,6 @@
 package stasis.client.encryption.secrets
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -29,14 +28,13 @@ final case class DeviceSecret(
       .via(encryptionStage)
       .runFold(ByteString.empty)(_ concat _)
 
-  def toFileSecret(forFile: Path, checksum: BigInt): DeviceFileSecret = {
-    val filePath = forFile.toAbsolutePath.toString
+  def toFileSecret(forFile: String, checksum: BigInt): DeviceFileSecret = {
     val checksumInfo = checksum.toString(radix = 16)
 
-    val salt = user.toBytes ++ device.toBytes ++ filePath.getBytes(StandardCharsets.UTF_8)
+    val salt = user.toBytes ++ device.toBytes ++ forFile.getBytes(StandardCharsets.UTF_8)
 
-    val keyInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-$checksumInfo-key")
-    val ivInfo = ByteString(s"${user.toString}-${device.toString}-$filePath-$checksumInfo-iv")
+    val keyInfo = ByteString(s"${user.toString}-${device.toString}-$forFile-$checksumInfo-key")
+    val ivInfo = ByteString(s"${user.toString}-${device.toString}-$forFile-$checksumInfo-iv")
 
     val hkdf = HKDF.fromHmacSha512()
 

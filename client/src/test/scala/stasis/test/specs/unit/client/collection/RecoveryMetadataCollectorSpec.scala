@@ -19,8 +19,8 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       checksum = Checksum.MD5
     )
 
-    val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2)
-    val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3)
+    val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2.asString)
+    val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3.asString)
 
     for {
       targetFile2 <- collector.collect(

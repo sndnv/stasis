@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -19,6 +20,7 @@ import stasis.client.ops.commands.ProcessedCommand
 import stasis.client.tracking.ServerTracker
 import stasis.core.commands.proto.Command
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.api.requests.ReEncryptDeviceSecret
 import stasis.shared.model
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -156,7 +158,8 @@ class DeviceSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(commands = commands, lastProcessed = commands.headOption.map(_.sequenceId)),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new Device().routes()

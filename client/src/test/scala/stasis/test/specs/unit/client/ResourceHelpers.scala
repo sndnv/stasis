@@ -18,7 +18,14 @@ import stasis.core.packaging.Crate
 import io.github.sndnv.layers.testing.FileSystemHelpers
 
 trait ResourceHelpers extends FileSystemHelpers {
+  implicit class ResourceHelpersStringPath(path: String) {
+    def asPath: Path = Paths.get(path)
+  }
+
   implicit class PathWithMetadataExtraction(resourcePath: Path) {
+    def asString: String =
+      resourcePath.toAbsolutePath.toString
+
     def extractFileMetadata(
       withChecksum: BigInt,
       withCrate: Crate.Id
@@ -31,9 +38,9 @@ trait ResourceHelpers extends FileSystemHelpers {
           require(!baseMetadata.isDirectory, s"Expected [$resourcePath] to be a file")
 
           EntityMetadata.File(
-            path = baseMetadata.path,
+            path = baseMetadata.path.toAbsolutePath.toString,
             size = baseMetadata.attributes.size,
-            link = baseMetadata.link,
+            link = baseMetadata.link.map(_.toAbsolutePath.toString),
             isHidden = baseMetadata.isHidden,
             created = baseMetadata.created,
             updated = baseMetadata.updated,
@@ -41,7 +48,7 @@ trait ResourceHelpers extends FileSystemHelpers {
             group = baseMetadata.group,
             permissions = baseMetadata.permissions,
             checksum = withChecksum,
-            crates = Map(baseMetadata.path -> withCrate),
+            crates = Map(baseMetadata.path.toAbsolutePath.toString -> withCrate),
             compression = "none"
           )
         }
@@ -61,8 +68,8 @@ trait ResourceHelpers extends FileSystemHelpers {
           require(baseMetadata.isDirectory, s"Expected [$resourcePath] to be a directory")
 
           EntityMetadata.Directory(
-            path = baseMetadata.path,
-            link = baseMetadata.link,
+            path = baseMetadata.path.toAbsolutePath.toString,
+            link = baseMetadata.link.map(_.toAbsolutePath.toString),
             isHidden = baseMetadata.isHidden,
             created = baseMetadata.created,
             updated = baseMetadata.updated,
@@ -88,9 +95,9 @@ trait ResourceHelpers extends FileSystemHelpers {
         require(!baseMetadata.isDirectory, s"Expected [$resourcePath] to be a file")
 
         EntityMetadata.File(
-          path = baseMetadata.path,
+          path = baseMetadata.path.toAbsolutePath.toString,
           size = baseMetadata.attributes.size,
-          link = baseMetadata.link,
+          link = baseMetadata.link.map(_.toAbsolutePath.toString),
           isHidden = baseMetadata.isHidden,
           created = baseMetadata.created,
           updated = baseMetadata.updated,
@@ -98,7 +105,7 @@ trait ResourceHelpers extends FileSystemHelpers {
           group = baseMetadata.group,
           permissions = baseMetadata.permissions,
           checksum = calculatedChecksum,
-          crates = Map(baseMetadata.path -> Crate.generateId()),
+          crates = Map(baseMetadata.path.toAbsolutePath.toString -> Crate.generateId()),
           compression = "none"
         )
       }
@@ -108,25 +115,19 @@ trait ResourceHelpers extends FileSystemHelpers {
   }
 
   implicit class ExtendedFileMetadata(metadata: EntityMetadata.File) {
-    def withFilesystem(filesystem: FileSystem): EntityMetadata.File =
-      metadata.copy(path = filesystem.getPath(metadata.path.toAbsolutePath.toString))
-
     def withRootAt(path: String): EntityMetadata.File = {
-      val originalPath = metadata.path.toString
+      val originalPath = metadata.path
 
       val updatedPath = originalPath.split(path).lastOption match {
         case Some(remainingPath) => s"$path$remainingPath"
         case None                => s"$path$originalPath"
       }
 
-      metadata.copy(path = metadata.path.getFileSystem.getPath(updatedPath))
+      metadata.copy(path = updatedPath)
     }
   }
 
   implicit class ExtendedDirectoryMetadata(metadata: EntityMetadata.Directory) {
-    def withFilesystem(filesystem: FileSystem): EntityMetadata.Directory =
-      metadata.copy(path = filesystem.getPath(metadata.path.toAbsolutePath.toString))
-
     def withRootAt(path: String): EntityMetadata.Directory = {
       val originalPath = metadata.path.toString
 
@@ -139,7 +140,7 @@ trait ResourceHelpers extends FileSystemHelpers {
         }
       }
 
-      metadata.copy(path = metadata.path.getFileSystem.getPath(updatedPath))
+      metadata.copy(path = updatedPath)
     }
   }
 
@@ -164,4 +165,8 @@ object ResourceHelpers {
     included: Int,
     root: Int
   )
+
+  implicit class StringPath(path: String) {
+    def asPath: Path = Paths.get(path)
+  }
 }

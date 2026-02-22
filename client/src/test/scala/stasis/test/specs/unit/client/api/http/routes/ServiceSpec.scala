@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
@@ -20,6 +21,7 @@ import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
 import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsPersistence
+
 import stasis.shared.api.responses.Ping
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -108,7 +110,8 @@ class ServiceSpec extends AsyncUnitSpec with ScalatestRouteTest with Eventually 
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = analytics,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new Service().routes()

@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.nio.file.FileSystems
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 
@@ -16,6 +18,7 @@ import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 import stasis.test.specs.unit.client.mocks._
 
 class MetadataCollectionSpec extends AsyncUnitSpec {
@@ -173,7 +176,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
       .copy(
         entities = Fixtures.State.BackupOneState.entities.copy(
           processed = Map(
-            Fixtures.Metadata.FileThreeMetadata.path -> BackupState.ProcessedSourceEntity(
+            Fixtures.Metadata.FileThreeMetadata.path.asPath -> BackupState.ProcessedSourceEntity(
               expectedParts = 1,
               processedParts = 1,
               metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
@@ -235,6 +238,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
         core = MockServerCoreEndpointClient()
       ),
       track = tracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 }

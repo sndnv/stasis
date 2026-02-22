@@ -1,7 +1,10 @@
 package stasis.client.api
 
+import java.nio.file.FileSystem
+
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
 import org.apache.pekko.Done
 import org.slf4j.Logger
 
@@ -11,7 +14,6 @@ import stasis.client.ops.scheduling.OperationExecutor
 import stasis.client.ops.scheduling.OperationScheduler
 import stasis.client.ops.search.Search
 import stasis.client.tracking.TrackerViews
-import io.github.sndnv.layers.telemetry.analytics.AnalyticsCollector
 import stasis.shared.secrets.SecretsConfig
 
 final case class Context(
@@ -24,7 +26,8 @@ final case class Context(
   commandProcessor: CommandProcessor,
   secretsConfig: SecretsConfig,
   analytics: AnalyticsCollector,
-  log: Logger
+  log: Logger,
+  filesystem: FileSystem
 )
 
 object Context {

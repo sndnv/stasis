@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -28,9 +27,9 @@ class MockSearch extends Search {
               entryId = DatasetEntry.generateId(),
               entryCreated = Instant.now(),
               matches = Map(
-                Paths.get("file-01") -> FilesystemMetadata.EntityState.New,
-                Paths.get("file-02") -> FilesystemMetadata.EntityState.Updated,
-                Paths.get("file-03") -> FilesystemMetadata.EntityState.Existing(entry = DatasetEntry.generateId())
+                "file-01" -> FilesystemMetadata.EntityState.New,
+                "file-02" -> FilesystemMetadata.EntityState.Updated,
+                "file-03" -> FilesystemMetadata.EntityState.Existing(entry = DatasetEntry.generateId())
               )
             )
           ),

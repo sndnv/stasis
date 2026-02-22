@@ -50,7 +50,7 @@ class StreamingMemoryBackend private (
           backend
             .put(key, data)
             .map { result =>
-              metrics.recordWrite(backend = backend.name, bytes = data.length.toLong)
+              metrics.recordWrite(backend = backend.name(), bytes = data.length.toLong)
               result
             }
         }
@@ -61,14 +61,14 @@ class StreamingMemoryBackend private (
     backend
       .get(key)
       .map(_.map { value =>
-        metrics.recordRead(backend = backend.name, bytes = value.length.toLong)
+        metrics.recordRead(backend = backend.name(), bytes = value.length.toLong)
         Source(value.grouped(maxChunkSize).toList)
       })
 
   override def delete(key: UUID): Future[Boolean] = backend
     .delete(key)
     .map { result =>
-      metrics.recordDiscard(backend = backend.name)
+      metrics.recordDiscard(backend = backend.name())
       result
     }
 

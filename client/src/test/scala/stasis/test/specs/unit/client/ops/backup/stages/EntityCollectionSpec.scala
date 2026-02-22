@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.nio.file.FileSystems
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 
@@ -12,24 +14,25 @@ import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 import stasis.test.specs.unit.client.mocks._
 
 class EntityCollectionSpec extends AsyncUnitSpec {
   "A Backup EntityCollection stage" should "collect and filter files" in {
     val sourceFile1 = SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path,
+      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
     val sourceFile2 = SourceEntity(
-      path = Fixtures.Metadata.FileTwoMetadata.path,
+      path = Fixtures.Metadata.FileTwoMetadata.path.asPath,
       existingMetadata = Some(Fixtures.Metadata.FileTwoMetadata),
       currentMetadata = Fixtures.Metadata.FileTwoMetadata
     )
 
     val sourceFile3 = SourceEntity(
-      path = Fixtures.Metadata.FileThreeMetadata.path,
+      path = Fixtures.Metadata.FileThreeMetadata.path.asPath,
       existingMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)),
       currentMetadata = Fixtures.Metadata.FileThreeMetadata
     )
@@ -50,7 +53,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
             core = MockServerCoreEndpointClient()
           ),
           track = mockTracker,
-          telemetry = mockTelemetry
+          telemetry = mockTelemetry,
+          filesystem = FileSystems.getDefault
         )
 
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default
