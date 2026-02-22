@@ -85,14 +85,14 @@ object Metadata {
   def collectEntityMetadata(
     currentMetadata: BaseEntityMetadata,
     checksum: Checksum,
-    collectCrates: BigInt => Future[Map[Path, Crate.Id]],
+    collectCrates: BigInt => Future[Map[String, Crate.Id]],
     collectCompression: () => Future[String]
   )(implicit mat: Materializer): Future[EntityMetadata] =
     if (currentMetadata.isDirectory) {
       Future.successful(
         EntityMetadata.Directory(
-          path = currentMetadata.path,
-          link = currentMetadata.link,
+          path = currentMetadata.path.toAbsolutePath.toString,
+          link = currentMetadata.link.map(_.toAbsolutePath.toString),
           isHidden = currentMetadata.isHidden,
           created = currentMetadata.created,
           updated = currentMetadata.updated,
@@ -110,9 +110,9 @@ object Metadata {
         compression <- collectCompression()
       } yield {
         EntityMetadata.File(
-          path = currentMetadata.path,
+          path = currentMetadata.path.toAbsolutePath.toString,
           size = currentMetadata.attributes.size,
-          link = currentMetadata.link,
+          link = currentMetadata.link.map(_.toAbsolutePath.toString),
           isHidden = currentMetadata.isHidden,
           created = currentMetadata.created,
           updated = currentMetadata.updated,
@@ -129,7 +129,7 @@ object Metadata {
   def collectCratesForSourceFile(
     existingMetadata: Option[EntityMetadata],
     currentChecksum: BigInt
-  ): Future[Map[Path, Crate.Id]] =
+  ): Future[Map[String, Crate.Id]] =
     existingMetadata match {
       case Some(file: EntityMetadata.File) if file.checksum == currentChecksum =>
         Future.successful(file.crates)
@@ -137,7 +137,7 @@ object Metadata {
       case Some(directory: EntityMetadata.Directory) =>
         Future.failed(
           new IllegalArgumentException(
-            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+            s"Expected metadata for file but directory metadata for [${directory.path}] provided"
           )
         )
 
@@ -145,7 +145,7 @@ object Metadata {
         Future.successful(Map.empty)
     }
 
-  def collectCratesForTargetFile(existingMetadata: EntityMetadata): Future[Map[Path, Crate.Id]] =
+  def collectCratesForTargetFile(existingMetadata: EntityMetadata): Future[Map[String, Crate.Id]] =
     existingMetadata match {
       case file: EntityMetadata.File =>
         Future.successful(file.crates)
@@ -153,7 +153,7 @@ object Metadata {
       case directory: EntityMetadata.Directory =>
         Future.failed(
           new IllegalArgumentException(
-            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+            s"Expected metadata for file but directory metadata for [${directory.path}] provided"
           )
         )
     }
@@ -166,7 +166,7 @@ object Metadata {
       case directory: EntityMetadata.Directory =>
         Future.failed(
           new IllegalArgumentException(
-            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+            s"Expected metadata for file but directory metadata for [${directory.path}] provided"
           )
         )
     }

@@ -12,6 +12,7 @@ import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 
 class BackupStateSpec extends UnitSpec {
   "A BackupState" should "provide its type and state" in {
@@ -111,15 +112,15 @@ class BackupStateSpec extends UnitSpec {
     val backup = BackupState
       .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
       .entityProcessed(
-        entity = Fixtures.Metadata.FileOneMetadata.path,
+        entity = Fixtures.Metadata.FileOneMetadata.path.asPath,
         metadata = Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
       )
       .entityProcessed(
-        entity = Fixtures.Metadata.FileTwoMetadata.path,
+        entity = Fixtures.Metadata.FileTwoMetadata.path.asPath,
         metadata = Left(Fixtures.Metadata.FileTwoMetadata) // content changed
       )
       .entityProcessed(
-        entity = Fixtures.Metadata.FileThreeMetadata.path,
+        entity = Fixtures.Metadata.FileThreeMetadata.path.asPath,
         metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
       )
 
@@ -334,9 +335,9 @@ class BackupStateSpec extends UnitSpec {
     )
   }
 
-  private val entity1 = Fixtures.Metadata.FileOneMetadata.path
-  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path
-  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
+  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
+  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
 
   private val sourceEntity1 = SourceEntity(
     path = entity1,

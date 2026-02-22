@@ -5,6 +5,7 @@ import java.nio.file.Paths
 import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 
 class TargetEntitySpec extends UnitSpec {
   "A TargetEntity" should "fail if different entity types provided for current and existing metadata" in {
@@ -39,7 +40,7 @@ class TargetEntitySpec extends UnitSpec {
   }
 
   it should "provide its original file path" in {
-    targetFile.originalPath should be(targetFile.existingMetadata.path)
+    targetFile.originalPath.toString should be(targetFile.existingMetadata.path)
   }
 
   it should "provide its destination file path" in {
@@ -65,7 +66,7 @@ class TargetEntitySpec extends UnitSpec {
   }
 
   private val targetFile = TargetEntity(
-    path = Fixtures.Metadata.FileOneMetadata.path,
+    path = Fixtures.Metadata.FileOneMetadata.path.asPath,
     destination = TargetEntity.Destination.Default,
     existingMetadata = Fixtures.Metadata.FileOneMetadata,
     currentMetadata = None
@@ -87,7 +88,7 @@ class TargetEntitySpec extends UnitSpec {
     targetFile.copy(currentMetadata = Some(Fixtures.Metadata.FileOneMetadata.copy(checksum = 0)))
 
   private val targetDirectory = TargetEntity(
-    path = Fixtures.Metadata.DirectoryOneMetadata.path,
+    path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
     destination = TargetEntity.Destination.Default,
     existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
     currentMetadata = None

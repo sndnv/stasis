@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.Context
 import stasis.client.api.http.routes.User
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.api.requests.UpdateUserPasswordOwn
 import stasis.shared.api.requests.UpdateUserSaltOwn
 import stasis.shared.model
@@ -293,7 +295,8 @@ class UserSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new User().routes()

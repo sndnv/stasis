@@ -3,17 +3,18 @@ package stasis.test.specs.unit.client.model
 import stasis.client.model.SourceEntity
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 
 class SourceEntitySpec extends UnitSpec {
   "A SourceEntity" should "fail if different entity types provided for current and existing metadata" in {
     an[IllegalArgumentException] should be thrownBy SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path,
+      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
       existingMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata),
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
     an[IllegalArgumentException] should be thrownBy SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path,
+      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
       existingMetadata = Some(Fixtures.Metadata.FileOneMetadata),
       currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
     )
@@ -39,7 +40,7 @@ class SourceEntitySpec extends UnitSpec {
   }
 
   private val fileEntity = SourceEntity(
-    path = Fixtures.Metadata.FileOneMetadata.path,
+    path = Fixtures.Metadata.FileOneMetadata.path.asPath,
     existingMetadata = None,
     currentMetadata = Fixtures.Metadata.FileOneMetadata
   )
@@ -60,7 +61,7 @@ class SourceEntitySpec extends UnitSpec {
     sourceFileWithExistingMetadata.copy(existingMetadata = Some(Fixtures.Metadata.FileOneMetadata.copy(checksum = 0)))
 
   private val directoryEntity = SourceEntity(
-    path = Fixtures.Metadata.DirectoryOneMetadata.path,
+    path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
     existingMetadata = None,
     currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
   )

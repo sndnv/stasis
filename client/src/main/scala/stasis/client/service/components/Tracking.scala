@@ -1,7 +1,5 @@
 package stasis.client.service.components
 
-import java.nio.file.FileSystems
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
@@ -32,16 +30,13 @@ object Tracking {
     Future.fromTry(
       Try {
         val parent = directory.appDirectory.resolve("state")
-        val filesystem = FileSystems.getDefault
 
         val backupStateStore = StateStore[Map[Operation.Id, BackupState]](
-          directory = parent.resolve("backups").toAbsolutePath.toString,
-          filesystem = filesystem
+          directory = parent.resolve("backups").toAbsolutePath
         )
 
         val recoveryStateStore = StateStore[Map[Operation.Id, RecoveryState]](
-          directory = parent.resolve("recoveries").toAbsolutePath.toString,
-          filesystem = filesystem
+          directory = parent.resolve("recoveries").toAbsolutePath
         )
 
         new Tracking {

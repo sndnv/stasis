@@ -1,6 +1,5 @@
 package stasis.client.ops.search
 
-import java.nio.file.Path
 import java.time.Instant
 import java.util.regex.Pattern
 
@@ -44,6 +43,6 @@ object Search {
     definitionInfo: String,
     entryId: DatasetEntry.Id,
     entryCreated: Instant,
-    matches: Map[Path, FilesystemMetadata.EntityState]
+    matches: Map[String, FilesystemMetadata.EntityState]
   )
 }

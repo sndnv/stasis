@@ -1,5 +1,6 @@
 package stasis.client.ops.recovery.stages
 
+import java.nio.file.FileSystem
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.Files
 import java.nio.file.Path
@@ -26,6 +27,7 @@ import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.Metrics
 import stasis.client.ops.ParallelismConfig
+import stasis.client.utils.StringPaths.StringAsPath
 import stasis.core.packaging.Crate
 import stasis.core.routing.exceptions.PullFailure
 import stasis.shared.ops.Operation
@@ -109,9 +111,9 @@ trait EntityProcessing {
     Future.successful(entity)
   }
 
-  private def pull(crates: Map[Path, Crate.Id], entity: Path): Iterable[(Int, Path, Source[ByteString, NotUsed])] = {
+  private def pull(crates: Map[String, Crate.Id], entity: Path): Iterable[(Int, String, Source[ByteString, NotUsed])] = {
     val sources = crates.map { case (partPath, crate) =>
-      val partId = EntityProcessing.partIdFromPath(path = partPath)
+      val partId = EntityProcessing.partIdFromPath(path = partPath, fs = entity.getFileSystem)
 
       val source: Source[ByteString, NotUsed] = Source
         .lazyFutureSource { () =>
@@ -148,7 +150,7 @@ trait EntityProcessing {
   private val targetDirectoryAttributes =
     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
 
-  private type CratesSources = Iterable[(Int, Path, Source[ByteString, NotUsed])]
+  private type CratesSources = Iterable[(Int, String, Source[ByteString, NotUsed])]
   private type EntitySource = Source[ByteString, NotUsed]
 
   private implicit class DecryptedCrates(crates: CratesSources) extends internal.DecryptedCrates(crates)
@@ -158,10 +160,10 @@ trait EntityProcessing {
 }
 
 object EntityProcessing {
-  val pathPartId: Regex = ".*__part=(\\d+)".r
+  private val pathPartId: Regex = ".*__part=(\\d+)".r
 
-  def partIdFromPath(path: Path): Int =
-    path.getFileName.toString match {
+  def partIdFromPath(path: String, fs: FileSystem): Int =
+    path.extractName(fs) match {
       case pathPartId(id) => Try(Integer.parseInt(id)).getOrElse(0)
       case _              => 0
     }
@@ -174,7 +176,7 @@ object EntityProcessing {
       case directory: EntityMetadata.Directory =>
         Future.failed(
           new IllegalArgumentException(
-            s"Expected metadata for file but directory metadata for [${directory.path.toString}] provided"
+            s"Expected metadata for file but directory metadata for [${directory.path}] provided"
           )
         )
     }

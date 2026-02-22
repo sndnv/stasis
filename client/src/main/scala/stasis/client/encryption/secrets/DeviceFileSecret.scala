@@ -1,14 +1,12 @@
 package stasis.client.encryption.secrets
 
-import java.nio.file.Path
-
 import org.apache.pekko.util.ByteString
 
 import stasis.client.encryption.Aes
 import stasis.client.encryption.stream.CipherStage
 
 final case class DeviceFileSecret(
-  file: Path,
+  file: String,
   iv: ByteString,
   private val key: ByteString
 ) extends Secret {
@@ -17,6 +15,6 @@ final case class DeviceFileSecret(
 }
 
 object DeviceFileSecret {
-  def apply(file: Path, iv: ByteString, key: ByteString): DeviceFileSecret =
+  def apply(file: String, iv: ByteString, key: ByteString): DeviceFileSecret =
     new DeviceFileSecret(file, iv, key)
 }

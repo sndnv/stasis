@@ -17,7 +17,7 @@ trait EntityCollection {
 
   def entityCollection(implicit operation: Operation.Id): Source[TargetEntity, NotUsed] =
     collector
-      .collect()
+      .collect(providers.filesystem)
       .wireTap { entity =>
         metrics.recordEntityExamined(entity = entity)
 

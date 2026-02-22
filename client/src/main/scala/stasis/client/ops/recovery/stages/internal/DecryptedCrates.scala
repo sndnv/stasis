@@ -1,7 +1,5 @@
 package stasis.client.ops.recovery.stages.internal
 
-import java.nio.file.Path
-
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -10,10 +8,10 @@ import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.Metrics
 import stasis.client.ops.recovery.Providers
 
-class DecryptedCrates(crates: Iterable[(Int, Path, Source[ByteString, NotUsed])]) {
+class DecryptedCrates(crates: Iterable[(Int, String, Source[ByteString, NotUsed])]) {
   def decrypt(
-    withPartSecret: Path => DeviceFileSecret
-  )(implicit providers: Providers): Iterable[(Int, Path, Source[ByteString, NotUsed])] = {
+    withPartSecret: String => DeviceFileSecret
+  )(implicit providers: Providers): Iterable[(Int, String, Source[ByteString, NotUsed])] = {
     val metrics = providers.telemetry.metrics[Metrics.RecoveryOperation]
 
     crates.map { case (partId, partPath, source) =>

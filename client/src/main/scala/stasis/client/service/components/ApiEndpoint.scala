@@ -59,7 +59,8 @@ object ApiEndpoint {
         commandProcessor = commandProcessor,
         secretsConfig = secrets.config,
         analytics = telemetry.analytics,
-        log = LoggerFactory.getLogger(this.getClass.getName)
+        log = LoggerFactory.getLogger(this.getClass.getName),
+        filesystem = directory.appDirectory.getFileSystem
       )
 
       log.debug("Successfully created API token file [{}]", tokenFile)

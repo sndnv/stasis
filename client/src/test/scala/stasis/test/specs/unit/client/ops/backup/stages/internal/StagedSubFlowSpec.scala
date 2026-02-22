@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
@@ -43,10 +44,11 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockBackupTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
-    val expectedPartPath = Paths.get("/tmp/file/one_0")
+    val expectedPartPath = "/tmp/file/one_0"
 
     for {
       flow <- StagedSubFlow.createStagingFlow(
@@ -95,14 +97,15 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockBackupTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
-    val stagedParts = new java.util.LinkedList[(Path, Path)](
+    val stagedParts = new java.util.LinkedList[(String, Path)](
       (
-        (Paths.get("/tmp/file/one_0"), Paths.get("/tmp/file/staged_1"))
-          :: (Paths.get("/tmp/file/two_0"), Paths.get("/tmp/file/staged_2"))
-          :: (Paths.get("/tmp/file/two_1"), Paths.get("/tmp/file/staged_3"))
+        ("/tmp/file/one_0", Paths.get("/tmp/file/staged_1"))
+          :: ("/tmp/file/two_0", Paths.get("/tmp/file/staged_2"))
+          :: ("/tmp/file/two_1", Paths.get("/tmp/file/staged_3"))
           :: Nil
       ).asJava
     )
@@ -148,11 +151,12 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockBackupTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
-    val stagedParts = new java.util.LinkedList[(Path, Path)](
-      ((Paths.get("/tmp/file/one_0"), Paths.get("/tmp/file/staged_1")) :: Nil).asJava
+    val stagedParts = new java.util.LinkedList[(String, Path)](
+      (("/tmp/file/one_0", Paths.get("/tmp/file/staged_1")) :: Nil).asJava
     )
 
     StagedSubFlow
@@ -201,7 +205,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockBackupTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
     val partsStaged = new AtomicInteger(0)
@@ -210,7 +215,7 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       .stage(
         withPartSecret = partId =>
           DeviceFileSecret(
-            file = Paths.get(s"/tmp/file/one_$partId"),
+            file = s"/tmp/file/one_$partId",
             iv = ByteString.empty,
             key = ByteString.empty
           ),
@@ -221,10 +226,10 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
 
         result.toList match {
           case (part1Path, part1Staged) :: (part2Path, part2Staged) :: Nil =>
-            part1Path.toString should be("/tmp/file/one_0")
+            part1Path should be("/tmp/file/one_0")
             part1Staged should be(mockStaging.temporaryPath)
 
-            part2Path.toString should be("/tmp/file/one_1")
+            part2Path should be("/tmp/file/one_1")
             part2Staged should be(mockStaging.temporaryPath)
 
           case other =>

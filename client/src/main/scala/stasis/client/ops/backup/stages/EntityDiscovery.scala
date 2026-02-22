@@ -34,7 +34,7 @@ trait EntityDiscovery {
       collector match {
         case EntityDiscovery.Collector.WithRules(rules) =>
           Specification
-            .tracked(rules, providers.track)
+            .tracked(rules = rules, tracker = providers.track, filesystem = providers.filesystem)
             .map { spec =>
               spec.includedParents.foreach(providers.track.entityDiscovered)
               providers.track.specificationProcessed(unmatched = spec.unmatched)

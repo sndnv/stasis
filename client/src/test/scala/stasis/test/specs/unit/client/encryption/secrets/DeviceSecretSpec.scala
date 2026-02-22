@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.encryption.secrets
 
-import java.nio.file.Paths
-
 import org.apache.pekko.actor.ActorSystem
 
 import stasis.client.encryption.Aes
@@ -45,7 +43,7 @@ class DeviceSecretSpec extends AsyncUnitSpec with SecretsConfig with EncodingHel
   }
 
   it should "support generating file secrets" in {
-    val file = Paths.get("/tmp/some/file")
+    val file = "/tmp/some/file"
 
     val iv = "uXE+Ru1aojwZa+8IVE49mg=="
     val key = "aHhX4zqPGYLnr+WI9RF23Q=="

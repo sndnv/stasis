@@ -1,6 +1,8 @@
 package stasis.client.collection.rules
 
-import java.nio.file._
+import java.nio.file.FileSystem
+import java.nio.file.Path
+import java.nio.file.PathMatcher
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -69,21 +71,17 @@ object Specification {
   )
 
   def untracked(
-    rules: Seq[Rule]
+    rules: Seq[Rule],
+    filesystem: FileSystem
   )(implicit ec: ExecutionContext): Future[Specification] =
-    apply(rules, onMatchIncluded = { _ => () }, filesystem = FileSystems.getDefault)
+    apply(rules, onMatchIncluded = { _ => () }, filesystem = filesystem)
 
   def tracked(
     rules: Seq[Rule],
-    tracker: BackupTracker
+    tracker: BackupTracker,
+    filesystem: FileSystem
   )(implicit ec: ExecutionContext, operation: Operation.Id): Future[Specification] =
-    apply(rules, onMatchIncluded = { path => tracker.entityDiscovered(path) }, filesystem = FileSystems.getDefault)
-
-  def apply(
-    rules: Seq[Rule],
-    onMatchIncluded: Path => Unit
-  )(implicit ec: ExecutionContext): Future[Specification] =
-    apply(rules, onMatchIncluded = onMatchIncluded, filesystem = FileSystems.getDefault)
+    apply(rules, onMatchIncluded = { path => tracker.entityDiscovered(path) }, filesystem = filesystem)
 
   def apply(
     rules: Seq[Rule],

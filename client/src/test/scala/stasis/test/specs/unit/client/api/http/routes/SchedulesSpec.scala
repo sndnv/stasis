@@ -1,5 +1,7 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
+
 import scala.concurrent.Future
 
 import org.apache.pekko.Done
@@ -12,6 +14,7 @@ import stasis.client.api.Context
 import stasis.client.api.http.routes.Schedules
 import stasis.client.ops.scheduling.OperationScheduler.ActiveSchedule
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.model.schedules.Schedule
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -140,7 +143,8 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new Schedules().routes()

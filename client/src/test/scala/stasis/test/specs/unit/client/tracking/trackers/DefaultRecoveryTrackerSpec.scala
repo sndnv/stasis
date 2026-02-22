@@ -18,6 +18,7 @@ import stasis.core.persistence.backends.memory.EventLogMemoryBackend
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 import stasis.test.specs.unit.core.telemetry.MockTelemetryContext
 
 class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with BeforeAndAfterAll {
@@ -26,7 +27,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
 
     implicit val operation: Operation.Id = Operation.generateId()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
 
     val targetEntity = TargetEntity(
       path = entity,
@@ -45,7 +46,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
     tracker.entityProcessed(entity = entity)
     tracker.metadataApplied(entity = entity)
     tracker.failureEncountered(new RuntimeException("Test failure #1"))
-    tracker.failureEncountered(entity = Fixtures.Metadata.FileTwoMetadata.path, new RuntimeException("Test failure #2"))
+    tracker.failureEncountered(entity = Fixtures.Metadata.FileTwoMetadata.path.asPath, new RuntimeException("Test failure #2"))
     tracker.completed()
 
     eventually[Assertion] {
@@ -66,7 +67,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
           ),
           metadataApplied = Set(entity),
           failed = Map(
-            Fixtures.Metadata.FileTwoMetadata.path -> "RuntimeException - Test failure #2"
+            Fixtures.Metadata.FileTwoMetadata.path.asPath -> "RuntimeException - Test failure #2"
           )
         )
       )
@@ -81,7 +82,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
 
     implicit val operation: Operation.Id = Operation.generateId()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
 
     val initialState = tracker.state.await
     initialState should be(empty)
@@ -118,7 +119,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
   it should "support dropping old state" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
 
     val operation1 = Operation.generateId()
 
@@ -151,7 +152,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
 
     implicit val operation: Operation.Id = Operation.generateId()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
 
     val initialState = tracker.state.await
     initialState should be(empty)
@@ -194,7 +195,7 @@ class DefaultRecoveryTrackerSpec extends AsyncUnitSpec with Eventually with Befo
   it should "support removing operations" in withRetry {
     val tracker = createTracker(maxRetention = 250.millis)
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
 
     val operation1 = Operation.generateId()
     val operation2 = Operation.generateId()

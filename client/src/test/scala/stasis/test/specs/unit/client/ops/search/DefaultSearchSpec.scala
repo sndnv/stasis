@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.ops.search
 
-import java.nio.file.Paths
 import java.time.Instant
 
 import scala.concurrent.Future
@@ -34,14 +33,14 @@ class DefaultSearchSpec extends AsyncUnitSpec {
     )
 
     val matchingFiles = Map(
-      Paths.get(s"$searchTerm-01") -> FilesystemMetadata.EntityState.New,
-      Paths.get(s"$searchTerm-02") -> FilesystemMetadata.EntityState.Updated,
-      Paths.get(s"other-$searchTerm") -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId()),
-      Paths.get(s"$searchTerm") -> FilesystemMetadata.EntityState.New
+      s"$searchTerm-01" -> FilesystemMetadata.EntityState.New,
+      s"$searchTerm-02" -> FilesystemMetadata.EntityState.Updated,
+      s"other-$searchTerm" -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId()),
+      s"$searchTerm" -> FilesystemMetadata.EntityState.New
     )
 
     val nonMatchingFiles = Map(
-      Paths.get("other-name") -> FilesystemMetadata.EntityState.New
+      "other-name" -> FilesystemMetadata.EntityState.New
     )
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {

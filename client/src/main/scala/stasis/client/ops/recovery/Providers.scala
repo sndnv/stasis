@@ -1,5 +1,7 @@
 package stasis.client.ops.recovery
 
+import java.nio.file.FileSystem
+
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.compression.Compression
@@ -15,5 +17,6 @@ final case class Providers(
   decryptor: encryption.Decoder,
   clients: Clients,
   track: RecoveryTracker,
-  telemetry: TelemetryContext
+  telemetry: TelemetryContext,
+  filesystem: FileSystem
 )

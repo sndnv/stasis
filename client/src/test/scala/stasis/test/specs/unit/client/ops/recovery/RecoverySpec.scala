@@ -1,6 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery
 
-import java.nio.file.Paths
+import java.nio.file.FileSystems
 import java.time.Instant
 
 import scala.concurrent.Future
@@ -33,6 +33,7 @@ import stasis.client.ops.recovery.Recovery.PathQuery
 import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
 import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -460,7 +461,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         )
       ),
       track = new MockRecoveryTracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     for {
@@ -513,7 +515,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         core = MockServerCoreEndpointClient()
       ),
       track = new MockRecoveryTracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     Recovery
@@ -549,7 +552,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
         core = MockServerCoreEndpointClient()
       ),
       track = new MockRecoveryTracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     val descriptor = Recovery.Descriptor(
@@ -563,10 +567,14 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   }
 
   "Recovery path queries" should "support checking for matches in withRetry paths" in withRetry {
+    val (filesystem, _) = createMockFileSystem(
+      setup = FileSystemSetup.Unix
+    )
+
     matchingPathRegexes.foreach { regex =>
       val query = PathQuery.ForAbsolutePath(query = new Regex(regex))
       withClue(s"Matching path [$matchingPath] with [$regex]:") {
-        query.matches(matchingPath) should be(true)
+        query.matches(matchingPath, filesystem) should be(true)
       }
     }
 
@@ -574,17 +582,21 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   }
 
   they should "support checking for matches in withRetry file names" in withRetry {
+    val (filesystem, _) = createMockFileSystem(
+      setup = FileSystemSetup.Unix
+    )
+
     matchingFileNameRegexes.foreach { regex =>
       val query = PathQuery.ForFileName(query = new Regex(regex))
       withClue(s"Matching file name in withRetry path [$matchingPath] with [$regex]:") {
-        query.matches(matchingPath) should be(true)
+        query.matches(matchingPath, filesystem) should be(true)
       }
     }
 
     nonMatchingPathRegexes.foreach { regex =>
       val query = PathQuery.ForFileName(query = new Regex(regex))
       withClue(s"Matching file name in withRetry path [$matchingPath] with [$regex]:") {
-        query.matches(matchingPath) should be(false)
+        query.matches(matchingPath, filesystem) should be(false)
       }
     }
 
@@ -606,18 +618,17 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
 
     val recoveryDestination = Destination(
       path = "/tmp/test/path",
-      keepStructure = false,
-      filesystem = filesystem
+      keepStructure = false
     )
 
-    Some(recoveryDestination).toTargetEntityDestination should be(
+    Some(recoveryDestination).toTargetEntityDestination(filesystem) should be(
       TargetEntity.Destination.Directory(
         path = filesystem.getPath(recoveryDestination.path),
         keepDefaultStructure = recoveryDestination.keepStructure
       )
     )
 
-    Option.empty[Destination].toTargetEntityDestination should be(
+    Option.empty[Destination].toTargetEntityDestination(filesystem) should be(
       TargetEntity.Destination.Default
     )
   }
@@ -660,7 +671,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     secret = ByteString("some-secret")
   )
 
-  private val matchingPath = Paths.get("/tmp/a/b/c/test-file.json")
+  private val matchingPath = "/tmp/a/b/c/test-file.json"
 
   private val matchingFileNameRegexes = Seq(
     """test-file""",
@@ -696,7 +707,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       decryptor = new MockEncryption,
       clients = clients,
       track = tracker,
-      telemetry = MockClientTelemetryContext()
+      telemetry = MockClientTelemetryContext(),
+      filesystem = FileSystems.getDefault
     )
 
     new Recovery(

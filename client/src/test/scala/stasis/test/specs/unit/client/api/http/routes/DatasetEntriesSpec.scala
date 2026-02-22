@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.api.http.routes
 
+import java.nio.file.FileSystems
 import java.time.Instant
 
 import scala.concurrent.Future
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory
 import stasis.client.api.Context
 import stasis.client.api.http.routes.DatasetEntries
 import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
+
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -230,7 +232,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
       commandProcessor = MockCommandProcessor(),
       secretsConfig = Fixtures.Secrets.DefaultConfig,
       analytics = new MockAnalyticsCollector,
-      log = LoggerFactory.getLogger(this.getClass.getName)
+      log = LoggerFactory.getLogger(this.getClass.getName),
+      filesystem = FileSystems.getDefault
     )
 
     new DatasetEntries().routes()

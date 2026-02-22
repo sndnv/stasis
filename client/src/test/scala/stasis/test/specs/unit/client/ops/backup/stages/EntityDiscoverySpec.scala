@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages
 
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
@@ -60,8 +61,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     val stage = new EntityDiscovery {
       override protected def collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithRules(
         rules = Seq(
-          Rule(line = s"+ ${sourceDirectory1Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get,
-          Rule(line = s"+ ${sourceDirectory2Metadata.path.toAbsolutePath} source-file-*", lineNumber = 0).get
+          Rule(line = s"+ ${sourceDirectory1Metadata.path} source-file-*", lineNumber = 0).get,
+          Rule(line = s"+ ${sourceDirectory2Metadata.path} source-file-*", lineNumber = 0).get
         )
       )
       override protected def latestMetadata: Option[DatasetMetadata] = Some(metadata)
@@ -77,7 +78,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             core = MockServerCoreEndpointClient()
           ),
           track = mockTracker,
-          telemetry = MockClientTelemetryContext()
+          telemetry = MockClientTelemetryContext(),
+          filesystem = FileSystems.getDefault
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -138,7 +140,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             core = MockServerCoreEndpointClient()
           ),
           track = mockTracker,
-          telemetry = MockClientTelemetryContext()
+          telemetry = MockClientTelemetryContext(),
+          filesystem = FileSystems.getDefault
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -185,10 +188,10 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             discovered = Set(
               sourceFile1,
               sourceFile2,
-              Fixtures.Metadata.FileThreeMetadata.path
+              Fixtures.Metadata.FileThreeMetadata.path.asPath
             ),
             processed = Map(
-              Fixtures.Metadata.FileThreeMetadata.path -> ProcessedSourceEntity(
+              Fixtures.Metadata.FileThreeMetadata.path.asPath -> ProcessedSourceEntity(
                 expectedParts = 1,
                 processedParts = 1,
                 metadata = Left(Fixtures.Metadata.FileThreeMetadata)
@@ -212,7 +215,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
             core = MockServerCoreEndpointClient()
           ),
           track = mockTracker,
-          telemetry = MockClientTelemetryContext()
+          telemetry = MockClientTelemetryContext(),
+          filesystem = FileSystems.getDefault
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer

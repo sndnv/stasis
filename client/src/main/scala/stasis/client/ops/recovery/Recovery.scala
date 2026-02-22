@@ -1,8 +1,6 @@
 package stasis.client.ops.recovery
 
 import java.nio.file.FileSystem
-import java.nio.file.FileSystems
-import java.nio.file.Path
 import java.time.Instant
 
 import scala.concurrent.ExecutionContext
@@ -30,6 +28,7 @@ import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.client.ops.recovery.stages.EntityProcessing
 import stasis.client.ops.recovery.stages.MetadataApplication
 import stasis.client.tracking.RecoveryTracker
+import stasis.client.utils.StringPaths.StringAsPath
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.ops.Operation
@@ -114,8 +113,8 @@ object Recovery {
     ): RecoveryCollector =
       new RecoveryCollector.Default(
         targetMetadata = targetMetadata,
-        keep = (entity, _) => query.forall(_.matches(entity.toAbsolutePath)),
-        destination = destination.toTargetEntityDestination,
+        keep = (entity, _) => query.forall(_.matches(entity, providers.filesystem)),
+        destination = destination.toTargetEntityDestination(providers.filesystem),
         metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
         clients = providers.clients
       )
@@ -164,7 +163,7 @@ object Recovery {
   }
 
   sealed trait PathQuery {
-    def matches(path: Path): Boolean
+    def matches(path: String, filesystem: FileSystem): Boolean
   }
 
   object PathQuery {
@@ -176,33 +175,27 @@ object Recovery {
       }
 
     final case class ForAbsolutePath(query: Regex) extends PathQuery {
-      override def matches(path: Path): Boolean =
-        query.pattern.matcher(path.toAbsolutePath.toString).find()
+      override def matches(path: String, filesystem: FileSystem): Boolean =
+        query.pattern.matcher(path).find()
     }
 
     final case class ForFileName(query: Regex) extends PathQuery {
-      override def matches(path: Path): Boolean =
-        query.pattern.matcher(path.getFileName.toString).find()
+      override def matches(path: String, filesystem: FileSystem): Boolean =
+        query.pattern.matcher(path.extractName(filesystem)).find()
     }
   }
 
   final case class Destination(
     path: String,
-    keepStructure: Boolean,
-    filesystem: FileSystem
+    keepStructure: Boolean
   )
 
-  object Destination {
-    def apply(path: String, keepStructure: Boolean): Destination =
-      Destination(path = path, keepStructure = keepStructure, filesystem = FileSystems.getDefault)
-  }
-
   implicit class RecoveryToTargetEntityDestination(destination: Option[Destination]) {
-    def toTargetEntityDestination: TargetEntity.Destination =
+    def toTargetEntityDestination(filesystem: FileSystem): TargetEntity.Destination =
       destination match {
         case Some(destination) =>
           TargetEntity.Destination.Directory(
-            path = destination.filesystem.getPath(destination.path),
+            path = filesystem.getPath(destination.path),
             keepDefaultStructure = destination.keepStructure
           )
 

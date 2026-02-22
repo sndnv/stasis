@@ -11,6 +11,7 @@ import stasis.client.tracking.state.RecoveryState.ProcessedTargetEntity
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
+import stasis.test.specs.unit.client.ResourceHelpers.StringPath
 
 class RecoveryStateSpec extends UnitSpec {
   "A RecoveryState" should "provide its type and state" in {
@@ -183,9 +184,9 @@ class RecoveryStateSpec extends UnitSpec {
     actualEntity should be(expectedEntity)
   }
 
-  private val entity1 = Fixtures.Metadata.FileOneMetadata.path
-  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path
-  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path
+  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
+  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
+  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
 
   private val targetEntity1 = TargetEntity(
     path = entity1,

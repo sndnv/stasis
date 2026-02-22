@@ -5,11 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.ExecutionContext
 
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.Specification
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.IndexedRule
-import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 import stasis.test.specs.unit.AsyncUnitSpec
 import stasis.test.specs.unit.client.ResourceHelpers
 
@@ -219,7 +220,9 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
     }
 
     it should "create an empty spec if no rules are provided" in {
-      Specification(rules = Seq.empty, onMatchIncluded = _ => ())(ec).map { spec =>
+      val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
+
+      Specification(rules = Seq.empty, onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
         spec should be(Specification.empty)
       }
     }

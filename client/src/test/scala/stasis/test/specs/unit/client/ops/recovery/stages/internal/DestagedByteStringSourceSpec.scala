@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.ops.recovery.stages.internal
 
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 
 import scala.util.control.NonFatal
@@ -30,7 +31,8 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockRecoveryTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
     val original = Source.single(ByteString("original"))
@@ -65,7 +67,8 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
         core = MockServerCoreEndpointClient()
       ),
       track = new MockRecoveryTracker,
-      telemetry = mockTelemetry
+      telemetry = mockTelemetry,
+      filesystem = FileSystems.getDefault
     )
 
     val original = Source.failed(new RuntimeException("test failure"))

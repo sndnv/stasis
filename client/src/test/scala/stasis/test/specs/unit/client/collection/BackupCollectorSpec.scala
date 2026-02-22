@@ -62,7 +62,7 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val mockApiClient = MockServerApiEndpointClient()
 
     val file1 = "/collection/file-1".asTestResource
-    val file1Metadata = Fixtures.Metadata.FileOneMetadata.copy(path = file1)
+    val file1Metadata = Fixtures.Metadata.FileOneMetadata.copy(path = file1.asString)
 
     val file2 = "/collection/file-2".asTestResource
 
@@ -73,9 +73,9 @@ class BackupCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
             entities = List(file1, file2),
             latestMetadata = Some(
               DatasetMetadata(
-                contentChanged = Map(file1 -> file1Metadata),
+                contentChanged = Map(file1.asString -> file1Metadata),
                 metadataChanged = Map.empty,
-                filesystem = FilesystemMetadata(entities = Map(file1 -> FilesystemMetadata.EntityState.New))
+                filesystem = FilesystemMetadata(entities = Map(file1.asString -> FilesystemMetadata.EntityState.New))
               )
             ),
             clients = Clients(api = mockApiClient, core = null)

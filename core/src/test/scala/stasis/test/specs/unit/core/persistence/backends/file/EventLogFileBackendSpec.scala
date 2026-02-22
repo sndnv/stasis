@@ -52,10 +52,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
             persistAfterPeriod = 1.minute
           ),
           initialState = Queue.empty[String],
-          stateStore = StateStore(
-            directory = "/store",
-            filesystem = filesystem
-          )
+          stateStore = StateStore(directory = filesystem.getPath("/store"))
         )
       }
     )
@@ -67,10 +64,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
 
     val expectedState = Queue("a", "b", "c")
 
-    val stateStore = StateStore(
-      directory = "/store",
-      filesystem = filesystem
-    )
+    val stateStore = StateStore(directory = filesystem.getPath("/store"))
 
     stateStore.persist(state = expectedState).await
 
@@ -104,9 +98,8 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
       ),
       initialState = Queue.empty[String],
       stateStore = StateStore(
-        directory = target,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = filesystem.getPath(target),
+        retainedVersions = 10
       )
     )
 
@@ -145,9 +138,8 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
       ),
       initialState = Queue.empty[String],
       stateStore = StateStore(
-        directory = target,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = filesystem.getPath(target),
+        retainedVersions = 10
       )
     )
 
@@ -189,10 +181,7 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
           persistAfterPeriod = 250.millis
         ),
         initialState = Queue.empty[String],
-        stateStore = StateStore(
-          directory = target,
-          filesystem = filesystem
-        )
+        stateStore = StateStore(directory = filesystem.getPath(target))
       )
 
     val testEvent = "test-event"
@@ -227,9 +216,8 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     val expectedState = Queue("a", "b", "c")
 
     val stateStore = new StateStore(
-      directory = "/store",
-      retainedVersions = 10,
-      filesystem = filesystem
+      directory = filesystem.getPath("/store"),
+      retainedVersions = 10
     ) {
       override def restore(): Future[Option[Queue[String]]] =
         Future.failed(new RuntimeException("Test failure"))
@@ -271,9 +259,8 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
       ),
       initialState = expectedState,
       stateStore = StateStore(
-        directory = target,
-        retainedVersions = 10,
-        filesystem = filesystem
+        directory = filesystem.getPath(target),
+        retainedVersions = 10
       )
     )
 
@@ -290,9 +277,8 @@ class EventLogFileBackendSpec extends AsyncUnitSpec with EventLogBackendBehaviou
     val target = "/store"
 
     val stateStore = new StateStore(
-      directory = target,
-      retainedVersions = 10,
-      filesystem = filesystem
+      directory = filesystem.getPath(target),
+      retainedVersions = 10
     ) {
       override def persist(state: Queue[String]): Future[Done] =
         Future.failed(new RuntimeException("Test failure"))

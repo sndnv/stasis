@@ -1,7 +1,5 @@
 package stasis.test.specs.unit.client.model
 
-import java.nio.file.Paths
-
 import scala.util.Failure
 import scala.util.Success
 
@@ -52,7 +50,7 @@ class FilesystemMetadataSpec extends UnitSpec {
   it should "allow to be updated with new files" in {
     val newEntry = DatasetEntry.generateId()
 
-    val newFile = Paths.get("/tmp/file/five")
+    val newFile = "/tmp/file/five"
 
     val updated = filesystemMetadata.updated(
       changes = Seq(
@@ -141,9 +139,9 @@ class FilesystemMetadataSpec extends UnitSpec {
 
   private val filesystemMetadataProto = proto.metadata.FilesystemMetadata(
     entities = Map(
-      Fixtures.Metadata.FileOneMetadata.path.toAbsolutePath.toString -> protoEntityStateNew(),
-      Fixtures.Metadata.FileTwoMetadata.path.toAbsolutePath.toString -> protoEntityStateUpdated(),
-      Fixtures.Metadata.FileThreeMetadata.path.toAbsolutePath.toString -> protoEntityStateExisting(Some(entry))
+      Fixtures.Metadata.FileOneMetadata.path -> protoEntityStateNew(),
+      Fixtures.Metadata.FileTwoMetadata.path -> protoEntityStateUpdated(),
+      Fixtures.Metadata.FileThreeMetadata.path -> protoEntityStateExisting(Some(entry))
     )
   )
 
