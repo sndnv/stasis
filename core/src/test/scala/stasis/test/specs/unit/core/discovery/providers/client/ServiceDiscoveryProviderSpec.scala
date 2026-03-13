@@ -24,7 +24,7 @@ import stasis.test.specs.unit.core.discovery.providers.client.ServiceDiscoveryPr
 import stasis.test.specs.unit.core.discovery.providers.client.ServiceDiscoveryProviderSpec.TestCoreClient
 
 class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeAndAfterAll {
-  "A ServiceDiscoveryProvider" should "support providing existing clients when discovery is not active" in {
+  "A ServiceDiscoveryProvider" should "support providing existing clients when discovery is not active" in withRetry {
     val provider = ServiceDiscoveryProvider(
       interval = 3.seconds,
       initialClients = createClients(
@@ -41,7 +41,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     a[DiscoveryFailure] should be thrownBy provider.latest[TestCoreClient]
   }
 
-  it should "support providing new clients when discovery is active" in {
+  it should "support providing new clients when discovery is active" in withRetry {
     val provider = ServiceDiscoveryProvider(
       interval = 3.seconds,
       initialClients = createClients(
@@ -65,7 +65,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     noException should be thrownBy provider.latest[TestCoreClient]
   }
 
-  it should "periodically refresh list of endpoints and clients (with result=keep-existing)" in {
+  it should "periodically refresh list of endpoints and clients (with result=keep-existing)" in withRetry {
     def createResult(recreateExisting: Boolean = false): ServiceDiscoveryResult = ServiceDiscoveryResult.SwitchTo(
       endpoints = ServiceDiscoveryResult.Endpoints(
         api = ServiceApiEndpoint.Api(uri = java.util.UUID.randomUUID().toString),
@@ -94,7 +94,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     provider.latest[TestCoreClient] should be(initialCoreClient)
   }
 
-  it should "periodically refresh list of endpoints and clients (with result=switch-to)" in {
+  it should "periodically refresh list of endpoints and clients (with result=switch-to)" in withRetry {
     def createResult(recreateExisting: Boolean = false): ServiceDiscoveryResult = ServiceDiscoveryResult.SwitchTo(
       endpoints = ServiceDiscoveryResult.Endpoints(
         api = ServiceApiEndpoint.Api(uri = java.util.UUID.randomUUID().toString),
@@ -129,7 +129,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     }
   }
 
-  it should "not recreate clients for same endpoints" in {
+  it should "not recreate clients for same endpoints" in withRetry {
     def createResult(): ServiceDiscoveryResult = ServiceDiscoveryResult.SwitchTo(
       endpoints = ServiceDiscoveryResult.Endpoints(
         api = ServiceApiEndpoint.Api(uri = java.util.UUID.randomUUID().toString),
@@ -174,7 +174,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     }
   }
 
-  it should "fail to retrieve unsupported client types" in {
+  it should "fail to retrieve unsupported client types" in withRetry {
     val provider = ServiceDiscoveryProvider(
       interval = 3.seconds,
       initialClients = createClients(
@@ -190,7 +190,7 @@ class ServiceDiscoveryProviderSpec extends UnitSpec with Eventually with BeforeA
     e.getMessage should be(s"Service client [${classOf[TestApiClient].getName}] was not found")
   }
 
-  it should "handle discovery failures" in {
+  it should "handle discovery failures" in withRetry {
     val clientCalls = new AtomicInteger(0)
 
     val _ = ServiceDiscoveryProvider(
