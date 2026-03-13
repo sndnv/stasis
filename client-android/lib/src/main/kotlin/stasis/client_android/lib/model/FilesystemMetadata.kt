@@ -1,37 +1,46 @@
 package stasis.client_android.lib.model
 
+import io.github.sndnv.fsi.Index
+import io.github.sndnv.fsi.backends.TrieIndex
 import stasis.client_android.lib.model.FilesystemMetadata.EntityState.Companion.toModel
 import stasis.client_android.lib.model.FilesystemMetadata.EntityState.Companion.toProto
+import stasis.client_android.lib.model.proto.Uuid
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
+import java.nio.file.FileSystems
 import java.util.UUID
+import java.util.regex.Pattern
 
-data class FilesystemMetadata(
-    val entities: Map<String, EntityState>
-) {
-    fun updated(changes: Iterable<String>, latestEntry: DatasetEntryId): FilesystemMetadata {
-        val newAndUpdated = changes.map { entity ->
-            if (entities.contains(entity)) {
-                entity to EntityState.Updated
-            } else {
-                entity to EntityState.New
-            }
-        }
+sealed class FilesystemMetadata {
+    abstract val underlying: Index<EntityState>
 
-        val existing = entities.mapValues {
-            when (it.value) {
+    fun get(entity: String): EntityState? =
+        underlying.get(entity)
+
+    fun <T> collect(f: (String, EntityState) -> T?): List<T> =
+        underlying.collect { entity, state -> f(entity, state) }
+
+    fun search(regex: Pattern): Map<String, EntityState> =
+        underlying.search(regex)
+
+    fun updated(changes: Iterable<String>, latestEntry: DatasetEntryId): FilesystemMetadata = apply {
+        underlying.replaceAll { _, state ->
+            when (state) {
                 is EntityState.New -> EntityState.Existing(entry = latestEntry)
                 is EntityState.Updated -> EntityState.Existing(entry = latestEntry)
-                is EntityState.Existing -> it.value
+                is EntityState.Existing -> state
             }
+        }.putAll(paths = changes) { _, existing ->
+            if (existing != null) EntityState.Updated
+            else EntityState.New
         }
-
-        return FilesystemMetadata(entities = existing + newAndUpdated)
     }
+
+    data class AsTrie(override val underlying: TrieIndex<EntityState>) : FilesystemMetadata()
 
     sealed class EntityState {
         object New : EntityState()
@@ -44,14 +53,16 @@ data class FilesystemMetadata(
                     is New -> stasis.client_android.lib.model.proto.EntityState(
                         present_new = stasis.client_android.lib.model.proto.EntityState.PresentNew()
                     )
+
                     is Existing -> stasis.client_android.lib.model.proto.EntityState(
                         present_existing = stasis.client_android.lib.model.proto.EntityState.PresentExisting(
-                            entry = stasis.client_android.lib.model.proto.Uuid(
+                            entry = Uuid(
                                 mostSignificantBits = entry.mostSignificantBits,
                                 leastSignificantBits = entry.leastSignificantBits
                             )
                         )
                     )
+
                     is Updated -> stasis.client_android.lib.model.proto.EntityState(
                         present_updated = stasis.client_android.lib.model.proto.EntityState.PresentUpdated()
                     )
@@ -74,6 +85,7 @@ data class FilesystemMetadata(
                                 )
                             }
                         }
+
                         else -> when (present_updated) {
                             is stasis.client_android.lib.model.proto.EntityState.PresentUpdated -> Success(Updated)
                             else -> Failure(IllegalArgumentException("Unexpected empty file state encountered"))
@@ -84,18 +96,31 @@ data class FilesystemMetadata(
     }
 
     companion object {
-        fun empty(): FilesystemMetadata = FilesystemMetadata(entities = emptyMap())
-
-        operator fun invoke(changes: Iterable<String>): FilesystemMetadata = FilesystemMetadata(
-            entities = changes.associateWith { EntityState.New }
+        fun empty(): FilesystemMetadata = AsTrie(
+            underlying = TrieIndex.mutable(separator = DefaultFilesystemSeparator)
         )
 
-        fun FilesystemMetadata.toProto(): stasis.client_android.lib.model.proto.FilesystemMetadata =
-            stasis.client_android.lib.model.proto.FilesystemMetadata(
-                entities = entities.map { entity ->
-                    entity.key to entity.value.toProto()
-                }.toMap()
+        operator fun invoke(entities: Map<String, EntityState>): FilesystemMetadata = AsTrie(
+            underlying = TrieIndex.mutable<EntityState>(separator = DefaultFilesystemSeparator)
+                .putAll(entities)
+        )
+
+        operator fun invoke(changes: Iterable<String>): FilesystemMetadata = AsTrie(
+            underlying = TrieIndex.mutable<EntityState>(separator = DefaultFilesystemSeparator)
+                .putAll(paths = changes) { _, _ -> EntityState.New }
+        )
+
+        fun FilesystemMetadata.toProto(): stasis.client_android.lib.model.proto.FilesystemMetadata {
+            val result = mutableMapOf<String, stasis.client_android.lib.model.proto.EntityState>()
+
+            this.underlying.forEach { path, state ->
+                result[path] = state.toProto()
+            }
+
+            return stasis.client_android.lib.model.proto.FilesystemMetadata(
+                entities = result
             )
+        }
 
         fun stasis.client_android.lib.model.proto.FilesystemMetadata?.toModel(): Try<FilesystemMetadata> =
             when (this) {
@@ -115,5 +140,7 @@ data class FilesystemMetadata(
                     tryCurrent.map { current -> collected + (key to current) }
                 }
             }
+
+        val DefaultFilesystemSeparator: String = FileSystems.getDefault().separator
     }
 }

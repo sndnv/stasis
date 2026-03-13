@@ -31,9 +31,7 @@ class DefaultSearch(
                         else -> {
                             val (entry, metadata) = entryMetadata
 
-                            val matches = metadata.filesystem.entities.filter { (path, _) ->
-                                regex.matcher(path).matches()
-                            }
+                            val matches = metadata.filesystem.search(regex)
 
                             val result = Search.DatasetDefinitionResult(
                                 definitionInfo = definition.info,

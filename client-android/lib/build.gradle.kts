@@ -20,6 +20,7 @@ dependencies {
     implementation("at.favre.lib:hkdf:2.0.0")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.21")
+    implementation("io.github.sndnv:fsi:1.1.0")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
 
     testImplementation("io.kotest:kotest-runner-junit5-jvm:6.0.4")

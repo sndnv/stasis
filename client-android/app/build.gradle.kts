@@ -34,6 +34,7 @@ dependencies {
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.15.0")
     implementation("io.github.amrdeveloper:treeview:1.2.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-rc01")
+    implementation("io.github.sndnv:fsi:1.1.0")
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")

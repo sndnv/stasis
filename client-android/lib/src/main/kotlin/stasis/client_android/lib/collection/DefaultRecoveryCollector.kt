@@ -10,7 +10,6 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.TargetEntity
 import java.nio.file.FileSystem
-import java.nio.file.Path
 
 class DefaultRecoveryCollector(
     private val targetMetadata: DatasetMetadata,
@@ -37,8 +36,8 @@ class DefaultRecoveryCollector(
             keep: (String, FilesystemMetadata.EntityState) -> Boolean,
             clients: Clients
         ): List<EntityMetadata> =
-            targetMetadata.filesystem.entities.toList()
-                .filter { (entity, state) -> keep(entity, state) }
-                .map { (entity, _) -> targetMetadata.require(entity = entity, clients = clients) }
+            targetMetadata.filesystem
+                .collect { entity, state -> if (keep(entity, state)) entity else null }
+                .map { targetMetadata.require(entity = it, clients = clients) }
     }
 }
