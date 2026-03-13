@@ -20,7 +20,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
   private val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   def specification(setup: FileSystemSetup): Unit = {
-    it should "require at least one rule to be present" in {
+    it should s"require at least one rule to be present (${setup.config})" in withRetry {
       import Specification.ExtendedRules
 
       val rules = Seq(IndexedRule(index = 0, underlying = Rule("+ /work ?", 0).get))
@@ -29,7 +29,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       an[IllegalStateException] should be thrownBy Seq.empty[IndexedRule].first
     }
 
-    it should "support creation based on rules" in {
+    it should s"support creation based on rules (${setup.config})" in withRetry {
       val (filesystem, objects) = createMockFileSystem(setup)
 
       objects.filesPerDir should be > 0
@@ -117,7 +117,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should "provide list of unmatched rules" in {
+    it should s"provide list of unmatched rules  (${setup.config})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
 
       val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get
@@ -137,7 +137,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should "provide a reason for including/excluding each file" in {
+    it should s"provide a reason for including/excluding each file  (${setup.config})" in withRetry {
       val (filesystem, objects) = createMockFileSystem(
         setup = setup.copy(chars = FileSystemSetup.Chars.AlphaNumeric, nestedParentDirs = 0)
       )
@@ -219,7 +219,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should "create an empty spec if no rules are provided" in {
+    it should s"create an empty spec if no rules are provided (${setup.config})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
 
       Specification(rules = Seq.empty, onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
@@ -227,7 +227,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should "handle matching failures" in {
+    it should s"handle matching failures (${setup.config})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
 
       val rule1 = Rule("+ /work/missing-dir *", 0).get
@@ -242,7 +242,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should "support collecting parent directories" in {
+    it should s"support collecting parent directories (${setup.config})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       Specification
@@ -291,7 +291,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
         .sorted should be(Seq.empty)
     }
 
-    it should "handle mismatched parent directories" in {
+    it should s"handle mismatched parent directories (${setup.config})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       Specification.collectRelativeParents(
