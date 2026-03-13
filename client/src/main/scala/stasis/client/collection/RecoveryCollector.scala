@@ -54,7 +54,7 @@ object RecoveryCollector {
     keep: (String, FilesystemMetadata.EntityState) => Boolean,
     clients: Clients
   )(implicit ec: ExecutionContext): Seq[Future[EntityMetadata]] =
-    targetMetadata.filesystem.entities.collect {
+    targetMetadata.filesystem.collect {
       case (entity, state) if keep(entity, state) =>
         targetMetadata.require(entity = entity, clients = clients)
     }.toSeq

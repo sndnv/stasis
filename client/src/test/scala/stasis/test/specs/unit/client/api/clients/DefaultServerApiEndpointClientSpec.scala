@@ -410,7 +410,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     apiClient
       .datasetMetadata(entry = DatasetEntry.generateId())
       .map { metadata =>
-        metadata should be(DatasetMetadata.empty)
+        metadata should be(DatasetMetadata.empty(filesystemSeparator = "/"))
       }
   }
 
@@ -424,7 +424,7 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
     apiClient
       .datasetMetadata(entry = Generators.generateEntry)
       .map { metadata =>
-        metadata should be(DatasetMetadata.empty)
+        metadata should be(DatasetMetadata.empty(filesystemSeparator = "/"))
       }
   }
 
@@ -790,7 +790,9 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       deviceSecret = Fixtures.Secrets.Default,
       decoder = new MockEncryption() {
         override def decrypt(metadataSecret: DeviceMetadataSecret): Flow[ByteString, ByteString, NotUsed] =
-          Flow[ByteString].mapAsync(parallelism = 1)(_ => DatasetMetadata.toByteString(DatasetMetadata.empty))
+          Flow[ByteString].mapAsync(parallelism = 1)(_ =>
+            DatasetMetadata.toByteString(DatasetMetadata.empty(filesystemSeparator = "/"))
+          )
       }
     )
 

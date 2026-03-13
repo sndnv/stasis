@@ -52,7 +52,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
           sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
           sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -127,7 +128,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           Paths.get("/ops/invalid-file")
         )
       )
-      override protected def latestMetadata: Option[DatasetMetadata] = Some(DatasetMetadata.empty)
+      override protected def latestMetadata: Option[DatasetMetadata] = Some(DatasetMetadata.empty(filesystemSeparator = "/"))
       override protected def providers: Providers =
         Providers(
           checksum = Checksum.SHA256,
@@ -202,7 +203,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
         )
       )
 
-      override protected def latestMetadata: Option[DatasetMetadata] = Some(DatasetMetadata.empty)
+      override protected def latestMetadata: Option[DatasetMetadata] = Some(DatasetMetadata.empty(filesystemSeparator = "/"))
       override protected def providers: Providers =
         Providers(
           checksum = Checksum.SHA256,

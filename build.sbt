@@ -44,7 +44,8 @@ lazy val versions = new {
   val logback      = "1.5.23"
   val systemTray   = "4.4"
   val bouncycastle = "1.83"
-  val layers       = "1.1.3"
+  val layers       = "1.2.0"
+  val fsi          = "1.1.0"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:25-noble"
@@ -90,6 +91,7 @@ lazy val client = (project in file("./client"))
       "org.bouncycastle"  % "bcprov-jdk18on"                    % versions.bouncycastle,
       "org.bouncycastle"  % "bcpkix-jdk18on"                    % versions.bouncycastle,
       "io.github.sndnv"  %% "layers"                            % versions.layers,
+      "io.github.sndnv"   % "fsi"                               % versions.fsi,
       "com.google.jimfs"  % "jimfs"                             % versions.jimfs % Test
     ),
     dockerBaseImage                    := jdkDockerImage,

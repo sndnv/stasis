@@ -12,14 +12,20 @@ import stasis.test.specs.unit.client.Fixtures
 class FilesystemMetadataSpec extends UnitSpec {
   "A FilesystemMetadata" should "be serializable to protobuf data" in {
     FilesystemMetadata.toProto(
-      filesystem = filesystemMetadata
-    ) should be(filesystemMetadataProto)
+      filesystem = createFilesystemMetadata()
+    ) should be(filesystemMetadataProtoWithoutSeparator) // default separator used
   }
 
-  it should "be deserializable from valid protobuf data" in {
+  it should "be deserializable from valid protobuf data (with separator)" in {
     FilesystemMetadata.fromProto(
-      filesystem = Some(filesystemMetadataProto)
-    ) should be(Success(filesystemMetadata))
+      filesystem = Some(filesystemMetadataProtoWithSeparator)
+    ) should be(Success(createFilesystemMetadata(separator = "?")))
+  }
+
+  it should "be deserializable from valid protobuf data (without separator)" in {
+    FilesystemMetadata.fromProto(
+      filesystem = Some(filesystemMetadataProtoWithoutSeparator)
+    ) should be(Success(createFilesystemMetadata()))
   }
 
   it should "fail to be deserialized if no metadata is provided" in {
@@ -29,12 +35,13 @@ class FilesystemMetadataSpec extends UnitSpec {
     }
   }
 
-  it should "allow to be created with new files" in {
+  it should "support creation with new files" in {
     val created = FilesystemMetadata(
       changes = Seq(
         Fixtures.Metadata.FileOneMetadata.path,
         Fixtures.Metadata.FileTwoMetadata.path
-      )
+      ),
+      filesystemSeparator = "/"
     )
 
     created should be(
@@ -42,17 +49,18 @@ class FilesystemMetadataSpec extends UnitSpec {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
   }
 
-  it should "allow to be updated with new files" in {
+  it should "support updating with new files" in {
     val newEntry = DatasetEntry.generateId()
 
     val newFile = "/tmp/file/five"
 
-    val updated = filesystemMetadata.updated(
+    val updated = createFilesystemMetadata().updated(
       changes = Seq(
         Fixtures.Metadata.FileOneMetadata.path, // updated
         newFile // new
@@ -67,7 +75,8 @@ class FilesystemMetadataSpec extends UnitSpec {
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(newEntry),
           Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry),
           newFile -> FilesystemMetadata.EntityState.New
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -80,9 +89,33 @@ class FilesystemMetadataSpec extends UnitSpec {
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(newEntry),
           Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry),
           newFile -> FilesystemMetadata.EntityState.Existing(latestEntry)
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
+  }
+
+  it should "support metadata collection" in {
+    val collected = createFilesystemMetadata().collect {
+      case (path, state) if state == FilesystemMetadata.EntityState.Updated => path
+    }
+
+    collected should be(Seq("/tmp/file/two"))
+  }
+
+  it should "support metadata retrieval" in {
+    val filesystemMetadata = createFilesystemMetadata()
+    filesystemMetadata.get("/tmp/file/one") should be(Some(FilesystemMetadata.EntityState.New))
+    filesystemMetadata.get("/tmp/file/two") should be(Some(FilesystemMetadata.EntityState.Updated))
+    filesystemMetadata.get("/tmp/file/other") should be(None)
+  }
+
+  it should "support metadata search" in {
+    val result = createFilesystemMetadata().search(".*(two|four)$".r.pattern)
+
+    result.size should be(2)
+    result.get("/tmp/file/two") should be(Some(FilesystemMetadata.EntityState.Updated))
+    result.get("/tmp/file/four") should be(Some(FilesystemMetadata.EntityState.Existing(entry)))
   }
 
   "A Filesystem metadata EntityState" should "be serializable to protobuf data" in {
@@ -129,15 +162,25 @@ class FilesystemMetadataSpec extends UnitSpec {
 
   private val entry = DatasetEntry.generateId()
 
-  private val filesystemMetadata = FilesystemMetadata(
+  private def createFilesystemMetadata(separator: String = "/") = FilesystemMetadata(
     entities = Map(
       Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
       Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
       Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Existing(entry)
-    )
+    ),
+    filesystemSeparator = separator
   )
 
-  private val filesystemMetadataProto = proto.metadata.FilesystemMetadata(
+  private val filesystemMetadataProtoWithSeparator = proto.metadata.FilesystemMetadata(
+    entities = Map(
+      Fixtures.Metadata.FileOneMetadata.path -> protoEntityStateNew(),
+      Fixtures.Metadata.FileTwoMetadata.path -> protoEntityStateUpdated(),
+      Fixtures.Metadata.FileThreeMetadata.path -> protoEntityStateExisting(Some(entry))
+    ),
+    separator = "?"
+  )
+
+  private val filesystemMetadataProtoWithoutSeparator = proto.metadata.FilesystemMetadata(
     entities = Map(
       Fixtures.Metadata.FileOneMetadata.path -> protoEntityStateNew(),
       Fixtures.Metadata.FileTwoMetadata.path -> protoEntityStateUpdated(),

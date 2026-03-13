@@ -33,7 +33,8 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
       filesystem = FilesystemMetadata(
         changes = Seq(
           Fixtures.Metadata.FileOneMetadata.path
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -71,7 +72,8 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
                   Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Updated,
                   Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.New,
                   Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.New
-                )
+                ),
+                filesystemSeparator = "/"
               )
             )
           )
@@ -132,7 +134,8 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
                   Fixtures.Metadata.FileOneMetadata.path,
                   Fixtures.Metadata.FileTwoMetadata.path,
                   Fixtures.Metadata.FileThreeMetadata.path
-                )
+                ),
+                filesystemSeparator = "/"
               )
             )
           )
@@ -204,7 +207,8 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
                   Fixtures.Metadata.FileOneMetadata.path,
                   Fixtures.Metadata.FileTwoMetadata.path,
                   Fixtures.Metadata.FileThreeMetadata.path
-                )
+                ),
+                filesystemSeparator = "/"
               )
             )
           )

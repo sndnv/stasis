@@ -39,7 +39,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -66,7 +67,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -109,7 +111,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry),
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry)
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -124,7 +127,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -166,7 +170,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry),
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Existing(entry = previousEntry)
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -206,7 +211,8 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         entities = Map(
           Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
           Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -226,7 +232,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
     val mockApiClient = MockServerApiEndpointClient()
     val clients = Clients(api = mockApiClient, core = null)
 
-    val metadata = DatasetMetadata.empty
+    val metadata = DatasetMetadata.empty(filesystemSeparator = "/")
 
     for {
       _ <-
@@ -259,19 +265,25 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
 
   it should "be serializable to byte string" in {
     DatasetMetadata.toByteString(metadata = datasetMetadata).map { serialized =>
-      serialized should be(serializedDatasetMetadata.decodeFromBase64)
+      serialized should be(serializedDatasetMetadataLatest.decodeFromBase64)
     }
   }
 
-  it should "be deserializable from a valid byte string" in {
-    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64).map { deserialized =>
+  it should "be deserializable from a valid byte string (without separator, original)" in {
+    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadataOriginal.decodeFromBase64).map { deserialized =>
+      deserialized should be(datasetMetadata)
+    }
+  }
+
+  it should "be deserializable from a valid byte string (with separator, latest)" in {
+    DatasetMetadata.fromByteString(bytes = serializedDatasetMetadataLatest.decodeFromBase64).map { deserialized =>
       deserialized should be(datasetMetadata)
     }
   }
 
   it should "fail to be deserialized from an invalid byte string" in {
     DatasetMetadata
-      .fromByteString(bytes = serializedDatasetMetadata.decodeFromBase64.take(42))
+      .fromByteString(bytes = serializedDatasetMetadataLatest.decodeFromBase64.take(42))
       .map(metadata => fail(s"Unexpected successful result received: [$metadata]"))
       .failed
       .map { e => e shouldBe a[ZipException] }
@@ -285,16 +297,29 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         encoder = Aes
       )
       .map { encrypted =>
-        encrypted should be(encryptedDatasetMetadata.decodeFromBase64)
+        encrypted should be(encryptedDatasetMetadataLatest.decodeFromBase64)
       }
   }
 
-  it should "be decryptable" in {
+  it should "be decryptable (without separator, original)" in {
     DatasetMetadata
       .decrypt(
         metadataCrate = metadataCrate,
         metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
-        metadata = Some(Source.single(encryptedDatasetMetadata.decodeFromBase64)),
+        metadata = Some(Source.single(encryptedDatasetMetadataOriginal.decodeFromBase64)),
+        decoder = Aes
+      )
+      .map { decrypted =>
+        decrypted should be(datasetMetadata)
+      }
+  }
+
+  it should "be decryptable (with separator, latest)" in {
+    DatasetMetadata
+      .decrypt(
+        metadataCrate = metadataCrate,
+        metadataSecret = deviceSecret.toMetadataSecret(metadataCrate),
+        metadata = Some(Source.single(encryptedDatasetMetadataLatest.decodeFromBase64)),
         decoder = Aes
       )
       .map { decrypted =>
@@ -366,11 +391,12 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
         Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
         Fixtures.Metadata.DirectoryOneMetadata.path -> FilesystemMetadata.EntityState.New,
         Fixtures.Metadata.DirectoryTwoMetadata.path -> FilesystemMetadata.EntityState.New
-      )
+      ),
+      filesystemSeparator = "/"
     )
   )
 
-  private val serializedDatasetMetadata =
+  private val serializedDatasetMetadataOriginal =
     "H4sIAAAAAAAAAOJqYuTi1S/JLdBPy8xJ1c/PSxUq5MpH" +
       "ExJg1GhYMWFx46Mfx/8zGvz/ePXK+lntFlYsRfn5JU" +
       "5g0ouzqLwCgoIYGaM0uPhRDIg3EBLl2NHa27rj777z" +
@@ -382,7 +408,18 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       "OqIMgOJikGLgms3gUpl8DqLqAMAAAA//8DALy3AudB" +
       "AgAA"
 
-  private val encryptedDatasetMetadata =
+  private val serializedDatasetMetadataLatest =
+    "H4sIAAAAAAAAAOJqYuTi1S/JLdBPy8xJ1c/PSxUq5MpH" +
+      "ExJg1GhYMWFx46Mfx/8zGvz/ePXK+lntFlYsRfn5JU" +
+      "5g0ouzqLwCgoIYGaM0uPhRDIg3EBLl2NHa27rj777z" +
+      "RgKnvq/8f2D7vHcbGZNY8kBWTkNxREl5vlALI1cjuq" +
+      "AAkxSSsSUZRampGjDHGCAciNNdWlGayO4Cmgh0lxhH" +
+      "S9vVKw9Xrdr5jFFg188J7f3NS390AR2WXpVZIBTOJQ" +
+      "TWkJJZlJpckl9UCQ4hRyF7bOIKCDfA3WUEdgbUSQjH" +
+      "CGVgGADydZBQAFZxdG8rwIxHihccNknFcUlg9QQTFw" +
+      "OXMHqwM0kxYFEOlkFXDjUDAAAA//8DAKzONQFBAgAA"
+
+  private val encryptedDatasetMetadataOriginal =
     "v+fJfvEvfQ1b7Ra25wpP5nB0bDKod5n6dsNhYmphKWy2" +
       "a0BZRpmKjRg17YubrV+8USyPzN67PPBkyI+c6uyFG2" +
       "qP3vJMkjE8KbyEn6kIGOxHPYvnfSthIFyIV02bnSR9" +
@@ -393,4 +430,16 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFpTPqJdg6v" +
       "/Oc1ip0HFR31KVAgJcuklS1Cvs+zVcO5EEnvChRuJN" +
       "lNLNb4720g9gwdJpZ7U3dU1mZw=="
+
+  private val encryptedDatasetMetadataLatest =
+    "v+fJfvEvfQ1b7Ra25wpP5nB0bDKod5n6dsNhYmphKWy2" +
+      "a0BZRpmKjRg17YubrV+8USyPzN67PPBkyI+c6uyFG2" +
+      "qP3vJMkjE8KbyEn6kIGOxHPYvnfSthIFyIV02bnSR9" +
+      "3EdXfbGUDCjl1SZXPHGyjIolyk+CUGGxSjryYT4sDJ" +
+      "kwKGPH6rVF9iimrCUHTnNXqfCpMsjtTxmyvGUVYpcd" +
+      "8FQJ/zSOBROe9WZidltAtU1namFZTg+k2Ot9kBBt5r" +
+      "X8AJ/4DA0jzdwSO0Apu0HL4i0mf0YBihD/mfzgLYck" +
+      "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFtQMmqNg6v" +
+      "/zY+oXxRFmkQo3SkYiI7y7+ovgBMpfxMLJq01XRgUM" +
+      "xqmkkTU6wNtVE4KPGpWM1A=="
 }

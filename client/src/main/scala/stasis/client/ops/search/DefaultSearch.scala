@@ -41,9 +41,7 @@ class DefaultSearch(
     metadataResult.map { metadata =>
       val definitions = metadata.map {
         case (definition, Some((entry, metadata))) =>
-          val matches = metadata.filesystem.entities.filter { case (path, _) =>
-            query.pattern.matcher(path).matches
-          }
+          val matches = metadata.filesystem.search(query.pattern)
 
           val result = Search.DatasetDefinitionResult(
             definitionInfo = definition.info,

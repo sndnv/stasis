@@ -38,7 +38,7 @@ final case class DatasetMetadata(
     entity: String,
     clients: Clients
   )(implicit ec: ExecutionContext): Future[Option[EntityMetadata]] = {
-    val existingMetadata = filesystem.entities.get(entity).map {
+    val existingMetadata = filesystem.get(entity).map {
       case FilesystemMetadata.EntityState.New | FilesystemMetadata.EntityState.Updated =>
         contentChanged.get(entity).orElse(metadataChanged.get(entity)) match {
           case Some(metadata) =>
@@ -101,11 +101,11 @@ final case class DatasetMetadata(
 object DatasetMetadata {
   private final val DefaultCompression: CompressionEncoder with CompressionDecoder = Gzip
 
-  def empty: DatasetMetadata =
+  def empty(filesystemSeparator: String): DatasetMetadata =
     DatasetMetadata(
       contentChanged = Map.empty,
       metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata.empty
+      filesystem = FilesystemMetadata.empty(filesystemSeparator)
     )
 
   def toByteString(metadata: DatasetMetadata)(implicit mat: Materializer): Future[ByteString] = {
