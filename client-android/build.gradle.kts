@@ -29,7 +29,7 @@ plugins {
 }
 
 subprojects {
-    version = "1.6.2"
+    version = "1.6.3-SNAPSHOT"
 }
 
 allprojects {
