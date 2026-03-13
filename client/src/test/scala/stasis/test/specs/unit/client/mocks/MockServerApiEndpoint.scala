@@ -316,7 +316,7 @@ class MockServerApiEndpoint(
             head {
               expectedDeviceKey match {
                 case Some(_) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.empty))
-                case None =>
+                case None    =>
                   onSuccess(keyStore.get(deviceId)) {
                     case Some(_) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.empty))
                     case None    => complete(StatusCodes.NotFound)
@@ -326,7 +326,7 @@ class MockServerApiEndpoint(
             get {
               expectedDeviceKey match {
                 case Some(key) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key)))
-                case None =>
+                case None      =>
                   onSuccess(keyStore.get(deviceId)) {
                     case Some(key) => complete(HttpEntity(ContentTypes.`application/octet-stream`, Source.single(key.value)))
                     case None      => complete(StatusCodes.NotFound)
