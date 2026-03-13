@@ -14,26 +14,26 @@ dependencies:
   collection: ^1.19.1
   cupertino_icons: ^1.0.8
   freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
-  http: ^1.5.0
+  json_annotation: ^4.11.0
+  http: ^1.6.0
   oauth2: ^2.0.5
   sse_channel: ^0.2.2
   fluro: ^2.0.5
-  flutter_svg: ^2.2.1
+  flutter_svg: ^2.2.4
   intl: ^0.20.2
   flutter_fancy_tree_view: ^1.6.0
   flutter_json_view: ^1.1.5
-  uuid: ^4.5.1
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
-  build_runner: ^2.10.1
-  freezed: ^3.2.3
-  json_serializable: ^6.11.1
-  mockito: ^5.5.1
+  build_runner: ^2.12.2
+  freezed: ^3.2.5
+  json_serializable: ^6.13.0
+  mockito: ^5.6.3
 
 flutter:
   uses-material-design: true
