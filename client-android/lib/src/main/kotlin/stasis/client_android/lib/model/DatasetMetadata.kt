@@ -48,7 +48,7 @@ data class DatasetMetadata(
         entity: String,
         clients: Clients
     ): EntityMetadata? =
-        filesystem.entities[entity]?.let { state ->
+        filesystem.get(entity)?.let { state ->
             when (state) {
                 is FilesystemMetadata.EntityState.New, FilesystemMetadata.EntityState.Updated -> {
                     when (val metadata = contentChanged[entity] ?: metadataChanged[entity]) {

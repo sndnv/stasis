@@ -33,7 +33,7 @@ class DatasetMetadataEntryListItemAdapter(
     private val metadata: DatasetMetadata,
     private val onFiltersUpdated: (Map<String, Filter>, Int, Int) -> Unit
 ) : RecyclerView.Adapter<DatasetMetadataEntryListItemAdapter.ItemViewHolder>() {
-    private val originalEntities = metadata.filesystem.entities.keys.sorted().toList()
+    private val originalEntities = metadata.filesystem.underlying.keys.sorted().toList()
     private var shownEntities = originalEntities
     private var latestFilters: Map<String, Filter> = emptyMap()
     private val filesystem: FileSystem = FileSystems.getDefault()
@@ -50,7 +50,7 @@ class DatasetMetadataEntryListItemAdapter(
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val entity = shownEntities[position]
 
-        val state = when (val state = metadata.filesystem.entities[entity]) {
+        val state = when (val state = metadata.filesystem.get(entity)) {
             null -> throw IllegalStateException("Expected filesystem entity state for [$entity] but none was found")
             else -> state
         }
@@ -99,7 +99,7 @@ class DatasetMetadataEntryListItemAdapter(
         val filtered = originalEntities.filter { entity ->
             keep(
                 entity = entity,
-                state = metadata.filesystem.entities[entity],
+                state = metadata.filesystem.get(entity),
                 metadata = metadata.contentChanged[entity] ?: metadata.metadataChanged[entity]
             )
         }

@@ -35,14 +35,14 @@ class DefaultSearchSpec : WordSpec({
             )
 
             val matchingFiles = mapOf(
-                "$searchTerm-01" to FilesystemMetadata.EntityState.New,
-                "$searchTerm-02" to FilesystemMetadata.EntityState.Updated,
-                "other-$searchTerm" to FilesystemMetadata.EntityState.Existing(UUID.randomUUID()),
-                searchTerm to FilesystemMetadata.EntityState.New
+                "/$searchTerm-01" to FilesystemMetadata.EntityState.New,
+                "/$searchTerm-02" to FilesystemMetadata.EntityState.Updated,
+                "/other-$searchTerm" to FilesystemMetadata.EntityState.Existing(UUID.randomUUID()),
+                "/$searchTerm" to FilesystemMetadata.EntityState.New
             )
 
             val nonMatchingFiles = mapOf(
-                "other-name" to FilesystemMetadata.EntityState.New
+                "/other-name" to FilesystemMetadata.EntityState.New
             )
 
             val mockApiClient = object : MockServerApiEndpointClient(self = UUID.randomUUID()) {

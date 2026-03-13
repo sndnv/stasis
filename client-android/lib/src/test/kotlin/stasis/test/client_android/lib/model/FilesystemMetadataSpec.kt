@@ -41,16 +41,15 @@ class FilesystemMetadataSpec : WordSpec({
     fun protoEntityStateEmpty(): stasis.client_android.lib.model.proto.EntityState =
         stasis.client_android.lib.model.proto.EntityState()
 
-    "FilesystemMetadata" should {
-
-        val filesystemMetadata = FilesystemMetadata(
-            entities = mapOf(
-                Fixtures.Metadata.FileOneMetadata.path to FilesystemMetadata.EntityState.New,
-                Fixtures.Metadata.FileTwoMetadata.path to FilesystemMetadata.EntityState.Updated,
-                Fixtures.Metadata.FileThreeMetadata.path to FilesystemMetadata.EntityState.Existing(entry)
-            )
+    fun createFilesystemMetadata(): FilesystemMetadata = FilesystemMetadata(
+        entities = mapOf(
+            Fixtures.Metadata.FileOneMetadata.path to FilesystemMetadata.EntityState.New,
+            Fixtures.Metadata.FileTwoMetadata.path to FilesystemMetadata.EntityState.Updated,
+            Fixtures.Metadata.FileThreeMetadata.path to FilesystemMetadata.EntityState.Existing(entry)
         )
+    )
 
+    "FilesystemMetadata" should {
         val filesystemMetadataProto = stasis.client_android.lib.model.proto.FilesystemMetadata(
             entities = mapOf(
                 Fixtures.Metadata.FileOneMetadata.path to protoEntityStateNew(),
@@ -60,11 +59,11 @@ class FilesystemMetadataSpec : WordSpec({
         )
 
         "be serializable to protobuf data" {
-            filesystemMetadata.toProto() shouldBe (filesystemMetadataProto)
+            createFilesystemMetadata().toProto() shouldBe (filesystemMetadataProto)
         }
 
         "be deserializable from valid protobuf data" {
-            filesystemMetadataProto.toModel() shouldBe (Success(filesystemMetadata))
+            filesystemMetadataProto.toModel() shouldBe (Success(createFilesystemMetadata()))
         }
 
         "fail to be deserialized if no metadata is provided" {
@@ -97,7 +96,7 @@ class FilesystemMetadataSpec : WordSpec({
 
             val newFile = "/tmp/file/five"
 
-            val updated = filesystemMetadata.updated(
+            val updated = createFilesystemMetadata().updated(
                 changes = listOf(
                     Fixtures.Metadata.FileOneMetadata.path, // updated
                     newFile // new
@@ -130,6 +129,29 @@ class FilesystemMetadataSpec : WordSpec({
                         )
                     )
                     )
+        }
+
+        "support metadata collection" {
+            val collected = createFilesystemMetadata().collect { path, state ->
+                if (state == FilesystemMetadata.EntityState.Updated) path else null
+            }
+
+            collected shouldBe (listOf("/tmp/file/two"))
+        }
+
+        "support metadata retrieval" {
+            val filesystemMetadata = createFilesystemMetadata()
+            filesystemMetadata.get("/tmp/file/one") shouldBe (FilesystemMetadata.EntityState.New)
+            filesystemMetadata.get("/tmp/file/two") shouldBe (FilesystemMetadata.EntityState.Updated)
+            filesystemMetadata.get("/tmp/file/other") shouldBe (null)
+        }
+
+        "support metadata search" {
+            val result = createFilesystemMetadata().search(".*(two|four)$".toRegex().toPattern())
+
+            result.size shouldBe (2)
+            result["/tmp/file/two"] shouldBe (FilesystemMetadata.EntityState.Updated)
+            result["/tmp/file/four"] shouldBe (FilesystemMetadata.EntityState.Existing(entry))
         }
     }
 
