@@ -43,7 +43,10 @@ trait MetadataCollection {
                 )
 
             case _ =>
-              FilesystemMetadata(contentChanged.keys ++ metadataChanged.keys)
+              FilesystemMetadata(
+                changes = contentChanged.keys ++ metadataChanged.keys,
+                filesystemSeparator = providers.filesystem.getSeparator
+              )
           }
         )
       }

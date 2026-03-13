@@ -3,6 +3,8 @@ package stasis.client.api.http
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import scala.jdk.CollectionConverters._
+
 import play.api.libs.json.Format.GenericFormat
 
 import stasis.client.collection.rules.Rule
@@ -156,7 +158,26 @@ object Formats {
     }
   )
 
-  implicit val filesystemMetadata: Format[FilesystemMetadata] = Json.format[FilesystemMetadata]
+  implicit val filesystemMetadataFormat: Format[FilesystemMetadata] = Format(
+    fjs = _.validate[JsObject]
+      .flatMap { fs =>
+        for {
+          entities <- (fs \ "entities").validate[Map[String, FilesystemMetadata.EntityState]]
+          separator <- (fs \ "separator").validateOpt[String]
+        } yield {
+          FilesystemMetadata(
+            entities = entities,
+            filesystemSeparator = separator.getOrElse(FilesystemMetadata.DefaultFilesystemSeparator)
+          )
+        }
+      },
+    tjs = fs =>
+      Json.obj(
+        "entities" -> Json.toJson(fs.underlying.toMap.asScala),
+        "separator" -> Json.toJson(fs.separator)
+      )
+  )
+
   implicit val datasetMetadataFormat: Format[DatasetMetadata] = Json.format[DatasetMetadata]
 
   implicit val activeScheduleFormat: Format[ActiveSchedule] = Json.format[ActiveSchedule]

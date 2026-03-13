@@ -1,45 +1,83 @@
 package stasis.client.model
 
+import java.nio.file.FileSystems
+import java.util.regex.Pattern
+
+import scala.jdk.CollectionConverters._
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import io.github.sndnv.fsi.Index
+import io.github.sndnv.fsi.backends.TrieIndex
+
 import stasis.client.model.FilesystemMetadata.EntityState
 import stasis.shared.model.datasets.DatasetEntry
 
-final case class FilesystemMetadata(
-  entities: Map[String, EntityState]
-) {
+sealed trait FilesystemMetadata {
+  def underlying: Index[EntityState]
+  def separator: String
+
+  def get(entity: String): Option[EntityState] =
+    Option(underlying.get(entity))
+
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+  def collect[T >: Null](f: PartialFunction[(String, EntityState), T]): Iterable[T] =
+    underlying
+      .collect[T] { case e: (String, EntityState) => if (f.isDefinedAt(e)) f.apply(e) else null }
+      .asScala
+
+  def search(regex: Pattern): Map[String, EntityState] =
+    underlying.search(regex).asScala.toMap
+
   def updated(changes: Iterable[String], latestEntry: DatasetEntry.Id): FilesystemMetadata = {
-    val newAndUpdated = changes.map {
-      case entity if entities.contains(entity) => entity -> (EntityState.Updated: EntityState)
-      case entity                              => entity -> (EntityState.New: EntityState)
-    }
+    val _ = underlying
+      .replaceAll {
+        case (_, EntityState.New)                => EntityState.Existing(entry = latestEntry)
+        case (_, EntityState.Updated)            => EntityState.Existing(entry = latestEntry)
+        case (_, existing: EntityState.Existing) => existing
+      }
+      .putAll(
+        changes.asJava,
+        (_: String, existing: EntityState) =>
+          if (existing != null) EntityState.Updated
+          else EntityState.New
+      )
 
-    val existing = entities.view.mapValues {
-      case EntityState.New                => EntityState.Existing(entry = latestEntry)
-      case EntityState.Updated            => EntityState.Existing(entry = latestEntry)
-      case existing: EntityState.Existing => existing
-    }.toMap
-
-    FilesystemMetadata(entities = existing ++ newAndUpdated)
+    this
   }
 }
 
 object FilesystemMetadata {
-  def empty: FilesystemMetadata = FilesystemMetadata(entities = Map.empty)
+  private final case class AsTrie(override val underlying: TrieIndex[EntityState]) extends FilesystemMetadata {
+    override val separator: String = underlying.getSeparator
+  }
 
-  def apply(changes: Iterable[String]): FilesystemMetadata =
-    FilesystemMetadata(
-      entities = changes.map(entity => entity -> EntityState.New).toMap
+  def empty(filesystemSeparator: String): FilesystemMetadata =
+    FilesystemMetadata.AsTrie(underlying = TrieIndex.mutable(filesystemSeparator))
+
+  def apply(entities: Map[String, EntityState], filesystemSeparator: String): FilesystemMetadata =
+    FilesystemMetadata.AsTrie(underlying = TrieIndex.mutable(filesystemSeparator).putAll(entities.asJava))
+
+  def apply(changes: Iterable[String], filesystemSeparator: String): FilesystemMetadata =
+    FilesystemMetadata.AsTrie(
+      underlying = TrieIndex
+        .mutable(filesystemSeparator)
+        .putAll(changes.asJava, (_, _) => EntityState.New)
     )
 
-  def toProto(filesystem: FilesystemMetadata): proto.metadata.FilesystemMetadata =
+  def toProto(filesystem: FilesystemMetadata): proto.metadata.FilesystemMetadata = {
+    val result = scala.collection.mutable.Map[String, proto.metadata.EntityState]()
+
+    filesystem.underlying.forEach { case (path, state) =>
+      val _ = result.put(path, EntityState.toProto(state))
+      kotlin.Unit.INSTANCE
+    }
+
     proto.metadata.FilesystemMetadata(
-      entities = filesystem.entities.map { case (entity, state) =>
-        entity -> EntityState.toProto(state)
-      }
+      entities = result.toMap
     )
+  }
 
   def fromProto(filesystem: Option[proto.metadata.FilesystemMetadata]): Try[FilesystemMetadata] =
     filesystem match {
@@ -50,7 +88,12 @@ object FilesystemMetadata {
           }
         )
 
-        entities.map(FilesystemMetadata.apply)
+        val separator = Option(filesystem.separator)
+          .map(_.trim)
+          .filter(_.nonEmpty)
+          .getOrElse(DefaultFilesystemSeparator)
+
+        entities.map(FilesystemMetadata.apply(_, separator))
 
       case None =>
         Failure(new IllegalArgumentException("No filesystem metadata provided"))
@@ -121,4 +164,6 @@ object FilesystemMetadata {
         tryCurrent.map(current => collected + (key -> current))
       }
     }
+
+  lazy val DefaultFilesystemSeparator: String = FileSystems.getDefault.getSeparator
 }

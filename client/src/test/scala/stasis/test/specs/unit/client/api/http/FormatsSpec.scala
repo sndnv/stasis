@@ -60,6 +60,40 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
     succeed
   }
 
+  they should "convert filesystem metadata to/from JSON (with separator)" in withRetry {
+    val metadata = FilesystemMetadata(
+      changes = Seq(
+        Fixtures.Metadata.FileOneMetadata.path,
+        Fixtures.Metadata.FileTwoMetadata.path
+      ),
+      filesystemSeparator = "/"
+    )
+
+    val json =
+      s"""{"entities":{"/tmp/file/one":{"entity_state":"new"},"/tmp/file/two":{"entity_state":"new"}},"separator":"/"}"""
+
+    filesystemMetadataFormat.writes(metadata).toString should be(json)
+    filesystemMetadataFormat.reads(Json.parse(json)).asOpt should be(Some(metadata))
+  }
+
+  they should "convert filesystem metadata to/from JSON (without separator)" in withRetry {
+    val metadata = FilesystemMetadata(
+      changes = Seq(
+        Fixtures.Metadata.FileOneMetadata.path,
+        Fixtures.Metadata.FileTwoMetadata.path
+      ),
+      filesystemSeparator = "/"
+    )
+
+    val jsonWith =
+      s"""{"entities":{"/tmp/file/one":{"entity_state":"new"},"/tmp/file/two":{"entity_state":"new"}},"separator":"/"}"""
+    val jsonWithout =
+      s"""{"entities":{"/tmp/file/one":{"entity_state":"new"},"/tmp/file/two":{"entity_state":"new"}}}"""
+
+    filesystemMetadataFormat.writes(metadata).toString should be(jsonWith)
+    filesystemMetadataFormat.reads(Json.parse(jsonWithout)).asOpt should be(Some(metadata))
+  }
+
   they should "convert path maps to/from JSON" in withRetry {
     val path1 = Paths.get("test-path-01").toAbsolutePath
     val path2 = Paths.get("test-path-02").toAbsolutePath

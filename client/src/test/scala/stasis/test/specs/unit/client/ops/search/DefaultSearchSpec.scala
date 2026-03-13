@@ -33,14 +33,14 @@ class DefaultSearchSpec extends AsyncUnitSpec {
     )
 
     val matchingFiles = Map(
-      s"$searchTerm-01" -> FilesystemMetadata.EntityState.New,
-      s"$searchTerm-02" -> FilesystemMetadata.EntityState.Updated,
-      s"other-$searchTerm" -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId()),
-      s"$searchTerm" -> FilesystemMetadata.EntityState.New
+      s"/$searchTerm-01" -> FilesystemMetadata.EntityState.New,
+      s"/$searchTerm-02" -> FilesystemMetadata.EntityState.Updated,
+      s"/other-$searchTerm" -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId()),
+      s"/$searchTerm" -> FilesystemMetadata.EntityState.New
     )
 
     val nonMatchingFiles = Map(
-      "other-name" -> FilesystemMetadata.EntityState.New
+      "/other-name" -> FilesystemMetadata.EntityState.New
     )
 
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
@@ -59,7 +59,14 @@ class DefaultSearchSpec extends AsyncUnitSpec {
         if (entry.id == matchingEntry) {
           super
             .datasetMetadata(entry)
-            .map(_.copy(filesystem = FilesystemMetadata(entities = matchingFiles ++ nonMatchingFiles)))
+            .map(
+              _.copy(filesystem =
+                FilesystemMetadata(
+                  entities = matchingFiles ++ nonMatchingFiles,
+                  filesystemSeparator = "/"
+                )
+              )
+            )
         } else {
           super.datasetMetadata(entry)
         }

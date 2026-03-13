@@ -45,6 +45,7 @@ message DirectoryMetadata {
 
 message FilesystemMetadata {
   map<string, EntityState> entities = 1;
+  string separator = 2;
 }
 
 message EntityState {

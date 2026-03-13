@@ -68,7 +68,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
               Fixtures.Metadata.FileOneMetadata.path -> FilesystemMetadata.EntityState.New,
               Fixtures.Metadata.FileTwoMetadata.path -> FilesystemMetadata.EntityState.Updated,
               Fixtures.Metadata.FileThreeMetadata.path -> FilesystemMetadata.EntityState.Updated
-            )
+            ),
+            filesystemSeparator = "/"
           )
         )
       )

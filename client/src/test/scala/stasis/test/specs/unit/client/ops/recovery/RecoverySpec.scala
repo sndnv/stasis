@@ -68,7 +68,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           originalSourceFile1Metadata.path,
           originalSourceFile2Metadata.path,
           originalSourceFile3Metadata.path
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -144,7 +145,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           sourceFile3Metadata.path,
           sourceFile4Metadata.path,
           sourceFile5Metadata.path
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -214,7 +216,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
           currentSourceFile1Metadata.path,
           currentSourceFile2Metadata.path,
           currentSourceFile3Metadata.path
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -264,7 +267,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       filesystem = FilesystemMetadata(
         entities = Map(
           currentSourceFile1Metadata.path -> FilesystemMetadata.EntityState.Existing(DatasetEntry.generateId())
-        )
+        ),
+        filesystemSeparator = "/"
       )
     )
 
@@ -393,7 +397,10 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     val originalMetadata = DatasetMetadata(
       contentChanged = Map(originalSourceFile1Metadata.path -> originalSourceFile1Metadata),
       metadataChanged = Map.empty,
-      filesystem = FilesystemMetadata(changes = Seq(originalSourceFile1Metadata.path))
+      filesystem = FilesystemMetadata(
+        changes = Seq(originalSourceFile1Metadata.path),
+        filesystemSeparator = "/"
+      )
     )
 
     val mockApiClient = MockServerApiEndpointClient()
@@ -422,7 +429,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
   "A Recovery Descriptor" should "be creatable from a collector descriptor" in withRetry {
     val dataset = Fixtures.Datasets.Default
     val entry = Fixtures.Entries.Default.copy(definition = dataset.id)
-    val metadata = DatasetMetadata.empty
+    val metadata = DatasetMetadata.empty(filesystemSeparator = "/")
 
     implicit val providers: Providers = Providers(
       checksum = checksum,
@@ -557,7 +564,7 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     )
 
     val descriptor = Recovery.Descriptor(
-      targetMetadata = DatasetMetadata.empty,
+      targetMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       query = None,
       destination = None,
       deviceSecret = secret

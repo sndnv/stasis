@@ -144,12 +144,12 @@ class MockServerApiEndpointClient(
 
   override def datasetMetadata(entry: DatasetEntry.Id): Future[DatasetMetadata] = {
     stats(Statistic.DatasetMetadataWithEntryIdRetrieved).getAndIncrement()
-    Future.successful(DatasetMetadata.empty)
+    Future.successful(DatasetMetadata.empty(filesystemSeparator = "/"))
   }
 
   override def datasetMetadata(entry: DatasetEntry): Future[DatasetMetadata] = {
     stats(Statistic.DatasetMetadataWithEntryRetrieved).getAndIncrement()
-    Future.successful(DatasetMetadata.empty)
+    Future.successful(DatasetMetadata.empty(filesystemSeparator = "/"))
   }
 
   override def user(): Future[User] = {

@@ -84,7 +84,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
             sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
-          )
+          ),
+          filesystemSeparator = "/"
         )
       ),
       clients = Clients(
@@ -175,7 +176,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
             sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
-          )
+          ),
+          filesystemSeparator = "/"
         )
       ),
       clients = Clients(
@@ -267,7 +269,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
             sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile3Metadata.path -> FilesystemMetadata.EntityState.New
-          )
+          ),
+          filesystemSeparator = "/"
         )
       ),
       clients = Clients(
@@ -371,7 +374,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
           entities = Map(
             sourceFile1Metadata.path -> FilesystemMetadata.EntityState.New,
             sourceFile2Metadata.path -> FilesystemMetadata.EntityState.New
-          )
+          ),
+          filesystemSeparator = "/"
         )
       ),
       clients = Clients(
@@ -441,7 +445,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       collector = Backup.Descriptor.Collector.WithEntities(
         entities = List(sourceFile1Metadata.path.asPath)
       ),
-      latestMetadata = DatasetMetadata.empty,
+      latestMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       clients = Clients(
         api = mockApiClient,
         core = mockCoreClient
@@ -503,7 +507,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val backupWithRules = createBackup(
       collector = Backup.Descriptor.Collector.WithRules(rules = Seq.empty),
-      latestMetadata = DatasetMetadata.empty,
+      latestMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       clients = Clients(
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
@@ -516,7 +520,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val backupWithEntities = createBackup(
       collector = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty),
-      latestMetadata = DatasetMetadata.empty,
+      latestMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       clients = Clients(
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
@@ -529,7 +533,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
 
     val backupWithState = createBackup(
       collector = Backup.Descriptor.Collector.WithState(Fixtures.State.BackupOneState.copy(operation = existingId)),
-      latestMetadata = DatasetMetadata.empty,
+      latestMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       clients = Clients(
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
@@ -649,7 +653,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       collector = Backup.Descriptor.Collector.WithEntities(
         entities = List(sourceFile1Metadata.path.asPath)
       ),
-      latestMetadata = DatasetMetadata.empty,
+      latestMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
       clients = Clients(
         api = MockServerApiEndpointClient(),
         core = MockServerCoreEndpointClient()
@@ -672,7 +676,7 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
     val datasetWithoutEntry = Fixtures.Datasets.Default.copy(id = DatasetDefinition.generateId())
 
     val entry = Fixtures.Entries.Default.copy(definition = datasetWithEntry.id)
-    val metadata = DatasetMetadata.empty
+    val metadata = DatasetMetadata.empty(filesystemSeparator = "/")
 
     implicit val providers: Providers = Providers(
       checksum = checksum,
