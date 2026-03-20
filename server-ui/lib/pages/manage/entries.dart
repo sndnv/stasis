@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:server_ui/api/api_client.dart';
 import 'package:server_ui/model/datasets/dataset_entry.dart';
@@ -49,7 +50,9 @@ class _DatasetEntriesState extends State<DatasetEntries> {
             EntityTableColumn(label: 'ID', sortBy: (e) => (e.id as String).toMinimizedString()),
             EntityTableColumn(label: 'Crates', sortBy: (e) => e.data.length),
             EntityTableColumn(label: 'Metadata', sortBy: (e) => (e.metadata as String).toMinimizedString()),
-            EntityTableColumn(label: 'Created', sortBy: (e) => e.created),
+            EntityTableColumn(label: 'Changes', sortBy: (e) => e.changes ?? 0),
+            EntityTableColumn(label: 'Size', sortBy: (e) => e.size ?? 0, size: ColumnSize.S),
+            EntityTableColumn(label: 'Created', sortBy: (e) => e.created ?? 0, size: ColumnSize.S),
             EntityTableColumn(label: ''),
           ],
           entityToRow: (entity) {
@@ -80,6 +83,8 @@ class _DatasetEntriesState extends State<DatasetEntries> {
                     : Text(entry.data.length.toString()),
               ),
               DataCell(entry.metadata.asShortId()),
+              DataCell(Text(entry.changes?.toString() ?? '-')),
+              DataCell(Text(entry.size?.renderFileSize() ?? '-')),
               DataCell(Text(entry.created.render())),
               DataCell(
                 Row(
