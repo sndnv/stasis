@@ -107,7 +107,7 @@ def str_to_memory_size(memory_size):
 
 DURATION_REGEX = r'^(?:(\d+) day(?:s?), )?(\d(?:\d?)):(\d\d):(\d\d)$'
 
-MEMORY_SIZE_REGEX = r'(\d+)\s*?(bytes|byte|b|kb|k|mb|m|gb|g|tb|t|pb|p)|(\d+)$'
+MEMORY_SIZE_REGEX = r'(?:(\d+)\s*?(bytes|byte|b|kb|k|mb|m|gb|g|tb|t|pb|p)|(\d+))$'
 
 MEMORY_SIZE_SUFFIXES = {
     'bytes': 1,
