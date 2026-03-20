@@ -77,5 +77,6 @@ class RenderPackageSpec(unittest.TestCase):
             self.assertEqual(str_to_memory_size(string), expected_memory_size)
 
     def test_should_fail_to_convert_invalid_strings_to_memory_size(self):
-        string = 'invalid-string'
-        self.assertIsNone(str_to_memory_size(string))
+        self.assertIsNone(str_to_memory_size('invalid-string'))
+        self.assertIsNone(str_to_memory_size('11b84ed8-3bb7-4654-94ee-5aa054304f4c'))
+        self.assertIsNone(str_to_memory_size('8bbeb25b-eb9e-4f63-b765-e4abbcdd9423'))
