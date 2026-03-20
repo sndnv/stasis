@@ -176,6 +176,8 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       device = Device.generateId(),
       data = Set.empty,
       metadata = Crate.generateId(),
+      changes = Some(42),
+      size = None,
       created = Instant.now()
     )
 

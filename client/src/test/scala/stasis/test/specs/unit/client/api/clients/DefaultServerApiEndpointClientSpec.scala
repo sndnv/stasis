@@ -166,7 +166,9 @@ class DefaultServerApiEndpointClientSpec extends AsyncUnitSpec with Eventually {
       definition = DatasetDefinition.generateId(),
       device = Device.generateId(),
       data = Set(Crate.generateId(), Crate.generateId()),
-      metadata = Crate.generateId()
+      metadata = Crate.generateId(),
+      changes = 1,
+      size = 2
     )
 
     for {

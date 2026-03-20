@@ -17,6 +17,8 @@ class CreateDatasetEntrySpec extends UnitSpec {
       device = Device.generateId(),
       data = Set(Crate.generateId(), Crate.generateId()),
       metadata = Crate.generateId(),
+      changes = Some(42),
+      size = Some(99),
       created = Instant.now()
     )
 
@@ -24,7 +26,9 @@ class CreateDatasetEntrySpec extends UnitSpec {
       definition = expectedEntry.definition,
       device = expectedEntry.device,
       metadata = expectedEntry.metadata,
-      data = expectedEntry.data
+      data = expectedEntry.data,
+      changes = 42,
+      size = 99
     )
 
     request.toEntry.copy(id = expectedEntry.id, created = expectedEntry.created) should be(expectedEntry)

@@ -341,6 +341,8 @@ class DatasetEntryStoreSpec extends AsyncUnitSpec {
     device = Device.generateId(),
     data = Set.empty,
     metadata = Crate.generateId(),
+    changes = Some(1),
+    size = Some(2),
     created = Instant.now()
   )
 

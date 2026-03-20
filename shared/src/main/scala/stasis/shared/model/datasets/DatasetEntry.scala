@@ -11,6 +11,8 @@ final case class DatasetEntry(
   device: Device.Id,
   data: Set[Crate.Id],
   metadata: Crate.Id,
+  changes: Option[Long],
+  size: Option[Long],
   created: Instant
 )
 

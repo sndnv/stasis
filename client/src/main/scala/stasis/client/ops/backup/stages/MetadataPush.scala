@@ -3,11 +3,11 @@ package stasis.client.ops.backup.stages
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.Done
-import org.apache.pekko.NotUsed
 
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
@@ -62,7 +62,9 @@ trait MetadataPush {
             .collect { case metadata: EntityMetadata.File => metadata }
             .flatMap(_.crates.values)
             .toSet,
-          metadata = metadataManifest.crate
+          metadata = metadataManifest.crate,
+          changes = metadata.contentChanged.size.toLong + metadata.metadataChanged.size.toLong,
+          size = metadata.contentChanged.collect { case (_, file: EntityMetadata.File) => file.size }.sum
         )
 
         for {
