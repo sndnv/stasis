@@ -10,5 +10,7 @@ data class CreateDatasetEntry(
     val definition: DatasetDefinitionId,
     val device: DeviceId,
     val data: Set<CrateId>,
-    val metadata: CrateId
+    val metadata: CrateId,
+    val changes: Long?,
+    val size: Long?,
 )

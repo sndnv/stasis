@@ -282,6 +282,8 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
         device = self,
         data = setOf(CrateId.randomUUID(), CrateId.randomUUID()),
         metadata = CrateId.randomUUID(),
+        changes = 1,
+        size = 2,
         created = Instant.now()
     )
 
@@ -291,6 +293,8 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
         device = self,
         data = setOf(CrateId.randomUUID()),
         metadata = CrateId.randomUUID(),
+        changes = null,
+        size = 3,
         created = Instant.now()
     )
 

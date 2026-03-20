@@ -206,6 +206,8 @@ class DefaultServerApiEndpointClientSpec : WordSpec({
                 definition = UUID.randomUUID(),
                 device = UUID.randomUUID(),
                 data = setOf(UUID.randomUUID(), UUID.randomUUID()),
+                changes = 1,
+                size = 2,
                 metadata = UUID.randomUUID()
             )
 

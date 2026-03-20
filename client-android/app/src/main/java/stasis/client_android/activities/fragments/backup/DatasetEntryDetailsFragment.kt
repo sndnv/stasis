@@ -116,12 +116,13 @@ class DatasetEntryDetailsFragment : Fragment() {
                             ),
                             StyledString(
                                 placeholder = "%2\$s",
-                                content = (metadata.contentChanged.size + metadata.metadataChanged.size).toString(),
+                                content = (entry.changes
+                                    ?: (metadata.contentChanged.size + metadata.metadataChanged.size)).toString(),
                                 style = StyleSpan(Typeface.BOLD)
                             ),
                             StyledString(
                                 placeholder = "%3\$s",
-                                content = metadata.contentChangedBytes.asSizeString(context),
+                                content = (entry.size ?: metadata.contentChangedBytes).asSizeString(context),
                                 style = StyleSpan(Typeface.BOLD)
                             )
                         )
@@ -151,7 +152,7 @@ class DatasetEntryDetailsFragment : Fragment() {
 
                 val adapter = DatasetMetadataEntryListItemAdapter(
                     metadata = metadata,
-                    onFiltersUpdated = { activeFilters, totalEntries, shownEntries ->
+                    onFiltersUpdated = { _, totalEntries, shownEntries ->
                         binding.datasetEntryFiltersSummary.text =
                             context.getString(R.string.dataset_entry_field_content_filters)
                                 .renderAsSpannable(

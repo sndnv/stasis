@@ -17,7 +17,7 @@ import java.util.UUID
 
 class DatasetEntrySpec : WordSpec({
     "A DatasetEntry" should {
-        val datasetEntry = DatasetEntry(
+        val defaultDatasetEntry = DatasetEntry(
             id = UUID.fromString("71a357e7-856f-4ae1-9d4d-abf424daddcd"),
             definition = UUID.fromString("03455212-735b-444a-9886-6762432ebae9"),
             device = UUID.fromString("0fabfb8e-aa45-4e9e-bca1-cca20b09097d"),
@@ -27,10 +27,17 @@ class DatasetEntrySpec : WordSpec({
                 UUID.fromString("4cc26129-8921-4c1b-a207-f6b0edc1b4ee")
             ),
             metadata = UUID.fromString("56179ef2-7897-488f-9cf0-6aa08c57b259"),
+            changes = null,
+            size = null,
             created = Instant.parse("2020-01-02T03:04:05Z")
         )
 
-        val serializedDatasetEntry =
+        val datasetEntryWithChangesAndSize = defaultDatasetEntry.copy(
+            changes = 1,
+            size = 2,
+        )
+
+        val serializedDefaultDatasetEntry =
             "ChUI4ZW9q/j81dFxEM2766bC/uqmnQESFQjKiO2ap8LU" +
                     "ogMQ6fW6maTsmcOYARoVCJ6dldLq8f7VDxD9kqTYoJ" +
                     "Tz0LwBIhYInYK5rOmuoPiHARCw4JTA+dKsn5EBIhUI" +
@@ -38,12 +45,34 @@ class DatasetEntrySpec : WordSpec({
                     "wQ7umG7o7W/YOiASoVCI+R3cSn3ueLVhDZ5N7iiNSa" +
                     "+JwBMIiZ16H2LQ=="
 
-        "be serializable to byte string" {
-            datasetEntry.toByteString() shouldBe (serializedDatasetEntry.decodeBase64())
+        val serializedDatasetEntryWithChangesAndSize =
+            "ChUI4ZW9q/j81dFxEM2766bC/uqmnQESFQjKiO2ap8LU" +
+                    "ogMQ6fW6maTsmcOYARoVCJ6dldLq8f7VDxD9kqTYoJ" +
+                    "Tz0LwBIhYInYK5rOmuoPiHARCw4JTA+dKsn5EBIhUI" +
+                    "s46lgf/JqJYLEJCil5K18OO5igEiFQibmIXJmKWY4U" +
+                    "wQ7umG7o7W/YOiASoVCI+R3cSn3ueLVhDZ5N7iiNSa" +
+                    "+JwBMIiZ16H2LTgBQAI="
+
+        "be serializable to byte string (default)" {
+            defaultDatasetEntry.toByteString() shouldBe (serializedDefaultDatasetEntry.decodeBase64())
         }
 
-        "be deserializable from a valid byte string" {
-            serializedDatasetEntry.decodeBase64()?.toDatasetEntry() shouldBe (Try.Success(datasetEntry))
+        "be serializable to byte string (with changes and size)" {
+            datasetEntryWithChangesAndSize.toByteString() shouldBe (
+                    serializedDatasetEntryWithChangesAndSize.decodeBase64()
+                    )
+        }
+
+        "be deserializable from a valid byte string (default)" {
+            serializedDefaultDatasetEntry.decodeBase64()?.toDatasetEntry() shouldBe (
+                    Try.Success(defaultDatasetEntry)
+                    )
+        }
+
+        "be deserializable from a valid byte string (with changes and size)" {
+            serializedDatasetEntryWithChangesAndSize.decodeBase64()?.toDatasetEntry() shouldBe (
+                    Try.Success(datasetEntryWithChangesAndSize)
+                    )
         }
 
         "fail to be deserialized from an invalid byte string" {

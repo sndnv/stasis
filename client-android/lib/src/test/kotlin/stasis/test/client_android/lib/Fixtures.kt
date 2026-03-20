@@ -15,7 +15,6 @@ import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.lib.utils.Either
 import stasis.test.client_android.lib.ResourceHelpers.asPath
 import java.math.BigInteger
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -136,6 +135,8 @@ object Fixtures {
                     + Metadata.FileThreeMetadata.crates.values)
                 .toSet(),
             metadata = UUID.randomUUID(),
+            changes = 1,
+            size = 2,
             created = Instant.now()
         )
     }
@@ -315,7 +316,7 @@ object Fixtures {
                     permissions = Fixtures.Metadata.FileOneMetadata.permissions,
                     checksum = Fixtures.Metadata.FileOneMetadata.checksum.toByteArray().toByteString(),
                     crates = Fixtures.Metadata.FileOneMetadata.crates.map { (path, uuid) ->
-                        path.toString() to stasis.client_android.lib.model.proto.Uuid(
+                        path to stasis.client_android.lib.model.proto.Uuid(
                             mostSignificantBits = uuid.mostSignificantBits,
                             leastSignificantBits = uuid.leastSignificantBits
                         )
@@ -336,7 +337,7 @@ object Fixtures {
                     permissions = Fixtures.Metadata.FileTwoMetadata.permissions,
                     checksum = Fixtures.Metadata.FileTwoMetadata.checksum.toByteArray().toByteString(),
                     crates = Fixtures.Metadata.FileTwoMetadata.crates.map { (path, uuid) ->
-                        path.toString() to stasis.client_android.lib.model.proto.Uuid(
+                        path to stasis.client_android.lib.model.proto.Uuid(
                             mostSignificantBits = uuid.mostSignificantBits,
                             leastSignificantBits = uuid.leastSignificantBits
                         )
@@ -390,37 +391,37 @@ object Fixtures {
                     definition = Fixtures.State.BackupOneState.definition.toString(),
                     started = Fixtures.State.BackupOneState.started.toEpochMilli(),
                     entities = stasis.client_android.lib.model.proto.BackupEntities(
-                        discovered = listOf(Fixtures.Metadata.FileOneMetadata.path.toString()),
+                        discovered = listOf(Fixtures.Metadata.FileOneMetadata.path),
                         unmatched = listOf("a", "b", "c"),
-                        examined = listOf(Fixtures.Metadata.FileTwoMetadata.path.toString()),
-                        skipped = listOf(Fixtures.Metadata.FileTwoMetadata.path.toString()),
+                        examined = listOf(Fixtures.Metadata.FileTwoMetadata.path),
+                        skipped = listOf(Fixtures.Metadata.FileTwoMetadata.path),
                         collected = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.SourceEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path.toString(),
-                                    existingMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto,
-                                    currentMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto
+                                    path = Fixtures.Metadata.FileOneMetadata.path,
+                                    existingMetadata = Metadata.FileOneMetadataProto,
+                                    currentMetadata = Metadata.FileOneMetadataProto
                                 )
                         ),
                         pending = mapOf(
-                            Fixtures.Metadata.FileTwoMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileTwoMetadata.path to stasis.client_android.lib.model
                                 .proto.PendingSourceEntity(expectedParts = 1, processedParts = 2)
                         ),
                         processed = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.ProcessedSourceEntity(
                                     expectedParts = 1,
                                     processedParts = 1,
-                                    left = Fixtures.Proto.Metadata.FileOneMetadataProto
+                                    left = Metadata.FileOneMetadataProto
                                 ),
-                            Fixtures.Metadata.FileTwoMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileTwoMetadata.path to stasis.client_android.lib.model
                                 .proto.ProcessedSourceEntity(
                                     expectedParts = 0,
                                     processedParts = 0,
-                                    right = Fixtures.Proto.Metadata.FileTwoMetadataProto
+                                    right = Metadata.FileTwoMetadataProto
                                 )
                         ),
-                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path.toString() to "x")
+                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path to "x")
                     ),
                     metadataCollected = Fixtures.State.BackupOneState.metadataCollected?.toEpochMilli(),
                     metadataPushed = Fixtures.State.BackupOneState.metadataPushed?.toEpochMilli(),
@@ -447,28 +448,28 @@ object Fixtures {
                             Fixtures.Metadata.FileOneMetadata.path,
                             Fixtures.Metadata.FileTwoMetadata.path,
                             Fixtures.Metadata.FileThreeMetadata.path
-                        ).map { it.toString() },
+                        ).map { it },
                         collected = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.TargetEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path.toString(),
+                                    path = Fixtures.Metadata.FileOneMetadata.path,
                                     destination = stasis.client_android.lib.model.proto.TargetEntityDestination(
                                         default = stasis.client_android.lib.model.proto.TargetEntityDestinationDefault()
                                     ),
-                                    existingMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto,
-                                    currentMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto
+                                    existingMetadata = Metadata.FileOneMetadataProto,
+                                    currentMetadata = Metadata.FileOneMetadataProto
                                 )
                         ),
                         pending = mapOf(
-                            Fixtures.Metadata.FileThreeMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileThreeMetadata.path to stasis.client_android.lib.model
                                 .proto.PendingTargetEntity(expectedParts = 3, processedParts = 1)
                         ),
                         processed = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.ProcessedTargetEntity(expectedParts = 1, processedParts = 1)
                         ),
-                        metadataApplied = listOf(Fixtures.Metadata.FileOneMetadata.path.toString()),
-                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path.toString() to "x")
+                        metadataApplied = listOf(Fixtures.Metadata.FileOneMetadata.path),
+                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path to "x")
                     ),
                     failures = listOf("y", "z"),
                     completed = Fixtures.State.RecoveryOneState.completed?.toEpochMilli()
@@ -482,32 +483,32 @@ object Fixtures {
                             Fixtures.Metadata.FileOneMetadata.path,
                             Fixtures.Metadata.FileTwoMetadata.path,
                             Fixtures.Metadata.FileThreeMetadata.path
-                        ).map { it.toString() },
+                        ).map { it },
                         collected = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.TargetEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path.toString(),
+                                    path = Fixtures.Metadata.FileOneMetadata.path,
                                     destination = stasis.client_android.lib.model.proto.TargetEntityDestination(
                                         directory = stasis.client_android.lib.model
                                             .proto.TargetEntityDestinationDirectory(
-                                                path = Fixtures.Metadata.FileOneMetadata.path.toString(),
+                                                path = Fixtures.Metadata.FileOneMetadata.path,
                                                 keepDefaultStructure = true
                                             )
                                     ),
-                                    existingMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto,
-                                    currentMetadata = Fixtures.Proto.Metadata.FileOneMetadataProto
+                                    existingMetadata = Metadata.FileOneMetadataProto,
+                                    currentMetadata = Metadata.FileOneMetadataProto
                                 )
                         ),
                         pending = mapOf(
-                            Fixtures.Metadata.FileThreeMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileThreeMetadata.path to stasis.client_android.lib.model
                                 .proto.PendingTargetEntity(expectedParts = 3, processedParts = 1)
                         ),
                         processed = mapOf(
-                            Fixtures.Metadata.FileOneMetadata.path.toString() to stasis.client_android.lib.model
+                            Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.ProcessedTargetEntity(expectedParts = 1, processedParts = 1)
                         ),
-                        metadataApplied = listOf(Fixtures.Metadata.FileOneMetadata.path.toString()),
-                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path.toString() to "x")
+                        metadataApplied = listOf(Fixtures.Metadata.FileOneMetadata.path),
+                        failed = mapOf(Fixtures.Metadata.FileThreeMetadata.path to "x")
                     ),
                     failures = listOf("y", "z"),
                     completed = Fixtures.State.RecoveryTwoState.completed?.toEpochMilli()

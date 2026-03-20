@@ -1,7 +1,9 @@
 package stasis.test.client_android.lib.ops.backup.stages
 
+import io.kotest.assertions.fail
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import stasis.client_android.lib.analysis.Checksum
@@ -9,6 +11,7 @@ import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
+import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
@@ -115,6 +118,16 @@ class MetadataPushSpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (1)
             mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+
+            val entryRequest = when (val value = mockApiClient.lastRequest<CreateDatasetEntry>()) {
+                null -> fail("Expected a [CreateDatasetEntry] request but none was found")
+                else -> value
+            }
+
+            entryRequest.definition shouldBe (Fixtures.Datasets.Default.id)
+            entryRequest.data.size shouldNotBe (0)
+            entryRequest.changes shouldBe (3)
+            entryRequest.size shouldBe (Fixtures.Metadata.FileOneMetadata.size)
         }
     }
 })

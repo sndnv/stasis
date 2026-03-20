@@ -96,6 +96,8 @@ message DatasetEntry {
   repeated Uuid data = 4;
   Uuid metadata = 5;
   int64 created = 6;
+  optional int64 changes = 7;
+  optional int64 size = 8;
 }
 
 message DatasetEntriesForDefinition {
