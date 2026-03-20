@@ -33,6 +33,29 @@ class FilterBinaryOperatorSpec(unittest.TestCase):
         self.assertFalse(FilterBinaryOperator(operator='!=').apply(value='a-b-c', condition='a-b-c'))
         self.assertFalse(FilterBinaryOperator(operator='like').apply(value='a-b-c', condition='-c-'))
 
+        self.assertFalse(FilterBinaryOperator(operator='<').apply(value=None, condition=6))
+        self.assertFalse(FilterBinaryOperator(operator='<=').apply(value=None, condition=5))
+        self.assertFalse(FilterBinaryOperator(operator='>').apply(value=None, condition=6))
+        self.assertFalse(FilterBinaryOperator(operator='>=').apply(value=None, condition=6))
+        self.assertFalse(FilterBinaryOperator(operator='==').apply(value=None, condition='-c-'))
+        self.assertFalse(FilterBinaryOperator(operator='!=').apply(value=None, condition='a-b-c'))
+        self.assertFalse(FilterBinaryOperator(operator='like').apply(value=None, condition='-c-'))
+
+        self.assertFalse(FilterBinaryOperator(operator='is').apply(value='a-b-c', condition='none'))
+        self.assertTrue(FilterBinaryOperator(operator='is-not').apply(value='a-b-c', condition='none'))
+        self.assertTrue(FilterBinaryOperator(operator='is').apply(value=None, condition='none'))
+        self.assertFalse(FilterBinaryOperator(operator='is-not').apply(value=None, condition='none'))
+
+        self.assertFalse(FilterBinaryOperator(operator='is').apply(value='a-b-c', condition='None'))
+        self.assertTrue(FilterBinaryOperator(operator='is-not').apply(value='a-b-c', condition='None'))
+        self.assertTrue(FilterBinaryOperator(operator='is').apply(value=None, condition='None'))
+        self.assertFalse(FilterBinaryOperator(operator='is-not').apply(value=None, condition='None'))
+
+        self.assertFalse(FilterBinaryOperator(operator='is').apply(value='a-b-c', condition='NONE'))
+        self.assertTrue(FilterBinaryOperator(operator='is-not').apply(value='a-b-c', condition='NONE'))
+        self.assertTrue(FilterBinaryOperator(operator='is').apply(value=None, condition='NONE'))
+        self.assertFalse(FilterBinaryOperator(operator='is-not').apply(value=None, condition='NONE'))
+
     def test_should_fail_when_provided_with_unsupported_operations(self):
         operator = FilterBinaryOperator(operator='?')
         with self.assertRaises(Abort):
@@ -47,7 +70,10 @@ class FilterBinaryOperatorSpec(unittest.TestCase):
         self.assertEqual(str(operator), 'FilterBinaryOperator(raw=[>=])')
 
     def test_should_provide_a_list_of_supported_operators(self):
-        self.assertListEqual(FilterBinaryOperator.supported_operators(), ['<', '<=', '>', '>=', '==', '!=', 'like'])
+        self.assertListEqual(
+            FilterBinaryOperator.supported_operators(),
+            ['<', '<=', '>', '>=', '==', '!=', 'like', 'is', 'is-not']
+        )
 
 
 class FilterSpec(unittest.TestCase):
@@ -62,6 +88,26 @@ class FilterSpec(unittest.TestCase):
         filter_instance = Filter(tokens=['test_field', 'like', '-b-'])
         self.assertTrue(filter_instance.apply(entry={'test_field': 'a-b-c', 'other_field': 40}, spec=spec))
         self.assertFalse(filter_instance.apply(entry={'test_field': 'other', 'other_field': 40}, spec=spec))
+
+        spec = {'test_field': int, 'other_field': int}
+        filter_instance = Filter(tokens=['test_field', 'is', 'none'])
+        self.assertTrue(filter_instance.apply(entry={'test_field': None, 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': 40, 'other_field': 40}, spec=spec))
+
+        spec = {'test_field': int, 'other_field': int}
+        filter_instance = Filter(tokens=['test_field', 'is-not', 'none'])
+        self.assertTrue(filter_instance.apply(entry={'test_field': 40, 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': None, 'other_field': 40}, spec=spec))
+
+        spec = {'test_field': str, 'other_field': int}
+        filter_instance = Filter(tokens=['test_field', 'is', 'none'])
+        self.assertTrue(filter_instance.apply(entry={'test_field': None, 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': '40', 'other_field': 40}, spec=spec))
+
+        spec = {'test_field': str, 'other_field': int}
+        filter_instance = Filter(tokens=['test_field', 'is-not', 'none'])
+        self.assertTrue(filter_instance.apply(entry={'test_field': '40', 'other_field': 40}, spec=spec))
+        self.assertFalse(filter_instance.apply(entry={'test_field': None, 'other_field': 40}, spec=spec))
 
     def test_should_fail_filtering_entries_when_invalid_field_is_provided(self):
         spec = {'test_field': int, 'other_field': int}

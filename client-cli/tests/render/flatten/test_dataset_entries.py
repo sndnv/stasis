@@ -7,7 +7,7 @@ from tests.mocks import mock_data
 class DatasetEntriesSpec(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.expected_keys = ['entry', 'definition', 'device', 'crates', 'metadata', 'created']
+        cls.expected_keys = ['entry', 'definition', 'device', 'crates', 'metadata', 'changes', 'size', 'created']
 
     def test_should_retrieve_dataset_entries_spec(self):
         spec = get_spec()

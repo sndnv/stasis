@@ -14,7 +14,7 @@ def render_as_table(entries):
     """
 
     if entries:
-        header = [['Entry', 'Definition', 'Device', 'Crates', 'Metadata', 'Created']]
+        header = [['Entry', 'Definition', 'Device', 'Crates', 'Metadata', 'Changes', 'Size', 'Created']]
         table = AsciiTable(
             header + list(
                 map(
@@ -24,6 +24,8 @@ def render_as_table(entries):
                         entry['device'],
                         entry['crates'],
                         entry['metadata'],
+                        entry['changes'] or '-',
+                        entry['size'] or '-',
                         timestamp_to_iso(entry['created']),
                     ],
                     entries
