@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
-import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/backup_entry_metadata.dart';
 import 'package:stasis_client_ui/pages/components/context/context_menu.dart';
@@ -11,7 +10,6 @@ import 'package:stasis_client_ui/pages/components/dataset_definition_summary.dar
 import 'package:stasis_client_ui/pages/components/dataset_entry_summary.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/top_bar.dart';
-import 'package:stasis_client_ui/utils/pair.dart';
 
 class BackupEntries extends StatelessWidget {
   const BackupEntries({
@@ -27,7 +25,7 @@ class BackupEntries extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildPage<List<Pair<DatasetEntry, DatasetMetadata>>>(
+    return buildPage<List<DatasetEntry>>(
       of: () => _getData(),
       builder: (context, entries) {
         final theme = Theme.of(context);
@@ -45,13 +43,13 @@ class BackupEntries extends StatelessWidget {
           ],
         );
 
-        void show(DatasetEntry entry, DatasetMetadata metadata) {
+        void show(DatasetEntry entry) {
           Navigator.push(
             context,
             MaterialPageRoute<void>(
               builder: (_) => Scaffold(
                 appBar: TopBar.fromTitle(context, 'Backup entry details'),
-                body: BackupEntryMetadata(client: client, entry: entry, metadata: metadata),
+                body: BackupEntryMetadata(client: client, entry: entry),
               ),
               fullscreenDialog: true,
             ),
@@ -61,14 +59,14 @@ class BackupEntries extends StatelessWidget {
         final entriesList = ListView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          children: (entries..sort((a, b) => b.a.created.compareTo(a.a.created))).map((e) {
+          children: (entries..sort((a, b) => b.created.compareTo(a.created))).map((e) {
             return ContextMenu(
               actions: [
                 EntryAction(
                   icon: Icons.notes,
                   name: 'Show',
                   description: 'Show details about this backup entry',
-                  handler: () => show(e.a, e.b),
+                  handler: () => show(e),
                 ),
                 EntryAction(
                   icon: Icons.delete_forever,
@@ -80,17 +78,21 @@ class BackupEntries extends StatelessWidget {
                       context,
                       title: 'Remove backup entry?',
                       content: Text(
-                        'Removing backup entry [${e.a.id.toMinimizedString()}] will make all of its data inaccessible!',
+                        'Removing backup entry [${e.id.toMinimizedString()}] will make all of its data inaccessible!',
                       ),
                       onConfirm: () {
                         final messenger = ScaffoldMessenger.of(context);
-                        client.deleteDatasetEntry(entry: e.a.id).then((_) {
-                          messenger.showSnackBar(const SnackBar(content: Text('Backup entry removed...')));
-                        }).onError((e, stackTrace) {
-                          messenger.showSnackBar(SnackBar(content: Text('Failed to remove backup entry: [$e]')));
-                        }).whenComplete(() {
-                          if (context.mounted) Navigator.pop(context);
-                        });
+                        client
+                            .deleteDatasetEntry(entry: e.id)
+                            .then((_) {
+                              messenger.showSnackBar(const SnackBar(content: Text('Backup entry removed...')));
+                            })
+                            .onError((e, stackTrace) {
+                              messenger.showSnackBar(SnackBar(content: Text('Failed to remove backup entry: [$e]')));
+                            })
+                            .whenComplete(() {
+                              if (context.mounted) Navigator.pop(context);
+                            });
                       },
                     );
                   },
@@ -98,9 +100,8 @@ class BackupEntries extends StatelessWidget {
               ],
               child: DatasetEntrySummary.build(
                 context,
-                entry: e.a,
-                metadata: e.b,
-                onTap: () => show(e.a, e.b),
+                entry: e,
+                onTap: () => show(e),
               ),
             );
           }).toList(),
@@ -137,11 +138,7 @@ class BackupEntries extends StatelessWidget {
     );
   }
 
-  Future<List<Pair<DatasetEntry, DatasetMetadata>>> _getData() async {
-    final entries = await client.getDatasetEntriesForDefinition(definition: definition.id);
-
-    return await Future.wait(
-      entries.map((e) => client.getDatasetMetadata(entry: e.id).then((metadata) => Pair(e, metadata))),
-    );
+  Future<List<DatasetEntry>> _getData() async {
+    return await client.getDatasetEntriesForDefinition(definition: definition.id);
   }
 }

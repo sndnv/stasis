@@ -13,6 +13,8 @@ abstract class DatasetEntry with _$DatasetEntry {
     required String device,
     required Set<String> data,
     required String metadata,
+    int? changes,
+    int? size,
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime created,
   }) = _DatasetEntry;
 

@@ -450,6 +450,8 @@ class MockApiClient extends ApiClient implements ClientApi, InitApi {
     device: device,
     data: {const Uuid().v4(), const Uuid().v4()},
     metadata: const Uuid().v4(),
+    changes: 20,
+    size: 10*1024*1024,
     created: DateTime.now(),
   );
 

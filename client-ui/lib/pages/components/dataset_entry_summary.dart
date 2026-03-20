@@ -1,14 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
-import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
-import 'package:flutter/material.dart';
 
 class DatasetEntrySummary {
   static ListTile build(
     BuildContext context, {
     required DatasetEntry entry,
-    required DatasetMetadata metadata,
     void Function()? onTap,
   }) {
     final theme = Theme.of(context);
@@ -35,9 +33,9 @@ class DatasetEntrySummary {
             TextSpan(text: 'Crates: ', style: theme.textTheme.bodySmall),
             TextSpan(text: entry.data.length.toString(), style: smallBold),
             TextSpan(text: ', Changes: ', style: theme.textTheme.bodySmall),
-            TextSpan(text: metadata.contentChanged.length.toString(), style: smallBold),
+            TextSpan(text: entry.changes?.toString() ?? '-', style: smallBold),
             TextSpan(text: ', Size: ', style: theme.textTheme.bodySmall),
-            TextSpan(text: metadata.contentChangedBytes.renderFileSize(), style: smallBold),
+            TextSpan(text: entry.size?.renderFileSize() ?? '-', style: smallBold),
           ],
         ),
       ),
