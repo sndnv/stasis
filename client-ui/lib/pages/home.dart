@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:stasis_client_ui/api/api_client.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_definition.dart';
 import 'package:stasis_client_ui/model/datasets/dataset_entry.dart';
-import 'package:stasis_client_ui/model/datasets/dataset_metadata.dart';
 import 'package:stasis_client_ui/model/operations/operation.dart' as operation;
 import 'package:stasis_client_ui/model/operations/operation_progress.dart';
 import 'package:stasis_client_ui/pages/common/components.dart';
 import 'package:stasis_client_ui/pages/components/extensions.dart';
 import 'package:stasis_client_ui/pages/components/rendering.dart';
 import 'package:stasis_client_ui/pages/components/sizing.dart';
-import 'package:stasis_client_ui/utils/pair.dart';
 import 'package:stasis_client_ui/utils/triple.dart';
 
 class Home extends StatelessWidget {
@@ -23,7 +21,7 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return buildPage<Triple<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?, DatasetDefinition?>>(
+    return buildPage<Triple<DatasetEntry?, OperationProgress?, DatasetDefinition?>>(
       of: () => _loadData(),
       builder: (context, data) {
         final theme = Theme.of(context);
@@ -75,11 +73,14 @@ class Home extends StatelessWidget {
               heroTag: null,
               onPressed: () {
                 final messenger = ScaffoldMessenger.of(context);
-                client.startBackup(definition: defaultDefinition.id).then((_) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Backup started...')));
-                }).onError((e, stackTrace) {
-                  messenger.showSnackBar(SnackBar(content: Text('Failed to start backup: [$e]')));
-                });
+                client
+                    .startBackup(definition: defaultDefinition.id)
+                    .then((_) {
+                      messenger.showSnackBar(const SnackBar(content: Text('Backup started...')));
+                    })
+                    .onError((e, stackTrace) {
+                      messenger.showSnackBar(SnackBar(content: Text('Failed to start backup: [$e]')));
+                    });
               },
               child: const Icon(Icons.upload),
             ),
@@ -100,8 +101,11 @@ class Home extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.max,
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [Expanded(child: backupContainer), Expanded(child: operationContainer)],
-                          )
+                            children: [
+                              Expanded(child: backupContainer),
+                              Expanded(child: operationContainer),
+                            ],
+                          ),
                         ]
                       : [backupContainer, operationContainer],
                 ),
@@ -124,37 +128,35 @@ class Home extends StatelessWidget {
     );
   }
 
-  Future<Triple<Pair<DatasetEntry, DatasetMetadata>?, OperationProgress?, DatasetDefinition?>> _loadData() async {
+  Future<Triple<DatasetEntry?, OperationProgress?, DatasetDefinition?>> _loadData() async {
     return await _getLatestOperation().then(
-      (operation) => _getLatestMetadata().then(
-        (metadata) => _getDefaultDatasetDefinition().then(
-          (definition) => Triple(metadata, operation, definition),
+      (operation) => _getLatestEntry().then(
+        (entry) => _getDefaultDatasetDefinition().then(
+          (definition) => Triple(entry, operation, definition),
         ),
       ),
     );
   }
 
-  Future<Pair<DatasetEntry, DatasetMetadata>?> _getLatestMetadata() async {
+  Future<DatasetEntry?> _getLatestEntry() async {
     final definitions = await client.getDatasetDefinitions();
 
-    final entries = await Stream.fromIterable(definitions)
-        .asyncMap((definition) => client.getLatestDatasetEntryForDefinition(definition: definition.id))
-        .expand<DatasetEntry>((entry) => (entry != null) ? [entry] : [])
-        .toList()
-      ..sort((a, b) => b.created.compareTo(a.created));
+    final entries =
+        await Stream.fromIterable(definitions)
+              .asyncMap((definition) => client.getLatestDatasetEntryForDefinition(definition: definition.id))
+              .expand<DatasetEntry>((entry) => (entry != null) ? [entry] : [])
+              .toList()
+          ..sort((a, b) => b.created.compareTo(a.created));
 
-    final latest = entries.firstOrNull;
-
-    return latest != null
-        ? await client.getDatasetMetadata(entry: latest.id).then((metadata) => Pair(latest, metadata))
-        : null;
+    return entries.firstOrNull;
   }
 
   Future<OperationProgress?> _getLatestOperation() async {
-    final completed = (await client.getOperations(state: operation.State.completed))
-        .where((o) => o.progress.completed != null)
-        .toList()
-      ..sort((a, b) => b.progress.completed?.compareTo(a.progress.completed!) ?? 0);
+    final completed =
+        (await client.getOperations(
+            state: operation.State.completed,
+          )).where((o) => o.progress.completed != null).toList()
+          ..sort((a, b) => b.progress.completed?.compareTo(a.progress.completed!) ?? 0);
 
     return completed.firstOrNull;
   }
@@ -165,14 +167,11 @@ class Home extends StatelessWidget {
     return definitions.firstOrNull;
   }
 
-  Widget _renderLatestBackup(ThemeData theme, Pair<DatasetEntry, DatasetMetadata>? data) {
+  Widget _renderLatestBackup(ThemeData theme, DatasetEntry? entry) {
     final mediumBold = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold);
     final mediumItalic = theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic);
 
-    if (data != null) {
-      final entry = data.a;
-      final metadata = data.b;
-
+    if (entry != null) {
       final title = RichText(
         text: TextSpan(
           children: [
@@ -192,12 +191,9 @@ class Home extends StatelessWidget {
             TextSpan(text: 'Crates: ', style: theme.textTheme.bodyMedium),
             TextSpan(text: entry.data.length.toString(), style: mediumBold),
             TextSpan(text: ', Changes: ', style: theme.textTheme.bodyMedium),
-            TextSpan(
-              text: (metadata.contentChanged.length + metadata.metadataChanged.length).toString(),
-              style: mediumBold,
-            ),
+            TextSpan(text: entry.changes?.toString() ?? '-', style: mediumBold),
             TextSpan(text: ', Size: ', style: theme.textTheme.bodyMedium),
-            TextSpan(text: metadata.contentChangedBytes.renderFileSize(), style: mediumBold),
+            TextSpan(text: entry.size?.renderFileSize() ?? '-', style: mediumBold),
             TextSpan(text: '\n', style: theme.textTheme.bodyMedium),
           ],
         ),
@@ -208,7 +204,9 @@ class Home extends StatelessWidget {
         subtitle: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: subtitle),
       );
     } else {
-      return ListTile(title: Text('No data', style: mediumItalic, textAlign: TextAlign.center));
+      return ListTile(
+        title: Text('No data', style: mediumItalic, textAlign: TextAlign.center),
+      );
     }
   }
 
@@ -230,7 +228,8 @@ class Home extends StatelessWidget {
 
       final subtitle = RichText(
         text: TextSpan(
-          children: [
+          children:
+              [
                 TextSpan(text: 'Started: ', style: theme.textTheme.bodyMedium),
                 TextSpan(text: operation.progress.started.render(), style: mediumBold),
               ] +
@@ -258,7 +257,9 @@ class Home extends StatelessWidget {
         subtitle: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: subtitle),
       );
     } else {
-      return ListTile(title: Text('No data', style: mediumItalic, textAlign: TextAlign.center));
+      return ListTile(
+        title: Text('No data', style: mediumItalic, textAlign: TextAlign.center),
+      );
     }
   }
 }
