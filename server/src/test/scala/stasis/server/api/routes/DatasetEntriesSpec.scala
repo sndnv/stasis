@@ -311,6 +311,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     device = userDevice.id,
     data = Set.empty,
     metadata = Crate.generateId(),
+    changes = None,
+    size = None,
     created = Instant.now().minusSeconds(entryCreationDifference.toSeconds)
   )
 
@@ -320,6 +322,8 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     device = Device.generateId(),
     data = Set.empty,
     metadata = Crate.generateId(),
+    changes = None,
+    size = Some(42),
     created = Instant.now()
   )
 
@@ -332,7 +336,9 @@ class DatasetEntriesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     definition = definition,
     device = userDevice.id,
     metadata = Crate.generateId(),
-    data = Set.empty
+    data = Set.empty,
+    changes = 1,
+    size = 2
   )
 
   import scala.language.implicitConversions

@@ -3,16 +3,18 @@ package stasis.server.persistence.datasets
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
+import scala.annotation.unused
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-
-import stasis.core.packaging.Crate
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
 import io.github.sndnv.layers.testing.UnitSpec
 import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
-import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import slick.jdbc.SetParameter
+
+import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -82,7 +84,7 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
       withStore { (profile, database) =>
         import play.api.libs.json._
 
-        val name = "TEST_ENTRIES"
+        val name = "TEST_ENTRIES_V1"
         val legacy = LegacyKeyValueStore(name = name, profile = profile, database = database)
         val current = new DefaultDatasetEntryStore(name = name, profile = profile, database = database)
 
@@ -125,13 +127,78 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
         }
       }
     }
+
+    withClue("from version 1 to version 2") {
+      withStore { (profile, database) =>
+        import profile.api._
+
+        val name = "TEST_ENTRIES_V2"
+
+        @unused
+        implicit val uuidParam: SetParameter[java.util.UUID] =
+          SetParameter[java.util.UUID] { (id, p) => p.setObject(id, java.sql.Types.OTHER) }
+
+        @unused
+        implicit val instantParam: SetParameter[Instant] =
+          SetParameter((i, p) => p.setTimestamp(java.sql.Timestamp.from(i)))
+
+        val legacyCreate = sqlu"""
+            CREATE TABLE "#$name" (
+              "ID" UUID NOT NULL PRIMARY KEY,
+              "DEFINITION" UUID NOT NULL,
+              "DEVICE" UUID NOT NULL,
+              "DATA" VARCHAR NOT NULL,
+              "METADATA" UUID NOT NULL,
+              "CREATED" TIMESTAMP(9) WITH TIME ZONE NOT NULL
+            )"""
+
+        val current = new DefaultDatasetEntryStore(name = name, profile = profile, database = database)
+
+        val entries = Seq(earliestEntry, otherEntry, latestEntry)
+
+        val migration = current.migrations.find(_.version == 2) match {
+          case Some(migration) => migration
+          case None            => fail("Expected migration with version == 2 but none was found")
+        }
+
+        for {
+          neededBeforeTableCreate <- migration.needed.run()
+          _ <- database.run(legacyCreate)
+          neededAfterTableCreate <- migration.needed.run()
+          _ <- database.run(
+            DBIO.seq(
+              entries.map { e =>
+                sqlu"""INSERT INTO #$name VALUES(
+                      ${e.id}, ${e.definition}, ${e.device}, ${e.data.mkString(",")}, ${e.metadata}, ${e.created}
+                )"""
+              }: _*
+            )
+          )
+          currentResultBefore <- current.list(entry.definition).failed
+          neededBefore <- migration.needed.run()
+          _ <- migration.action.run()
+          neededAfter <- migration.needed.run()
+          currentResultAfter <- current.list(entry.definition)
+          _ <- current.drop()
+        } yield {
+          neededBeforeTableCreate should be(false)
+          neededAfterTableCreate should be(true)
+
+          currentResultBefore.getMessage should include("""Column "CHANGES" not found""")
+          neededBefore should be(true)
+
+          neededAfter should be(false)
+          currentResultAfter.map(_.id).sorted should be(entries.map(_.id).sorted)
+        }
+      }
+    }
   }
 
   private implicit val telemetry: MockTelemetryContext = MockTelemetryContext()
 
   private implicit val system: ActorSystem[Nothing] = ActorSystem(
     guardianBehavior = Behaviors.ignore,
-    "DefaultDatasetEntryStoreSpec"
+    name = "DefaultDatasetEntryStoreSpec"
   )
 
   private val entry = DatasetEntry(
@@ -140,6 +207,8 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
     device = Device.generateId(),
     data = Set(Crate.generateId(), Crate.generateId(), Crate.generateId(), Crate.generateId(), Crate.generateId()),
     metadata = Crate.generateId(),
+    changes = Some(1),
+    size = Some(2),
     created = Instant.now()
   )
 
@@ -149,11 +218,13 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
 
   private val otherEntry = entry.copy(
     id = DatasetEntry.generateId(),
+    changes = None,
     created = earliestEntry.created.plusSeconds(entryCreationDifference.toSeconds)
   )
 
   private val latestEntry = entry.copy(
     id = DatasetEntry.generateId(),
+    size = None,
     created = earliestEntry.created.plusSeconds((entryCreationDifference * 2).toSeconds)
   )
 }

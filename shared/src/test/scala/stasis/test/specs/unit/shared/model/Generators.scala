@@ -94,6 +94,8 @@ object Generators {
       device = Device.generateId(),
       data = generateSeq(g = Crate.generateId()).toSet,
       metadata = Crate.generateId(),
+      changes = Some(rnd.nextLong(0, 99999)),
+      size = Some(rnd.nextLong(0, 42 * 1024 * 1024)),
       created = Instant.now().truncatedTo(ChronoUnit.SECONDS)
     )
 }

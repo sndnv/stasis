@@ -5,6 +5,9 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.persistence.Metrics
+import io.github.sndnv.layers.persistence.migration.Migration
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import slick.jdbc.JdbcProfile
@@ -13,9 +16,6 @@ import slick.lifted.ProvenShape
 
 import stasis.core.packaging.Crate
 import stasis.core.persistence.backends.slick.LegacyKeyValueStore
-import io.github.sndnv.layers.persistence.Metrics
-import io.github.sndnv.layers.persistence.migration.Migration
-import io.github.sndnv.layers.telemetry.TelemetryContext
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -44,10 +44,12 @@ class DefaultDatasetEntryStore(
     def device: Rep[Device.Id] = column[Device.Id]("DEVICE")
     def data: Rep[Set[Crate.Id]] = column[Set[Crate.Id]]("DATA")
     def metadata: Rep[Crate.Id] = column[Crate.Id]("METADATA")
+    def changes: Rep[Option[Long]] = column[Option[Long]]("CHANGES", O.Default(None))
+    def size: Rep[Option[Long]] = column[Option[Long]]("SIZE", O.Default(None))
     def created: Rep[Instant] = column[Instant]("CREATED")
 
     def * : ProvenShape[DatasetEntry] =
-      (id, definition, device, data, metadata, created) <> ((DatasetEntry.apply _).tupled, DatasetEntry.unapply)
+      (id, definition, device, data, metadata, changes, size, created) <> ((DatasetEntry.apply _).tupled, DatasetEntry.unapply)
   }
 
   private val store = TableQuery[SlickStore]
@@ -107,8 +109,38 @@ class DefaultDatasetEntryStore(
           device = (e \ "device").as[Device.Id],
           data = (e \ "data").as[Set[Crate.Id]],
           metadata = (e \ "metadata").as[Crate.Id],
+          changes = None,
+          size = None,
           created = (e \ "created").as[Instant]
         )
+      },
+    Migration(
+      version = 2,
+      needed = Migration.Action {
+        import slick.jdbc.meta.MTable
+
+        for {
+          table <- database.run(
+            MTable
+              .getTables(cat = None, schemaPattern = None, namePattern = Some(name), types = None)
+              .map(_.headOption)
+          )
+          columns <- table
+            .map(t => database.run(t.getColumns))
+            .getOrElse(Future.successful(Seq.empty))
+            .map(_.map(_.name.toLowerCase))
+        } yield {
+          table.isDefined && (!columns.contains("changes") && !columns.contains("size"))
+        }
+      },
+      action = Migration.Action {
+        database.run(
+          DBIO.seq(
+            sqlu"""ALTER TABLE #$name ADD COLUMN CHANGES BIGINT""",
+            sqlu"""ALTER TABLE #$name ADD COLUMN SIZE BIGINT"""
+          )
+        )
       }
+    )
   )
 }

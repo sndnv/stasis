@@ -15,6 +15,7 @@ import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataPush
+import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.ops.Operation
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -121,6 +122,16 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
         mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(1)
         mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
         mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+
+        val entryRequest = mockApiClient.lastRequest[CreateDatasetEntry] match {
+          case Some(value) => value
+          case None        => fail("Expected a [CreateDatasetEntry] request but none was found")
+        }
+
+        entryRequest.definition should be(Fixtures.Datasets.Default.id)
+        entryRequest.data should not be empty
+        entryRequest.changes should be(Some(3))
+        entryRequest.size should be(Some(Fixtures.Metadata.FileOneMetadata.size))
       }
   }
 

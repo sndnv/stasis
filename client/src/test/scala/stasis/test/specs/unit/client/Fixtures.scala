@@ -144,6 +144,8 @@ object Fixtures {
           Metadata.FileThreeMetadata.crates.values
       ).flatten,
       metadata = Crate.generateId(),
+      changes = Some(1),
+      size = Some(2),
       created = Instant.now()
     )
   }

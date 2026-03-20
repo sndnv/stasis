@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.mocks
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.Future
 
@@ -15,6 +16,7 @@ import stasis.core.commands.proto.CommandParameters
 import stasis.core.commands.proto.CommandSource
 import stasis.core.commands.proto.LogoutUser
 import io.github.sndnv.layers.telemetry.analytics.AnalyticsEntry
+
 import stasis.shared.api.requests.CreateDatasetDefinition
 import stasis.shared.api.requests.CreateDatasetEntry
 import stasis.shared.api.requests.ResetUserPassword
@@ -63,13 +65,17 @@ class MockServerApiEndpointClient(
 
   override val server: String = "mock-api-server"
 
+  private val lastRequestRef: AtomicReference[Option[AnyRef]] = new AtomicReference(None)
+
   override def createDatasetDefinition(request: CreateDatasetDefinition): Future[CreatedDatasetDefinition] = {
     stats(Statistic.DatasetDefinitionCreated).getAndIncrement()
+    lastRequestRef.set(Some(request))
     Future.successful(CreatedDatasetDefinition(DatasetDefinition.generateId()))
   }
 
   override def updateDatasetDefinition(definition: DatasetDefinition.Id, request: UpdateDatasetDefinition): Future[Done] = {
     stats(Statistic.DatasetDefinitionUpdated).getAndIncrement()
+    lastRequestRef.set(Some(request))
     Future.successful(Done)
   }
 
@@ -80,6 +86,7 @@ class MockServerApiEndpointClient(
 
   override def createDatasetEntry(request: CreateDatasetEntry): Future[CreatedDatasetEntry] = {
     stats(Statistic.DatasetEntryCreated).getAndIncrement()
+    lastRequestRef.set(Some(request))
     Future.successful(CreatedDatasetEntry(DatasetEntry.generateId()))
   }
 
@@ -166,6 +173,7 @@ class MockServerApiEndpointClient(
 
   override def resetUserPassword(request: ResetUserPassword): Future[Done] = {
     stats(Statistic.UserPasswordUpdated).getAndIncrement()
+    lastRequestRef.set(Some(request))
     Future.successful(Done)
   }
 
@@ -231,6 +239,9 @@ class MockServerApiEndpointClient(
   }
 
   def statistics: Map[Statistic, Int] = stats.view.mapValues(_.get()).toMap
+
+  def lastRequest[T]: Option[T] =
+    lastRequestRef.get().map(_.asInstanceOf[T])
 }
 
 object MockServerApiEndpointClient {
