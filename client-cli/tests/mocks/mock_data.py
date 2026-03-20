@@ -231,6 +231,7 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4())],
         'metadata': str(uuid4()),
+        'changes': 42,
         'created': '2020-10-01T01:03:02',
     },
     {
@@ -239,6 +240,7 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4()), str(uuid4())],
         'metadata': str(uuid4()),
+        'size': 21,
         'created': '2020-10-01T01:03:03',
     },
     {
@@ -247,6 +249,8 @@ ENTRIES = [
         'device': DEVICE['id'],
         'data': [str(uuid4())],
         'metadata': str(uuid4()),
+        'changes': None,
+        'size': None,
         'created': '2020-10-01T01:03:04',
     },
 ]

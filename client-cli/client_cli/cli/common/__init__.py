@@ -28,7 +28,7 @@ def normalize(value):
         return value
 
 
-def coerce(provided: str, field: str, spec: dict):
+def coerce(provided: str | None, field: str, spec: dict, coerce_none: bool = True):
     """
     Attempts to coerce the provided condition to the expected field value for better filtering/sorting comparisons.
 
@@ -37,12 +37,17 @@ def coerce(provided: str, field: str, spec: dict):
     :param provided: value to coerce
     :param field: required field
     :param spec: specification of `field->field-type` mapping
+    :param coerce_none: set to `True` to coerce a `None` to a string or number; otherwise, return `None`
     :return: the coerced value or the original value (if coercion failed)
     """
     expected = spec.get(field, None)
+    provided = None if provided and isinstance(provided, str) and provided.lower() == 'none' else provided
+
+    if provided is None and not coerce_none:
+        return None
 
     if expected == bool:
-        provided = provided.lower()
+        provided = (provided or 'false').lower()
         if provided == 'true':
             return True
         elif provided == 'false':
@@ -51,11 +56,11 @@ def coerce(provided: str, field: str, spec: dict):
             logging.error('Cannot convert [{}] to boolean'.format(provided))
         raise click.Abort()
     elif expected == int:
-        return int(provided)
+        return int(provided) if provided else 0
     elif expected == float:
-        return float(provided)
+        return float(provided) if provided else 0.0
     elif expected == str:
-        return str(provided)
+        return provided or ''
     else:
         logging.error('Unsupported type encountered for expected value: [{}]'.format(type(expected)))
         raise click.Abort()

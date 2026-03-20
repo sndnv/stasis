@@ -1,4 +1,5 @@
 """Utility functions for flattening dataset entries."""
+from client_cli.render import memory_size_to_str
 
 
 def get_spec():
@@ -15,6 +16,8 @@ def get_spec():
             'device': str,
             'crates': int,
             'metadata': str,
+            'changes': int,
+            'size': int,
             'created': str,
         },
         'sorting': {
@@ -41,6 +44,8 @@ def flatten(entries):
                 'device': entry['device'],
                 'crates': len(entry['data']),
                 'metadata': entry['metadata'],
+                'changes': entry.get('changes'),
+                'size': memory_size_to_str(entry.get('size')) if entry.get('size') else None,
                 'created': entry['created'],
             },
             entries

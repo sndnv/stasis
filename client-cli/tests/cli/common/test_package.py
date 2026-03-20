@@ -21,11 +21,23 @@ class CommonPackageSpec(unittest.TestCase):
         self.assertEqual(normalize(value='some-value'), 'some-value')
         self.assertEqual(normalize(value=42), 42)
 
+        self.assertEqual(normalize(value=None), None)
+
     def test_should_coerce_provided_conditions_to_boolean_expected_values(self):
         spec = {'some_field': bool}
 
         self.assertEqual(coerce(provided='true', field='some_field', spec=spec), True)
         self.assertEqual(coerce(provided='false', field='some_field', spec=spec), False)
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=True), False)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=True), False)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=True), False)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=True), False)
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=False), None)
 
         with self.assertRaises(click.Abort):
             coerce(provided='?', field='some_field', spec=spec)
@@ -35,15 +47,45 @@ class CommonPackageSpec(unittest.TestCase):
 
         self.assertEqual(coerce(provided='42', field='some_field', spec=spec), 42)
 
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=True), 0)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=True), 0)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=True), 0)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=True), 0)
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=False), None)
+
     def test_should_coerce_provided_conditions_to_float_expected_values(self):
         spec = {'some_field': float}
 
         self.assertEqual(coerce(provided='4.2', field='some_field', spec=spec), 4.2)
 
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=True), 0.0)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=True), 0.0)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=True), 0.0)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=True), 0.0)
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=False), None)
+
     def test_should_coerce_provided_conditions_to_string_expected_values(self):
         spec = {'some_field': str}
 
         self.assertEqual(coerce(provided='test-string', field='some_field', spec=spec), 'test-string')
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=True), '')
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=True), '')
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=True), '')
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=True), '')
+
+        self.assertEqual(coerce(provided=None, field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='none', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='None', field='some_field', spec=spec, coerce_none=False), None)
+        self.assertEqual(coerce(provided='NONE', field='some_field', spec=spec, coerce_none=False), None)
 
     def test_should_fail_to_coerce_provided_conditions_to_unknown_expected_values(self):
         spec = {'some_field': type({})}

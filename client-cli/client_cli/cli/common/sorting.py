@@ -1,7 +1,5 @@
 """Functions and classes for handling sorting of entries retrieved by the CLI."""
 
-import logging
-
 import click
 
 from client_cli.cli.common import coerce, normalize
@@ -89,18 +87,7 @@ class Sorting:
         """
 
         def extract(entry):
-            value = entry.get(self.field, None)
-
-            if value is not None:
-                return coerce(provided=normalize(value), field=self.field, spec=spec)
-            else:
-                logging.error(
-                    'No value found for field [{}]; available fields are: [{}]'.format(
-                        self.field,
-                        ', '.join(spec.keys())
-                    )
-                )
-                raise click.Abort()
+            return coerce(provided=normalize(entry.get(self.field, None)), field=self.field, spec=spec)
 
         return sorted(entries, key=extract, reverse=self.ordering == 'desc')
 

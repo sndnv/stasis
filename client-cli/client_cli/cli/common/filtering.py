@@ -24,7 +24,7 @@ def with_filtering(command):
         'Show entries matching the provided filter expression',
         'supported operators: [{}]'.format(', '.join(FilterBinaryOperator.supported_operators())),
         'supported aggregations: [{}]'.format(', '.join(FilterGroup.supported_operators())),
-        'for example: \'(is_hidden==true or path like /tmp/test_) && size >= 100\'.',
+        'for example: \'(is_hidden==true or path like /tmp/test_ or path is none) && size >= 100\'.',
     ]
 
     return click.option(
@@ -57,13 +57,15 @@ class FilterBinaryOperator:
     """Representation of binary operator used (>=, <, !=, etc) for defining filters."""
 
     OPERATORS = {
-        '<': lambda v, c: v < c,
-        '<=': lambda v, c: v <= c,
-        '>': lambda v, c: v > c,
-        '>=': lambda v, c: v >= c,
-        '==': lambda v, c: v == c,
-        '!=': lambda v, c: v != c,
-        'like': lambda v, c: str(c) in str(v),
+        '<': lambda v, c: v < c if v is not None else False,
+        '<=': lambda v, c: v <= c if v is not None else False,
+        '>': lambda v, c: v > c if v is not None else False,
+        '>=': lambda v, c: v >= c if v is not None else False,
+        '==': lambda v, c: v == c if v is not None else False,
+        '!=': lambda v, c: v != c if v is not None else False,
+        'like': lambda v, c: str(c) in str(v) if v is not None else False,
+        'is': lambda v, c: str(c).lower() == 'none' and v is None,
+        'is-not': lambda v, c: str(c).lower() == 'none' and v is not None,
     }
 
     def __init__(self, operator):
@@ -129,20 +131,9 @@ class Filter:
         :param spec: specification of `field->field-type` mapping
         :return: True, if the filter matches the entry
         """
-        value = entry.get(self.field, None)
-
-        if value is not None:
-            value = normalize(value)
-            condition = normalize(self.condition)
-            return self.operator.apply(value, coerce(provided=condition, field=self.field, spec=spec))
-        else:
-            logging.error(
-                'No value found for field [{}]; available fields are: [{}]'.format(
-                    self.field,
-                    ', '.join(spec.keys())
-                )
-            )
-            raise click.Abort()
+        value = normalize(entry.get(self.field, None))
+        condition = normalize(self.condition)
+        return self.operator.apply(value, coerce(provided=condition, field=self.field, spec=spec, coerce_none=False))
 
     def as_dict(self):
         """
