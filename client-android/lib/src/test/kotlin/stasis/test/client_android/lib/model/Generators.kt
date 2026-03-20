@@ -72,15 +72,20 @@ object Generators {
         )
     }
 
-    fun generateEntry(): DatasetEntry =
-        DatasetEntry(
+    fun generateEntry(): DatasetEntry {
+        val rnd = ThreadLocalRandom.current()
+
+        return DatasetEntry(
             id = UUID.randomUUID(),
             definition = UUID.randomUUID(),
             device = UUID.randomUUID(),
             data = generateList(g = { UUID.randomUUID() }).toSet(),
             metadata = UUID.randomUUID(),
+            changes = generateOptional { rnd.nextLong(0, 99999) },
+            size = generateOptional { rnd.nextLong(0, 9999999) },
             created = Instant.now().truncatedTo(ChronoUnit.MILLIS)
         )
+    }
 
     fun generateDuration(): Duration {
         val rnd = ThreadLocalRandom.current()
@@ -115,6 +120,16 @@ object Generators {
 
         val size = rnd.nextInt(min, max)
         return (0..size).map { g() }
+    }
+
+    fun <T> generateOptional(g: () -> T): T? {
+        val rnd = ThreadLocalRandom.current()
+
+        return if (rnd.nextBoolean()) {
+            g()
+        } else {
+            null
+        }
     }
 
     private val chars: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')

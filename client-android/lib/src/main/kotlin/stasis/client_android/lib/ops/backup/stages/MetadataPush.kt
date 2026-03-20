@@ -2,7 +2,6 @@ package stasis.client_android.lib.ops.backup.stages
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import okio.Buffer
@@ -15,7 +14,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Providers
-import java.util.*
+import java.util.UUID
 
 interface MetadataPush {
     val targetDataset: DatasetDefinition
@@ -57,6 +56,13 @@ interface MetadataPush {
                     .filterIsInstance<EntityMetadata.File>()
                     .flatMap { it.crates.values }
                     .toSet(),
+                changes = metadata.contentChanged.size.toLong() + metadata.metadataChanged.size.toLong(),
+                size = metadata.contentChanged.values.sumOf {
+                    when (it) {
+                        is EntityMetadata.File -> it.size
+                        else -> 0L
+                    }
+                },
                 metadata = metadataManifest.crate
             )
 

@@ -805,6 +805,8 @@ class CachedServerApiEndpointClientSpec : WordSpec({
                     definition = definition,
                     device = UUID.randomUUID(),
                     data = emptySet(),
+                    changes = 1,
+                    size = 2,
                     metadata = UUID.randomUUID()
                 )
             )
@@ -1075,6 +1077,8 @@ class CachedServerApiEndpointClientSpec : WordSpec({
                 device = UUID.randomUUID(),
                 data = emptySet(),
                 metadata = UUID.randomUUID(),
+                changes = 3,
+                size = 4,
                 created = Instant.now()
             )
 

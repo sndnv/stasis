@@ -31,7 +31,6 @@ import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullD
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentHomeBinding
-import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
@@ -77,17 +76,10 @@ class HomeFragment : Fragment() {
             datasets.latestEntry().observeOnce(viewLifecycleOwner) { latestEntry ->
                 when (latestEntry) {
                     null -> showLastBackupNoData(binding)
-                    else -> datasets.metadata(
-                        forEntry = latestEntry,
-                        onFailure = {
-                            showLastBackupNoData(binding)
-                            binding.homeRefresh?.isRefreshing = false
-                        }
-                    ).observeOnce(viewLifecycleOwner) { metadata ->
+                    else -> {
                         showLastBackupDetails(
                             binding = binding,
-                            entry = latestEntry,
-                            metadata = metadata
+                            entry = latestEntry
                         )
 
                         binding.homeRefresh?.isRefreshing = false
@@ -161,8 +153,7 @@ class HomeFragment : Fragment() {
 
     private fun showLastBackupDetails(
         binding: FragmentHomeBinding,
-        entry: DatasetEntry,
-        metadata: DatasetMetadata
+        entry: DatasetEntry
     ) {
         val context = binding.root.context
 
@@ -198,12 +189,12 @@ class HomeFragment : Fragment() {
                     ),
                     StyledString(
                         placeholder = "%2\$s",
-                        content = (metadata.contentChanged.size + metadata.metadataChanged.size).toString(),
+                        content = entry.changes?.toString() ?: "-",
                         style = StyleSpan(Typeface.BOLD)
                     ),
                     StyledString(
                         placeholder = "%3\$s",
-                        content = metadata.contentChangedBytes.asSizeString(context),
+                        content = entry.size?.asSizeString(context) ?: "-",
                         style = StyleSpan(Typeface.BOLD)
                     )
                 )

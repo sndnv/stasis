@@ -32,6 +32,7 @@ import stasis.test.client_android.lib.model.Generators
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 open class MockServerApiEndpointClient(
     override val self: DeviceId
@@ -63,6 +64,8 @@ open class MockServerApiEndpointClient(
         Statistic.AnalyticsEntriesSent to AtomicInteger(0),
     )
 
+    private val lastRequestRef: AtomicReference<Any?> = AtomicReference(null)
+
     override val server: String = "mock-api-server"
 
     override suspend fun datasetDefinitions(): Try<List<DatasetDefinition>> {
@@ -82,6 +85,7 @@ open class MockServerApiEndpointClient(
 
     override suspend fun createDatasetDefinition(request: CreateDatasetDefinition): Try<CreatedDatasetDefinition> {
         stats[Statistic.DatasetDefinitionCreated]?.getAndIncrement()
+        lastRequestRef.set(request)
         return Success(CreatedDatasetDefinition(definition = UUID.randomUUID()))
     }
 
@@ -90,6 +94,7 @@ open class MockServerApiEndpointClient(
         request: UpdateDatasetDefinition
     ): Try<Unit> {
         stats[Statistic.DatasetDefinitionUpdated]?.getAndIncrement()
+        lastRequestRef.set(request)
         return Success(Unit)
     }
 
@@ -124,6 +129,7 @@ open class MockServerApiEndpointClient(
 
     override suspend fun createDatasetEntry(request: CreateDatasetEntry): Try<CreatedDatasetEntry> {
         stats[Statistic.DatasetEntryCreated]?.getAndIncrement()
+        lastRequestRef.set(request)
         return Success(CreatedDatasetEntry(entry = UUID.randomUUID()))
     }
 
@@ -170,6 +176,7 @@ open class MockServerApiEndpointClient(
 
     override suspend fun resetUserPassword(request: ResetUserPassword): Try<Unit> {
         stats[Statistic.UserPasswordUpdated]?.getAndIncrement()
+        lastRequestRef.set(request)
         return Success(Unit)
     }
 
@@ -234,6 +241,10 @@ open class MockServerApiEndpointClient(
 
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> lastRequest(): T? =
+        lastRequestRef.get()?.let { it as T }
 
     sealed class Statistic {
         object DatasetEntryCreated : Statistic()

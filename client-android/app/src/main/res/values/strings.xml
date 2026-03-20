@@ -367,8 +367,6 @@
     <string name="dataset_entry_field_content_title">%1$s, %2$s (%3$s)</string>
     <string name="dataset_entry_field_content_info_loading">Crates: %1$s</string>
     <string name="dataset_entry_field_content_info_successful">Crates: %1$s, Changes: %2$s, Size: %3$s</string>
-    <string name="dataset_entry_field_content_info_failed">Crates: %1$s, %2$s</string>
-    <string name="dataset_entry_field_content_info_failed_message">Failed to load metadata</string>
     <string name="dataset_entry_field_content_filters">Showing %1$s of %2$s entries</string>
     <string name="dataset_entry_field_content_filters_updates_only">Show only updates</string>
     <string name="dataset_entry_field_content_filters_files_only">Show only updated files</string>

@@ -16,6 +16,8 @@ data class DatasetEntry(
     val device: DeviceId,
     val data: Set<CrateId>,
     val metadata: CrateId,
+    val changes: Long?,
+    val size: Long?,
     val created: Instant
 ) {
     companion object {
@@ -26,6 +28,8 @@ data class DatasetEntry(
                 device = this.device.toProtobuf(),
                 data_ = this.data.map { it.toProtobuf() }.toList(),
                 metadata = this.metadata.toProtobuf(),
+                changes = changes,
+                size = size,
                 created = this.created.toEpochMilli()
             ).encodeByteString()
 
@@ -38,6 +42,8 @@ data class DatasetEntry(
                 device = entry.device.toModel(),
                 data = entry.data_.map { it.toModel() }.toSet(),
                 metadata = entry.metadata.toModel(),
+                changes = entry.changes,
+                size = entry.size,
                 created = Instant.ofEpochMilli(entry.created),
             )
         }

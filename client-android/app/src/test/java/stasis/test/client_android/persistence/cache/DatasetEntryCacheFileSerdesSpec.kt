@@ -16,7 +16,7 @@ import java.util.UUID
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.OLDEST_SDK])
 class DatasetEntryCacheFileSerdesSpec {
-    private val datasetEntry = DatasetEntry(
+    private val defaultDatasetEntry = DatasetEntry(
         id = UUID.fromString("71a357e7-856f-4ae1-9d4d-abf424daddcd"),
         definition = UUID.fromString("03455212-735b-444a-9886-6762432ebae9"),
         device = UUID.fromString("0fabfb8e-aa45-4e9e-bca1-cca20b09097d"),
@@ -26,16 +26,32 @@ class DatasetEntryCacheFileSerdesSpec {
             UUID.fromString("4cc26129-8921-4c1b-a207-f6b0edc1b4ee")
         ),
         metadata = UUID.fromString("56179ef2-7897-488f-9cf0-6aa08c57b259"),
+        changes = null,
+        size = null,
         created = Instant.parse("2020-01-02T03:04:05Z")
     )
 
-    private val serializedDatasetEntry =
+
+    private val datasetEntryWithChangesAndSize = defaultDatasetEntry.copy(
+        changes = 999,
+        size = 32 * 1024 * 1024,
+    )
+
+    private val serializedDefaultDatasetEntry =
         "ChUI4ZW9q/j81dFxEM2766bC/uqmnQESFQjKiO2ap8LU" +
                 "ogMQ6fW6maTsmcOYARoVCJ6dldLq8f7VDxD9kqTYoJ" +
                 "Tz0LwBIhYInYK5rOmuoPiHARCw4JTA+dKsn5EBIhUI" +
                 "s46lgf/JqJYLEJCil5K18OO5igEiFQibmIXJmKWY4U" +
                 "wQ7umG7o7W/YOiASoVCI+R3cSn3ueLVhDZ5N7iiNSa" +
                 "+JwBMIiZ16H2LQ=="
+
+    private val serializedDatasetEntryWithChangesAndSize =
+        "ChUI4ZW9q/j81dFxEM2766bC/uqmnQESFQjKiO2ap8LU" +
+                "ogMQ6fW6maTsmcOYARoVCJ6dldLq8f7VDxD9kqTYoJ" +
+                "Tz0LwBIhYInYK5rOmuoPiHARCw4JTA+dKsn5EBIhUI" +
+                "s46lgf/JqJYLEJCil5K18OO5igEiFQibmIXJmKWY4U" +
+                "wQ7umG7o7W/YOiASoVCI+R3cSn3ueLVhDZ5N7iiNSa" +
+                "+JwBMIiZ16H2LTjnB0CAgIAQ"
 
     @Test
     fun serializeKeys() {
@@ -52,16 +68,29 @@ class DatasetEntryCacheFileSerdesSpec {
     @Test
     fun serializeValues() {
         assertThat(
-            DatasetEntryCacheFileSerdes.serializeValue(datasetEntry),
-            equalTo(serializedDatasetEntry.decodeBase64()?.toByteArray())
+            DatasetEntryCacheFileSerdes.serializeValue(defaultDatasetEntry),
+            equalTo(serializedDefaultDatasetEntry.decodeBase64()?.toByteArray())
+        )
+
+        assertThat(
+            DatasetEntryCacheFileSerdes.serializeValue(datasetEntryWithChangesAndSize),
+            equalTo(serializedDatasetEntryWithChangesAndSize.decodeBase64()?.toByteArray())
         )
     }
 
     @Test
     fun deserializeValues() {
         assertThat(
-            DatasetEntryCacheFileSerdes.deserializeValue(serializedDatasetEntry.decodeBase64()!!.toByteArray()),
-            equalTo(Try.Success(datasetEntry))
+            DatasetEntryCacheFileSerdes.deserializeValue(
+                serializedDefaultDatasetEntry.decodeBase64()!!.toByteArray()
+            ),
+            equalTo(Try.Success(defaultDatasetEntry))
+        )
+        assertThat(
+            DatasetEntryCacheFileSerdes.deserializeValue(
+                serializedDatasetEntryWithChangesAndSize.decodeBase64()!!.toByteArray()
+            ),
+            equalTo(Try.Success(datasetEntryWithChangesAndSize))
         )
     }
 }
