@@ -26,6 +26,7 @@ import stasis.client_android.providers.ProviderContext
 import stasis.client_android.scheduling.SchedulerService
 import stasis.client_android.scheduling.Schedules
 import stasis.client_android.serialization.Extras.putActiveSchedule
+import stasis.client_android.settings.Settings.getSchedulingEnabled
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
 import stasis.client_android.utils.LiveDataExtensions.and
@@ -46,6 +47,7 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
 
     private lateinit var service: SchedulerService
     private var serviceConnected: Boolean = false
+    private var schedulingEnabled: Boolean = false
 
     private lateinit var binding: FragmentSchedulesBinding
     private lateinit var adapter: ScheduleListItemAdapter
@@ -100,6 +102,8 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
         val context = requireContext()
         val preferences: SharedPreferences = ConfigRepository.getPreferences(context)
         val providerContext = providerContextFactory.getOrCreate(preferences).required()
+
+        schedulingEnabled = preferences.getSchedulingEnabled()
 
         adapter = ScheduleListItemAdapter(
             fragmentManager = childFragmentManager,
@@ -170,6 +174,16 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
                 .withArgumentsId<LocalScheduleFormDialogFragment>(id = "$argsId-LocalScheduleFormDialogFragment")
                 .show(childFragmentManager, LocalScheduleFormDialogFragment.Tag)
         }
+
+        if (schedulingEnabled) {
+            binding.schedulesInactive.isVisible = false
+            binding.schedulesList.isVisible = true
+            binding.scheduleAddButton.isVisible = true
+        } else {
+            binding.schedulesInactive.isVisible = true
+            binding.schedulesList.isVisible = false
+            binding.scheduleAddButton.isVisible = false
+        }
     }
 
     private fun updateView(
@@ -178,12 +192,21 @@ class SchedulesFragment : Fragment(), DynamicArguments.Provider {
     ) {
         adapter.setSchedules(schedules, definitions)
 
-        if (schedules.public.isEmpty() && schedules.local.isEmpty() && schedules.configured.isEmpty()) {
-            binding.schedulesListEmpty.isVisible = true
-            binding.schedulesList.isVisible = false
+        if (schedulingEnabled) {
+            binding.schedulesInactive.isVisible = false
+            binding.scheduleAddButton.isVisible = true
+
+            if (schedules.public.isEmpty() && schedules.local.isEmpty() && schedules.configured.isEmpty()) {
+                binding.schedulesListEmpty.isVisible = true
+                binding.schedulesList.isVisible = false
+            } else {
+                binding.schedulesListEmpty.isVisible = false
+                binding.schedulesList.isVisible = true
+            }
         } else {
-            binding.schedulesListEmpty.isVisible = false
-            binding.schedulesList.isVisible = true
+            binding.schedulesInactive.isVisible = true
+            binding.schedulesList.isVisible = false
+            binding.scheduleAddButton.isVisible = false
         }
     }
 }

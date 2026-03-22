@@ -523,6 +523,7 @@
     <string name="schedule_field_content_active">Active assignments: %1$s</string>
     <string name="schedule_field_content_next">Next run on %1$s at %2$s</string>
     <string name="schedule_field_content_interval">Running every %1$s %2$s</string>
+    <string name="schedules_inactive">Scheduling is disabled!\n\nGo to \"Settings\" > \"Advanced\" to re-enable it.</string>
     <string name="schedules_list_empty">No Schedules</string>
     <string name="schedule_assignment_field_title_assignment_type">Assignment Type</string>
     <string name="schedule_assignment_field_title_backup_definition">Backup definition</string>
