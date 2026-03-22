@@ -22,6 +22,14 @@
             android:text="@string/schedules_list_empty"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/schedules_inactive"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/schedules_inactive"
+            android:visibility="gone" />
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/schedule_add_button"
             android:layout_width="wrap_content"
