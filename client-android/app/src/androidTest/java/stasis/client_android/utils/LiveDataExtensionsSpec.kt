@@ -16,10 +16,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import stasis.client_android.await
+import stasis.client_android.captureWithin
 import stasis.client_android.eventually
 import stasis.client_android.failure
 import stasis.client_android.lib.utils.Try
@@ -29,7 +31,9 @@ import stasis.client_android.utils.LiveDataExtensions.liveData
 import stasis.client_android.utils.LiveDataExtensions.minimize
 import stasis.client_android.utils.LiveDataExtensions.observeOnce
 import stasis.client_android.utils.LiveDataExtensions.optionalLiveData
+import stasis.client_android.utils.LiveDataExtensions.refreshingLiveData
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
@@ -86,7 +90,30 @@ class LiveDataExtensionsSpec {
             return expectedResult
         }
 
-        assertThat(CoroutineScope(Dispatchers.IO).liveData { f() }.await(), equalTo(expectedResult))
+        assertThat(
+            CoroutineScope(Dispatchers.IO).liveData { f() }.await(),
+            equalTo(expectedResult)
+        )
+    }
+
+    @Test
+    fun supportConvertingCoroutinesToRefreshingLiveDataInstances() {
+        val calls = AtomicInteger(0)
+        val expectedResult = 42
+
+        suspend fun f(): Int {
+            val last = calls.getAndIncrement()
+            delay(100)
+            return expectedResult + last
+        }
+
+        val updates = CoroutineScope(Dispatchers.IO)
+            .refreshingLiveData(interval = Duration.ofMillis(300)) { f() }
+            .captureWithin(duration = Duration.ofSeconds(1))
+
+        assertThat(calls.get(), greaterThanOrEqualTo(3))
+        assertThat(updates.size, greaterThanOrEqualTo(3))
+        assertThat(updates, equalTo(listOf(42, 43, 44)))
     }
 
     @Test
