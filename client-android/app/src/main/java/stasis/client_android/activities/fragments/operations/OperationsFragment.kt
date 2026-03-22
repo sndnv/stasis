@@ -23,8 +23,8 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.LiveDataExtensions.and
-import stasis.client_android.utils.LiveDataExtensions.liveData
 import stasis.client_android.utils.LiveDataExtensions.minimize
+import stasis.client_android.utils.LiveDataExtensions.refreshingLiveData
 import stasis.client_android.utils.NotificationManagerExtensions.putOperationCompletedNotification
 import java.time.Duration
 import javax.inject.Inject
@@ -117,7 +117,7 @@ class OperationsFragment : Fragment() {
         lifecycleScope.launch {
             (providerContext.trackers.backup.state
                     and providerContext.trackers.recovery.state
-                    and liveData { providerContext.executor.active() })
+                    and refreshingLiveData(Duration.ofSeconds(1)) { providerContext.executor.active() })
                 .minimize(interval = Duration.ofMillis(1500), lifecycleScope)
                 .observe(viewLifecycleOwner) { (state, active) ->
                     providerContext.analytics.recordEvent(name = "get_operations")

@@ -70,6 +70,26 @@ object LiveDataExtensions {
         return data
     }
 
+    inline fun <reified T> CoroutineScope.refreshingLiveData(
+        interval: Duration = Duration.ofSeconds(10),
+        crossinline f: suspend () -> T?
+    ): LiveData<T> {
+        return androidx.lifecycle.liveData(context = this.coroutineContext) {
+            var last: T? = null
+
+            while (true) {
+                f()?.let {
+                    if (it != last) {
+                        emit(it)
+                        last = it
+                    }
+                }
+
+                delay(interval.toMillis())
+            }
+        }
+    }
+
     inline fun <reified T> CoroutineScope.optionalLiveData(crossinline f: suspend () -> T?): LiveData<T?> {
         val data = MutableLiveData<T>()
         launch { data.postValue(f()) }

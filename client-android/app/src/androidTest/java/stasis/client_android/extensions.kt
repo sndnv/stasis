@@ -30,6 +30,27 @@ fun <T> LiveData<T>.await(duration: Duration): T {
     return result ?: throw TimeoutException("Failed to retrieve data")
 }
 
+fun <T> LiveData<T>.captureWithin(duration: Duration): List<T> {
+    val result = mutableListOf<T>()
+
+    val count = CountDownLatch(1)
+    val end = System.currentTimeMillis() + duration.toMillis()
+
+    (object : Observer<T> {
+        override fun onChanged(value: T) {
+            result += value
+            if (System.currentTimeMillis() >= end) {
+                count.countDown()
+                this@captureWithin.removeObserver(this)
+            }
+        }
+    }).apply(::observeForever)
+
+    count.await((duration.toMillis() * 1.1).toLong(), TimeUnit.MILLISECONDS)
+
+    return result
+}
+
 inline fun <reified T> T?.notNull(): T =
     this ?: throw AssertionError("Expected value but null found")
 
