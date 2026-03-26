@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'requests==2.32.5',
+    'requests==2.33.0',
     'requests-oauthlib==2.0.0',
     'terminaltables==3.1.10',
     'hurry.filesize==0.9',
