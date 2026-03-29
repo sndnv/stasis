@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup Python 3
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Verify Assets
         run: |
@@ -25,17 +25,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
         with:
           java-version: 25
           distribution: adopt
           cache: sbt
 
       - name: Setup SBT
-        uses: sbt/setup-sbt@v1
+        uses: sbt/setup-sbt@508b753e53cb6095967669e0911487d2b9bc9f41
 
       - name: Run QA
         run: |
@@ -43,7 +43,7 @@ jobs:
           sbt qa
 
       - name: Push Coverage Result
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2
         with:
           flags: scala
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -55,12 +55,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup Python 3
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Run QA
         run: |
@@ -71,7 +71,7 @@ jobs:
           python -m coverage xml
 
       - name: Push Coverage Result
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2
         with:
           flags: python
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -83,8 +83,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
           channel: 'stable'
       - name: Run identity-ui QA
@@ -112,8 +112,8 @@ jobs:
 
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
           channel: 'stable'
           architecture: x64
@@ -130,10 +130,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
         with:
           java-version: 21
           distribution: adopt
