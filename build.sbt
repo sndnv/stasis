@@ -44,7 +44,7 @@ lazy val versions = new {
   val logback      = "1.5.32"
   val systemTray   = "4.4"
   val bouncycastle = "1.83"
-  val layers       = "1.2.0"
+  val layers       = "1.3.0"
   val fsi          = "1.1.0"
 }
 
