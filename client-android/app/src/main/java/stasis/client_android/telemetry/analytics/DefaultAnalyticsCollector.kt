@@ -31,8 +31,8 @@ class DefaultAnalyticsCollector(
         send(CollectorMessage.RecordEvent(name, attributes))
     }
 
-    override fun recordFailure(message: String) {
-        send(CollectorMessage.RecordFailure(message))
+    override fun recordFailure(message: String, stackTrace: String?) {
+        send(CollectorMessage.RecordFailure(message, stackTrace))
     }
 
     override fun state(): Try<AnalyticsEntry> =
@@ -68,7 +68,7 @@ class DefaultAnalyticsCollector(
                 }
 
                 is CollectorMessage.RecordFailure -> {
-                    latest.getAndUpdate { it.withFailure(message.message) }
+                    latest.getAndUpdate { it.withFailure(message.message, message.stackTrace) }
 
                     cancelScheduledPersist()
 
@@ -137,7 +137,7 @@ class DefaultAnalyticsCollector(
         data class PersistState(val forceTransmit: Boolean) : CollectorMessage()
         data object LoadState : CollectorMessage()
         data class RecordEvent(val name: String, val attributes: Map<String, String>) : CollectorMessage()
-        data class RecordFailure(val message: String) : CollectorMessage()
+        data class RecordFailure(val message: String, val stackTrace: String?) : CollectorMessage()
     }
 
     companion object {

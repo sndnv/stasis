@@ -56,6 +56,7 @@ class Recovery(
                 providers.track.completed(id)
             } catch (e: Throwable) {
                 providers.track.failureEncountered(id, e)
+                providers.analytics.recordFailure(e)
                 throw e
             }
         }

@@ -27,6 +27,7 @@ import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.Recovery
 import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toTargetEntityDestination
 import stasis.client_android.lib.staging.DefaultFileStaging
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
 import stasis.client_android.lib.utils.Try.Success
@@ -121,7 +122,8 @@ class RecoverySpec : WordSpec({
                 compression = MockCompression(),
                 decryptor = MockEncryption(),
                 clients = clients,
-                track = tracker
+                track = tracker,
+                analytics = AnalyticsCollector.NoOp
             )
 
             return Recovery(
@@ -532,7 +534,8 @@ class RecoverySpec : WordSpec({
                         crates = mapOf(actualEntry.metadata to ByteString.EMPTY)
                     )
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val descriptorWithDefinition = Recovery.Descriptor(
@@ -586,7 +589,8 @@ class RecoverySpec : WordSpec({
                     },
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val e = shouldThrow<IllegalStateException> {
@@ -621,7 +625,8 @@ class RecoverySpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val descriptor = Recovery.Descriptor(

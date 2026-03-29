@@ -27,6 +27,7 @@ import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.staging.DefaultFileStaging
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asPath
@@ -100,7 +101,8 @@ class BackupSpec : WordSpec({
                 encryptor = Aes,
                 decryptor = Aes,
                 clients = clients,
-                track = tracker
+                track = tracker,
+                analytics = AnalyticsCollector.NoOp
             )
 
             return Backup(
@@ -749,7 +751,8 @@ class BackupSpec : WordSpec({
                         crates = mapOf(entry.metadata to ByteString.EMPTY)
                     )
                 ),
-                track = MockBackupTracker()
+                track = MockBackupTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val collectorDescriptor =

@@ -44,6 +44,7 @@ class CrashReportActivity : AppCompatActivity() {
         dismissTimer.start()
 
         val message = intent.getStringExtra(ExceptionMessageExtra) ?: "Unknown"
+        val stackTrace = intent.getStringExtra(ExceptionStackTraceExtra)
 
         binding.crashReportMoreInfoButton.setOnClickListener {
             dismissTimer.cancel()
@@ -69,7 +70,7 @@ class CrashReportActivity : AppCompatActivity() {
             collector.restore().map {
                 val entry = (it ?: AnalyticsEntry.collected(StasisClientDependencies.ClientAppInfo))
                     .asCollected()
-                    .withFailure(message = message)
+                    .withFailure(message = message, stackTrace = stackTrace)
 
                 collector.cache(entry)
             }
@@ -79,5 +80,8 @@ class CrashReportActivity : AppCompatActivity() {
     companion object {
         val ExceptionMessageExtra: String =
             "stasis.client_android.activities.CrashReportActivity.extra_exception_message"
+
+        val ExceptionStackTraceExtra: String =
+            "stasis.client_android.activities.CrashReportActivity.extra_exception_stack_trace"
     }
 }

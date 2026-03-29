@@ -16,6 +16,7 @@ import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
@@ -151,7 +152,8 @@ class EntityProcessingSpec : WordSpec({
                     compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -234,7 +236,8 @@ class EntityProcessingSpec : WordSpec({
                     compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -302,7 +305,8 @@ class EntityProcessingSpec : WordSpec({
                     compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -394,7 +398,8 @@ class EntityProcessingSpec : WordSpec({
                     compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -460,7 +465,8 @@ class EntityProcessingSpec : WordSpec({
                     compression = mockCompression,
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

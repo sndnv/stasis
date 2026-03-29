@@ -11,6 +11,7 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.test.client_android.lib.Fixtures
@@ -103,7 +104,8 @@ class EntityDiscoverySpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -158,7 +160,8 @@ class EntityDiscoverySpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -225,7 +228,8 @@ class EntityDiscoverySpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

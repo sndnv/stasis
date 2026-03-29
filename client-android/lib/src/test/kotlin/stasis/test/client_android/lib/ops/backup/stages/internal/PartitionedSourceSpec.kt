@@ -10,6 +10,7 @@ import okio.buffer
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.internal.PartitionedSource
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.content
@@ -44,7 +45,8 @@ class PartitionedSourceSpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockBackupTracker()
+                track = MockBackupTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val partsStaged = AtomicInteger(0)
@@ -111,7 +113,8 @@ class PartitionedSourceSpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockBackupTracker()
+                track = MockBackupTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val partsStaged = AtomicInteger(0)

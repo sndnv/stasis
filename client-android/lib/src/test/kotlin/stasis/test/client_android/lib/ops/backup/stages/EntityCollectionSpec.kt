@@ -11,6 +11,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityCollection
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.mocks.MockBackupCollector
@@ -58,7 +59,8 @@ class EntityCollectionSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

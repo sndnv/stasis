@@ -11,6 +11,7 @@ import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.encryption.secrets.DeviceFileSecret
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.internal.DecryptedCrates.decrypt
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class DecryptedCratesSpec : WordSpec({
     "DecryptedCrates" should {
         "support data stream decryption" {
-            val providers: Providers = Providers(
+            val providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = MockFileStaging(),
                 compression = MockCompression(),
@@ -31,7 +32,8 @@ class DecryptedCratesSpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val firstInvoked = AtomicBoolean(false)

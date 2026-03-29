@@ -165,5 +165,5 @@ class DefaultAnalyticsPersistenceSpec {
     private val app = ApplicationInformation.none()
     private val entry = AnalyticsEntry.collected(app)
         .withEvent(name = "test", emptyMap())
-        .withFailure(message = "Test failure")
+        .withFailure(message = "Test failure", stackTrace = null)
 }

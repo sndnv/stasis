@@ -23,6 +23,7 @@ import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.helpers.Common.toMinimizedString
 import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
+import stasis.client_android.activities.views.dialogs.FailureDialogFragment
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.DialogAnalyticsBinding
 import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
@@ -389,14 +390,15 @@ class AnalyticsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                 )
 
             container.setOnClickListener {
-                InformationDialogFragment()
+                FailureDialogFragment()
                     .withTitle(
                         context.getString(
                             R.string.analytics_failure_title,
                             failure.timestamp.formatAsFullDateTime(context)
                         )
                     )
-                    .withMessage(context.getString(R.string.analytics_failure_message, failure.message))
+                    .withMessage(failure.message)
+                    .withStackTrace(failure.stackTrace)
                     .show(FragmentManager.findFragmentManager(layout))
             }
 
