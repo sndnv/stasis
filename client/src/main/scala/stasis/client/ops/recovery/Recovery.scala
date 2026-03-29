@@ -50,11 +50,13 @@ class Recovery(
         e.cause.getMessage
       )
       providers.track.failureEncountered(e.entity, failure = e.cause)
+      providers.telemetry.analytics.recordFailure(e = e.cause)
       Supervision.Resume
 
     case e =>
       system.log.error("Recovery stream encountered failure: [{} - {}]; resuming", e.getClass.getSimpleName, e.getMessage)
       providers.track.failureEncountered(failure = e)
+      providers.telemetry.analytics.recordFailure(e = e)
       Supervision.Resume
   }
 
