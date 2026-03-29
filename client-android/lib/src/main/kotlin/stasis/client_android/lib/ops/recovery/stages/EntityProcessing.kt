@@ -76,6 +76,8 @@ interface EntityProcessing {
                             entity = entity.path,
                             failure = result.exception.nonFatal()
                         )
+                        providers.analytics.recordFailure(result.exception)
+
                         if (result.exception is EndpointFailure) {
                             throw result.exception
                         } else {

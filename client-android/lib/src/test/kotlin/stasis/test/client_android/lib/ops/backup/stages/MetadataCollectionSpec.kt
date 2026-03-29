@@ -13,6 +13,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
@@ -56,7 +57,8 @@ class MetadataCollectionSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -126,7 +128,8 @@ class MetadataCollectionSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 
@@ -196,7 +199,8 @@ class MetadataCollectionSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = MockServerCoreEndpointClient()
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

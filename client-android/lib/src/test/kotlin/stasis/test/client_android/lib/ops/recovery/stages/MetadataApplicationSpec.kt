@@ -13,6 +13,7 @@ import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.MetadataApplication
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
@@ -59,7 +60,8 @@ class MetadataApplicationSpec : WordSpec({
                     compression = MockCompression(),
                     decryptor = MockEncryption(),
                     clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

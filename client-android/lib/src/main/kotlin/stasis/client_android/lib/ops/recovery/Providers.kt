@@ -5,6 +5,7 @@ import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.staging.FileStaging
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.RecoveryTracker
 
 data class Providers(
@@ -13,5 +14,6 @@ data class Providers(
     val compression: Compression,
     val decryptor: EncryptionDecoder,
     val clients: Clients,
-    val track: RecoveryTracker
+    val track: RecoveryTracker,
+    val analytics: AnalyticsCollector
 )

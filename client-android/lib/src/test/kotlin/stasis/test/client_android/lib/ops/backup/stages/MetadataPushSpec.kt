@@ -16,6 +16,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.mocks.MockBackupTracker
 import stasis.test.client_android.lib.mocks.MockCompression
@@ -47,7 +48,8 @@ class MetadataPushSpec : WordSpec({
                         api = mockApiClient,
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
             }
 

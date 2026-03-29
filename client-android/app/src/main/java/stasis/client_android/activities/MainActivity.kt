@@ -78,6 +78,10 @@ class MainActivity : AppCompatActivity() {
                         CrashReportActivity.ExceptionMessageExtra,
                         "${e.javaClass.simpleName} - ${e.message}"
                     )
+                    .putExtra(
+                        CrashReportActivity.ExceptionStackTraceExtra,
+                        e.stackTraceToString()
+                    )
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
             )
 

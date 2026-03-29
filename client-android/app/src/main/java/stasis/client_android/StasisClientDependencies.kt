@@ -313,6 +313,18 @@ object StasisClientDependencies {
                                 }
                             }
 
+                            val analyticsPersistence = DefaultAnalyticsPersistence(
+                                preferences = preferences,
+                                clients = clients
+                            )
+
+                            val analyticsCollector = DefaultAnalyticsCollector(
+                                app = ClientAppInfo,
+                                persistenceInterval = preferences.getAnalyticsPersistenceInterval(),
+                                transmissionInterval = preferences.getAnalyticsTransmissionInterval(),
+                                persistence = analyticsPersistence
+                            )
+
                             val executor = DefaultOperationExecutor(
                                 config = DefaultOperationExecutor.Config(
                                     backup = DefaultOperationExecutor.Config.Backup(
@@ -328,6 +340,7 @@ object StasisClientDependencies {
                                     decryptor = encryption,
                                     clients = clients,
                                     track = trackers.backup,
+                                    analytics = analyticsCollector
                                 ),
                                 recoveryProviders = RecoveryProviders(
                                     checksum = checksum,
@@ -335,7 +348,8 @@ object StasisClientDependencies {
                                     compression = compression,
                                     decryptor = encryption,
                                     clients = clients,
-                                    track = trackers.recovery
+                                    track = trackers.recovery,
+                                    analytics = analyticsCollector
                                 ),
                                 restrictions = {
                                     application.getOperationRestrictions(
@@ -380,18 +394,6 @@ object StasisClientDependencies {
                                 api = apiClient,
                                 handlers = commandHandler,
                                 scope = coroutineScope
-                            )
-
-                            val analyticsPersistence = DefaultAnalyticsPersistence(
-                                preferences = preferences,
-                                clients = clients
-                            )
-
-                            val analyticsCollector = DefaultAnalyticsCollector(
-                                app = ClientAppInfo,
-                                persistenceInterval = preferences.getAnalyticsPersistenceInterval(),
-                                transmissionInterval = preferences.getAnalyticsTransmissionInterval(),
-                                persistence = analyticsPersistence
                             )
 
                             ProviderContext(

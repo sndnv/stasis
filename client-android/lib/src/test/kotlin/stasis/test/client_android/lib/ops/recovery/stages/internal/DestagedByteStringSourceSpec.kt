@@ -8,6 +8,7 @@ import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.internal.DestagedByteStringSource.destage
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
@@ -22,7 +23,7 @@ class DestagedByteStringSourceSpec : WordSpec({
         "support data stream destaging" {
             val mockStaging = MockFileStaging()
 
-            val providers: Providers = Providers(
+            val providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = mockStaging,
                 compression = MockCompression(),
@@ -31,7 +32,8 @@ class DestagedByteStringSourceSpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val original = Buffer().write("original".toByteArray())
@@ -53,7 +55,7 @@ class DestagedByteStringSourceSpec : WordSpec({
                 }
             }
 
-            val providers: Providers = Providers(
+            val providers = Providers(
                 checksum = Checksum.Companion.MD5,
                 staging = mockStaging,
                 compression = MockCompression(),
@@ -62,7 +64,8 @@ class DestagedByteStringSourceSpec : WordSpec({
                     api = MockServerApiEndpointClient(),
                     core = MockServerCoreEndpointClient()
                 ),
-                track = MockRecoveryTracker()
+                track = MockRecoveryTracker(),
+                analytics = AnalyticsCollector.NoOp
             )
 
             val original = Buffer().write("original".toByteArray())

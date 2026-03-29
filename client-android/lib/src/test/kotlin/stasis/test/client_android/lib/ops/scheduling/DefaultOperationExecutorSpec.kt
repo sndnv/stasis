@@ -26,6 +26,7 @@ import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Try
 import stasis.client_android.lib.utils.Try.Failure
@@ -124,7 +125,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                     encryptor = encryption,
                     decryptor = encryption,
                     clients = clients,
-                    track = backupTracker
+                    track = backupTracker,
+                    analytics = AnalyticsCollector.NoOp
                 ),
                 recoveryProviders = stasis.client_android.lib.ops.recovery.Providers(
                     checksum = checksum,
@@ -132,7 +134,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                     decryptor = encryption,
                     clients = clients,
                     track = recoveryTracker,
-                    compression = compression
+                    compression = compression,
+                    analytics = AnalyticsCollector.NoOp
                 ),
                 restrictions = { restrictions },
                 operationDispatcher = Dispatchers.IO,

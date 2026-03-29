@@ -13,11 +13,16 @@ interface AnalyticsCollector {
     fun recordEvent(name: String, vararg attributes: Pair<String, String>): Unit =
         recordEvent(name = name, attributes = attributes.toMap())
 
-    fun recordFailure(e: Throwable): Unit = recordFailure(message = "${e.javaClass.simpleName} - ${e.message}")
+    fun recordFailure(e: Throwable) {
+        recordFailure(
+            message = "${e.javaClass.simpleName} - ${e.message}",
+            stackTrace = e.stackTraceToString()
+        )
+    }
 
     fun recordEvent(name: String, attributes: Map<String, String>)
 
-    fun recordFailure(message: String)
+    fun recordFailure(message: String, stackTrace: String?)
 
     fun state(): Try<AnalyticsEntry>
 
@@ -28,7 +33,7 @@ interface AnalyticsCollector {
     object NoOp : AnalyticsCollector {
         override fun recordEvent(name: String, attributes: Map<String, String>) = Unit
 
-        override fun recordFailure(message: String) = Unit
+        override fun recordFailure(message: String, stackTrace: String?) = Unit
 
         override fun state(): Try<AnalyticsEntry> =
             Try.Success(AnalyticsEntry.collected(app = ApplicationInformation.none()))

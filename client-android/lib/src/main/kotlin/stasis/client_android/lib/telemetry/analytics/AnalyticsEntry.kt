@@ -33,7 +33,7 @@ interface AnalyticsEntry {
         override val created: Instant,
         override val updated: Instant,
     ) : AnalyticsEntry {
-        override fun asJson(): AsJson  = this
+        override fun asJson(): AsJson = this
     }
 
     data class Collected(
@@ -62,10 +62,14 @@ interface AnalyticsEntry {
             )
         }
 
-        fun withFailure(message: String): Collected = copy(
+        fun withFailure(message: String): Collected =
+            withFailure(message = message, stackTrace = null)
+
+        fun withFailure(message: String, stackTrace: String?): Collected = copy(
             failures = failures + Failure(
-                message = message,
-                timestamp = Instant.now()
+                message = Failure.anonymize(message),
+                timestamp = Instant.now(),
+                stackTrace = stackTrace?.let { Failure.anonymize(it) }
             ),
             updated = Instant.now()
         )
@@ -90,8 +94,30 @@ interface AnalyticsEntry {
     @JsonClass(generateAdapter = true)
     data class Failure(
         val message: String,
-        val timestamp: Instant
-    )
+        val timestamp: Instant,
+        val stackTrace: String?
+    ) {
+        companion object {
+            operator fun invoke(
+                message: String,
+                timestamp: Instant,
+            ): Failure =
+                Failure(
+                    message = message,
+                    timestamp = timestamp,
+                    stackTrace = null
+                )
+
+            fun anonymize(content: String): String =
+                messageContainsPath
+                    .replace(content, " *CONTENT_REMOVED* ")
+                    .replace(repeatingWhitespace, " ")
+                    .trim()
+
+            private val messageContainsPath = """(?:[a-zA-Z]:\\|[\\/])(?:[\w\-. ]+[\\/])*[\w\-. ]+""".toRegex()
+            private val repeatingWhitespace = """\s\s+""".toRegex()
+        }
+    }
 
     @JsonClass(generateAdapter = true)
     data class RuntimeInformation(

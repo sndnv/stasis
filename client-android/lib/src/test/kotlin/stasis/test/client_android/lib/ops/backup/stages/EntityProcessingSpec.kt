@@ -20,6 +20,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
+import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asPath
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
@@ -159,7 +160,8 @@ class EntityProcessingSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
 
                 override val maxPartSize: Long = 16384
@@ -258,7 +260,8 @@ class EntityProcessingSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
 
                 override val maxPartSize: Long = 10
@@ -345,7 +348,8 @@ class EntityProcessingSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
 
                 override val maxPartSize: Long = 16384
@@ -424,7 +428,8 @@ class EntityProcessingSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
 
                 override val maxPartSize: Long = 16384
@@ -509,7 +514,8 @@ class EntityProcessingSpec : WordSpec({
                         api = MockServerApiEndpointClient(),
                         core = mockCoreClient
                     ),
-                    track = mockTracker
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp
                 )
 
                 override val maxPartSize: Long = 10

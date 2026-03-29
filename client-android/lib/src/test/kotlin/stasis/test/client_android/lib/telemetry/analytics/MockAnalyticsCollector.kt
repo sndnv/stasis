@@ -15,8 +15,8 @@ class MockAnalyticsCollector : AnalyticsCollector {
         entryRef.updateAndGet { it.withEvent(name, attributes) }
     }
 
-    override fun recordFailure(message: String) {
-        entryRef.updateAndGet { it.withFailure(message) }
+    override fun recordFailure(message: String, stackTrace: String?) {
+        entryRef.updateAndGet { it.withFailure(message, stackTrace) }
     }
 
     override fun state(): Try<AnalyticsEntry> =

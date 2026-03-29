@@ -67,7 +67,7 @@ class DefaultAnalyticsCollectorSpec {
         )
 
         collector.recordFailure(RuntimeException("Test failure"))
-        collector.recordFailure("Other failure")
+        collector.recordFailure("Other failure", stackTrace = null)
 
         runBlocking {
             eventually {
@@ -89,7 +89,7 @@ class DefaultAnalyticsCollectorSpec {
                 AnalyticsEntry
                     .collected(app = ApplicationInformation.none())
                     .withEvent(name = "existing_event", attributes = emptyMap())
-                    .withFailure(message = "Existing failure")
+                    .withFailure(message = "Existing failure", stackTrace = null)
             )
         )
 
@@ -166,7 +166,7 @@ class DefaultAnalyticsCollectorSpec {
         runBlocking { delay(timeMillis = 75) }
         collector.recordEvent("test_event", mapOf("a" to "b"))
         runBlocking { delay(timeMillis = 150) }
-        collector.recordFailure("Test failure")
+        collector.recordFailure("Test failure", stackTrace = null)
 
         runBlocking {
             eventually {
@@ -203,7 +203,7 @@ class DefaultAnalyticsCollectorSpec {
         )
 
         collector.recordEvent("test_event")
-        collector.recordFailure("Test failure")
+        collector.recordFailure("Test failure", stackTrace = null)
 
         runBlocking {
             eventually {
@@ -240,7 +240,7 @@ class DefaultAnalyticsCollectorSpec {
         )
 
         collector.recordEvent("test_event")
-        collector.recordFailure(message = "Test failure")
+        collector.recordFailure(message = "Test failure", stackTrace = null)
 
         runBlocking {
             eventually {
@@ -273,7 +273,7 @@ class DefaultAnalyticsCollectorSpec {
             persistence = persistence,
         )
 
-        collector.recordFailure("Test failure")
+        collector.recordFailure("Test failure", stackTrace = null)
 
         runBlocking {
             eventually {
