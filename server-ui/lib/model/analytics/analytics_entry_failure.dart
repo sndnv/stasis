@@ -10,6 +10,7 @@ abstract class AnalyticsEntryFailure with _$AnalyticsEntryFailure {
   const factory AnalyticsEntryFailure({
     required String message,
     @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson) required DateTime timestamp,
+    String? stackTrace,
   }) = _AnalyticsEntryFailure;
 
   factory AnalyticsEntryFailure.fromJson(Map<String, Object?> json) => _$AnalyticsEntryFailureFromJson(json);

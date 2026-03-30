@@ -95,6 +95,7 @@ interface AnalyticsEntry {
     data class Failure(
         val message: String,
         val timestamp: Instant,
+        @field:Json(name = "stack_trace")
         val stackTrace: String?
     ) {
         companion object {
