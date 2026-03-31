@@ -1,5 +1,9 @@
 name: Stasis Publish
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     tags:
@@ -9,10 +13,6 @@ on:
 jobs:
   scala:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
