@@ -13,13 +13,13 @@ lazy val versions = new {
   val pekko         = "1.4.0"
   val pekkoHttp     = "1.3.0"
   val pekkoHttpCors = "1.3.0"
-  val pekkoJson     = "3.9.0"
+  val pekkoJson     = "3.9.1"
 
   // persistence
   val slick    = "3.6.1"
   val postgres = "42.7.10"
-  val mariadb  = "3.5.7"
-  val sqlite   = "3.51.2.0"
+  val mariadb  = "3.5.8"
+  val sqlite   = "3.51.3.0"
   val h2       = "2.4.240"
 
   // telemetry
@@ -29,7 +29,7 @@ lazy val versions = new {
 
   // testing
   val scalaCheck    = "1.19.0"
-  val scalaTest     = "3.2.19"
+  val scalaTest     = "3.2.20"
   val wiremock      = "3.13.2"
   val mockito       = "2.1.0"
   val mockitoInline = "5.2.0"
@@ -44,7 +44,7 @@ lazy val versions = new {
   val logback      = "1.5.32"
   val systemTray   = "4.4"
   val bouncycastle = "1.83"
-  val layers       = "1.3.0"
+  val layers       = "1.4.0"
   val fsi          = "1.1.0"
 }
 

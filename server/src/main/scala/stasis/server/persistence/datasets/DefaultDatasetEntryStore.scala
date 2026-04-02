@@ -136,8 +136,8 @@ class DefaultDatasetEntryStore(
       action = Migration.Action {
         database.run(
           DBIO.seq(
-            sqlu"""ALTER TABLE #$name ADD COLUMN CHANGES BIGINT""",
-            sqlu"""ALTER TABLE #$name ADD COLUMN SIZE BIGINT"""
+            sqlu"""ALTER TABLE "#$name" ADD COLUMN "CHANGES" BIGINT""",
+            sqlu"""ALTER TABLE "#$name" ADD COLUMN "SIZE" BIGINT"""
           )
         )
       }

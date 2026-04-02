@@ -129,10 +129,10 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
     }
 
     withClue("from version 1 to version 2") {
-      withStore { (profile, database) =>
+      withStore(name = s"${getClass.getSimpleName}_v2", mode = TestSlickDatabase.Mode.PostgreSQL) { (profile, database) =>
         import profile.api._
 
-        val name = "TEST_ENTRIES_V2"
+        val name = "TEST_ENTRIES_V1"
 
         @unused
         implicit val uuidParam: SetParameter[java.util.UUID] =
@@ -168,7 +168,7 @@ class DefaultDatasetEntryStoreSpec extends UnitSpec with TestSlickDatabase {
           _ <- database.run(
             DBIO.seq(
               entries.map { e =>
-                sqlu"""INSERT INTO #$name VALUES(
+                sqlu"""INSERT INTO "#$name" VALUES(
                       ${e.id}, ${e.definition}, ${e.device}, ${e.data.mkString(",")}, ${e.metadata}, ${e.created}
                 )"""
               }: _*

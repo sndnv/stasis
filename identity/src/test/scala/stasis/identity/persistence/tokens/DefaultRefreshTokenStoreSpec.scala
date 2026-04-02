@@ -274,7 +274,7 @@ class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with TestSli
     }
 
     withClue("from version 1 to version 2") {
-      withStore { (profile, database) =>
+      withStore(name = s"${getClass.getSimpleName}_v2", mode = TestSlickDatabase.Mode.PostgreSQL) { (profile, database) =>
         val name = "TEST_TOKENS_V1"
 
         val original = new DefaultRefreshTokenStoreSpec.Migrations.V1(name, profile, database)
