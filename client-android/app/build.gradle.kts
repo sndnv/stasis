@@ -67,8 +67,8 @@ kotlin {
             targetSdk = 36
 
             applicationId = "stasis.client.android"
-            versionCode = 13
-            versionName = "1.7.1-SNAPSHOT"
+            versionCode = 14
+            versionName = "1.7.1"
 
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
