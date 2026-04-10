@@ -46,7 +46,9 @@ jobs:
           sbt identity/docker:stage
           NAME=$(sbt -no-colors --error "project identity" "print packageName")
           VERSION=$(sbt -no-colors --error "project identity" "print version")
-          echo "IDENTITY_TAG=${env.REGISTRY}/${NAME}:${env.BRANCH}-${VERSION}" >> "$GITHUB_OUTPUT"
+          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          echo "Staged [${TAG}] for [identity]"
+          echo "IDENTITY_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Stage server image
         id: stage-server
@@ -54,7 +56,9 @@ jobs:
           sbt server/docker:stage
           NAME=$(sbt -no-colors --error "project server" "print packageName")
           VERSION=$(sbt -no-colors --error "project server" "print version")
-          echo "SERVER_TAG=${env.REGISTRY}/${NAME}:${env.BRANCH}-${VERSION}" >> "$GITHUB_OUTPUT"
+          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          echo "Staged [${TAG}] for [server]"
+          echo "SERVER_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push identity image
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
@@ -64,7 +68,8 @@ jobs:
           context: ./identity/target/docker/stage
           file: ./identity/target/docker/stage/Dockerfile
           push: true
-          tags: ${IDENTITY_TAG}
+          tags: |
+            ${{env.IDENTITY_TAG}}
           platforms: linux/amd64,linux/arm64
 
       - name: Build and push server image
@@ -75,7 +80,8 @@ jobs:
           context: ./server/target/docker/stage
           file: ./server/target/docker/stage/Dockerfile
           push: true
-          tags: ${SERVER_TAG}
+          tags: |
+            ${{env.SERVER_TAG}}
           platforms: linux/amd64,linux/arm64
 
   flutter-docker:
@@ -105,6 +111,7 @@ jobs:
         run: |
           cd identity-ui
           TAG=$(./deployment/production/stage.py | tail -1)
+          echo "Staged [${TAG}] for [identity-ui]"
           echo "IDENTITY_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Stage server-ui
@@ -112,6 +119,7 @@ jobs:
         run: |
           cd server-ui
           TAG=$(./deployment/production/stage.py | tail -1)
+          echo "Staged [${TAG}] for [server-ui]"
           echo "SERVER_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push identity-ui image
@@ -122,7 +130,8 @@ jobs:
           context: ./identity-ui
           file: ./identity-ui/deployment/production//Dockerfile
           push: true
-          tags: ${IDENTITY_UI_TAG}
+          tags: |
+            ${{env.IDENTITY_UI_TAG}}
           platforms: linux/amd64,linux/arm64
 
       - name: Build and push server-ui image
@@ -133,5 +142,6 @@ jobs:
           context: ./server-ui
           file: ./server-ui/deployment/production//Dockerfile
           push: true
-          tags: ${SERVER_UI_TAG}
+          tags: |
+            ${{env.SERVER_UI_TAG}}
           platforms: linux/amd64,linux/arm64
