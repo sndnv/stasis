@@ -45,7 +45,7 @@ jobs:
           sbt identity/docker:stage
           NAME=$(sbt -no-colors --error "project identity" "print packageName")
           VERSION=$(sbt -no-colors --error "project identity" "print version")
-          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          TAG="${REGISTRY}/${NAME}:${VERSION}"
           echo "Staged [${TAG}] for [identity]"
           echo "IDENTITY_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
@@ -55,7 +55,7 @@ jobs:
           sbt server/docker:stage
           NAME=$(sbt -no-colors --error "project server" "print packageName")
           VERSION=$(sbt -no-colors --error "project server" "print version")
-          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          TAG="${REGISTRY}/${NAME}:${VERSION}"
           echo "Staged [${TAG}] for [server]"
           echo "SERVER_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
