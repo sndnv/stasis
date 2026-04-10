@@ -1,4 +1,4 @@
-name: Stasis Publish
+name: Stasis Publish (Release)
 
 permissions:
   contents: read

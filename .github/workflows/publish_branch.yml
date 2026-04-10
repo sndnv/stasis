@@ -1,0 +1,137 @@
+name: Stasis Publish (Branch)
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  workflow_dispatch:
+
+env:
+  BRANCH: ${{ github.head_ref || github.ref_name }}
+  REGISTRY: ghcr.io/sndnv/stasis
+
+jobs:
+  scala:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Log into registry
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup JDK 25
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          java-version: 25
+          distribution: adopt
+          cache: sbt
+
+      - name: Setup SBT
+        uses: sbt/setup-sbt@508b753e53cb6095967669e0911487d2b9bc9f41
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+
+      - name: Stage identity image
+        id: stage-identity
+        run: |
+          sbt identity/docker:stage
+          NAME=$(sbt -no-colors --error "project identity" "print packageName")
+          VERSION=$(sbt -no-colors --error "project identity" "print version")
+          echo "IDENTITY_TAG=${env.REGISTRY}/${NAME}:${env.BRANCH}-${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage server image
+        id: stage-server
+        run: |
+          sbt server/docker:stage
+          NAME=$(sbt -no-colors --error "project server" "print packageName")
+          VERSION=$(sbt -no-colors --error "project server" "print version")
+          echo "SERVER_TAG=${env.REGISTRY}/${NAME}:${env.BRANCH}-${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push identity image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          IDENTITY_TAG: ${{ steps.stage-identity.outputs.IDENTITY_TAG }}
+        with:
+          context: ./identity/target/docker/stage
+          file: ./identity/target/docker/stage/Dockerfile
+          push: true
+          tags: ${IDENTITY_TAG}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push server image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          SERVER_TAG: ${{ steps.stage-server.outputs.SERVER_TAG }}
+        with:
+          context: ./server/target/docker/stage
+          file: ./server/target/docker/stage/Dockerfile
+          push: true
+          tags: ${SERVER_TAG}
+          platforms: linux/amd64,linux/arm64
+
+  flutter-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Log into registry
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: 'stable'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+
+      - name: Stage identity-ui
+        id: stage-identity-ui
+        run: |
+          cd identity-ui
+          TAG=$(./deployment/production/stage.py | tail -1)
+          echo "IDENTITY_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage server-ui
+        id: stage-server-ui
+        run: |
+          cd server-ui
+          TAG=$(./deployment/production/stage.py | tail -1)
+          echo "SERVER_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push identity-ui image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          IDENTITY_UI_TAG: ${{ steps.stage-identity-ui.outputs.IDENTITY_UI_TAG }}
+        with:
+          context: ./identity-ui
+          file: ./identity-ui/deployment/production//Dockerfile
+          push: true
+          tags: ${IDENTITY_UI_TAG}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push server-ui image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          SERVER_UI_TAG: ${{ steps.stage-server-ui.outputs.SERVER_UI_TAG }}
+        with:
+          context: ./server-ui
+          file: ./server-ui/deployment/production//Dockerfile
+          push: true
+          tags: ${SERVER_UI_TAG}
+          platforms: linux/amd64,linux/arm64
