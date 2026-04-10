@@ -36,13 +36,52 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@508b753e53cb6095967669e0911487d2b9bc9f41
 
-      - name: Build and publish identity image
-        run: |
-          sbt identity/docker:publish
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
 
-      - name: Build and publish server image
+      - name: Stage identity image
+        id: stage-identity
         run: |
-          sbt server/docker:publish
+          sbt identity/docker:stage
+          NAME=$(sbt -no-colors --error "project identity" "print packageName")
+          VERSION=$(sbt -no-colors --error "project identity" "print version")
+          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          echo "Staged [${TAG}] for [identity]"
+          echo "IDENTITY_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage server image
+        id: stage-server
+        run: |
+          sbt server/docker:stage
+          NAME=$(sbt -no-colors --error "project server" "print packageName")
+          VERSION=$(sbt -no-colors --error "project server" "print version")
+          TAG="${REGISTRY}/${NAME}:${BRANCH}-${VERSION}"
+          echo "Staged [${TAG}] for [server]"
+          echo "SERVER_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push identity image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          IDENTITY_TAG: ${{ steps.stage-identity.outputs.IDENTITY_TAG }}
+        with:
+          context: ./identity/target/docker/stage
+          file: ./identity/target/docker/stage/Dockerfile
+          push: true
+          tags: |
+            ${{env.IDENTITY_TAG}}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push server image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          SERVER_TAG: ${{ steps.stage-server.outputs.SERVER_TAG }}
+        with:
+          context: ./server/target/docker/stage
+          file: ./server/target/docker/stage/Dockerfile
+          push: true
+          tags: |
+            ${{env.SERVER_TAG}}
+          platforms: linux/amd64,linux/arm64
 
       - name: Build client artifacts
         run: |
@@ -116,17 +155,48 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Build and publish identity-ui
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+
+      - name: Stage identity-ui
+        id: stage-identity-ui
         run: |
           cd identity-ui
-          IDENTITY_UI_IMAGE=$(./deployment/production/build.py | tail -1)
-          podman push $IDENTITY_UI_IMAGE
+          TAG=$(./deployment/production/stage.py | tail -1)
+          echo "Staged [${TAG}] for [identity-ui]"
+          echo "IDENTITY_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and publish server-ui
+      - name: Stage server-ui
+        id: stage-server-ui
         run: |
           cd server-ui
-          SERVER_UI_IMAGE=$(./deployment/production/build.py | tail -1)
-          podman push $SERVER_UI_IMAGE
+          TAG=$(./deployment/production/stage.py | tail -1)
+          echo "Staged [${TAG}] for [server-ui]"
+          echo "SERVER_UI_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push identity-ui image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          IDENTITY_UI_TAG: ${{ steps.stage-identity-ui.outputs.IDENTITY_UI_TAG }}
+        with:
+          context: ./identity-ui
+          file: ./identity-ui/deployment/production//Dockerfile
+          push: true
+          tags: |
+            ${{env.IDENTITY_UI_TAG}}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push server-ui image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        env:
+          SERVER_UI_TAG: ${{ steps.stage-server-ui.outputs.SERVER_UI_TAG }}
+        with:
+          context: ./server-ui
+          file: ./server-ui/deployment/production//Dockerfile
+          push: true
+          tags: |
+            ${{env.SERVER_UI_TAG}}
+          platforms: linux/amd64,linux/arm64
 
   flutter-linux:
     runs-on: ubuntu-latest
