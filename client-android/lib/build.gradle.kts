@@ -9,7 +9,7 @@ plugins {
 }
 
 dependencies {
-    api("com.squareup.wire:wire-runtime:5.5.1")
+    api("com.squareup.wire:wire-runtime:6.2.0")
 
     implementation(kotlin("stdlib"))
     implementation("com.squareup.okio:okio:3.17.0")
@@ -20,12 +20,12 @@ dependencies {
     implementation("at.favre.lib:hkdf:2.0.0")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.10")
-    implementation("io.github.sndnv:fsi:1.1.0")
+    implementation("io.github.sndnv:fsi:1.1.2")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
 
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:6.1.6")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:6.1.6")
-    testImplementation("io.kotest:kotest-property-jvm:6.1.6")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:6.1.11")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:6.1.11")
+    testImplementation("io.kotest:kotest-property-jvm:6.1.11")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
     testImplementation("com.google.jimfs:jimfs:1.3.1")
