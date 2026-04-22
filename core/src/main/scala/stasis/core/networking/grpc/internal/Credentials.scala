@@ -39,7 +39,7 @@ object Credentials {
             new String(
               Base64.getDecoder.decode(credentials),
               StandardCharsets.UTF_8
-            ).split(":").toList match {
+            ).split(":", 2).toList match {
               case node :: secret :: Nil =>
                 Right(BasicHttpCredentials(username = node, password = secret))
 
