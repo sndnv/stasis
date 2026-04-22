@@ -4,6 +4,7 @@ import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext
@@ -170,9 +171,8 @@ class Container(
         maxChunks = maxChunks
       )
       _ <- ContainerOps.filter(containerPath, temporaryContainer, header => crates.contains(header.crateId))
-      _ <- destroy()
       _ <- Future {
-        Files.move(temporaryContainer, containerPath)
+        Files.move(temporaryContainer, containerPath, StandardCopyOption.REPLACE_EXISTING)
       }
       _ <- rebuildLog()
     } yield {
