@@ -55,12 +55,16 @@ object DerivedPasswords {
       derivedKeySize * 8
     )
 
-    val derivedPassword = SecretKeyFactory
-      .getInstance(Defaults.Algorithm)
-      .generateSecret(spec)
-      .getEncoded
+    try {
+      val derivedPassword = SecretKeyFactory
+        .getInstance(Defaults.Algorithm)
+        .generateSecret(spec)
+        .getEncoded
 
-    ByteString(derivedPassword)
+      ByteString(derivedPassword)
+    } finally {
+      spec.clearPassword()
+    }
   }
 
   def encode(hashedPassword: ByteString): String =
