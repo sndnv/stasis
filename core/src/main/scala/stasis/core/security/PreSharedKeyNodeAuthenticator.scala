@@ -1,5 +1,7 @@
 package stasis.core.security
 
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext
@@ -26,9 +28,15 @@ class PreSharedKeyNodeAuthenticator(
         nodeStore.contains(nodeId).flatMap { nodeExists =>
           if (nodeExists) {
             backend.get(node).flatMap {
-              case Some(`secret`) => Future.successful(nodeId)
-              case Some(_)        => Future.failed(AuthenticationFailure(s"Invalid secret supplied for node [$node]"))
-              case None           => Future.failed(AuthenticationFailure(s"Credentials for node [$node] not found"))
+              case Some(stored)
+                  if MessageDigest.isEqual(
+                    stored.getBytes(StandardCharsets.UTF_8),
+                    secret.getBytes(StandardCharsets.UTF_8)
+                  ) =>
+                Future.successful(nodeId)
+
+              case Some(_) => Future.failed(AuthenticationFailure(s"Invalid secret supplied for node [$node]"))
+              case None    => Future.failed(AuthenticationFailure(s"Credentials for node [$node] not found"))
             }
           } else {
             Future.failed(AuthenticationFailure(s"Node [$node] not found"))
