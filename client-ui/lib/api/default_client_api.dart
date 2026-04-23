@@ -99,7 +99,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     required String searchQuery,
     required DateTime? until,
   }) async {
-    final searchPath = '/datasets/metadata/search?query=$searchQuery';
+    final searchPath = '/datasets/metadata/search?query=${Uri.encodeQueryComponent(searchQuery)}';
     final fullPath =
         until == null ? searchPath : '$searchPath&until=${until.toUtc().toIso8601String().split('.').first}Z';
     return await getOne(from: fullPath, fromJson: DatasetMetadataSearchResult.fromJson);
@@ -223,7 +223,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     final params = {'query': pathQuery, 'destination': destination, 'keep_structure': keepStructure}
         .entries
         .where((e) => e.value != null)
-        .map((e) => '${e.key}=${e.value}')
+        .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value!)}')
         .join('&');
 
     final path = ['/operations/recover/$definition/until/${until.toUtc().toIso8601String().split('.').first}Z', params]
@@ -246,7 +246,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     final params = {'query': pathQuery, 'destination': destination, 'keep_structure': keepStructure}
         .entries
         .where((e) => e.value != null)
-        .map((e) => '${e.key}=${e.value}')
+        .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value!)}')
         .join('&');
 
     final path = ['/operations/recover/$definition/from/$entry', params].where((e) => e.isNotEmpty).join('?');
@@ -266,7 +266,7 @@ class DefaultClientApi extends ApiClient implements ClientApi {
     final params = {'query': pathQuery, 'destination': destination, 'keep_structure': keepStructure}
         .entries
         .where((e) => e.value != null)
-        .map((e) => '${e.key}=${e.value}')
+        .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value!)}')
         .join('&');
 
     final path = ['/operations/recover/$definition/latest', params].where((e) => e.isNotEmpty).join('?');
