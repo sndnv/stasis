@@ -615,6 +615,14 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
     PathQuery("some-file.txt") shouldBe a[PathQuery.ForFileName]
   }
 
+  they should "fail to create path queries from invalid regex strings" in withRetry {
+    val e = intercept[IllegalArgumentException] {
+      PathQuery("[abc")
+    }
+
+    e.getMessage should be("Invalid path query provided: [Unclosed character class]")
+  }
+
   "A Recovery destination" should "be convertible to TargetEntity destination" in withRetry {
     import Recovery._
     import stasis.client.model.TargetEntity

@@ -2,6 +2,7 @@ package stasis.client.ops.recovery
 
 import java.nio.file.FileSystem
 import java.time.Instant
+import java.util.regex.PatternSyntaxException
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -169,12 +170,21 @@ object Recovery {
   }
 
   object PathQuery {
-    def apply(query: String): PathQuery =
-      if (query.contains("/")) {
-        ForAbsolutePath(query = new Regex(query))
-      } else {
-        ForFileName(query = new Regex(query))
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    def apply(query: String): PathQuery = {
+      val regex = try {
+        new Regex(query)
+      } catch {
+        case e: PatternSyntaxException =>
+          throw new IllegalArgumentException(s"Invalid path query provided: [${e.getDescription}]")
       }
+
+      if (query.contains("/")) {
+        ForAbsolutePath(query = regex)
+      } else {
+        ForFileName(query = regex)
+      }
+    }
 
     final case class ForAbsolutePath(query: Regex) extends PathQuery {
       override def matches(path: String, filesystem: FileSystem): Boolean =
