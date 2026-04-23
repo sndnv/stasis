@@ -16,7 +16,7 @@ import stasis.client_android.lib.utils.Try.Success
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getEncryptedDeviceSecret
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getSecretsConfig
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putEncryptedDeviceSecret
-import java.util.concurrent.ThreadLocalRandom
+import java.security.SecureRandom
 
 object Secrets {
     const val DefaultDeviceSecretSize: Int = 128
@@ -274,10 +274,8 @@ object Secrets {
     )
 
     fun generateRawDeviceSecret(secretSize: Int): ByteString {
-        val rnd = ThreadLocalRandom.current()
         val bytes = ByteArray(size = secretSize)
-        rnd.nextBytes(bytes)
-
+        SecureRandom().nextBytes(bytes)
         return bytes.toByteString()
     }
 }
