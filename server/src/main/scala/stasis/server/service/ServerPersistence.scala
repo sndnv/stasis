@@ -12,6 +12,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
+import slick.util.AsyncExecutor
 
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.core.persistence.commands.DefaultCommandStore
@@ -49,6 +50,8 @@ class ServerPersistence(
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")
   val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
+  val executorNumThreads: Int = persistenceConfig.getInt("database.executor.num-threads")
+  val executorQueueSize: Int = persistenceConfig.getInt("database.executor.queue-size")
 
   val userSaltSize: Int = persistenceConfig.getInt("users.salt-size")
 
@@ -57,7 +60,12 @@ class ServerPersistence(
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
     driver = databaseDriver,
-    keepAliveConnection = databaseKeepAlive
+    keepAliveConnection = databaseKeepAlive,
+    executor = AsyncExecutor(
+      name = "AsyncExecutor.server",
+      numThreads = executorNumThreads,
+      queueSize = executorQueueSize
+    )
   )
 
   private val migrationExecutor: MigrationExecutor = MigrationExecutor()

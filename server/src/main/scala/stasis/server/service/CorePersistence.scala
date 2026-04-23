@@ -13,6 +13,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
+import slick.util.AsyncExecutor
 
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.core.persistence.crates.CrateStore
@@ -43,6 +44,8 @@ class CorePersistence(
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")
   val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
+  val executorNumThreads: Int = persistenceConfig.getInt("database.executor.num-threads")
+  val executorQueueSize: Int = persistenceConfig.getInt("database.executor.queue-size")
 
   val reservationExpiration: FiniteDuration = persistenceConfig.getDuration("reservations.expiration").toMillis.millis
 
@@ -64,7 +67,12 @@ class CorePersistence(
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
     driver = databaseDriver,
-    keepAliveConnection = databaseKeepAlive
+    keepAliveConnection = databaseKeepAlive,
+    executor = AsyncExecutor(
+      name = "AsyncExecutor.core",
+      numThreads = executorNumThreads,
+      queueSize = executorQueueSize
+    )
   )
 
   private val migrationExecutor: MigrationExecutor = MigrationExecutor()
