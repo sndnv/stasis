@@ -65,12 +65,16 @@ data class UserPassword(
                 derivedKeySize * Bytes
             )
 
-            val derivedPassword = SecretKeyFactory
-                .getInstance(Defaults.Algorithm)
-                .generateSecret(spec)
-                .encoded
+            try {
+                val derivedPassword = SecretKeyFactory
+                    .getInstance(Defaults.Algorithm)
+                    .generateSecret(spec)
+                    .encoded
 
-            return derivedPassword.toByteString()
+                return derivedPassword.toByteString()
+            } finally {
+                spec.clearPassword()
+            }
         }
     }
 }
