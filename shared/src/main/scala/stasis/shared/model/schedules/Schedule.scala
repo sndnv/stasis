@@ -15,6 +15,15 @@ final case class Schedule(
   created: Instant,
   updated: Instant
 ) {
+  def validated(): Schedule = {
+    require(
+      interval >= Schedule.MinInterval,
+      s"Expected schedule interval of at least [${Schedule.MinInterval.toCoarsest.toString}] " +
+        s"but [${interval.toCoarsest.toString}] provided"
+    )
+    this
+  }
+
   def nextInvocation: LocalDateTime = {
     val now = LocalDateTime.now()
 
@@ -35,4 +44,6 @@ object Schedule {
   type Id = java.util.UUID
 
   def generateId(): Id = java.util.UUID.randomUUID()
+
+  final val MinInterval: FiniteDuration = 5.minutes
 }

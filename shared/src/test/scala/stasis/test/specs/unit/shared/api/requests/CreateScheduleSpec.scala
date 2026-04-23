@@ -11,16 +11,6 @@ import stasis.test.specs.unit.UnitSpec
 
 class CreateScheduleSpec extends UnitSpec {
   it should "convert requests to schedules" in {
-    val expectedSchedule = Schedule(
-      id = Schedule.generateId(),
-      info = "test-info",
-      isPublic = true,
-      start = LocalDateTime.now(),
-      interval = 3.seconds,
-      created = Instant.now(),
-      updated = Instant.now()
-    )
-
     val request = CreateSchedule(
       info = expectedSchedule.info,
       isPublic = expectedSchedule.isPublic,
@@ -34,4 +24,25 @@ class CreateScheduleSpec extends UnitSpec {
       updated = expectedSchedule.updated
     ) should be(expectedSchedule)
   }
+
+  it should "fail if an invalid schedule interval is provided" in {
+    val request = CreateSchedule(
+      info = expectedSchedule.info,
+      isPublic = expectedSchedule.isPublic,
+      start = expectedSchedule.start,
+      interval = 0.seconds
+    )
+
+    an[IllegalArgumentException] should be thrownBy (request.toSchedule)
+  }
+
+  private val expectedSchedule = Schedule(
+    id = Schedule.generateId(),
+    info = "test-info",
+    isPublic = true,
+    start = LocalDateTime.now(),
+    interval = 30.minutes,
+    created = Instant.now(),
+    updated = Instant.now()
+  )
 }

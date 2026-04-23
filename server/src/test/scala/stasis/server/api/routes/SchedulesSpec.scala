@@ -257,7 +257,7 @@ class SchedulesSpec extends AsyncUnitSpec with ScalatestRouteTest {
     isPublic = true,
     info = "test-schedule",
     start = LocalDateTime.now(),
-    interval = 3.seconds
+    interval = 30.minutes
   )
 
   private val updateRequest = UpdateSchedule(

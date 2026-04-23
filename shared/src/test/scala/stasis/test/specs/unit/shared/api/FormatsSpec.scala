@@ -171,7 +171,7 @@ class FormatsSpec extends UnitSpec {
 
     val schedule = Generators.generateSchedule.copy(
       start = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
-      interval = 30.seconds,
+      interval = 30.minutes,
       created = now,
       updated = now
     )

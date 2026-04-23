@@ -56,4 +56,19 @@ class ScheduleSpec extends UnitSpec {
 
     schedule.nextInvocation should be(schedule.start.plus(1, ChronoUnit.MILLIS))
   }
+
+  it should "support validating schedules" in withRetry {
+    val schedule = Schedule(
+      id = Schedule.generateId(),
+      info = "test-schedule",
+      isPublic = true,
+      start = LocalDateTime.now(),
+      interval = 0.seconds,
+      created = Instant.now(),
+      updated = Instant.now()
+    )
+
+    val e = intercept[IllegalArgumentException] { schedule.validated() }
+    e.getMessage should include("Expected schedule interval of at least [5 minutes] but [0 seconds] provided")
+  }
 }

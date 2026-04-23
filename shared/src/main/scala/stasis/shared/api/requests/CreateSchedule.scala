@@ -26,7 +26,7 @@ object CreateSchedule {
         interval = request.interval,
         created = now,
         updated = now
-      )
+      ).validated()
     }
   }
 }
