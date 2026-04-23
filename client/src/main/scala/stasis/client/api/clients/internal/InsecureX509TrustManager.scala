@@ -17,12 +17,18 @@ class InsecureX509TrustManager(underlying: X509TrustManager) extends X509TrustMa
   override def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit =
     underlying.checkClientTrusted(chain, authType)
 
-  override def checkServerTrusted(chain: Array[X509Certificate], authType: String): Unit =
-    if (Option(chain).exists(_.length == 1)) {
+  override def checkServerTrusted(chain: Array[X509Certificate], authType: String): Unit = {
+    val isSelfSigned = Option(chain)
+      .map(_.toList)
+      .collect { case cert :: Nil => cert }
+      .exists(cert => cert.getSubjectX500Principal == cert.getIssuerX500Principal)
+
+    if (isSelfSigned) {
       log.warn("Self-signed certificate with auth type [{}] encountered; skipping server trust verification!", authType)
     } else {
       underlying.checkServerTrusted(chain, authType)
     }
+  }
 
   override def getAcceptedIssuers: Array[X509Certificate] =
     underlying.getAcceptedIssuers
