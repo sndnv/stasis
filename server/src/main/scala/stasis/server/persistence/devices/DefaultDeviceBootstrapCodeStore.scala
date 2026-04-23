@@ -57,11 +57,8 @@ class DefaultDeviceBootstrapCodeStore(
   }
 
   override protected[devices] def consume(code: String): Future[Option[DeviceBootstrapCode]] =
-    for {
-      result <- get(code)
-      _ <- delete(code)
-    } yield {
-      result
+    metrics.recordConsume(store = name) {
+      backend.consume(code)
     }
 
   override protected[devices] def get(code: String): Future[Option[DeviceBootstrapCode]] = metrics.recordGet(store = name) {
