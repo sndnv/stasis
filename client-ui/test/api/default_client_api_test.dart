@@ -253,11 +253,11 @@ void main() {
 
       final until = DateTime(2020, 2, 2, 2, 2, 2);
 
-      when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=$searchQuery&until=2020-02-02T01:02:02Z'),
+      when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=${Uri.encodeQueryComponent(searchQuery)}&until=2020-02-02T01:02:02Z'),
               headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(result), 200));
 
-      when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=$searchQuery&until=2020-02-02T02:02:02Z'),
+      when(underlying.get(Uri.parse('$server/datasets/metadata/search?query=${Uri.encodeQueryComponent(searchQuery)}&until=2020-02-02T02:02:02Z'),
               headers: authorization))
           .thenAnswer((_) async => http.Response(jsonEncode(result), 200));
 
