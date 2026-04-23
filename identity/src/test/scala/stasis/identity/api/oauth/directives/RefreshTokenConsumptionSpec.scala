@@ -154,7 +154,7 @@ class RefreshTokenConsumptionSpec extends RouteTest {
 
   it should "fail if refresh tokens could not be queried" in withRetry {
     val owners = createOwnerStore()
-    val tokens = createFailingTokenStore(failingGet = true)
+    val tokens = createFailingTokenStore(failingConsume = true)
     val directive = createDirective(owners, tokens)
 
     val client = Client.generateId()

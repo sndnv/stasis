@@ -43,6 +43,34 @@ class DefaultAuthorizationCodeStoreSpec extends UnitSpec {
     }
   }
 
+  it should "consume authorization codes" in withRetry {
+    val store = new DefaultAuthorizationCodeStore(
+      name = "TEST_CODES",
+      expiration = 3.seconds,
+      backend = MemoryStore(name = "code-store")
+    )
+
+    val expectedCode = Generators.generateAuthorizationCode
+    val client = Client.generateId()
+    val owner = Generators.generateResourceOwner
+    val expectedStoredCode = StoredAuthorizationCode(expectedCode, client, owner, scope = None)
+
+    for {
+      _ <- store.put(StoredAuthorizationCode(expectedCode, client, owner, scope = None))
+      actualCode <- store.get(expectedCode)
+      someCodes <- store.all
+      consumedCode <- store.consume(expectedCode)
+      missingCode <- store.get(expectedCode)
+      noCodes <- store.all
+    } yield {
+      actualCode.map(_.copy(created = expectedStoredCode.created)) should be(Some(expectedStoredCode))
+      someCodes.map(_.copy(created = expectedStoredCode.created)) should be(Seq(expectedStoredCode))
+      consumedCode.map(_.copy(created = expectedStoredCode.created)) should be(Some(expectedStoredCode))
+      missingCode should be(None)
+      noCodes should be(Seq.empty)
+    }
+  }
+
   it should "expire authorization codes" in withRetry {
     val expiration = 50.millis
 

@@ -44,6 +44,8 @@ class MockRefreshTokenStore(
 
   override def delete(code: RefreshToken): Future[Boolean] = underlying.delete(code)
 
+  override def consume(token: RefreshToken): Future[Option[StoredRefreshToken]] = underlying.consume(token)
+
   override def get(code: RefreshToken): Future[Option[StoredRefreshToken]] = underlying.get(code)
 
   override def all: Future[Seq[StoredRefreshToken]] = underlying.entries.map(_.values.toSeq)

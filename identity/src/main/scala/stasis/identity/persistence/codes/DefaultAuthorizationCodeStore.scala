@@ -41,6 +41,10 @@ class DefaultAuthorizationCodeStore(
     backend.delete(code)
   }
 
+  override def consume(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] = metrics.recordConsume(store = name) {
+    backend.consume(code)
+  }
+
   override def get(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] = metrics.recordGet(store = name) {
     backend.get(code)
   }

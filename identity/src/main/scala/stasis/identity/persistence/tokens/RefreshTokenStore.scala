@@ -13,6 +13,7 @@ import io.github.sndnv.layers.persistence.Store
 trait RefreshTokenStore extends Store { store =>
   def put(client: Client.Id, token: RefreshToken, owner: ResourceOwner, scope: Option[String]): Future[Done]
   def delete(token: RefreshToken): Future[Boolean]
+  def consume(token: RefreshToken): Future[Option[StoredRefreshToken]]
   def get(token: RefreshToken): Future[Option[StoredRefreshToken]]
   def all: Future[Seq[StoredRefreshToken]]
 }

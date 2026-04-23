@@ -311,7 +311,7 @@ class AuthorizationCodeConsumptionSpec extends RouteTest {
   }
 
   it should "fail if authorization codes could not be queried" in withRetry {
-    val codes = createFailingCodeStore(failingGet = true)
+    val codes = createFailingCodeStore(failingConsume = true)
     val directive = createDirective(codes)
 
     val client = Client.generateId()
