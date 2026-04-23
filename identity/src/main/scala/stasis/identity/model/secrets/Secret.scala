@@ -1,6 +1,7 @@
 package stasis.identity.model.secrets
 
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.SecureRandom
 
 import javax.crypto.SecretKeyFactory
@@ -18,7 +19,7 @@ final case class Secret(value: ByteString) {
   def isSameAs(rawSecret: String, salt: String)(implicit config: Secret.Config): Boolean = {
     val hashedSecret = Secret.derive(rawSecret, salt)
 
-    value == hashedSecret.value
+    MessageDigest.isEqual(value.toArray, hashedSecret.value.toArray)
   }
 }
 
@@ -80,12 +81,16 @@ object Secret {
       config.derivedKeySize * 8
     )
 
-    val derivedSecret = SecretKeyFactory
-      .getInstance(config.algorithm)
-      .generateSecret(spec)
-      .getEncoded
+    try {
+      val derivedSecret = SecretKeyFactory
+        .getInstance(config.algorithm)
+        .generateSecret(spec)
+        .getEncoded
 
-    Secret(ByteString(derivedSecret))
+      Secret(ByteString(derivedSecret))
+    } finally {
+      spec.clearPassword()
+    }
   }
 
   def generateSalt()(implicit config: Config): String = {
