@@ -5,10 +5,17 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 import com.typesafe.{config => typesafe}
+import io.github.sndnv.layers.persistence.KeyValueStore
+import io.github.sndnv.layers.persistence.memory.MemoryStore
+import io.github.sndnv.layers.persistence.migration.MigrationExecutor
+import io.github.sndnv.layers.persistence.migration.MigrationResult
+import io.github.sndnv.layers.service.PersistenceProvider
+import io.github.sndnv.layers.telemetry.TelemetryContext
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.util.Timeout
 import slick.jdbc.JdbcProfile
+import slick.util.AsyncExecutor
 
 import stasis.core.persistence.backends.slick.SlickProfile
 import stasis.identity.model.codes.AuthorizationCode
@@ -23,12 +30,6 @@ import stasis.identity.persistence.owners.DefaultResourceOwnerStore
 import stasis.identity.persistence.owners.ResourceOwnerStore
 import stasis.identity.persistence.tokens.DefaultRefreshTokenStore
 import stasis.identity.persistence.tokens.RefreshTokenStore
-import io.github.sndnv.layers.persistence.KeyValueStore
-import io.github.sndnv.layers.persistence.memory.MemoryStore
-import io.github.sndnv.layers.persistence.migration.MigrationExecutor
-import io.github.sndnv.layers.persistence.migration.MigrationResult
-import io.github.sndnv.layers.service.PersistenceProvider
-import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class Persistence(
   persistenceConfig: typesafe.Config,
@@ -43,13 +44,20 @@ class Persistence(
   val databaseUrl: String = persistenceConfig.getString("database.url")
   val databaseDriver: String = persistenceConfig.getString("database.driver")
   val databaseKeepAlive: Boolean = persistenceConfig.getBoolean("database.keep-alive-connection")
+  val executorNumThreads: Int = persistenceConfig.getInt("database.executor.num-threads")
+  val executorQueueSize: Int = persistenceConfig.getInt("database.executor.queue-size")
 
   private val database: profile.backend.Database = profile.api.Database.forURL(
     url = databaseUrl,
     user = persistenceConfig.getString("database.user"),
     password = persistenceConfig.getString("database.password"),
     driver = databaseDriver,
-    keepAliveConnection = databaseKeepAlive
+    keepAliveConnection = databaseKeepAlive,
+    executor = AsyncExecutor(
+      name = "AsyncExecutor.identity",
+      numThreads = executorNumThreads,
+      queueSize = executorQueueSize
+    )
   )
 
   private val migrationExecutor: MigrationExecutor = MigrationExecutor()

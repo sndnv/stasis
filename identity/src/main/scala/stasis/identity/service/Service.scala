@@ -231,6 +231,9 @@ trait Service {
          |    url:        ${persistence.databaseUrl}
          |    driver:     ${persistence.databaseDriver}
          |    keep-alive: ${persistence.databaseKeepAlive.toString}
+         |    executor:
+         |      num-threads: ${persistence.executorNumThreads.toString}
+         |      queue-size: ${persistence.executorQueueSize.toString}
          |)""".stripMargin
     )
 
