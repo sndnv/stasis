@@ -5,6 +5,8 @@ import java.nio.file.FileSystems
 import scala.collection.mutable
 import scala.concurrent.Future
 
+import io.github.sndnv.layers.api.MessageResponse
+import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -21,9 +23,6 @@ import stasis.client.api.Context
 import stasis.client.api.clients.exceptions.ServerApiFailure
 import stasis.client.api.http.HttpApiEndpoint
 import stasis.client.model.DatasetMetadata
-import io.github.sndnv.layers.api.MessageResponse
-import io.github.sndnv.layers.telemetry.mocks.MockAnalyticsCollector
-
 import stasis.shared.api.responses.Ping
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
@@ -179,7 +178,7 @@ class HttpApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest {
       )
       .map { response =>
         response.status should be(expectedStatus)
-        Unmarshal(response).to[MessageResponse].await.message should be(expectedMessage)
+        Unmarshal(response).to[MessageResponse].await.message should include("Server API request failed; failure reference is")
       }
   }
 

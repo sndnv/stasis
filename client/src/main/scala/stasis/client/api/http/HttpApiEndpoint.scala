@@ -47,12 +47,18 @@ class HttpApiEndpoint(
       case e: ServerApiFailure =>
         context.analytics.recordFailure(e)
 
-        context.log.error(e.message)
+        val failureReference = java.util.UUID.randomUUID()
 
-        discardEntity & complete(
-          e.status,
-          MessageResponse(e.message)
+        context.log.errorN(
+          "Server API request failed with status [{}]: [{}]; failure reference is [{}]",
+          e.status.value,
+          e.message,
+          failureReference
         )
+
+        val message = s"Server API request failed; failure reference is [${failureReference.toString}]"
+
+        discardEntity & complete(e.status, MessageResponse(message))
 
       case NonFatal(e) =>
         extractRequest { request =>
@@ -60,7 +66,7 @@ class HttpApiEndpoint(
 
           val failureReference = java.util.UUID.randomUUID()
 
-          log.errorN(
+          context.log.errorN(
             "Unhandled exception encountered during [{}] request for [{}]: [{} - {}]; failure reference is [{}]",
             request.method.value,
             request.uri.path.toString,
@@ -69,13 +75,9 @@ class HttpApiEndpoint(
             failureReference
           )
 
-          val message = s"Unhandled exception encountered: [${e.getClass.getSimpleName} - ${e.getMessage}]; " +
-            s"failure reference is [${failureReference.toString}]"
+          val message = s"Unhandled exception encountered; failure reference is [${failureReference.toString}]"
 
-          discardEntity & complete(
-            StatusCodes.InternalServerError,
-            MessageResponse(message)
-          )
+          discardEntity & complete(StatusCodes.InternalServerError, MessageResponse(message))
         }
     }
 
