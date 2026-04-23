@@ -141,8 +141,7 @@ trait AuthorizationCodeConsumption extends EntityDiscardingDirectives {
     Directive { inner =>
       onComplete(
         for {
-          storedCode <- authorizationCodeStore.get(providedCode)
-          _ <- authorizationCodeStore.delete(providedCode)
+          storedCode <- authorizationCodeStore.consume(providedCode)
         } yield {
           storedCode
         }

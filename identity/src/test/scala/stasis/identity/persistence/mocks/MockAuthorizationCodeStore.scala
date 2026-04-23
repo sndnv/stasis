@@ -29,6 +29,8 @@ class MockAuthorizationCodeStore(
 
   override def delete(code: AuthorizationCode): Future[Boolean] = underlying.delete(code)
 
+  override def consume(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] = underlying.consume(code)
+
   override def get(code: AuthorizationCode): Future[Option[StoredAuthorizationCode]] = underlying.get(code)
 
   override def all: Future[Seq[StoredAuthorizationCode]] = underlying.entries.map(_.values.toSeq)

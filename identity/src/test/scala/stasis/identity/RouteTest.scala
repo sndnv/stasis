@@ -68,6 +68,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
   def createFailingApiStore(
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
+    failingConsume: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false,
@@ -80,6 +81,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def storeName: String = s"api-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
+        override def consumeFails: Boolean = failingConsume
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
@@ -90,6 +92,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
   def createFailingClientStore(
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
+    failingConsume: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false,
@@ -102,6 +105,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def storeName: String = s"client-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
+        override def consumeFails: Boolean = failingConsume
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
@@ -112,6 +116,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
   def createFailingCodeStore(
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
+    failingConsume: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false,
@@ -124,6 +129,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def storeName: String = s"code-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
+        override def consumeFails: Boolean = failingConsume
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
@@ -134,6 +140,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
   def createFailingOwnerStore(
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
+    failingConsume: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false,
@@ -146,6 +153,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def storeName: String = s"owner-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
+        override def consumeFails: Boolean = failingConsume
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
@@ -156,6 +164,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
   def createFailingTokenStore(
     failingPut: Boolean = false,
     failingDelete: Boolean = false,
+    failingConsume: Boolean = false,
     failingGet: Boolean = false,
     failingEntries: Boolean = false,
     failingContains: Boolean = false,
@@ -168,6 +177,7 @@ trait RouteTest extends UnitSpec with ScalatestRouteTest {
         override def storeName: String = s"token-store-${java.util.UUID.randomUUID()}"
         override def putFails: Boolean = failingPut
         override def deleteFails: Boolean = failingDelete
+        override def consumeFails: Boolean = failingConsume
         override def getFails: Boolean = failingGet
         override def entriesFails: Boolean = failingEntries
         override def containsFails: Boolean = failingContains
@@ -227,6 +237,7 @@ object RouteTest {
     def storeName: String
     def putFails: Boolean
     def deleteFails: Boolean
+    def consumeFails: Boolean
     def getFails: Boolean
     def entriesFails: Boolean
     def containsFails: Boolean
@@ -240,6 +251,9 @@ object RouteTest {
 
     override def delete(key: K): Future[Boolean] =
       if (deleteFails) Future.failed(new RuntimeException("Operation failure enabled")) else underlying.delete(key)
+
+    override def consume(key: K): Future[Option[V]] =
+      if (consumeFails) Future.failed(new RuntimeException("Operation failure enabled")) else underlying.consume(key)
 
     override def get(key: K): Future[Option[V]] =
       if (getFails) Future.failed(new RuntimeException("Operation failure enabled")) else underlying.get(key)

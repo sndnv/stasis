@@ -66,6 +66,17 @@ class SlickBackend[K, V](
     )
   }
 
+  override def consume(key: K): Future[Option[V]] = metrics.recordConsume(store = name) {
+    database.run(
+      (
+        for {
+          existing <- store.filter(_.key === (key: String)).map(_.value).result.headOption
+          _ <- store.filter(_.key === (key: String)).delete
+        } yield existing.map(value => ByteString(value): V)
+      ).transactionally
+    )
+  }
+
   override def get(key: K): Future[Option[V]] = metrics.recordGet(store = name) {
     database.run(
       store

@@ -50,6 +50,8 @@ class SlickBackendSpec extends UnitSpec with KeyValueStoreBehaviour {
 
     override def delete(key: String): Future[Boolean] = slickBackend.delete(key)
 
+    override def consume(key: String): Future[Option[Int]] = slickBackend.consume(key)
+
     override def get(key: String): Future[Option[Int]] = slickBackend.get(key)
 
     override def contains(key: String): Future[Boolean] = slickBackend.contains(key)

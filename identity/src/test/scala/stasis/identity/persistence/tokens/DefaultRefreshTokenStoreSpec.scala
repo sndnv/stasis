@@ -7,6 +7,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import io.github.sndnv.layers.telemetry.TelemetryContext
+import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
+import io.github.sndnv.layers.testing.UnitSpec
+import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -22,10 +26,6 @@ import stasis.identity.model.owners.ResourceOwner
 import stasis.identity.model.tokens.RefreshToken
 import stasis.identity.model.tokens.StoredRefreshToken
 import stasis.identity.persistence.internal.LegacyKeyValueStore
-import io.github.sndnv.layers.testing.UnitSpec
-import io.github.sndnv.layers.testing.persistence.TestSlickDatabase
-import io.github.sndnv.layers.telemetry.mocks.MockTelemetryContext
-import io.github.sndnv.layers.telemetry.TelemetryContext
 
 class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with TestSlickDatabase {
   "A DefaultRefreshTokenStore" should "add, retrieve and delete refresh tokens" in withRetry {
@@ -63,6 +63,50 @@ class DefaultRefreshTokenStoreSpec extends UnitSpec with Eventually with TestSli
 
         tokenDeleted should be(true)
         tokenNotDeleted should be(false)
+
+        actualToken.map(_.copy(created = expectedStoredToken.created)) should be(Some(expectedStoredToken))
+        someTokens.map(_.copy(created = expectedStoredToken.created)) should be(Seq(expectedStoredToken))
+        missingToken should be(None)
+        noTokens should be(Seq.empty)
+      }
+    }
+  }
+
+  it should "consume refresh tokens" in withRetry {
+    withStore { (profile, database) =>
+      val store = new DefaultRefreshTokenStore(
+        name = "TEST_TOKENS",
+        profile = profile,
+        database = database,
+        expiration = 3.seconds
+      )
+
+      val client = Client.generateId()
+      val owner = Generators.generateResourceOwner
+      val expectedToken = Generators.generateRefreshToken
+
+      for {
+        _ <- store.init()
+        _ <- store.put(client, expectedToken, owner, scope = None)
+        actualToken <- store.get(expectedToken)
+        someTokens <- store.all
+        consumedToken <- store.consume(expectedToken)
+        missingToken <- store.get(expectedToken)
+        tokenNotConsumed <- store.consume(expectedToken)
+        noTokens <- store.all
+        _ <- store.drop()
+      } yield {
+        val expectedStoredToken = StoredRefreshToken(
+          token = expectedToken,
+          client = client,
+          owner = owner.username,
+          scope = None,
+          expiration = actualToken.map(_.expiration).getOrElse(Instant.MIN),
+          created = Instant.now()
+        )
+
+        consumedToken.map(_.copy(created = expectedStoredToken.created)) should be(Some(expectedStoredToken))
+        tokenNotConsumed should be(empty)
 
         actualToken.map(_.copy(created = expectedStoredToken.created)) should be(Some(expectedStoredToken))
         someTokens.map(_.copy(created = expectedStoredToken.created)) should be(Seq(expectedStoredToken))

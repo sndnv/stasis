@@ -39,8 +39,7 @@ trait RefreshTokenConsumption extends EntityDiscardingDirectives {
     Directive { inner =>
       onComplete(
         for {
-          storedToken <- refreshTokenStore.get(providedToken)
-          _ <- refreshTokenStore.delete(providedToken)
+          storedToken <- refreshTokenStore.consume(providedToken)
           owner <- storedToken match {
             case Some(token) => resourceOwnerStore.get(token.owner)
             case None        => Future.successful(None)

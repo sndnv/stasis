@@ -98,6 +98,17 @@ class DefaultRefreshTokenStore(
     database.run(store.filter(_.token === token).delete).map(_ == 1)
   }
 
+  override def consume(token: RefreshToken): Future[Option[StoredRefreshToken]] = metrics.recordConsume(store = name) {
+    database.run(
+      (
+        for {
+          existing <- store.filter(e => e.token === token && e.expiration > Instant.now()).map(_.value).result.headOption
+          _ <- store.filter(_.token === token).delete
+        } yield existing
+      ).transactionally
+    )
+  }
+
   override def get(token: RefreshToken): Future[Option[StoredRefreshToken]] = metrics.recordGet(store = name) {
     database.run(store.filter(e => e.token === token && e.expiration > Instant.now()).map(_.value).result.headOption)
   }
