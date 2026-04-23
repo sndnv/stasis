@@ -247,7 +247,7 @@ class ApiEndpointSpec extends AsyncUnitSpec with ScalatestRouteTest with Secrets
       info = "test-schedule",
       isPublic = true,
       start = LocalDateTime.now(),
-      interval = 3.seconds,
+      interval = 30.minutes,
       created = Instant.now(),
       updated = Instant.now()
     )

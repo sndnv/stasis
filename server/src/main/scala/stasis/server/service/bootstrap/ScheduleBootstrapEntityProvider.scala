@@ -9,9 +9,9 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 import com.typesafe.config.Config
+import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import org.apache.pekko.Done
 
-import io.github.sndnv.layers.service.bootstrap.BootstrapEntityProvider
 import stasis.server.persistence.schedules.ScheduleStore
 import stasis.shared.model.schedules.Schedule
 
@@ -35,7 +35,7 @@ class ScheduleBootstrapEntityProvider(store: ScheduleStore) extends BootstrapEnt
       interval = config.getDuration("interval").toSeconds.seconds,
       created = now,
       updated = now
-    )
+    ).validated()
   }
 
   override def validate(entities: Seq[Schedule]): Future[Done] =

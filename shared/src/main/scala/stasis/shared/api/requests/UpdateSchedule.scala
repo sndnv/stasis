@@ -16,11 +16,13 @@ final case class UpdateSchedule(
 object UpdateSchedule {
   implicit class RequestToUpdatedSchedule(request: UpdateSchedule) {
     def toUpdatedSchedule(schedule: Schedule): Schedule =
-      schedule.copy(
-        info = request.info,
-        start = request.start,
-        interval = request.interval,
-        updated = Instant.now()
-      )
+      schedule
+        .copy(
+          info = request.info,
+          start = request.start,
+          interval = request.interval,
+          updated = Instant.now()
+        )
+        .validated()
   }
 }
