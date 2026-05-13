@@ -10,6 +10,8 @@ import stasis.client.staging.FileStaging
 import stasis.client.tracking.RecoveryTracker
 import io.github.sndnv.layers.telemetry.TelemetryContext
 
+import stasis.client.analysis.PlatformMetadata
+
 final case class Providers(
   checksum: Checksum,
   staging: FileStaging,
@@ -18,5 +20,6 @@ final case class Providers(
   clients: Clients,
   track: RecoveryTracker,
   telemetry: TelemetryContext,
-  filesystem: FileSystem
+  filesystem: FileSystem,
+  metadataDefaults: PlatformMetadata.Defaults
 )

@@ -1,7 +1,6 @@
 package stasis.client.ops.recovery.stages
 
 import java.nio.file.FileSystem
-import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -12,21 +11,22 @@ import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.Flow
-import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.SharedKillSwitch
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.encryption.secrets.DeviceSecret
-import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.EntityMetadata
 import stasis.client.model.TargetEntity
+import stasis.client.model.TargetEntity.Destination
+import stasis.client.ops.Metrics
+import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.EntityProcessingFailure
 import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.Providers
-import stasis.client.ops.Metrics
-import stasis.client.ops.ParallelismConfig
 import stasis.client.utils.StringPaths.StringAsPath
 import stasis.core.packaging.Crate
 import stasis.core.routing.exceptions.PullFailure
@@ -68,7 +68,7 @@ trait EntityProcessing {
       case _: EntityMetadata.Directory => entity.destinationPath
     }
 
-    val _ = Files.createDirectories(entityDirectory, targetDirectoryAttributes)
+    val _ = Files.createDirectories(entityDirectory, targetDirectoryAttributes: _*)
 
     entity
   }
@@ -145,10 +145,8 @@ trait EntityProcessing {
     sources
   }
 
-  private val targetDirectoryPermissions = "rwx------"
-
   private val targetDirectoryAttributes =
-    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(targetDirectoryPermissions))
+    PlatformMetadata.current.ownerOnlyDirectoryAttributes
 
   private type CratesSources = Iterable[(Int, String, Source[ByteString, NotUsed])]
   private type EntitySource = Source[ByteString, NotUsed]

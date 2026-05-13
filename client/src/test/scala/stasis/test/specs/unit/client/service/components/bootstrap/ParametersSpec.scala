@@ -347,7 +347,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
         val created = directory.findFile(s"$file.p12")
         created match {
           case Some(file) =>
-            val expectedPermissions = ApplicationDirectory.Default.CreatedFilePermissions
+            val expectedPermissions = "rw-------"
             val actualPermissions = PosixFilePermissions.toString(Files.getPosixFilePermissions(file))
             actualPermissions should be(expectedPermissions)
 
@@ -379,7 +379,7 @@ class ParametersSpec extends AsyncUnitSpec with ResourceHelpers {
         val created = directory.findFile(s"$file.jks")
         created match {
           case Some(file) =>
-            val expectedPermissions = ApplicationDirectory.Default.CreatedFilePermissions
+            val expectedPermissions = "rw-------"
             val actualPermissions = PosixFilePermissions.toString(Files.getPosixFilePermissions(file))
             actualPermissions should be(expectedPermissions)
 

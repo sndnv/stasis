@@ -1,26 +1,47 @@
 # include user files
-+ /Users/$${USER}/Desktop               **
-+ /Users/$${USER}/Documents             **
-+ /Users/$${USER}/Downloads             **
-+ /Users/$${USER}/Movies                **
-+ /Users/$${USER}/Music                 **
-+ /Users/$${USER}/Pictures              **
-+ /Users/$${USER}/Videos                **
-+ /Users/$${USER}/Library/Preferences   stasis-client/**
-+ /Users/$${USER}/stasis-client         logs/*.log
++ /Users/$${USER}/Desktop                       **
++ /Users/$${USER}/Documents                     **
++ /Users/$${USER}/Downloads                     **
++ /Users/$${USER}/Movies                        **
++ /Users/$${USER}/Music                         **
++ /Users/$${USER}/Pictures                      **
++ /Users/$${USER}/Videos                        **
++ /Users/$${USER}/Library/Application Support   **
++ /Users/$${USER}/Library/Preferences           stasis-client/**
++ /Users/$${USER}/stasis-client                 logs/*.log
 
-# exclude git files, logs, temporary and cache files
-- /Users/$${USER}                       **/*.{class,obj}
-- /Users/$${USER}                       **/lost+found/**
-- /Users/$${USER}                       **/*cache*/**
-- /Users/$${USER}                       **/*log*/**
-- /Users/$${USER}                       **/*.{tmp,temp,part,bak,~}
-- /Users/$${USER}                       **/.git
-- /Users/$${USER}                       Library/Caches
-- /Users/$${USER}                       Library/Logs
-- /Users/$${USER}                       **/{.localized,*.localized}
+# include secrets and encryption keys
++ /Users/$${USER}/.ssh                          **
++ /Users/$${USER}/.gnupg                        **
+
+# exclude application caches and large data from Library/Application Support
+- /Users/$${USER}/Library/Application Support   **/{Cache,cache,Caches,caches,Code Cache,GPUCache}
+
+# exclude version control
+- /Users/$${USER}                               **/{.git,.svn,.hg}
+
+# exclude build and compiled artifacts
+- /Users/$${USER}                               **/*.{class,obj,o,so,dylib,pyc,pyo}
+- /Users/$${USER}                               **/{__pycache__,node_modules,target,build,dist}
+
+# exclude caches and temporary files
+- /Users/$${USER}                               **/*.{tmp,temp,part,bak}
+- /Users/$${USER}                               **/{*~,*.sw[op]}
+- /Users/$${USER}                               {Library/Caches,Library/Logs}
+
+# exclude IDE and editor files
+- /Users/$${USER}                               **/{.idea,.vscode}
+
+# exclude package manager caches
+- /Users/$${USER}                               {.npm,.cargo,.rustup,.gradle,.m2,.docker}
+
+# exclude macOS artifacts
+- /Users/$${USER}                               **/{.DS_Store,.localized,*.localized}
+- /Users/$${USER}                               .Trash
+- /Users/$${USER}                               Library/Application Support/CrashReporter
+- /Users/$${USER}                               Library/Saved Application State
 
 # generated stasis-client files
-- /Users/$${USER}/Library/Preferences   stasis-client/certs
-- /Users/$${USER}/Library/Preferences   stasis-client/*.{p12,pem}
-- /Users/$${USER}/Library/Preferences   stasis-client/{device-secret,api-token}
+- /Users/$${USER}/Library/Preferences           stasis-client/certs
+- /Users/$${USER}/Library/Preferences           stasis-client/*.{p12,pem}
+- /Users/$${USER}/Library/Preferences           stasis-client/{device-secret,api-token}

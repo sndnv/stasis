@@ -34,6 +34,7 @@ import stasis.client.staging.DefaultFileStaging
 import stasis.core.routing.Node
 import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
 
+import stasis.client.analysis.PlatformMetadata
 import stasis.shared.model.datasets.DatasetDefinition
 import stasis.shared.model.datasets.DatasetEntry
 import stasis.shared.model.devices.Device
@@ -469,7 +470,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       ),
       track = new MockRecoveryTracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     for {
@@ -523,7 +525,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       ),
       track = new MockRecoveryTracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     Recovery
@@ -560,7 +563,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       ),
       track = new MockRecoveryTracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     val descriptor = Recovery.Descriptor(
@@ -723,7 +727,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       clients = clients,
       track = tracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     new Recovery(

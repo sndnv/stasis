@@ -18,11 +18,23 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val original = Rule.Original(line = "", lineNumber = 0)
 
-      val rule1 = Rule(operation = Rule.Operation.Include, directory = "/", pattern = "*", comment = None, original = original)
-      val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{a,b,c}")
+      val rule1 = Rule(
+        operation = Rule.Operation.Include,
+        directory = "/".normalized(setup),
+        pattern = "*",
+        comment = None,
+        original = original
+      )
+      val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{a,b,c}".normalizedGlob(setup))
 
-      val rule2 = Rule(operation = Rule.Operation.Exclude, directory = "/", pattern = "*", comment = None, original = original)
-      val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{d,e}")
+      val rule2 = Rule(
+        operation = Rule.Operation.Exclude,
+        directory = "/".normalized(setup),
+        pattern = "*",
+        comment = None,
+        original = original
+      )
+      val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-*/*-{d,e}".normalizedGlob(setup))
 
       val matchers = Seq(
         IndexedRule(index = 0, underlying = rule1) -> matcher1,
@@ -31,16 +43,16 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val matchedSuccessful = mutable.ListBuffer[Path]()
       val successfulResult = FilesWalker.filter(
-        start = filesystem.getPath("/work/root/parent-1"),
+        start = filesystem.getPath("/work/root/parent-1".normalized(setup)),
         onMatchIncluded = matchedSuccessful.addOne,
         matchers = matchers
       )
 
       matchedSuccessful.map(_.toString).toList should be(
         List(
-          "/work/root/parent-1/child-dir-a",
-          "/work/root/parent-1/child-dir-b",
-          "/work/root/parent-1/child-dir-c"
+          "/work/root/parent-1/child-dir-a".normalized(setup),
+          "/work/root/parent-1/child-dir-b".normalized(setup),
+          "/work/root/parent-1/child-dir-c".normalized(setup)
         )
       )
 
@@ -50,14 +62,14 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
         k.underlying.asString -> v.map(_.toString)
       } should be(
         Map(
-          "+ / *" -> Seq(
-            "/work/root/parent-1/child-dir-a",
-            "/work/root/parent-1/child-dir-b",
-            "/work/root/parent-1/child-dir-c"
+          "+ / *".normalized(setup) -> Seq(
+            "/work/root/parent-1/child-dir-a".normalized(setup),
+            "/work/root/parent-1/child-dir-b".normalized(setup),
+            "/work/root/parent-1/child-dir-c".normalized(setup)
           ),
-          "- / *" -> Seq(
-            "/work/root/parent-1/child-dir-d",
-            "/work/root/parent-1/child-dir-e"
+          "- / *".normalized(setup) -> Seq(
+            "/work/root/parent-1/child-dir-d".normalized(setup),
+            "/work/root/parent-1/child-dir-e".normalized(setup)
           )
         )
       )
@@ -66,7 +78,7 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val matchedFailed = mutable.ListBuffer[Path]()
       val failedResult = FilesWalker.filter(
-        start = filesystem.getPath("/work/root/other"),
+        start = filesystem.getPath("/work/root/other".normalized(setup)),
         onMatchIncluded = matchedFailed.addOne,
         matchers = matchers
       )
@@ -76,7 +88,7 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
       failedResult.matches should be(empty)
 
       failedResult.failures.map { case (k, v) => k.toString -> v.toString } should be(
-        Map("/work/root/other" -> "java.nio.file.NoSuchFileException: /work/root/other")
+        Map("/work/root/other".normalized(setup) -> s"java.nio.file.NoSuchFileException: ${"/work/root/other".normalized(setup)}")
       )
     }
 
@@ -85,18 +97,34 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val original = Rule.Original(line = "", lineNumber = 0)
 
-      val rule1 = Rule(operation = Rule.Operation.Include, directory = "/", pattern = "*", comment = None, original = original)
-      val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{a,b,c}/*")
+      val rule1 = Rule(
+        operation = Rule.Operation.Include,
+        directory = "/".normalized(setup),
+        pattern = "*",
+        comment = None,
+        original = original
+      )
+      val matcher1 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{a,b,c}/*".normalizedGlob(setup))
 
-      val rule2 = Rule(operation = Rule.Operation.Exclude, directory = "/", pattern = "*", comment = None, original = original)
-      val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{c,d,e}")
+      val rule2 = Rule(
+        operation = Rule.Operation.Exclude,
+        directory = "/".normalized(setup),
+        pattern = "*",
+        comment = None,
+        original = original
+      )
+      val matcher2 = filesystem.getPathMatcher("glob:/work/root/parent-{0,1}/*-{c,d,e}".normalizedGlob(setup))
 
       val matchers = Seq(
         IndexedRule(index = 0, underlying = rule1) -> matcher1,
         IndexedRule(index = 1, underlying = rule2) -> matcher2
       )
 
-      val result = FilesWalker.filter(start = filesystem.getPath("/work/root"), onMatchIncluded = _ => (), matchers = matchers)
+      val result = FilesWalker.filter(
+        start = filesystem.getPath("/work/root".normalized(setup)),
+        onMatchIncluded = _ => (),
+        matchers = matchers
+      )
 
       result.isEmpty should be(false)
 
@@ -113,14 +141,24 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       excluded.flatMap(_._2).map(_.toString) should be(
         Seq(
-          "/work/root/parent-0/child-dir-c",
-          "/work/root/parent-0/child-dir-d",
-          "/work/root/parent-0/child-dir-e",
-          "/work/root/parent-1/child-dir-c",
-          "/work/root/parent-1/child-dir-d",
-          "/work/root/parent-1/child-dir-e"
+          "/work/root/parent-0/child-dir-c".normalized(setup),
+          "/work/root/parent-0/child-dir-d".normalized(setup),
+          "/work/root/parent-0/child-dir-e".normalized(setup),
+          "/work/root/parent-1/child-dir-c".normalized(setup),
+          "/work/root/parent-1/child-dir-d".normalized(setup),
+          "/work/root/parent-1/child-dir-e".normalized(setup)
         )
       )
     }
+  }
+
+  private implicit class ExtendedString(string: String) {
+    def normalized(setup: FileSystemSetup): String =
+      if (setup.name == "Windows") string.replaceFirst("/", "C:/").replaceAll("/", "\\\\")
+      else string
+
+    def normalizedGlob(setup: FileSystemSetup): String =
+      if (setup.name == "Windows") string.replaceFirst("/", "C:/")
+      else string
   }
 }

@@ -5,6 +5,7 @@ import java.nio.file.FileSystems
 import org.apache.pekko.actor.ActorSystem
 
 import stasis.client.analysis.Checksum
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.collection.RecoveryCollector
 import stasis.client.model.TargetEntity
@@ -55,7 +56,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
     }
 

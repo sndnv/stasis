@@ -2,7 +2,7 @@ package stasis.client.service
 
 import java.io.FileNotFoundException
 import java.nio.file._
-import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.attribute.FileAttribute
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -12,6 +12,8 @@ import org.apache.pekko.util.ByteString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import io.github.sndnv.layers.files.FilteringFileVisitor
+
+import stasis.client.analysis.PlatformMetadata
 
 trait ApplicationDirectory {
   def findFile(file: String): Option[Path]
@@ -108,8 +110,6 @@ object ApplicationDirectory {
       path match {
         case Some(path) =>
           Future {
-            val permissions = PosixFilePermissions.fromString(Default.CreatedFilePermissions)
-
             val defaultOptions = Seq(
               StandardOpenOption.WRITE,
               StandardOpenOption.TRUNCATE_EXISTING
@@ -118,7 +118,7 @@ object ApplicationDirectory {
             val _ = Files.deleteIfExists(path)
 
             Files.write(
-              Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions)),
+              Files.createFile(path, Default.CreatedFileAttributes: _*),
               content.toArray,
               defaultOptions: _*
             )
@@ -142,7 +142,7 @@ object ApplicationDirectory {
   }
 
   object Default {
-    final val CreatedFilePermissions: String = "rw-------"
+    final val CreatedFileAttributes: Seq[FileAttribute[_]] = PlatformMetadata.current.ownerOnlyFileAttributes
 
     def apply(applicationName: String, filesystem: FileSystem): Default =
       new Default(

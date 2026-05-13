@@ -5,6 +5,7 @@ import scala.concurrent.duration._
 
 import org.apache.pekko.Done
 
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.collection.rules.RuleSet
 import stasis.client.ops
 import stasis.client.ops.ParallelismConfig
@@ -64,6 +65,10 @@ object Ops {
         filesystem = directory.appDirectory.getFileSystem
       )
 
+      val recoveryMetadataDefaults = PlatformMetadata.Defaults(
+        config = rawConfig.getConfig("ops.recovery.default-permissions")
+      )
+
       implicit val recoveryProviders: ops.recovery.Providers = ops.recovery.Providers(
         checksum = checksum,
         staging = staging,
@@ -72,7 +77,8 @@ object Ops {
         clients = clients,
         track = trackers.recovery,
         telemetry = telemetry,
-        filesystem = directory.appDirectory.getFileSystem
+        filesystem = directory.appDirectory.getFileSystem,
+        metadataDefaults = recoveryMetadataDefaults
       )
 
       new Ops {

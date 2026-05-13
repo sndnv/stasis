@@ -7,14 +7,35 @@
 + /home/$${USER}/Pictures       **
 + /home/$${USER}/Templates      **
 + /home/$${USER}/Videos         **
++ /home/$${USER}/.local/share   **
 + /home/$${USER}/.config        stasis-client/**
 + /home/$${USER}/stasis-client  logs/*.log
 
-# exclude git files, logs, temporary and cache files
-- /home/$${USER}                **/*.{class,obj}
+# include secrets and encryption keys
++ /home/$${USER}/.ssh            **
++ /home/$${USER}/.gnupg          **
+
+# exclude version control
+- /home/$${USER}                **/{.git,.svn,.hg}
+
+# exclude build and compiled artifacts
+- /home/$${USER}                **/*.{class,obj,o,so,dylib,pyc,pyo}
+- /home/$${USER}                **/{__pycache__,node_modules,target,build,dist}
+
+# exclude caches and temporary files
+- /home/$${USER}                **/*.{tmp,temp,part,bak}
+- /home/$${USER}                **/{*~,*.sw[op]}
+- /home/$${USER}                {.cache,.local/share/Trash}
+
+# exclude IDE and editor files
+- /home/$${USER}                **/{.idea,.vscode}
+
+# exclude package manager caches
+- /home/$${USER}                {.npm,.cargo,.rustup,.gradle,.m2,.docker}
+- /home/$${USER}                snap/*/*/.cache
+
+# exclude OS artifacts
 - /home/$${USER}                **/lost+found
-- /home/$${USER}                **/*.{tmp,temp,part,bak,~}
-- /home/$${USER}                **/.git
 
 # generated stasis-client files
 - /home/$${USER}                .config/stasis-client/certs

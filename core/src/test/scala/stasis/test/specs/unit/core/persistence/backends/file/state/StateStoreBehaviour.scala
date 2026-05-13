@@ -19,7 +19,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
     it should "support persisting state to file" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
-      val target = filesystem.getPath("/store")
+      val target = filesystem.getPath("/store".normalized(setup))
 
       val store = StateStore[Map[String, State]](
         directory = target,
@@ -50,7 +50,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
     it should "support pruning old state files" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
-      val target = filesystem.getPath("/store")
+      val target = filesystem.getPath("/store".normalized(setup))
 
       val store = new StateStore[Map[String, State]](
         directory = target,
@@ -108,7 +108,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
     it should "support discarding state files" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
-      val target = filesystem.getPath("/store")
+      val target = filesystem.getPath("/store".normalized(setup))
 
       val store = new StateStore[Map[String, State]](
         directory = target,
@@ -157,7 +157,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
     it should "support restoring existing state from file" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
-      val target = filesystem.getPath("/store")
+      val target = filesystem.getPath("/store".normalized(setup))
 
       val store = StateStore[Map[String, State]](
         directory = target,
@@ -181,7 +181,7 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
     it should "handle deserialization failures" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
-      val target = filesystem.getPath("/store")
+      val target = filesystem.getPath("/store".normalized(setup))
 
       val store = new StateStore[Map[String, State]](
         directory = target,
@@ -249,6 +249,12 @@ trait StateStoreBehaviour { _: AsyncUnitSpec with FileSystemHelpers =>
             .toMap
         )
     }
+
+  private implicit class ExtendedString(string: String) {
+    def normalized(setup: FileSystemSetup): String =
+      if (setup.name == "Windows") string.replaceFirst("/", "C:/").replaceAll("/", "\\\\")
+      else string
+  }
 }
 
 object StateStoreBehaviour {

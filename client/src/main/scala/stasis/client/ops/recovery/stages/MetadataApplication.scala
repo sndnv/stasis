@@ -28,7 +28,7 @@ trait MetadataApplication {
           .applyEntityMetadataTo(
             metadata = targetEntity.existingMetadata,
             entity = targetEntity.destinationPath
-          )
+          )(ec, providers.metadataDefaults)
           .map(_ => targetEntity)
       }
       .wireTap { targetEntity =>

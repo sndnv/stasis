@@ -13,6 +13,7 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 
 import stasis.client.analysis.Checksum
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.ops.recovery.Providers
@@ -35,7 +36,8 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
       ),
       track = new MockRecoveryTracker,
       telemetry = mockTelemetry,
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     val original = Seq(
