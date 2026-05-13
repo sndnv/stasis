@@ -19,6 +19,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 
 import stasis.client.analysis.Checksum
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.collection.rules.RuleSet
 import stasis.client.encryption.secrets.DeviceFileSecret
@@ -420,7 +421,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       clients = clients,
       track = recoveryTracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      metadataDefaults = PlatformMetadata.Defaults.default()
     )
 
     new DefaultOperationExecutor(

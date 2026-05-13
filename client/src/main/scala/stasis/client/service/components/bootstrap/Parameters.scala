@@ -1,7 +1,6 @@
 package stasis.client.service.components.bootstrap
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ThreadLocalRandom
@@ -129,8 +128,7 @@ object Parameters {
       if (force || !Files.exists(path)) {
         log.info("Creating [{}] from template...", path)
         val _ = Files.deleteIfExists(path)
-        val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
-        val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
+        val _ = Files.createFile(path, ApplicationDirectory.Default.CreatedFileAttributes: _*)
 
         val out = Files.newOutputStream(path)
         try {
@@ -207,8 +205,7 @@ object Parameters {
         store.setKeyEntry(file, privateKey, password.toCharArray, Array(certificate))
 
         val _ = Files.deleteIfExists(path)
-        val permissions = PosixFilePermissions.fromString(ApplicationDirectory.Default.CreatedFilePermissions)
-        val _ = Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions))
+        val _ = Files.createFile(path, ApplicationDirectory.Default.CreatedFileAttributes: _*)
 
         val out = Files.newOutputStream(path)
         try {

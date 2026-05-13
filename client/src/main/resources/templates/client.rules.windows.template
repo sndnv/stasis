@@ -1,0 +1,44 @@
+# include user files
++ C:\Users\$${USER}\Desktop                     **
++ C:\Users\$${USER}\Documents                   **
++ C:\Users\$${USER}\Downloads                   **
++ C:\Users\$${USER}\Music                       **
++ C:\Users\$${USER}\Pictures                    **
++ C:\Users\$${USER}\Videos                      **
++ C:\Users\$${USER}\AppData\Roaming             **
++ C:\Users\$${USER}\AppData\Local               stasis-client\**
++ C:\Users\$${USER}\stasis-client               logs\*.log
+
+# include secrets and encryption keys
++ C:\Users\$${USER}\.ssh                        **
++ C:\Users\$${USER}\.gnupg                      **
+
+# exclude application caches and large data from AppData\Roaming
+- C:\Users\$${USER}\AppData\Roaming             **\{Cache,cache,Caches,caches,Code Cache,GPUCache}
+
+# exclude version control
+- C:\Users\$${USER}                             **\{.git,.svn,.hg}
+
+# exclude build and compiled artifacts
+- C:\Users\$${USER}                             **\*.{class,obj,o,so,dll,exe,lib,pyc,pyo}
+- C:\Users\$${USER}                             **\{__pycache__,node_modules,target,build,dist}
+
+# exclude caches and temporary files
+- C:\Users\$${USER}                             **\*.{tmp,temp,part,bak}
+- C:\Users\$${USER}                             **\{*~,*.sw[op]}
+- C:\Users\$${USER}\AppData\Local               Temp
+
+# exclude IDE and editor files
+- C:\Users\$${USER}                             **\{.idea,.vscode,.vs}
+
+# exclude package manager caches
+- C:\Users\$${USER}                             {.npm,.cargo,.rustup,.gradle,.m2,.docker}
+
+# exclude Windows artifacts
+- C:\Users\$${USER}                             **\{Thumbs.db,desktop.ini}
+- C:\Users\$${USER}\AppData\Local               {CrashDumps,Microsoft\Windows\INetCache,Microsoft\Windows\Explorer}
+
+# generated stasis-client files
+- C:\Users\$${USER}\AppData\Local               stasis-client\certs
+- C:\Users\$${USER}\AppData\Local               stasis-client\*.{p12,pem}
+- C:\Users\$${USER}\AppData\Local               stasis-client\{device-secret,api-token}

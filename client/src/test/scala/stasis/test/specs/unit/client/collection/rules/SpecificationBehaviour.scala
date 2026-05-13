@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.ExecutionContext
 
-import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+import io.github.sndnv.layers.testing.FileSystemHelpers._
 
 import stasis.client.collection.rules.Rule
 import stasis.client.collection.rules.Specification
@@ -20,7 +20,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
   private val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   def specification(setup: FileSystemSetup): Unit = {
-    it should s"require at least one rule to be present (${setup.config})" in withRetry {
+    it should s"require at least one rule to be present (${setup.name})" in withRetry {
       import Specification.ExtendedRules
 
       val rules = Seq(IndexedRule(index = 0, underlying = Rule("+ /work ?", 0).get))
@@ -29,7 +29,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       an[IllegalStateException] should be thrownBy Seq.empty[IndexedRule].first
     }
 
-    it should s"support creation based on rules (${setup.config})" in withRetry {
+    it should s"support creation based on rules (${setup.name})" in withRetry {
       val (filesystem, objects) = createMockFileSystem(setup)
 
       objects.filesPerDir should be > 0
@@ -65,7 +65,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
         rule6 -> RuleExpectation(excluded = parent0Dirs, included = 0, root = 0),
         rule7 -> RuleExpectation(excluded = qFiles, included = 0, root = 0)
       ).zipWithIndex.map { case ((rule, expectations), lineNumber) =>
-        (Rule(line = rule, lineNumber = lineNumber).get, expectations)
+        (Rule(line = rule.normalized(setup), lineNumber = lineNumber).get, expectations)
       }
 
       rules.foreach { case (rule, expectation) =>
@@ -117,11 +117,11 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should s"provide list of unmatched rules  (${setup.config})" in withRetry {
-      val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
+    it should s"provide list of unmatched rules  (${setup.name})" in withRetry {
+      val (filesystem, _) = createMockFileSystem(setup = setup.withEmptyDirs)
 
-      val rule1 = Rule(line = "+ /test/ **                # include all files in directory", lineNumber = 0).get
-      val rule2 = Rule(line = "+ /work  missing-test-file # include specific file", lineNumber = 0).get
+      val rule1 = Rule(line = "+ /test/ **                # include all files in directory".normalized(setup), lineNumber = 0).get
+      val rule2 = Rule(line = "+ /work  missing-test-file # include specific file".normalized(setup), lineNumber = 0).get
 
       Specification(rules = Seq(rule1, rule2), onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
         spec.unmatched.toList match {
@@ -137,16 +137,16 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should s"provide a reason for including/excluding each file  (${setup.config})" in withRetry {
+    it should s"provide a reason for including/excluding each file  (${setup.name})" in withRetry {
       val (filesystem, objects) = createMockFileSystem(
         setup = setup.copy(chars = FileSystemSetup.Chars.AlphaNumeric, nestedParentDirs = 0)
       )
 
-      val rule1 = Rule("+ /work      ?      # incl all files in the root work directory", 0).get
-      val rule2 = Rule("- /work      a      # excl file 'a'", 0).get
-      val rule3 = Rule("- /work      b      # excl file 'b'", 0).get
-      val rule4 = Rule("- /work      c      # excl file 'c'", 0).get
-      val rule5 = Rule("+ /work      [c-f]  # incl files 'c' to 'f'", 0).get
+      val rule1 = Rule("+ /work      ?      # incl all files in the root work directory".normalized(setup), 0).get
+      val rule2 = Rule("- /work      a      # excl file 'a'".normalized(setup), 0).get
+      val rule3 = Rule("- /work      b      # excl file 'b'".normalized(setup), 0).get
+      val rule4 = Rule("- /work      c      # excl file 'c'".normalized(setup), 0).get
+      val rule5 = Rule("+ /work      [c-f]  # incl files 'c' to 'f'".normalized(setup), 0).get
 
       val rules = Seq(rule1, rule2, rule3, rule4, rule5)
 
@@ -155,12 +155,12 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
         spec.entries.size should be(objects.filesPerDir)
 
         val files = List(
-          spec.entries.get(filesystem.getPath("/work/a")),
-          spec.entries.get(filesystem.getPath("/work/b")),
-          spec.entries.get(filesystem.getPath("/work/c")),
-          spec.entries.get(filesystem.getPath("/work/d")),
-          spec.entries.get(filesystem.getPath("/work/e")),
-          spec.entries.get(filesystem.getPath("/work/f"))
+          spec.entries.get(filesystem.getPath("/work/a".normalized(setup))),
+          spec.entries.get(filesystem.getPath("/work/b".normalized(setup))),
+          spec.entries.get(filesystem.getPath("/work/c".normalized(setup))),
+          spec.entries.get(filesystem.getPath("/work/d".normalized(setup))),
+          spec.entries.get(filesystem.getPath("/work/e".normalized(setup))),
+          spec.entries.get(filesystem.getPath("/work/f".normalized(setup)))
         ).flatten
 
         files match {
@@ -219,7 +219,7 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should s"create an empty spec if no rules are provided (${setup.config})" in withRetry {
+    it should s"create an empty spec if no rules are provided (${setup.name})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
 
       Specification(rules = Seq.empty, onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
@@ -227,10 +227,10 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should s"handle matching failures (${setup.config})" in withRetry {
-      val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.empty)
+    it should s"handle matching failures (${setup.name})" in withRetry {
+      val (filesystem, _) = createMockFileSystem(setup = setup.withEmptyDirs)
 
-      val rule1 = Rule("+ /work/missing-dir *", 0).get
+      val rule1 = Rule("+ /work/missing-dir *".normalized(setup), 0).get
 
       Specification(rules = Seq(rule1), onMatchIncluded = _ => (), filesystem = filesystem)(ec).map { spec =>
         spec.unmatched.toList match {
@@ -242,13 +242,13 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
       }
     }
 
-    it should s"support collecting parent directories (${setup.config})" in withRetry {
+    it should s"support collecting parent directories (${setup.name})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       Specification
         .collectRelativeParents(
-          from = filesystem.getPath("/"),
-          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+          from = filesystem.getPath("/".normalized(setup)),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a".normalized(setup))
         )
         .sorted should be(
         Seq(
@@ -257,47 +257,53 @@ trait SpecificationBehaviour { _: AsyncUnitSpec with ResourceHelpers =>
           "/work/root",
           "/work/root/parent-0",
           "/work/root/parent-0/child-dir-a"
-        ).map(filesystem.getPath(_))
+        ).map(p => filesystem.getPath(p.normalized(setup)))
       )
 
       Specification
         .collectRelativeParents(
-          from = filesystem.getPath("/work/root/parent-0"),
-          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+          from = filesystem.getPath("/work/root/parent-0".normalized(setup)),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a".normalized(setup))
         )
         .sorted should be(
         Seq(
           "/work/root/parent-0",
           "/work/root/parent-0/child-dir-a"
-        ).map(filesystem.getPath(_))
+        ).map(p => filesystem.getPath(p.normalized(setup)))
       )
 
       Specification
         .collectRelativeParents(
-          from = filesystem.getPath("/work/root/parent-0/child-dir-a"),
-          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a")
+          from = filesystem.getPath("/work/root/parent-0/child-dir-a".normalized(setup)),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a/a".normalized(setup))
         )
         .sorted should be(
         Seq(
           "/work/root/parent-0/child-dir-a"
-        ).map(filesystem.getPath(_))
+        ).map(p => filesystem.getPath(p.normalized(setup)))
       )
 
       Specification
         .collectRelativeParents(
-          from = filesystem.getPath("/work/root/parent-0/child-dir-a"),
-          to = filesystem.getPath("/work/root/parent-0/child-dir-a")
+          from = filesystem.getPath("/work/root/parent-0/child-dir-a".normalized(setup)),
+          to = filesystem.getPath("/work/root/parent-0/child-dir-a".normalized(setup))
         )
         .sorted should be(Seq.empty)
     }
 
-    it should s"handle mismatched parent directories (${setup.config})" in withRetry {
+    it should s"handle mismatched parent directories (${setup.name})" in withRetry {
       val (filesystem, _) = createMockFileSystem(setup)
 
       Specification.collectRelativeParents(
-        from = filesystem.getPath("/work/root/parent-0"),
-        to = filesystem.getPath("/work/root/parent-1/child-dir-b/c")
+        from = filesystem.getPath("/work/root/parent-0".normalized(setup)),
+        to = filesystem.getPath("/work/root/parent-1/child-dir-b/c".normalized(setup))
       ) should be(Seq.empty)
     }
+  }
+
+  private implicit class ExtendedString(string: String) {
+    def normalized(setup: FileSystemSetup): String =
+      if (setup.name == "Windows") string.replaceFirst("/", "C:/").replaceAll("/", "\\\\")
+      else string
   }
 }

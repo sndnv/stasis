@@ -79,7 +79,7 @@ object ApplicationTemplates {
         Success(components.Files.Templates.RulesMacOS)
 
       case Some(osName) if osName.contains("windows") =>
-        Failure(new IllegalArgumentException(s"Unsupported operating system found: [$property]"))
+        Success(components.Files.Templates.RulesWindows)
 
       case _ =>
         Success(components.Files.Templates.RulesLinux)

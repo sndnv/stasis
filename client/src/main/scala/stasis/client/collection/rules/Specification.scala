@@ -162,7 +162,8 @@ object Specification {
       val directory = filesystem.getPath(ruleDirectory)
 
       val matchers = rules.map { rule =>
-        rule -> filesystem.getPathMatcher(s"glob:$ruleDirectory${rule.underlying.pattern}")
+        val globPattern = s"$ruleDirectory${rule.underlying.pattern}".replace("\\", "\\\\")
+        rule -> filesystem.getPathMatcher(s"glob:$globPattern")
       }
 
       directory -> matchers

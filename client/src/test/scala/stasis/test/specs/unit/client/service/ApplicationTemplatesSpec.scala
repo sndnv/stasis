@@ -172,12 +172,12 @@ class ApplicationTemplatesSpec extends UnitSpec {
     }
   }
 
-  they should "not support retrieving rules for Windows systems" in {
+  they should "support retrieving rules for Windows systems" in {
     val os = "Windows"
 
     ApplicationTemplates.getRulesTemplateFile(property = os) match {
-      case Success(other) => fail(s"Unexpected result received: [$other]")
-      case Failure(e)     => e.getMessage should be(s"Unsupported operating system found: [$os]")
+      case Success(rules) => rules should be(components.Files.Templates.RulesWindows)
+      case Failure(e)     => fail(e.getMessage)
     }
   }
 

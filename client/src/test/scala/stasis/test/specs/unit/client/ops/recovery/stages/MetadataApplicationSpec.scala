@@ -14,6 +14,7 @@ import org.apache.pekko.stream.scaladsl.Source
 
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.Metadata
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.model.EntityMetadata
 import stasis.client.model.TargetEntity
@@ -63,7 +64,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec with ResourceHelpers { spec 
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
 
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher

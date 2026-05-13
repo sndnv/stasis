@@ -215,6 +215,6 @@ object Service {
     osName.toLowerCase.split(" ").headOption match {
       case Some("mac")   => Seq("open", s"$userHome/Applications/stasis.app")
       case Some("linux") => Seq("stasis-ui")
-      case _             => throw new IllegalArgumentException(s"Operating system [$osName}] is not supported")
+      case _             => throw new IllegalArgumentException(s"Operating system [$osName] is not supported")
     }
 }

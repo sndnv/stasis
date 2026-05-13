@@ -14,6 +14,7 @@ import org.apache.pekko.actor.ActorSystem
 
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.Metadata
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.model.EntityMetadata
 import stasis.client.model.TargetEntity
 import stasis.core.packaging.Crate
@@ -234,6 +235,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   it should "apply metadata to a file" in {
+    implicit val defaults: PlatformMetadata.Defaults = PlatformMetadata.Defaults.default()
+
     val targetFile = Files.createTempFile("metadata-target-file", "")
     targetFile.toFile.deleteOnExit()
 
@@ -270,6 +273,8 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   it should "apply metadata to a directory" in {
+    implicit val defaults: PlatformMetadata.Defaults = PlatformMetadata.Defaults.default()
+
     val targetDirectory = Files.createTempDirectory("metadata-target-directory")
     targetDirectory.toFile.deleteOnExit()
 

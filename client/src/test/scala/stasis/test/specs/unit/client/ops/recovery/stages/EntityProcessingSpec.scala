@@ -16,6 +16,7 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.Eventually
 
 import stasis.client.analysis.Checksum
+import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.TargetEntity
@@ -139,7 +140,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           clients = Clients(api = mockApiClient, core = mockCoreClient),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = fs
+          filesystem = fs,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -235,7 +237,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           clients = Clients(api = mockApiClient, core = mockCoreClient),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = fs
+          filesystem = fs,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -341,7 +344,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = fs
+          filesystem = fs,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -390,7 +394,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = fs
+          filesystem = fs,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -464,7 +469,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           clients = Clients(api = mockApiClient, core = mockCoreClient),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = fs
+          filesystem = fs,
+          metadataDefaults = PlatformMetadata.Defaults.default()
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 4, entityParts = 4)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer

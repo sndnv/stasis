@@ -11,6 +11,7 @@ object Files {
     final val ConfigOverride: String = "client.conf.template"
     final val RulesLinux: String = "client.rules.linux.template"
     final val RulesMacOS: String = "client.rules.macos.template"
+    final val RulesWindows: String = "client.rules.windows.template"
   }
 
   object TrustStores {
