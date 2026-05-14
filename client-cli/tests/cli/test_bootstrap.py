@@ -16,7 +16,7 @@ class BootstrapSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_bootstrap_client(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.bootstrap.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -202,7 +202,7 @@ class BootstrapSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_force_client_bootstrap_when_configured_or_active(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.bootstrap.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -247,7 +247,7 @@ class BootstrapSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_bootstrap_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.bootstrap.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -288,7 +288,7 @@ class BootstrapSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_print_bootstrap_failure_information(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.bootstrap.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = DefaultWriter()
             context.service_binary = 'test-name'
@@ -314,7 +314,7 @@ class BootstrapSpec(unittest.TestCase):
 
             self.assertEqual(result.exit_code, 0, result.output)
             self.assertIn('Failed: Client bootstrap failed', result.output)
-            self.assertIn('MagicMock name=\'spawn().before.decode()\'', result.output)
+            self.assertIn('MagicMock name=\'spawn_interactive().before.decode()\'', result.output)
 
             mock_spawn.return_value.expect.assert_any_call('Server bootstrap URL:')
             mock_spawn.return_value.expect.assert_any_call('Bootstrap Code:')

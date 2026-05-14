@@ -5,6 +5,7 @@ import click
 import pexpect
 from tqdm import tqdm
 
+from client_cli.cli import spawn_interactive
 from client_cli.cli.service import _get_processes
 from client_cli.render.json_writer import JsonWriter
 
@@ -58,7 +59,7 @@ def spawn_regenerate_api_certificate(service_binary):
     :param service_binary: the binary used for calling the service
     :return: the spawned process
     """
-    return pexpect.spawn(
+    return spawn_interactive(
         service_binary,
         args=['maintenance', 'regenerate-api-certificate'],
         env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
@@ -116,7 +117,7 @@ def credentials_reset(ctx, current_password, new_password, verify_new_password, 
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
+        process = spawn_interactive(
             ctx.obj.service_binary,
             args=['maintenance', 'credentials', 'reset'],
             env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
@@ -192,7 +193,7 @@ def secret_push(ctx, current_username, current_password, remote_password, verify
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
+        process = spawn_interactive(
             ctx.obj.service_binary,
             args=['maintenance', 'secret', 'push'],
             env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
@@ -256,7 +257,7 @@ def secret_pull(ctx, current_username, current_password, remote_password, force)
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
+        process = spawn_interactive(
             ctx.obj.service_binary,
             args=['maintenance', 'secret', 'pull'],
             env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}
@@ -320,7 +321,7 @@ def secret_re_encrypt(ctx, current_username, current_password, old_password, for
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
+        process = spawn_interactive(
             ctx.obj.service_binary,
             args=['maintenance', 'secret', 're-encrypt'],
             env=os.environ | {'STASIS_CLIENT_LOG_TARGET': 'CONSOLE'}

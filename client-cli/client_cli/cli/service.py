@@ -1,6 +1,8 @@
 """CLI commands for showing and managing the client's state."""
 
 import logging
+import subprocess
+import sys
 import time
 from subprocess import DEVNULL, Popen
 
@@ -45,8 +47,16 @@ def start(ctx, username, password, service_arguments):
                     disable=isinstance(ctx.obj.rendering, JsonWriter)
             ) as progress:
                 # pylint: disable=consider-using-with
-                Popen([service] + list(service_arguments or []), stdout=DEVNULL, stdin=DEVNULL, stderr=DEVNULL,
-                      start_new_session=True)
+                if sys.platform == 'win32':
+                    detach_flags = {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+                else:
+                    detach_flags = {'start_new_session': True}
+
+                Popen(
+                    [service] + list(service_arguments or []),
+                    stdout=DEVNULL, stdin=DEVNULL, stderr=DEVNULL,
+                    **detach_flags
+                )
                 progress.update()
 
                 init_state_before_auth = ctx.obj.init.state()
