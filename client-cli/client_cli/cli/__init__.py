@@ -10,6 +10,7 @@ import sys
 from typing import Optional
 
 import click
+import pexpect
 from pyhocon import ConfigFactory
 
 
@@ -134,16 +135,27 @@ def get_app_dir(application_name):
     xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
 
     if xdg_config_home is not None:
-        return '{}{}{}'.format(xdg_config_home, os.sep, application_name)
+        return os.path.join(xdg_config_home, application_name)
     else:
-        user_home = os.path.expanduser(os.environ.get('HOME', '~').rstrip(os.sep))
+        user_home = os.path.expanduser('~')
         if sys.platform.startswith('linux'):
-            return '{}/.config/{}'.format(user_home, application_name)
-        elif sys.platform == "darwin":
-            return '{}/Library/Preferences/{}'.format(user_home, application_name)
+            return os.path.join(user_home, '.config', application_name)
+        elif sys.platform == 'darwin':
+            return os.path.join(user_home, 'Library', 'Preferences', application_name)
+        elif sys.platform == 'win32':
+            local_app_data = os.environ.get('LOCALAPPDATA', os.path.join(user_home, 'AppData', 'Local'))
+            return os.path.join(local_app_data, application_name)
         else:
             logging.error('Unsupported operating system: [{}]'.format(sys.platform))
             raise click.Abort()
+
+
+def spawn_interactive(command, args=None, env=None):
+    """Spawns an interactive process with the provided args and environment vars"""
+    if sys.platform == 'win32':
+        return pexpect.popen_spawn.PopenSpawn([command] + (args or []), env=env)
+    else:
+        return pexpect.spawn(command, args=args or [], env=env)
 
 
 def get_top_level_command(args, commands):

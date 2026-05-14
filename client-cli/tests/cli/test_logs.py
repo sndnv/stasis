@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch, mock_open
 
@@ -51,4 +52,4 @@ class LogsSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertEqual(result.output.strip(), 'TEST_HOME/stasis-client/logs')
+        self.assertEqual(result.output.strip(), os.path.join('TEST_HOME', 'stasis-client', 'logs'))

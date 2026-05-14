@@ -15,10 +15,13 @@ from tests.mocks.mock_init_api import MockInitApi
 
 class ServiceSpec(unittest.TestCase):
 
+    @patch('client_cli.cli.service.sys')
     @patch('psutil.process_iter')
     @patch('subprocess.Popen.__init__')
     @patch('time.sleep')
-    def test_should_start_background_service(self, mock_sleep, mock_popen, mock_process_iter):
+    def test_should_start_background_service(self, mock_sleep, mock_popen, mock_process_iter, mock_sys):
+        mock_sys.platform = 'linux'
+
         context = Context()
         context.api = InactiveClientApi()
         context.init = MockInitApi(state_responses=[mock_data.INIT_STATE_PENDING, mock_data.INIT_STATE_SUCCESSFUL])
@@ -40,8 +43,55 @@ class ServiceSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
         mock_popen.assert_called_once()
+        self.assertTrue(mock_popen.call_args[1].get('start_new_session'))
+        mock_sleep.assert_called_once()
+        self.assertEqual(context.init.stats['state'], 2)
+        self.assertEqual(context.init.stats['provide_credentials'], 1)
+
+    @patch('client_cli.cli.service.subprocess')
+    @patch('client_cli.cli.service.sys')
+    @patch('psutil.process_iter')
+    @patch('subprocess.Popen.__init__')
+    @patch('time.sleep')
+    def test_should_start_background_service_on_windows(
+            self,
+            mock_sleep,
+            mock_popen,
+            mock_process_iter,
+            mock_sys,
+            mock_subprocess
+    ):
+        create_new_process_group = 0x200
+        mock_sys.platform = 'win32'
+        mock_subprocess.CREATE_NEW_PROCESS_GROUP = create_new_process_group
+
+        context = Context()
+        context.api = InactiveClientApi()
+        context.init = MockInitApi(state_responses=[mock_data.INIT_STATE_PENDING, mock_data.INIT_STATE_SUCCESSFUL])
+        context.rendering = JsonWriter()
+        context.service_binary = 'test-name'
+        context.service_main_class = 'test.name.Main'
+
+        mock_process_iter.return_value = []
+        mock_popen.return_value = None
+        mock_sleep.return_value = None
+
+        username = 'username'
+        password = 'password'
+
+        runner = Runner(cli)
+        result = runner.invoke(
+            args=['start', '--username', username, '--password', password],
+            obj=context
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
+        mock_popen.assert_called_once()
+        self.assertEqual(mock_popen.call_args[1].get('creationflags'), create_new_process_group)
+        self.assertNotIn('start_new_session', mock_popen.call_args[1])
         mock_sleep.assert_called_once()
         self.assertEqual(context.init.stats['state'], 2)
         self.assertEqual(context.init.stats['provide_credentials'], 1)
@@ -71,7 +121,7 @@ class ServiceSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
         mock_popen.assert_called_once()
         mock_sleep.assert_called_once()
         self.assertEqual(context.init.stats['state'], 2)
@@ -107,7 +157,7 @@ class ServiceSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(
-            json.loads(result.output),
+            json.loads(result.stdout),
             {'successful': False, 'failure': 'Initialization did not complete; last state received was [pending]'}
         )
         mock_popen.assert_called_once()
@@ -150,7 +200,7 @@ class ServiceSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(
-            json.loads(result.output),
+            json.loads(result.stdout),
             {'successful': False, 'failure': 'No or invalid credentials provided'}
         )
         mock_popen.assert_called_once()
@@ -174,7 +224,7 @@ class ServiceSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(
-            json.loads(result.output),
+            json.loads(result.stdout),
             {'successful': False, 'failure': 'Background service is already active'}
         )
 
@@ -198,7 +248,7 @@ class ServiceSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(
-            json.loads(result.output),
+            json.loads(result.stdout),
             {'successful': False, 'failure': 'Unexpected background service process(es) found'}
         )
 
@@ -216,7 +266,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['stop'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
         self.assertEqual(context.api.stats['stop'], 1)
 
     def test_should_support_skipping_confirmation_when_stopping_background_service(self):
@@ -230,7 +280,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['stop', '--confirm'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
         self.assertEqual(context.api.stats['stop'], 1)
 
     @patch('click.confirm')
@@ -251,7 +301,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['stop'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertDictEqual(json.loads(result.output), {'successful': True})
+        self.assertDictEqual(json.loads(result.stdout), {'successful': True})
         self.assertEqual(process.kill_count, 1)
 
     @patch('click.confirm')
@@ -271,7 +321,7 @@ class ServiceSpec(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertDictEqual(
-            json.loads(result.output),
+            json.loads(result.stdout),
             {'successful': False, 'failure': 'Background service is not active'}
         )
 
@@ -284,7 +334,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['status', 'connection'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['device_connections'], 1)
 
     def test_should_show_client_commands(self):
@@ -296,7 +346,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['status', 'commands'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['device_commands'], 1)
 
     def test_should_show_current_user(self):
@@ -308,7 +358,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['status', 'user'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['user'], 1)
 
     def test_should_update_current_user_password(self):
@@ -329,7 +379,7 @@ class ServiceSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['user_password_update'], 1)
 
     def test_should_fail_to_update_user_password_with_mismatched_current_passwords(self):
@@ -410,7 +460,7 @@ class ServiceSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['user_salt_update'], 1)
 
     def test_should_fail_to_update_user_salt_with_mismatched_new_passwords(self):
@@ -462,7 +512,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['status', 'device'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['device'], 1)
 
     def test_should_reencrypt_current_device_secret(self):
@@ -481,7 +531,7 @@ class ServiceSpec(unittest.TestCase):
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['device_reencrypt_secret'], 1)
 
     def test_should_fail_to_reencrypt_current_device_secret_with_mismatched_passwords(self):
@@ -511,7 +561,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['analytics', 'show'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['analytics_state'], 1)
 
     def test_should_send_current_analytics_state(self):
@@ -523,7 +573,7 @@ class ServiceSpec(unittest.TestCase):
         result = runner.invoke(args=['analytics', 'send'], obj=context)
 
         self.assertEqual(result.exit_code, 0, result.output)
-        self.assertTrue(json.loads(result.output))
+        self.assertTrue(json.loads(result.stdout))
         self.assertEqual(context.api.stats['analytics_state_send'], 1)
 
 

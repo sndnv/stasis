@@ -29,8 +29,8 @@ def cli():
 
 
 def _get_logs_dir():
-    user_home = os.path.expanduser(os.environ.get('HOME', '~').rstrip(os.sep))
-    return '{}/stasis-client/logs'.format(user_home)
+    user_home = os.path.expanduser('~')
+    return os.path.join(user_home, 'stasis-client', 'logs')
 
 
 cli.add_command(show_logs)

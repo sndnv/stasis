@@ -5,6 +5,7 @@ import click
 import pexpect
 from tqdm import tqdm
 
+from client_cli.cli import spawn_interactive
 from client_cli.cli.service import _get_processes
 from client_cli.render.json_writer import JsonWriter
 
@@ -64,7 +65,7 @@ def bootstrap(ctx, server, code, username, password, verify_password, accept_sel
             bar_format='{desc}: |{bar}| {n_fmt}/{total_fmt}',
             disable=isinstance(ctx.obj.rendering, JsonWriter)
     ) as progress:
-        process = pexpect.spawn(
+        process = spawn_interactive(
             ctx.obj.service_binary,
             args=['bootstrap'] + (['--accept-self-signed'] if accept_self_signed else []) + (
                 ['--recreate-files'] if recreate_files else []),

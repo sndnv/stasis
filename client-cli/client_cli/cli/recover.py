@@ -26,10 +26,10 @@ def until_timestamp(ctx, definition, until, path_query, destination, discard_pat
     If [-d/--destination] is NOT set, all files will be recovered at their original paths.
 
     Example: \n
-        Original File:               /home/user/.bashrc             \n
-        Destination:                 /tmp/recover                   \n
-        Recovered:                   /tmp/recover/home/user/.bashrc \n
-        Recovered (paths discarded): /tmp/recover/.bashrc           \n
+        Original File:               ~/Documents/notes.txt                  \n
+        Destination:                 ~/recover                              \n
+        Recovered:                   ~/recover/Documents/notes.txt          \n
+        Recovered (paths discarded): ~/recover/notes.txt                    \n
     """
     # pylint: disable=too-many-arguments
 
@@ -68,10 +68,10 @@ def from_entry(ctx, definition, entry, path_query, destination, discard_paths, f
     If [-d/--destination] is NOT set, all files will be recovered at their original paths.
 
     Example: \n
-        Original File:               /home/user/.bashrc             \n
-        Destination:                 /tmp/recover                   \n
-        Recovered:                   /tmp/recover/home/user/.bashrc \n
-        Recovered (paths discarded): /tmp/recover/.bashrc           \n
+        Original File:               ~/Documents/notes.txt                  \n
+        Destination:                 ~/recover                              \n
+        Recovered:                   ~/recover/Documents/notes.txt          \n
+        Recovered (paths discarded): ~/recover/notes.txt                    \n
     """
     # pylint: disable=too-many-arguments
 

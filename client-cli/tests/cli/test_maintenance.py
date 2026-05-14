@@ -16,7 +16,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_regenerate_api_certificate(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -40,7 +40,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_api_certificate_regeneration_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -65,7 +65,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_reset_user_credentials(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -103,7 +103,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_fail_to_reset_user_credentials_when_mismatched_passwords_provided(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -133,7 +133,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_fail_to_reset_user_credentials_when_no_salt_provided(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -163,7 +163,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_user_credentials_reset_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -202,7 +202,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_push_client_secret(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -240,7 +240,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_push_client_secret_without_remote_password_override(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -275,7 +275,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_fail_to_push_client_secret_when_mismatched_remote_passwords_provided(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -305,7 +305,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_client_secret_push_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -344,7 +344,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_pull_client_secret(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -381,7 +381,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_pull_client_secret_without_remote_password_override(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -416,7 +416,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_client_secret_pull_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -454,7 +454,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_reencrypt_client_secret(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -491,7 +491,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_handle_client_secret_reencryption_failures(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -529,7 +529,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_fail_to_run_maintenance_command_when_client_is_active(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -551,7 +551,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_fail_to_run_maintenance_command_when_client_is_not_configured(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -573,7 +573,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_force_run_maintenance_command_when_configured_or_active(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = JsonWriter()
             context.service_binary = 'test-name'
@@ -599,7 +599,7 @@ class MaintenanceSpec(unittest.TestCase):
 
     @patch('psutil.process_iter')
     def test_should_print_maintenance_command_failure_information(self, mock_process_iter):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             context = Context()
             context.rendering = DefaultWriter()
             context.service_binary = 'test-name'
@@ -619,13 +619,13 @@ class MaintenanceSpec(unittest.TestCase):
 
             self.assertEqual(result.exit_code, 0, result.output)
             self.assertIn('Failed: API certificate re-generation failed', result.output)
-            self.assertIn('MagicMock name=\'spawn().before.decode()\'', result.output)
+            self.assertIn('MagicMock name=\'spawn_interactive().before.decode()\'', result.output)
 
             mock_spawn.return_value.expect.assert_any_call('Generating a new client API certificate')
             mock_spawn.return_value.expect.assert_any_call([pexpect.EOF, 'Client startup failed: '])
 
     def test_should_spawn_regenerate_api_certificate_processes(self):
-        with patch('pexpect.spawn') as mock_spawn:
+        with patch('client_cli.cli.maintenance.spawn_interactive') as mock_spawn:
             spawn_regenerate_api_certificate(service_binary='test')
             mock_spawn.assert_called()
 

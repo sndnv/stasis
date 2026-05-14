@@ -14,6 +14,7 @@ from client_cli.cli import (
     capture_failures,
     get_app_dir,
     get_top_level_command, is_client_configured,
+    spawn_interactive,
 )
 
 
@@ -162,39 +163,62 @@ class CliPackageSpec(unittest.TestCase):
     @patch('sys.platform', 'linux')
     @patch.dict(os.environ, {'XDG_CONFIG_HOME': '/a/b/c'}, clear=True)
     def test_should_retrieve_app_dir_when_xdg_env_var_is_set(self):
-        self.assertEqual(get_app_dir(application_name='test'), '/a/b/c/test')
-
-    @patch('sys.platform', 'linux')
-    @patch.dict(os.environ, {'HOME': '/x/y/z'}, clear=True)
-    def test_should_retrieve_app_dir_when_home_env_var_is_set(self):
-        self.assertEqual(get_app_dir(application_name='test'), '/x/y/z/.config/test')
-
-    @patch('sys.platform', 'linux')
-    @patch('os.path.expanduser')
-    @patch.dict(os.environ, {}, clear=True)
-    def test_should_retrieve_app_dir_when_no_env_var_is_set(self, mock_expanduser):
-        mock_expanduser.return_value = 'TEST_HOME'
-        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/.config/test')
+        self.assertEqual(get_app_dir(application_name='test'), os.path.join('/a/b/c', 'test'))
 
     @patch('sys.platform', 'linux')
     @patch('os.path.expanduser')
     @patch.dict(os.environ, {}, clear=True)
     def test_should_retrieve_linux_app_dir(self, mock_expanduser):
-        mock_expanduser.return_value = 'TEST_HOME'
-        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/.config/test')
+        mock_expanduser.return_value = '/home/user'
+        self.assertEqual(get_app_dir(application_name='test'), os.path.join('/home/user', '.config', 'test'))
 
     @patch('sys.platform', 'darwin')
     @patch('os.path.expanduser')
     @patch.dict(os.environ, {}, clear=True)
     def test_should_retrieve_macos_app_dir(self, mock_expanduser):
-        mock_expanduser.return_value = 'TEST_HOME'
-        self.assertEqual(get_app_dir(application_name='test'), 'TEST_HOME/Library/Preferences/test')
+        mock_expanduser.return_value = '/Users/user'
+        self.assertEqual(
+            get_app_dir(application_name='test'),
+            os.path.join('/Users/user', 'Library', 'Preferences', 'test')
+        )
+
+    @patch('sys.platform', 'win32')
+    @patch('os.path.expanduser')
+    @patch.dict(os.environ, {'LOCALAPPDATA': 'C:\\Users\\user\\AppData\\Local'}, clear=True)
+    def test_should_retrieve_windows_app_dir(self, mock_expanduser):
+        mock_expanduser.return_value = 'C:\\Users\\user'
+        self.assertEqual(
+            get_app_dir(application_name='test'),
+            os.path.join('C:\\Users\\user\\AppData\\Local', 'test')
+        )
+
+    @patch('sys.platform', 'win32')
+    @patch('os.path.expanduser')
+    @patch.dict(os.environ, {}, clear=True)
+    def test_should_retrieve_windows_app_dir_without_env_var(self, mock_expanduser):
+        mock_expanduser.return_value = 'C:\\Users\\user'
+        self.assertEqual(
+            get_app_dir(application_name='test'),
+            os.path.join('C:\\Users\\user', 'AppData', 'Local', 'test')
+        )
 
     @patch('sys.platform', 'other')
     @patch.dict(os.environ, {}, clear=True)
     def test_should_fail_to_retrieve_app_dir_for_invalid_platforms(self):
         with self.assertRaises(Abort):
             get_app_dir(application_name='test')
+
+    @patch('sys.platform', 'linux')
+    @patch('pexpect.spawn')
+    def test_should_spawn_interactive_process_on_unix(self, mock_spawn):
+        spawn_interactive('test-cmd', args=['a', 'b'], env={'KEY': 'VAL'})
+        mock_spawn.assert_called_once_with('test-cmd', args=['a', 'b'], env={'KEY': 'VAL'})
+
+    @patch('sys.platform', 'win32')
+    @patch('pexpect.popen_spawn.PopenSpawn')
+    def test_should_spawn_interactive_process_on_windows(self, mock_popen_spawn):
+        spawn_interactive('test-cmd', args=['a', 'b'], env={'KEY': 'VAL'})
+        mock_popen_spawn.assert_called_once_with(['test-cmd', 'a', 'b'], env={'KEY': 'VAL'})
 
     def test_should_get_top_level_commands(self):
         self.assertEqual(
