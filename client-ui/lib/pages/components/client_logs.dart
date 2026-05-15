@@ -22,15 +22,15 @@ class ClientLogs extends StatefulWidget {
   static Future<List<String>> loadLogsFromFile({required String? path}) async {
     if (path != null) {
       final sanitized = path.endsWith(Platform.pathSeparator) ? path.substring(0, path.length - 1) : path;
-      return File('$sanitized/stasis-client.log').readAsLines();
+      return File('$sanitized${Platform.pathSeparator}stasis-client.log').readAsLines();
     } else {
       return [];
     }
   }
 
   static String? getLogsDir() {
-    final home = Platform.environment['HOME'];
-    return home != null ? '$home/stasis-client/logs' : null;
+    final home = Platform.environment[Platform.isWindows ? 'USERPROFILE' : 'HOME'];
+    return home != null ? '$home${Platform.pathSeparator}stasis-client${Platform.pathSeparator}logs' : null;
   }
 }
 

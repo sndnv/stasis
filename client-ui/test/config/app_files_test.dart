@@ -1,5 +1,7 @@
-import 'package:stasis_client_ui/config/app_files.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stasis_client_ui/config/app_files.dart';
 
 void main() {
   group('App Files should', () {
@@ -8,9 +10,9 @@ void main() {
 
       final files = AppFiles.load(configDir: configDir);
 
-      expect(files.paths.config, '$configDir/client.conf');
-      expect(files.paths.schedules, '$configDir/client.schedules');
-      expect(files.paths.apiToken, '$configDir/api-token');
+      expect(files.paths.config, '$configDir${Platform.pathSeparator}client.conf');
+      expect(files.paths.schedules, '$configDir${Platform.pathSeparator}client.schedules');
+      expect(files.paths.apiToken, '$configDir${Platform.pathSeparator}api-token');
 
       expect(files.config.isEmpty(), false);
       expect(files.schedules, ['test-schedules']);
@@ -29,9 +31,9 @@ void main() {
     test('provide empty app files', () async {
       final files = AppFiles.empty();
 
-      expect(files.paths.config, '/tmp');
-      expect(files.paths.schedules, '/tmp');
-      expect(files.paths.apiToken, '/tmp');
+      expect(files.paths.config, Directory.systemTemp.path);
+      expect(files.paths.schedules, Directory.systemTemp.path);
+      expect(files.paths.apiToken, Directory.systemTemp.path);
 
       expect(files.config.isEmpty(), true);
       expect(files.schedules, []);

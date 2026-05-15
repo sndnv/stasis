@@ -14,20 +14,29 @@ class AppProcesses {
   final String serviceMainClass;
 
   Future<List<int>> get() async {
+    final String command;
+    final List<String> args;
+
+    if (Platform.isWindows) {
+      command = 'powershell';
+      args = ['-Command', r'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.CommandLine)" }'];
+    } else {
+      command = 'ps';
+      args = ['-Ao', 'pid,command'];
+    }
+
     final pidExtractor = RegExp(r'^(\d+)\s+.*');
+    final result = await Process.run(command, args, stdoutEncoding: utf8);
 
-    final result = await Process.run('ps', ['-Ao', 'pid,command'], stdoutEncoding: utf8);
-
-    final processes = (result.stdout as String)
+    return (result.stdout as String)
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.contains(serviceMainClass))
         .expand((line) {
-          final pid = int.tryParse(pidExtractor.firstMatch(line.trim())?.group(1)?.trim() ?? '');
+          final pid = int.tryParse(pidExtractor.firstMatch(line)?.group(1)?.trim() ?? '');
           return pid != null ? [pid] : <int>[];
-        });
-
-    return processes.toList();
+        })
+        .toList();
   }
 
   void stop(List<int> processes) {

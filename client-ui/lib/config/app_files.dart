@@ -27,15 +27,15 @@ class AppFiles {
       schedules: [],
       apiToken: null,
       paths: AppFilesPaths(
-        config: '/tmp',
-        schedules: '/tmp',
-        apiToken: '/tmp',
+        config: Directory.systemTemp.path,
+        schedules: Directory.systemTemp.path,
+        apiToken: Directory.systemTemp.path,
       ),
     );
   }
 
   static AppFiles load({required String configDir}) {
-    final configFilePath = '$configDir/$configFileName';
+    final configFilePath = '$configDir${Platform.pathSeparator}$configFileName';
     final config = ConfigFactory.load(path: configFilePath);
 
     final schedulesFileName = config.getString(
@@ -45,8 +45,8 @@ class AppFiles {
 
     final paths = AppFilesPaths(
       config: configFilePath,
-      schedules: '$configDir/$schedulesFileName',
-      apiToken: '$configDir/$apiTokenFileName',
+      schedules: '$configDir${Platform.pathSeparator}$schedulesFileName',
+      apiToken: '$configDir${Platform.pathSeparator}$apiTokenFileName',
     );
 
     return AppFiles(
