@@ -94,7 +94,7 @@ object ActionsComponentLoader
     com.typesafe.config.ConfigFactory
       .parseFile(
         Option(getClass.getClassLoader.getResource(configFile))
-          .map(resource => new File(resource.getFile))
+          .map(resource => new File(resource.toURI))
           .getOrElse(new File(configFile))
       )
       .resolve()
