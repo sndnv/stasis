@@ -102,6 +102,7 @@ def main():
             {'asset': 'icons/stasis.logo.256.png', 'target': '{}/256.png'.format(FLUTTER_DESKTOP_MACOS_ASSETS)},
             {'asset': 'icons/stasis.logo.512.png', 'target': '{}/512.png'.format(FLUTTER_DESKTOP_MACOS_ASSETS)},
             {'asset': 'icons/stasis.logo.1024.png', 'target': '{}/1024.png'.format(FLUTTER_DESKTOP_MACOS_ASSETS)},
+            {'asset': 'icons/stasis.logo.512.png', 'target': '{}/logo.png'.format(FLUTTER_DESKTOP_ASSETS)},
         ],
         'client-android': [
             {'asset': 'launchers/stasis.logo.xml', 'target': '{}/ic_launcher_foreground.xml'.format(ANDROID_ASSETS)},
