@@ -41,7 +41,7 @@ run_command(
 test_result = subprocess.run(['flutter', 'test', '--coverage']).returncode
 print('>: Testing finished with exit code [{}]'.format(test_result))
 
-if test_result == 0:
+if test_result == 0 and sys.platform != 'win32':
     target = '{}/coverage/html'.format(identity_ui_path)
     coverage_result = subprocess.run(
         [
