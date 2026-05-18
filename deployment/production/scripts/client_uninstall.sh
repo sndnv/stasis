@@ -111,7 +111,7 @@ if [[ "${OSTYPE}" == "linux"* ]]; then
   unlink "${TARGET_BIN_PATH}/stasis-ui" 2> /dev/null
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   log_requires_sudo
-  sudo bash -c "unlink \"${TARGET_BIN_PATH}/stasis-client\" 2> /dev/null && unlink \"${TARGET_BIN_PATH}/stasis\" 2> /dev/null"
+  sudo bash -c "unlink \"${TARGET_BIN_PATH}/stasis-client\" 2> /dev/null; unlink \"${TARGET_BIN_PATH}/stasis\" 2> /dev/null"
 else
   log_error "Operating system [${OSTYPE}] is not supported."
   exit 1
