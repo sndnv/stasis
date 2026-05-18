@@ -340,7 +340,9 @@ class ExtendedProcess {
       final String? matched = latest.firstWhereOrNull(
         (line) {
           final trimmed = line.trim();
-          return trimmed.endsWith('not found') || trimmed.endsWith('No such file or directory');
+          return trimmed.endsWith('not found') ||
+              trimmed.endsWith('No such file or directory') ||
+              trimmed.contains('is not recognized as an internal or external command');
         },
       );
       if (matched != null) {
