@@ -4,11 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stasis_client_ui/api/app_processes.dart';
 
 void main() {
+  final command = Platform.isWindows ? '.\\test\\resources\\command.bat' : './test/resources/command.sh';
+  final missingCommand = Platform.isWindows ? '.\\test\\resources\\missing-command.bat' : './test/resources/missing-command.sh';
+
   group('An ExtendedProcess should', () {
     test('support checking if process exists', () async {
       final process = ExtendedProcess(
         process: await Process.start(
-          './test/resources/missing-command.sh',
+          missingCommand,
           [],
           mode: ProcessStartMode.normal,
           runInShell: true,
@@ -22,7 +25,7 @@ void main() {
     test('support communicating with an active process', () async {
       final process = ExtendedProcess(
         process: await Process.start(
-          './test/resources/command.sh',
+          command,
           [],
           mode: ProcessStartMode.normal,
           runInShell: true,
@@ -54,13 +57,13 @@ void main() {
         'Command succeeded with [param1=p1,param2=p2,secret1=s1,secret2=s2]',
       ]);
 
-      expect(process.stderr.isEmpty, true);
+      if (!Platform.isWindows) expect(process.stderr.isEmpty, true);
     });
 
     test('support handline process failures', () async {
       final process = ExtendedProcess(
         process: await Process.start(
-          './test/resources/command.sh',
+          command,
           ['fail'],
           mode: ProcessStartMode.normal,
           runInShell: true,
@@ -84,7 +87,7 @@ void main() {
 
       expect(process.stdout, ['Received param1=p1', 'Command failed']);
 
-      expect(process.stderr.isEmpty, true);
+      if (!Platform.isWindows) expect(process.stderr.isEmpty, true);
     });
   });
 }

@@ -274,6 +274,7 @@ jobs:
   flutter-windows:
     runs-on: windows-latest
     steps:
+      - run: git config --system core.longpaths true
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false

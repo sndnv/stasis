@@ -8,7 +8,7 @@ identity_ui_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def run_command(command, description):
-    result = subprocess.run(command).returncode
+    result = subprocess.run(command, shell=(sys.platform == 'win32')).returncode
     if result != 0:
         print('>: {} failed with exit code [{}]'.format(description, result))
         sys.exit(result)
@@ -38,7 +38,7 @@ run_command(
     description='Code linting'
 )
 
-test_result = subprocess.run(['flutter', 'test', '--coverage']).returncode
+test_result = subprocess.run(['flutter', 'test', '--coverage'], shell=(sys.platform == 'win32')).returncode
 print('>: Testing finished with exit code [{}]'.format(test_result))
 
 if test_result == 0 and sys.platform != 'win32':
