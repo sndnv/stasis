@@ -399,7 +399,9 @@ class ServiceSpec extends AsyncUnitSpec with ResourceHelpers with EncodingHelper
 
     Service.startUiCommand(osName = "Mac OS X", userHome = "/a/b/c") should be(Seq("open", "/a/b/c/Applications/stasis.app"))
 
-    an[IllegalArgumentException] should be thrownBy Service.startUiCommand(osName = "Windows", userHome = "/a/b/c")
+    Service.startUiCommand(osName = "Windows 10", userHome = "C:\\Users\\user") should be(Seq("stasis-ui"))
+
+    an[IllegalArgumentException] should be thrownBy Service.startUiCommand(osName = "Other", userHome = "/a/b/c")
   }
 
   it should "support creating service callbacks" in {

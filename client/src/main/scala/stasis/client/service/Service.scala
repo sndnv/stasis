@@ -213,8 +213,9 @@ object Service {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def startUiCommand(osName: String, userHome: String): Seq[String] =
     osName.toLowerCase.split(" ").headOption match {
-      case Some("mac")   => Seq("open", s"$userHome/Applications/stasis.app")
-      case Some("linux") => Seq("stasis-ui")
-      case _             => throw new IllegalArgumentException(s"Operating system [$osName] is not supported")
+      case Some("mac")     => Seq("open", s"$userHome/Applications/stasis.app")
+      case Some("linux")   => Seq("stasis-ui")
+      case Some("windows") => Seq("stasis-ui")
+      case _               => throw new IllegalArgumentException(s"Operating system [$osName] is not supported")
     }
 }
