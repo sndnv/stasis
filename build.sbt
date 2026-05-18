@@ -10,21 +10,21 @@ ThisBuild / scalaVersion := "2.13.18"
 
 lazy val versions = new {
   // pekko
-  val pekko         = "1.5.0"
+  val pekko         = "1.6.0"
   val pekkoHttp     = "1.3.0"
   val pekkoHttpCors = "1.3.0"
   val pekkoJson     = "3.9.1"
 
   // persistence
   val slick    = "3.6.1"
-  val postgres = "42.7.10"
+  val postgres = "42.7.11"
   val mariadb  = "3.5.8"
-  val sqlite   = "3.53.0.0"
+  val sqlite   = "3.53.1.0"
   val h2       = "2.4.240"
 
   // telemetry
-  val openTelemetry           = "1.61.0"
-  val openTelemetryPrometheus = "1.61.0-alpha"
+  val openTelemetry           = "1.62.0"
+  val openTelemetryPrometheus = "1.62.0-alpha"
   val prometheus              = "0.16.0"
 
   // testing
@@ -44,7 +44,7 @@ lazy val versions = new {
   val logback      = "1.5.32"
   val systemTray   = "4.4"
   val bouncycastle = "1.84"
-  val layers       = "1.5.1"
+  val layers       = "1.5.2"
   val fsi          = "1.1.2"
 }
 
