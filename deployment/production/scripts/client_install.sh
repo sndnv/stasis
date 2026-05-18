@@ -77,7 +77,7 @@ fi
 PYTHON3_VERSION_MIN=13
 PYTHON3_VERSION_ACTUAL=$(python3 -c 'import sys; print(sys.version_info[1:2][0])')
 
-if [ "${PYTHON3_VERSION_MIN}" -ge "${PYTHON3_VERSION_ACTUAL}" ]; then
+if [ "${PYTHON3_VERSION_ACTUAL}" -lt "${PYTHON3_VERSION_MIN}" ]; then
     log_error "The minimum required Python version is [3.${PYTHON3_VERSION_MIN}] but [3.${PYTHON3_VERSION_ACTUAL}] was found"
     exit 1
 fi
@@ -170,7 +170,7 @@ else
     URL="https://github.com/${REPO}/releases/download/${RELEASE_VERSION}/${ASSET}"
 
     log_debug "Downloading [${URL}] to [${OUTPUT_DIR}]"
-    $(curl -sOL --output-dir ${OUTPUT_DIR} ${URL})
+    curl -sOL --output-dir ${OUTPUT_DIR} ${URL}
   }
 
   log_debug "Loading version information from [${RELEASES_API}]"
@@ -273,7 +273,7 @@ if [[ "${OSTYPE}" == "darwin"* ]]; then
   if [ ! -d "${TARGET_BIN_PATH}" ]; then
     log_info "Creating missing target binary path [${TARGET_BIN_PATH}]..."
     log_requires_sudo
-    echo sudo mkdir -p "${TARGET_BIN_PATH}"
+    sudo mkdir -p "${TARGET_BIN_PATH}"
 
     if [[ ! ":$PATH:" == *":${TARGET_BIN_PATH}:"* ]]; then
       NEW_PATHS_FILE="/etc/paths.d/99-stasis"
@@ -334,12 +334,12 @@ fi
 
 log_info "Linking executables..."
 if [[ "${OSTYPE}" == "linux"* ]]; then
-  ln -s "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client"
-  ln -s "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
-  ln -s "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}" "${TARGET_BIN_PATH}/stasis-ui"
+  ln -sf "${CLIENT_PATH}/bin/stasis-client" "${TARGET_BIN_PATH}/stasis-client"
+  ln -sf "$(which stasis-client-cli)" "${TARGET_BIN_PATH}/stasis"
+  ln -sf "${CLIENT_UI_PATH}/stasis-client-ui-${CLIENT_UI_TARGET}-${ACTUAL_VERSION}.${CLIENT_UI_EXT}" "${TARGET_BIN_PATH}/stasis-ui"
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   log_requires_sudo
-  sudo bash -c "ln -s \"${CLIENT_PATH}/bin/stasis-client\" \"${TARGET_BIN_PATH}/stasis-client\" && ln -s \"$(which stasis-client-cli)\" \"${TARGET_BIN_PATH}/stasis\""
+  sudo bash -c "ln -sf \"${CLIENT_PATH}/bin/stasis-client\" \"${TARGET_BIN_PATH}/stasis-client\"; ln -sf \"$(which stasis-client-cli)\" \"${TARGET_BIN_PATH}/stasis\""
 else
   log_error "Operating system [${OSTYPE}] is not supported."
   exit 1

@@ -42,6 +42,7 @@ msix_config:
   identity_name: com.github.sndnv.stasis.clientUi
   logo_path: assets/logo.png
   capabilities: internetClient
+  execution_alias: stasis-ui
 
 flutter:
   uses-material-design: true

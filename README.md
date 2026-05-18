@@ -89,6 +89,27 @@ $ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/prod
 
 > Secrets, configuration, logs and operation state are NOT removed when uninstalling the client!
 
+#### Windows
+The provided installer can be used (in PowerShell):
+```
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_install.ps1").Content
+```
+
+###### Removing
+The Windows client can be uninstalled using:
+```
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_uninstall.ps1").Content
+```
+
+###### Updating
+The Windows client can be updated by uninstalling the current version and installing the latest one:
+```
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_uninstall.ps1").Content
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/production/scripts/client_install.ps1").Content
+```
+
+> Secrets, configuration, logs and operation state are NOT removed when uninstalling the client!
+
 #### Android
 On Android, installing and updating is done by simply downloading the `apk` file and running it.
 

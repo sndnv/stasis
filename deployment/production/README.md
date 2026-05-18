@@ -257,11 +257,19 @@ Used to generate x509 certificates and private keys signed by the provided certi
 
 #### `client_install.sh`
 
-> Installs stasis-client and stasis-client-cli for the current user
+> Installs stasis-client, stasis-client-cli and stasis-client-ui for the current user (Linux and macOS)
 
 #### `client_uninstall.sh`
 
-> Uninstalls stasis-client and stasis-client-cli for the current user
+> Uninstalls stasis-client, stasis-client-cli and stasis-client-ui for the current user (Linux and macOS)
+
+#### `client_install.ps1`
+
+> Installs stasis-client, stasis-client-cli and stasis-client-ui for the current user (Windows)
+
+#### `client_uninstall.ps1`
+
+> Uninstalls stasis-client, stasis-client-cli and stasis-client-ui for the current user (Windows)
 
 #### `server_prepare_deployment.sh`
 
