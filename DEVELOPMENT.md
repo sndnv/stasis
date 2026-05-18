@@ -98,7 +98,7 @@ Web UI for [`server`](server).
 
 #### [`client`](client)
 
-Linux / macOS backup client, using `server` for management and storage.
+Desktop backup client, using `server` for management and storage.
 
 * **Scala** code
 * **Testing** - `sbt "project client" qa`
@@ -140,6 +140,6 @@ Deployment, artifact and certificate generation scripts and configuration.
 > Ready for prime time but run in production at your own risk!
 
 * `identity` / `identity-ui` - *authentication service and web UI* - **complete**
-* `server` / `server-ui` - *backup server and web UI* - **operational**; some features are not yet available
-* `client` / `client-cli` / `client-ui`- *Linux / macOS client, CLI and UI* - **operational**; some features are not yet available
-* `client-android` - *Android client* - **operational**; some features are not yet available;
+* `server` / `server-ui` - *backup server and web UI* - **operational**
+* `client` / `client-cli` / `client-ui`- *Linux / macOS / Windows client, CLI and UI* - **complete**
+* `client-android` - *Android client* - **complete**

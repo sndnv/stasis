@@ -6,10 +6,10 @@
 `stasis` is a backup and recovery system with an emphasis on security and privacy; no personal information is collected,
 no unencrypted data leaves a client device and all encryption keys are fully in the control of their owner.
 
-### Linux/macOS Client CLI
+### Desktop Client CLI
 [![asciicast](https://asciinema.org/a/YMIf9oCMfvrbznnMnCrUMfar9.svg)](https://asciinema.org/a/YMIf9oCMfvrbznnMnCrUMfar9?speed=3)
 
-### Linux/macOS Client UI
+### Desktop Client UI
 | ![Login Screen](assets/screenshots/client_ui_screenshot_1.png)              | ![Home Screen](assets/screenshots/client_ui_screenshot_2.png)     |
 |-----------------------------------------------------------------------------|-------------------------------------------------------------------|
 | ![Backup Definitions Screen](assets/screenshots/client_ui_screenshot_3.png) | ![Recovery Screen](assets/screenshots/client_ui_screenshot_4.png) |
@@ -47,6 +47,8 @@ device and recover the original system in an automated and repeatable way.*
   various storage backends (**[Slick](https://scala-slick.org/)**, **in-memory**, **file-based**) are supported and used
 * ***Secrets Escrow*** -
   enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
+* ***Multi-platform*** -
+  server supporting Linux (amd64/arm64); client supporting **Linux**, **macOS**, **Windows** and **Android**
 * ***Serverless Mode*** -
   (*TODO*) enables creating backups and recovering from them without the presence of a server
 
@@ -63,7 +65,7 @@ $ curl -s "https://raw.githubusercontent.com/sndnv/stasis/master/deployment/prod
 > See [deployment/production](deployment/production/README.md) for more information on how to set up and deploy the services.
 
 ### Clients
-Client binaries for Linux, macOS and Android can be found for each [release](https://github.com/sndnv/stasis/releases).
+Client binaries for Linux, macOS, Windows and Android can be found for each [release](https://github.com/sndnv/stasis/releases).
 
 #### Linux and macOS
 The provided installer can be used:
