@@ -1,6 +1,6 @@
 # stasis / client
 
-Linux / macOS backup client, using [`server`](../server) for management and storage.
+Linux / macOS / Windows backup client, using [`server`](../server) for management and storage.
 
 This submodule represents the client's background service, responsible for performing all client operations
 (backup, recovery, maintenance).
