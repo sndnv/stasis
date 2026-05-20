@@ -48,7 +48,7 @@ device and recover the original system in an automated and repeatable way.*
 * ***Secrets Escrow*** -
   enables storing encrypted device secrets on the server to simplify recovering of a lost or replaced device
 * ***Multi-platform*** -
-  server supporting Linux (amd64/arm64); client supporting **Linux**, **macOS**, **Windows** and **Android**
+  server supporting Linux (amd64/arm64); client supporting **Linux**, **macOS**, **Windows**, **Android** and **iOS**
 * ***Serverless Mode*** -
   (*TODO*) enables creating backups and recovering from them without the presence of a server
 
@@ -112,6 +112,9 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/snd
 
 #### Android
 On Android, installing and updating is done by simply downloading the `apk` file and running it.
+
+#### iOS
+The iOS client is in early development.
 
 ### Testing
 Images and binaries for testing/development purposes can be created locally using the existing [dev tools](deployment/dev).
