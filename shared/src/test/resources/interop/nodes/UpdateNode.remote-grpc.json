@@ -1,0 +1,9 @@
+{
+  "node_type": "remote-grpc",
+  "address": {
+    "host": "core-updated.example.test",
+    "port": 8888,
+    "tls_enabled": false
+  },
+  "storage_allowed": true
+}

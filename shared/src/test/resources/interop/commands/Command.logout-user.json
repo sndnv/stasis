@@ -1,0 +1,12 @@
+{
+  "sequence_id": 42,
+  "source": "user",
+  "target": "4e167c18-0808-4f23-886c-598e094a1b6b",
+  "parameters": {
+    "command_type": "logout_user",
+    "logout_user": {
+      "reason": "session timed out"
+    }
+  },
+  "created": "2026-04-15T10:00:00Z"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "test-device",
+  "node": "c1ed6cb7-596b-468c-968c-e4772356d948",
+  "owner": "1528e306-7218-44c2-857c-96c3d64e29b6",
+  "limits": {
+    "max_crates": 100,
+    "max_storage": 1099511627776,
+    "max_storage_per_crate": 10737418240,
+    "max_retention": 7776000,
+    "min_retention": 86400
+  }
+}

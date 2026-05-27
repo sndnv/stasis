@@ -1,0 +1,20 @@
+{
+  "result": "switch-to",
+  "endpoints": {
+    "api": {
+      "uri": "https://api.example.test"
+    },
+    "core": {
+      "address": {
+        "address_type": "http",
+        "address": {
+          "uri": "https://core.example.test"
+        }
+      }
+    },
+    "discovery": {
+      "uri": "https://discovery.example.test"
+    }
+  },
+  "recreate_existing": false
+}

@@ -1,0 +1,9 @@
+{
+  "node_type": "local",
+  "store_descriptor": {
+    "backend_type": "memory",
+    "max_size": 1073741824,
+    "max_chunk_size": 1048576,
+    "name": "memory-backend"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "authentication": {
+    "token_endpoint": "https://identity.example.test/token",
+    "client_id": "stasis-device-client",
+    "client_secret": "client-secret-value",
+    "use_query_string": false,
+    "scopes": {
+      "api": "urn:stasis:identity:audience:api",
+      "core": "urn:stasis:identity:audience:core"
+    },
+    "context": {
+      "enabled": false,
+      "protocol": "TLS",
+      "store_type": "JKS",
+      "temporary_store_password": "",
+      "store_content": ""
+    }
+  },
+  "server_api": {
+    "url": "https://api.example.test",
+    "user": "d6d6f8d1-7549-4fd2-867f-f01728e81e68",
+    "user_salt": "user-salt-value",
+    "device": "8e656c06-d7dd-4e46-9b1d-7dff02c3973e",
+    "context": {
+      "enabled": false,
+      "protocol": "TLS",
+      "store_type": "JKS",
+      "temporary_store_password": "",
+      "store_content": ""
+    }
+  },
+  "server_core": {
+    "address": "https://core.example.test",
+    "node_id": "2a1d0dfc-9b56-4793-895b-f38785ec4993",
+    "context": {
+      "enabled": false,
+      "protocol": "TLS",
+      "store_type": "JKS",
+      "temporary_store_password": "",
+      "store_content": ""
+    }
+  },
+  "secrets": {
+    "derivation": {
+      "encryption": {
+        "secret_size": 32,
+        "iterations": 100000,
+        "salt_prefix": "stasis-encryption"
+      },
+      "authentication": {
+        "enabled": true,
+        "secret_size": 32,
+        "iterations": 100000,
+        "salt_prefix": "stasis-authentication"
+      }
+    },
+    "encryption": {
+      "file": {
+        "key_size": 16,
+        "iv_size": 12
+      },
+      "metadata": {
+        "key_size": 16,
+        "iv_size": 12
+      },
+      "device_secret": {
+        "key_size": 16,
+        "iv_size": 12
+      }
+    }
+  },
+  "additional_config": {}
+}

@@ -1,0 +1,10 @@
+{
+  "id": "f1e1ed1a-7dc2-4e9c-89fd-bab0ffbaa997",
+  "name": "test-device",
+  "node": "a9b7d0fb-3751-48fc-8706-9176eca571f1",
+  "owner": "7a1c27c2-0b3c-4f23-a68b-814084bfee7d",
+  "active": true,
+  "limits": null,
+  "created": "2026-03-01T12:00:00Z",
+  "updated": "2026-03-02T13:00:00Z"
+}

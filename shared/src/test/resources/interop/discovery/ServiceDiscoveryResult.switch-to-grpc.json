@@ -1,0 +1,22 @@
+{
+  "result": "switch-to",
+  "endpoints": {
+    "api": {
+      "uri": "https://api.example.test"
+    },
+    "core": {
+      "address": {
+        "address_type": "grpc",
+        "address": {
+          "host": "core.example.test",
+          "port": 9999,
+          "tls_enabled": true
+        }
+      }
+    },
+    "discovery": {
+      "uri": "https://discovery.example.test"
+    }
+  },
+  "recreate_existing": true
+}

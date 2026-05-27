@@ -1,0 +1,9 @@
+{
+  "limits": {
+    "max_crates": 200,
+    "max_storage": 2199023255552,
+    "max_storage_per_crate": 21474836480,
+    "max_retention": 15552000,
+    "min_retention": 172800
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "info": "new backup definition",
+  "device": "caac9b3b-dbf9-41c1-9fee-3aa0e5bbb70b",
+  "redundant_copies": 2,
+  "existing_versions": {
+    "policy": {
+      "policy_type": "all"
+    },
+    "duration": 7776000
+  },
+  "removed_versions": {
+    "policy": {
+      "policy_type": "at-most",
+      "versions": 7
+    },
+    "duration": 1209600
+  }
+}

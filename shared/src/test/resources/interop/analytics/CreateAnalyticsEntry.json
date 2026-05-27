@@ -1,0 +1,25 @@
+{
+  "entry": {
+    "entry_type": "collected",
+    "runtime": {
+      "id": "10136ad4-c1c2-469b-94b9-79af1e2b939e",
+      "app": "stasis-client;1.0.0",
+      "jre": "none",
+      "os": "linux;6.1.0;x86_64"
+    },
+    "events": [
+      {
+        "id": 0,
+        "event": "backup_started"
+      }
+    ],
+    "failures": [
+      {
+        "message": "connection refused",
+        "timestamp": "2026-04-10T08:17:30Z"
+      }
+    ],
+    "created": "2026-04-10T08:15:00Z",
+    "updated": "2026-04-10T08:18:00Z"
+  }
+}

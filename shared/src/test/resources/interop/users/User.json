@@ -1,0 +1,18 @@
+{
+  "id": "7a1c27c2-0b3c-4f23-a68b-814084bfee7d",
+  "salt": "test-salt-value",
+  "active": true,
+  "limits": {
+    "max_devices": 10,
+    "max_crates": 100,
+    "max_storage": 1099511627776,
+    "max_storage_per_crate": 10737418240,
+    "max_retention": 7776000,
+    "min_retention": 86400
+  },
+  "permissions": [
+    "view-self"
+  ],
+  "created": "2026-03-01T12:00:00Z",
+  "updated": "2026-03-02T13:00:00Z"
+}

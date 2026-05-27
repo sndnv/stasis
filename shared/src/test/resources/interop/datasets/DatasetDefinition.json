@@ -1,0 +1,21 @@
+{
+  "id": "6c041cb6-94af-4649-9091-8e39d330527e",
+  "info": "primary backup definition",
+  "device": "caac9b3b-dbf9-41c1-9fee-3aa0e5bbb70b",
+  "redundant_copies": 3,
+  "existing_versions": {
+    "policy": {
+      "policy_type": "at-most",
+      "versions": 5
+    },
+    "duration": 604800
+  },
+  "removed_versions": {
+    "policy": {
+      "policy_type": "latest-only"
+    },
+    "duration": 2592000
+  },
+  "created": "2026-01-15T10:30:00Z",
+  "updated": "2026-01-20T14:45:00Z"
+}

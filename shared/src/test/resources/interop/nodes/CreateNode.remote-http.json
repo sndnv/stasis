@@ -1,0 +1,7 @@
+{
+  "node_type": "remote-http",
+  "address": {
+    "uri": "https://core.example.test"
+  },
+  "storage_allowed": true
+}

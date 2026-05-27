@@ -1,0 +1,10 @@
+{
+  "name": "test-device",
+  "limits": {
+    "max_crates": 100,
+    "max_storage": 1099511627776,
+    "max_storage_per_crate": 10737418240,
+    "max_retention": 7776000,
+    "min_retention": 86400
+  }
+}

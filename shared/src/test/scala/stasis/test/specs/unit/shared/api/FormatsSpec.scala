@@ -287,6 +287,54 @@ class FormatsSpec extends UnitSpec {
     pendingDestagingWrites.writes(pending).toString should be(json)
   }
 
+  they should "convert device limits to/from JSON" in {
+    val limits = Device.Limits(
+      maxCrates = 100,
+      maxStorage = BigInt("9999999999"),
+      maxStoragePerCrate = BigInt("1234567890"),
+      maxRetention = 5.seconds,
+      minRetention = 1.second
+    )
+
+    val json =
+      """
+        |{
+        |"max_crates":100,
+        |"max_storage":9999999999,
+        |"max_storage_per_crate":1234567890,
+        |"max_retention":5,
+        |"min_retention":1
+        |}""".stripMargin.replaceAll("\n", "").trim
+
+    deviceLimitsFormat.writes(limits).toString should be(json)
+    deviceLimitsFormat.reads(Json.parse(json)).asOpt should be(Some(limits))
+  }
+
+  they should "convert user limits to/from JSON" in {
+    val limits = User.Limits(
+      maxDevices = 10,
+      maxCrates = 100,
+      maxStorage = BigInt("9999999999"),
+      maxStoragePerCrate = BigInt("1234567890"),
+      maxRetention = 5.seconds,
+      minRetention = 1.second
+    )
+
+    val json =
+      """
+        |{
+        |"max_devices":10,
+        |"max_crates":100,
+        |"max_storage":9999999999,
+        |"max_storage_per_crate":1234567890,
+        |"max_retention":5,
+        |"min_retention":1
+        |}""".stripMargin.replaceAll("\n", "").trim
+
+    userLimitsFormat.writes(limits).toString should be(json)
+    userLimitsFormat.reads(Json.parse(json)).asOpt should be(Some(limits))
+  }
+
   they should "convert operation types to/from JSON" in {
     val operationTypes = Map(
       Operation.Type.Backup -> "\"client-backup\"",

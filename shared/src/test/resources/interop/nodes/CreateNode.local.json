@@ -1,0 +1,7 @@
+{
+  "node_type": "local",
+  "store_descriptor": {
+    "backend_type": "file",
+    "parent_directory": "/var/stasis/crates"
+  }
+}

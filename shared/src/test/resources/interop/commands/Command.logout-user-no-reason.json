@@ -1,0 +1,11 @@
+{
+  "sequence_id": 7,
+  "source": "service",
+  "parameters": {
+    "command_type": "logout_user",
+    "logout_user": {
+      "reason": null
+    }
+  },
+  "created": "2026-04-15T10:00:00Z"
+}

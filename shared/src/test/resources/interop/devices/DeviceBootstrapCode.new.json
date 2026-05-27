@@ -1,0 +1,13 @@
+{
+  "id": "89e2d96c-d29d-4b01-bb81-8bdae16e7624",
+  "value": "bootstrap-code-value",
+  "owner": "1528e306-7218-44c2-857c-96c3d64e29b6",
+  "target": {
+    "type": "new",
+    "request": {
+      "name": "new-device",
+      "limits": null
+    }
+  },
+  "expires_at": "2026-06-01T10:00:00Z"
+}

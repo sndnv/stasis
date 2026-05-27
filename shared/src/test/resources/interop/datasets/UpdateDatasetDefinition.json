@@ -1,0 +1,17 @@
+{
+  "info": "updated backup definition",
+  "redundant_copies": 4,
+  "existing_versions": {
+    "policy": {
+      "policy_type": "latest-only"
+    },
+    "duration": 86400
+  },
+  "removed_versions": {
+    "policy": {
+      "policy_type": "at-most",
+      "versions": 3
+    },
+    "duration": 432000
+  }
+}
