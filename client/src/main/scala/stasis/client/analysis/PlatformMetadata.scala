@@ -152,6 +152,7 @@ object PlatformMetadata {
     }
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   final case class Defaults(
     permissions: Map[Type, Defaults.Permissions],
     currentUser: String
