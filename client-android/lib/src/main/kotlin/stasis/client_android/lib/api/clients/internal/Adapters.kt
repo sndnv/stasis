@@ -1,6 +1,8 @@
 package stasis.client_android.lib.api.clients.internal
 
 import com.squareup.moshi.FromJson
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.ToJson
 import stasis.client_android.lib.discovery.ServiceApiEndpoint
 import stasis.client_android.lib.discovery.ServiceDiscoveryResult
@@ -48,10 +50,12 @@ object Adapters {
 
     object ForBigInteger {
         @ToJson
-        fun toJson(int: BigInteger): String = int.toString()
+        fun toJson(writer: JsonWriter, value: BigInteger) {
+            writer.valueSink().use { sink -> sink.writeUtf8(value.toString()) }
+        }
 
         @FromJson
-        fun fromJson(int: String): BigInteger = BigInteger(int)
+        fun fromJson(reader: JsonReader): BigInteger = BigInteger(reader.nextString())
     }
 
     object ForDatasetDefinitionRetentionPolicy {
@@ -76,7 +80,7 @@ object Adapters {
         fun fromJson(policy: Map<String, Any>): DatasetDefinition.Retention.Policy =
             when (val policyType = policy["policy_type"]) {
                 "at-most" -> when (val versions = policy["versions"]) {
-                    is Int -> DatasetDefinition.Retention.Policy.AtMost(versions = versions)
+                    is Number -> DatasetDefinition.Retention.Policy.AtMost(versions = versions.toInt())
                     else -> throw IllegalArgumentException("Expected integer for [versions] but [${versions}] provided")
                 }
 
@@ -177,8 +181,13 @@ object Adapters {
         fun toJson(params: CommandAsJson.CommandParametersAsJson): Map<String, Any> =
             when {
                 params.logoutUser != null -> mapOf(
-                    "command_type" to "logout_user"
-                ) + if (params.logoutUser.reason != null) mapOf("reason" to params.logoutUser.reason) else mapOf()
+                    "command_type" to "logout_user",
+                    "logout_user" to if (params.logoutUser.reason != null) {
+                        mapOf("reason" to params.logoutUser.reason)
+                    } else {
+                        emptyMap()
+                    }
+                )
 
                 params.isEmpty() -> mapOf("command_type" to "empty")
 
@@ -188,16 +197,19 @@ object Adapters {
         @FromJson
         fun fromJson(params: Map<String, Any>): CommandAsJson.CommandParametersAsJson =
             when (val commandType = params["command_type"]) {
-                "logout_user" -> when (val reason = params["reason"]) {
-                    null -> CommandAsJson.CommandParametersAsJson(
-                        logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = null)
-                    )
+                "logout_user" -> {
+                    val logoutUser = params["logout_user"] as? Map<*, *>
+                    when (val reason = logoutUser?.get("reason")) {
+                        null -> CommandAsJson.CommandParametersAsJson(
+                            logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = null)
+                        )
 
-                    is String -> CommandAsJson.CommandParametersAsJson(
-                        logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = reason)
-                    )
+                        is String -> CommandAsJson.CommandParametersAsJson(
+                            logoutUser = CommandAsJson.LogoutUserCommandAsJson(reason = reason)
+                        )
 
-                    else -> throw IllegalArgumentException("Expected string for [reason] but [${reason}] provided")
+                        else -> throw IllegalArgumentException("Expected string for [reason] but [${reason}] provided")
+                    }
                 }
 
                 "empty" -> CommandAsJson.CommandParametersAsJson()

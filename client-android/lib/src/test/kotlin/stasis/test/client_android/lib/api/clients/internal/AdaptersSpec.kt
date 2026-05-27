@@ -1,5 +1,6 @@
 package stasis.test.client_android.lib.api.clients.internal
 
+import com.squareup.moshi.Moshi
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
@@ -51,11 +52,13 @@ class AdaptersSpec : WordSpec({
         }
 
         "convert BigInteger to/from JSON" {
+            val adapter = Moshi.Builder().add(Adapters.ForBigInteger).build().adapter(BigInteger::class.java)
+
             val int = BigInteger("12345678901234567890123456789012345678901234567890")
             val json = int.toString()
 
-            Adapters.ForBigInteger.toJson(int) shouldBe (json)
-            Adapters.ForBigInteger.fromJson(json) shouldBe (int)
+            adapter.toJson(int) shouldBe (json)
+            adapter.fromJson(json) shouldBe (int)
         }
 
         "convert DatasetDefinition.Retention.Policy to/from JSON" {
@@ -72,6 +75,10 @@ class AdaptersSpec : WordSpec({
                 Adapters.ForDatasetDefinitionRetentionPolicy.toJson(policy) shouldBe (json)
                 Adapters.ForDatasetDefinitionRetentionPolicy.fromJson(json) shouldBe (policy)
             }
+
+            Adapters.ForDatasetDefinitionRetentionPolicy.fromJson(
+                mapOf("policy_type" to "at-most", "versions" to 3.0)
+            ) shouldBe DatasetDefinition.Retention.Policy.AtMost(3)
 
             val e = shouldThrow<IllegalArgumentException> {
                 Adapters.ForDatasetDefinitionRetentionPolicy.fromJson(mapOf("policy_type" to "other"))
@@ -160,7 +167,10 @@ class AdaptersSpec : WordSpec({
             )
 
             val emptyCommandJson = mapOf("command_type" to "empty")
-            val logoutUserCommandJson = mapOf("command_type" to "logout_user", "reason" to "test")
+            val logoutUserCommandJson = mapOf(
+                "command_type" to "logout_user",
+                "logout_user" to mapOf("reason" to "test")
+            )
 
             Adapters.ForCommandParametersAsJson.toJson(emptyCommand) shouldBe (emptyCommandJson)
             Adapters.ForCommandParametersAsJson.fromJson(emptyCommandJson) shouldBe (emptyCommand)

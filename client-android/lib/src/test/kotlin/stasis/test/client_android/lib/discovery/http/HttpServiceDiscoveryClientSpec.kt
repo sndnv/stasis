@@ -44,6 +44,16 @@ class HttpServiceDiscoveryClientSpec : WordSpec({
             )
 
             client.latest(isInitialRequest = false) shouldBe (Success(ServiceDiscoveryResult.KeepExisting))
+
+            val request = api.takeRequest()
+            request.path shouldBe ("/v1/discovery/provide")
+            request.method shouldBe ("POST")
+            request.headers[HttpCredentials.AuthorizationHeader] shouldBe (
+                "Basic c29tZS11c2VyOnNvbWUtcGFzc3dvcmQ="
+            )
+            request.body.readUtf8() shouldBe ("""{"is_initial_request":false,"attributes":{}}""")
+
+            api.shutdown()
         }
     }
 })

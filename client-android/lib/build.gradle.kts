@@ -31,6 +31,12 @@ dependencies {
     testImplementation("com.google.jimfs:jimfs:1.3.1")
 }
 
+sourceSets {
+    test {
+        resources.srcDir("../../shared/src/test/resources")
+    }
+}
+
 tasks.withType<Test> {
     minHeapSize = "512m"
     maxHeapSize = "2048m"

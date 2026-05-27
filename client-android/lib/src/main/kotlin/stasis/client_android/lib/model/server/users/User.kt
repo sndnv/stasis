@@ -1,5 +1,6 @@
 package stasis.client_android.lib.model.server.users
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import java.math.BigInteger
 import java.time.Duration
@@ -18,11 +19,17 @@ data class User(
 ) {
     @JsonClass(generateAdapter = true)
     data class Limits(
+        @field:Json(name = "max_devices")
         val maxDevices: Long,
+        @field:Json(name = "max_crates")
         val maxCrates: Long,
+        @field:Json(name = "max_storage")
         val maxStorage: BigInteger,
+        @field:Json(name = "max_storage_per_crate")
         val maxStoragePerCrate: BigInteger,
+        @field:Json(name = "max_retention")
         val maxRetention: Duration,
+        @field:Json(name = "min_retention")
         val minRetention: Duration
     )
 }
