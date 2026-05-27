@@ -1,0 +1,46 @@
+disabled_rules:
+  - todo
+  - trailing_comma
+  - nesting
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - sorted_imports
+
+analyzer_rules:
+  - unused_import
+
+included:
+  - lib/Sources
+  - lib/Tests
+  - app/StasisClient
+  - app/StasisFileProvider
+  - app/StasisShare
+
+excluded:
+  - lib/.build
+  - app/build
+  - app/StasisClient.xcodeproj
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 800
+  error: 1000
+
+identifier_name:
+  min_length: 2
+
+type_name:
+  min_length: 3
+  max_length: 50
+
+type_body_length:
+  warning: 500
+  error: 800

@@ -1,0 +1,4 @@
+disabled_rules:
+  - empty_count
+  - identifier_name
+  - function_body_length

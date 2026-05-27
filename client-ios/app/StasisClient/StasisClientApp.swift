@@ -1,6 +1,6 @@
-import SwiftUI
 import FileProvider
 import StasisClientLib
+import SwiftUI
 
 @main
 struct StasisClientApp: App {

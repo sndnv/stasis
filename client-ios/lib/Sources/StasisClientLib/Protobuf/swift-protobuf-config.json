@@ -1,0 +1,11 @@
+{
+  "invocations": [
+    {
+      "protoFiles": [
+        "metadata.proto",
+        "state.proto"
+      ],
+      "visibility": "public"
+    }
+  ]
+}

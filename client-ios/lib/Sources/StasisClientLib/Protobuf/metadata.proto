@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package stasis.client_ios.lib.model.proto;
+
+message DatasetMetadata {
+  map<string, EntityMetadata> contentChanged = 1;
+  map<string, EntityMetadata> metadataChanged = 2;
+  FilesystemMetadata filesystem = 3;
+}
+
+message EntityMetadata {
+  oneof entity {
+    FileMetadata file = 1;
+    DirectoryMetadata directory = 2;
+  }
+}
+
+message FileMetadata {
+  string path = 1;
+  int64 size = 2;
+  string link = 3;
+  bool isHidden = 4;
+  int64 created = 5;
+  int64 updated = 6;
+  string owner = 7;
+  string group = 8;
+  string permissions = 9;
+  bytes checksum = 10;
+  map<string, Uuid> crates = 11;
+  string compression = 12;
+}
+
+message DirectoryMetadata {
+  string path = 1;
+  string link = 2;
+  bool isHidden = 3;
+  int64 created = 4;
+  int64 updated = 5;
+  string owner = 6;
+  string group = 7;
+  string permissions = 8;
+}
+
+message FilesystemMetadata {
+  map<string, EntityState> entities = 1;
+}
+
+message EntityState {
+  message PresentNew {}
+  message PresentExisting {Uuid entry = 1;}
+  message PresentUpdated {}
+
+  oneof state {
+    PresentNew present_new = 1;
+    PresentExisting present_existing = 2;
+    PresentUpdated present_updated = 3;
+  }
+}
+
+message DatasetDefinition {
+  Uuid id = 1;
+  string info = 2;
+  Uuid device = 3;
+  int32 redundant_copies = 4;
+  Retention existing_versions = 5;
+  Retention removed_versions = 6;
+  int64 created = 7;
+  int64 updated = 8;
+
+  message Retention {
+    Policy policy = 1;
+    int64 duration = 2;
+
+    message Policy {
+      oneof value {
+        AtMost atMost = 1;
+        LatestOnly latestOnly = 2;
+        All all = 3;
+      }
+
+      message AtMost {
+        int32 versions = 1;
+      }
+      message LatestOnly {}
+      message All {}
+    }
+  }
+}
+
+message DatasetEntry {
+  Uuid id = 1;
+  Uuid definition = 2;
+  Uuid device = 3;
+  repeated Uuid data = 4;
+  Uuid metadata = 5;
+  int64 created = 6;
+  optional int64 changes = 7;
+  optional int64 size = 8;
+}
+
+message DatasetEntriesForDefinition {
+  map<string, int64> entries = 1;
+  optional string latest = 2;
+}
+
+message Uuid {
+  int64 mostSignificantBits = 1;
+  int64 leastSignificantBits = 2;
+}

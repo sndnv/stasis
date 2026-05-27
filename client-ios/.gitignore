@@ -27,3 +27,5 @@ fastlane/test_output
 
 # macOS
 .DS_Store
+
+lib/Tests/StasisClientLibTests/Resources/interop/

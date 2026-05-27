@@ -1,6 +1,6 @@
+import StasisClientLib
 import UIKit
 import UniformTypeIdentifiers
-import StasisClientLib
 
 final class ShareViewController: UIViewController {
     private static let dismissDelay: Duration = .milliseconds(500)
