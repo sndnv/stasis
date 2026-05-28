@@ -11,7 +11,7 @@ struct DefaultServerCoreEndpointClientTests {
         let stub = HttpTransportStub()
         let http = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(coreCredentials),
+            credentialsProvider: StaticHttpCredentialsProvider(coreCredentials),
             retryConfig: .disabled
         )
         return (

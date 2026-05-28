@@ -17,7 +17,7 @@ struct HttpServiceDiscoveryClientTests {
 
         let http = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(
+            credentialsProvider: StaticHttpCredentialsProvider(
                 .basic(username: "some-user", password: "some-password")
             ),
             retryConfig: .disabled

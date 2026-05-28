@@ -14,7 +14,7 @@ struct DefaultServerApiEndpointClientTests {
         let stub = HttpTransportStub()
         let http = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(apiCredentials),
+            credentialsProvider: StaticHttpCredentialsProvider(apiCredentials),
             retryConfig: .disabled
         )
         return (
@@ -47,13 +47,16 @@ struct DefaultServerApiEndpointClientTests {
         )
     }
 
-    private static func entry(definition: DatasetDefinitionId = UUID()) -> DatasetEntry {
+    private static func entry(
+        definition: DatasetDefinitionId = UUID(),
+        metadata: CrateId = UUID()
+    ) -> DatasetEntry {
         DatasetEntry(
             id: UUID(),
             definition: definition,
             device: UUID(),
             data: [UUID(), UUID()],
-            metadata: UUID(),
+            metadata: metadata,
             changes: 0,
             size: 0,
             created: now
@@ -398,6 +401,86 @@ struct DefaultServerApiEndpointClientTests {
         } catch {
             Issue.record("Unexpected error: \(error)")
         }
+    }
+
+    @Test("retrieves and decrypts dataset metadata when a decryption context is provided (with entry)")
+    func retrievesDecryptedMetadataWithEntry() async throws {
+        let fixture = try Self.encryptedMetadataFixture()
+        let entry = Self.entry(metadata: fixture.metadataCrate)
+        let core = MockServerCoreEndpointClient(crates: [fixture.metadataCrate: fixture.encrypted])
+        let decryption = DecryptionContext.enabled(core: core) { fixture.deviceSecret }
+        let (client, _) = makeClient(decryption: decryption)
+
+        let actual = try await client.datasetMetadata(entry: entry)
+        #expect(actual == fixture.metadata)
+        let pulled = await core.recordedCrates()
+        #expect(pulled == [fixture.metadataCrate])
+    }
+
+    @Test("retrieves and decrypts dataset metadata when a decryption context is provided (with entry ID)")
+    func retrievesDecryptedMetadataWithEntryId() async throws {
+        let fixture = try Self.encryptedMetadataFixture()
+        let resolved = Self.entry(metadata: fixture.metadataCrate)
+        let core = MockServerCoreEndpointClient(crates: [fixture.metadataCrate: fixture.encrypted])
+        let decryption = DecryptionContext.enabled(core: core) { fixture.deviceSecret }
+        let (client, stub) = makeClient(decryption: decryption)
+        await stub.enqueue(.init(statusCode: 200, body: try JSONCoders.encoder().encode(resolved)))
+
+        let actual = try await client.datasetMetadata(entry: resolved.id)
+        #expect(actual == fixture.metadata)
+    }
+
+    @Test("fails to retrieve dataset metadata when the core endpoint has no data")
+    func failsWhenCoreReturnsNoData() async throws {
+        let fixture = try Self.encryptedMetadataFixture()
+        let entry = Self.entry(metadata: fixture.metadataCrate)
+        let core = MockServerCoreEndpointClient(crates: [:])
+        let decryption = DecryptionContext.enabled(core: core) { fixture.deviceSecret }
+        let (client, _) = makeClient(decryption: decryption)
+
+        do {
+            _ = try await client.datasetMetadata(entry: entry)
+            Issue.record("Expected EndpointFailure")
+        } catch let failure as EndpointFailure {
+            #expect(failure.message.contains("no data provided"))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    private struct EncryptedMetadataFixture {
+        let deviceSecret: DeviceSecret
+        let metadata: DatasetMetadata
+        let metadataCrate: CrateId
+        let encrypted: Data
+    }
+
+    private static func encryptedMetadataFixture() throws -> EncryptedMetadataFixture {
+        let deviceSecret = DeviceSecret(
+            user: SecretsConfigFixtures.testUser,
+            device: SecretsConfigFixtures.testDevice,
+            secret: Data("device-secret".utf8),
+            target: SecretsConfigFixtures.testConfig
+        )
+        let metadata = DatasetMetadata(
+            contentChanged: [Fixtures.Metadata.fileOne.path: Fixtures.Metadata.fileOne],
+            metadataChanged: [Fixtures.Metadata.fileTwo.path: Fixtures.Metadata.fileTwo],
+            filesystem: FilesystemMetadata(entities: [
+                Fixtures.Metadata.fileOne.path: .new,
+                Fixtures.Metadata.fileTwo.path: .updated
+            ])
+        )
+        let metadataCrate: CrateId = UUID(uuidString: "2b94caba-7c28-4322-9d72-fc8e72f884d5")!
+        let bytes = try metadata.toByteString()
+        let encrypted = try deviceSecret
+            .toMetadataSecret(metadataCrate: metadataCrate)
+            .encrypt(bytes)
+        return EncryptedMetadataFixture(
+            deviceSecret: deviceSecret,
+            metadata: metadata,
+            metadataCrate: metadataCrate,
+            encrypted: encrypted
+        )
     }
 
     @Test("retrieves current user")

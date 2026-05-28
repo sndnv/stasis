@@ -11,7 +11,7 @@ struct HttpClientTests {
         let stub = HttpTransportStub()
         let client = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(credentials),
+            credentialsProvider: StaticHttpCredentialsProvider(credentials),
             retryConfig: retryConfig
         )
         return (client, stub)

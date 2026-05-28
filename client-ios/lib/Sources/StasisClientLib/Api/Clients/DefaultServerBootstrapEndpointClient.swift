@@ -7,7 +7,7 @@ public struct DefaultServerBootstrapEndpointClient: ServerBootstrapEndpointClien
     public init(serverBootstrapUrl: String, retryConfig: RetryConfig = .default) {
         self.server = serverBootstrapUrl.trimmedTrailingSlash
         self.http = HttpClient(
-            credentialsProvider: StaticCredentialsProvider(.none),
+            credentialsProvider: StaticHttpCredentialsProvider(.none),
             retryConfig: retryConfig
         )
     }

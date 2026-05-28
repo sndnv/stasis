@@ -37,4 +37,8 @@ public protocol ServerApiEndpointClient: ServiceApiClient, AnalyticsClient {
 
 public enum DecryptionContext: Sendable {
     case disabled
+    case enabled(
+        core: any ServerCoreEndpointClient,
+        deviceSecret: @Sendable () -> DeviceSecret
+    )
 }

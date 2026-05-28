@@ -2,12 +2,12 @@ import Foundation
 
 public struct HttpClient: Sendable {
     private let transport: any HttpTransport
-    private let credentialsProvider: any CredentialsProvider
+    private let credentialsProvider: any HttpCredentialsProvider
     private let retryConfig: RetryConfig
 
     public init(
         transport: any HttpTransport = URLSession.shared,
-        credentialsProvider: any CredentialsProvider,
+        credentialsProvider: any HttpCredentialsProvider,
         retryConfig: RetryConfig = .default
     ) {
         self.transport = transport

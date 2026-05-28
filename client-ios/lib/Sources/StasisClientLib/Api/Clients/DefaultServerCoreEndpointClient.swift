@@ -11,7 +11,7 @@ public struct DefaultServerCoreEndpointClient: ServerCoreEndpointClient, ApiClie
 
     public init(
         serverCoreUrl: String,
-        credentialsProvider: any CredentialsProvider,
+        credentialsProvider: any HttpCredentialsProvider,
         selfNode: NodeId,
         retryConfig: RetryConfig = .default
     ) {

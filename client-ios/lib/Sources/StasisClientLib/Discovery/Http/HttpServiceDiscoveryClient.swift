@@ -7,7 +7,7 @@ public struct HttpServiceDiscoveryClient: ServiceDiscoveryClient, ApiClient {
 
     public init(
         apiUrl: String,
-        credentialsProvider: any CredentialsProvider,
+        credentialsProvider: any HttpCredentialsProvider,
         attributes: any ServiceDiscoveryClientAttributes,
         retryConfig: RetryConfig = .default
     ) {

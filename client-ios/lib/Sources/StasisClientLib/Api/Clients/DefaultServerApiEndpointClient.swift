@@ -8,7 +8,7 @@ public struct DefaultServerApiEndpointClient: ServerApiEndpointClient, ApiClient
 
     public init(
         serverApiUrl: String,
-        credentialsProvider: any CredentialsProvider,
+        credentialsProvider: any HttpCredentialsProvider,
         decryption: DecryptionContext,
         selfDevice: DeviceId,
         retryConfig: RetryConfig = .default
@@ -129,6 +129,16 @@ public struct DefaultServerApiEndpointClient: ServerApiEndpointClient, ApiClient
         switch decryption {
         case .disabled:
             throw EndpointFailure(message: "Cannot retrieve dataset metadata; decryption context is disabled")
+        case .enabled(let core, let deviceSecretProvider):
+            guard let encrypted = try await core.pull(crate: entry.metadata) else {
+                throw EndpointFailure(
+                    message: "Cannot decrypt metadata crate [\(entry.metadata.uuidString.lowercased())];" +
+                        " no data provided"
+                )
+            }
+            let metadataSecret = deviceSecretProvider().toMetadataSecret(metadataCrate: entry.metadata)
+            let decrypted = try metadataSecret.decrypt(encrypted)
+            return try DatasetMetadata(byteString: decrypted)
         }
     }
 

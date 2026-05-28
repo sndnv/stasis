@@ -318,8 +318,6 @@ struct ServiceDiscoveryProviderTests {
         }
     }
 
-    // MARK: - Helpers
-
     private final class FailingDiscoveryClient: ServiceDiscoveryClient {
         let attributes: any ServiceDiscoveryClientAttributes
         let counter: Counter

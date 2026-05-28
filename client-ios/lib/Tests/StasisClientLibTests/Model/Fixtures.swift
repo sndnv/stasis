@@ -1,5 +1,6 @@
 import Foundation
 @testable import StasisClientLib
+import StasisSharedProto
 
 enum Fixtures {
     enum Metadata {
@@ -75,6 +76,84 @@ enum Fixtures {
             group: "root",
             permissions: "rwxrwxrwx"
         ))
+    }
+
+    enum Proto {
+        enum Metadata {
+            static let fileOneMetadataProto: Stasis_ClientIos_Lib_Model_Proto_EntityMetadata = {
+                var file = Stasis_ClientIos_Lib_Model_Proto_FileMetadata()
+                file.path = "/tmp/file/one"
+                file.size = 1
+                file.link = ""
+                file.isHidden = false
+                file.created = 0
+                file.updated = 4_102_444_800
+                file.owner = "root"
+                file.group = "root"
+                file.permissions = "rwxrwxrwx"
+                file.checksum = Data([0x01])
+                file.crates = [
+                    "/tmp/file/one_0": UUID(uuidString: "329efbeb-80a3-42b8-b1dc-79bc0fea7bca")!.proto
+                ]
+                file.compression = "none"
+                var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+                entity.entity = .file(file)
+                return entity
+            }()
+
+            static let fileTwoMetadataProto: Stasis_ClientIos_Lib_Model_Proto_EntityMetadata = {
+                var file = Stasis_ClientIos_Lib_Model_Proto_FileMetadata()
+                file.path = "/tmp/file/two"
+                file.size = 2
+                file.link = "/tmp/file/three"
+                file.isHidden = false
+                file.created = 4_102_444_800
+                file.updated = 0
+                file.owner = "root"
+                file.group = "root"
+                file.permissions = "rwxrwxrwx"
+                file.checksum = Data([0x2a])
+                file.crates = [
+                    "/tmp/file/two_0": UUID(uuidString: "e672a956-1a95-4304-8af0-9418f0e43cba")!.proto
+                ]
+                file.compression = "gzip"
+                var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+                entity.entity = .file(file)
+                return entity
+            }()
+
+            static let directoryOneMetadataProto: Stasis_ClientIos_Lib_Model_Proto_EntityMetadata = {
+                var directory = Stasis_ClientIos_Lib_Model_Proto_DirectoryMetadata()
+                directory.path = "/tmp/directory/one"
+                directory.link = ""
+                directory.isHidden = false
+                directory.created = 0
+                directory.updated = 4_102_444_800
+                directory.owner = "root"
+                directory.group = "root"
+                directory.permissions = "rwxrwxrwx"
+                var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+                entity.entity = .directory(directory)
+                return entity
+            }()
+
+            static let directoryTwoMetadataProto: Stasis_ClientIos_Lib_Model_Proto_EntityMetadata = {
+                var directory = Stasis_ClientIos_Lib_Model_Proto_DirectoryMetadata()
+                directory.path = "/tmp/directory/two"
+                directory.link = "/tmp/file/three"
+                directory.isHidden = false
+                directory.created = 4_102_444_800
+                directory.updated = 0
+                directory.owner = "root"
+                directory.group = "root"
+                directory.permissions = "rwxrwxrwx"
+                var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+                entity.entity = .directory(directory)
+                return entity
+            }()
+
+            static let emptyMetadataProto = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+        }
     }
 }
 

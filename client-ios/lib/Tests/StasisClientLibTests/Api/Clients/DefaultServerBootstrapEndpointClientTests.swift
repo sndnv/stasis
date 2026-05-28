@@ -11,7 +11,7 @@ struct DefaultServerBootstrapEndpointClientTests {
         let stub = HttpTransportStub()
         let http = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(.none),
+            credentialsProvider: StaticHttpCredentialsProvider(.none),
             retryConfig: .disabled
         )
         return (DefaultServerBootstrapEndpointClient(serverBootstrapUrl: server, http: http), stub)

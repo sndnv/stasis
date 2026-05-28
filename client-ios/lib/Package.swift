@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.0"),
         .package(url: "https://github.com/sndnv/fsi-swift.git", from: "1.0.1"),
+        .package(url: "https://github.com/1024jp/GzipSwift.git", from: "6.0.1"),
         .package(path: "../../proto")
     ],
     targets: [
@@ -24,6 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "fsi", package: "fsi-swift"),
+                .product(name: "Gzip", package: "GzipSwift"),
                 .product(name: "StasisSharedProto", package: "proto")
             ],
             plugins: [

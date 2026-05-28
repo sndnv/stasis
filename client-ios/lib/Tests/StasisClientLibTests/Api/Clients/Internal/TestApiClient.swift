@@ -10,7 +10,7 @@ struct TestApiClient: ApiClient {
         self.transport = stub
         self.http = HttpClient(
             transport: stub,
-            credentialsProvider: StaticCredentialsProvider(credentials),
+            credentialsProvider: StaticHttpCredentialsProvider(credentials),
             retryConfig: .disabled
         )
     }
