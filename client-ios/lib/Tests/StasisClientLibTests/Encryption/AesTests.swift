@@ -26,8 +26,8 @@ struct AesTests {
     }
 
     @Test("exposes maximum plaintext size (4 GB)")
-    func maximumPlaintextSizeConstant() {
-        #expect(Aes.maximumPlaintextSize == 4 * 1024 * 1024 * 1024)
+    func maxPlaintextSizeConstant() {
+        #expect(Aes.maxPlaintextSize == 4 * 1024 * 1024 * 1024)
     }
 
     @Test("encrypts and decrypts arbitrary data (low-level)")
@@ -50,7 +50,7 @@ struct AesTests {
     func encryptsFilesViaFileSecret() throws {
         let plaintext = EncryptionResources.load("plaintext-file")
         let expected = EncryptionResources.load("encrypted-file")
-        let actual = try Aes.encrypt(plaintext, fileSecret: fileSecret)
+        let actual = try Aes.shared.encrypt(plaintext, fileSecret: fileSecret)
         #expect(actual == expected)
     }
 
@@ -58,15 +58,15 @@ struct AesTests {
     func decryptsFilesViaFileSecret() throws {
         let encrypted = EncryptionResources.load("encrypted-file")
         let expected = EncryptionResources.load("plaintext-file")
-        let actual = try Aes.decrypt(encrypted, fileSecret: fileSecret)
+        let actual = try Aes.shared.decrypt(encrypted, fileSecret: fileSecret)
         #expect(actual == expected)
     }
 
     @Test("encrypts and decrypts via DeviceMetadataSecret")
     func roundTripViaMetadataSecret() throws {
         let plaintext = Data("some metadata payload".utf8)
-        let ciphertext = try Aes.encrypt(plaintext, metadataSecret: metadataSecret)
-        let decrypted = try Aes.decrypt(ciphertext, metadataSecret: metadataSecret)
+        let ciphertext = try Aes.shared.encrypt(plaintext, metadataSecret: metadataSecret)
+        let decrypted = try Aes.shared.decrypt(ciphertext, metadataSecret: metadataSecret)
         #expect(decrypted == plaintext)
     }
 
@@ -74,8 +74,8 @@ struct AesTests {
     func roundTripsDatasetMetadata() throws {
         let metadata = Self.datasetMetadataFixture
         let bytes = try metadata.toByteString()
-        let encrypted = try Aes.encrypt(bytes, metadataSecret: metadataSecret)
-        let decryptedBytes = try Aes.decrypt(encrypted, metadataSecret: metadataSecret)
+        let encrypted = try Aes.shared.encrypt(bytes, metadataSecret: metadataSecret)
+        let decryptedBytes = try Aes.shared.decrypt(encrypted, metadataSecret: metadataSecret)
         let actual = try DatasetMetadata(byteString: decryptedBytes)
         #expect(actual == metadata)
     }
@@ -83,7 +83,7 @@ struct AesTests {
     @Test("decrypts dataset metadata produced by other clients")
     func decryptsCrossPlatformDatasetMetadata() throws {
         let ciphertext = Data(base64Encoded: Self.crossPlatformEncryptedDatasetMetadata)!
-        let decryptedBytes = try Aes.decrypt(ciphertext, metadataSecret: metadataSecret)
+        let decryptedBytes = try Aes.shared.decrypt(ciphertext, metadataSecret: metadataSecret)
         let actual = try DatasetMetadata(byteString: decryptedBytes)
         #expect(actual == Self.crossPlatformDatasetMetadata)
     }

@@ -21,7 +21,7 @@ public struct DeviceSecret: Secret, Equatable {
     }
 
     public func toFileSecret(forFile: String, checksum: Data) -> DeviceFileSecret {
-        let checksumInfo = Self.magnitudeHex(checksum)
+        let checksumInfo = ChecksumEncoding.string(of: checksum)
         let salt = user.bytes + device.bytes + Data(forFile.utf8)
 
         let keyInfo = Data(
@@ -76,12 +76,4 @@ public struct DeviceSecret: Secret, Equatable {
         return DeviceSecret(user: user, device: device, secret: secret, target: target)
     }
 
-    static func magnitudeHex(_ data: Data) -> String {
-        var bytes = Array(data)
-        while bytes.first == 0 { bytes.removeFirst() }
-        if bytes.isEmpty { return "0" }
-        let first = String(bytes[0], radix: 16)
-        let rest = bytes.dropFirst().map { String(format: "%02x", $0) }.joined()
-        return first + rest
-    }
 }

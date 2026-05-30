@@ -5,7 +5,7 @@ let package = Package(
     name: "StasisClientLib",
     platforms: [
         .iOS(.v26),
-        .macOS(.v13)
+        .macOS(.v15)
     ],
     products: [
         .library(

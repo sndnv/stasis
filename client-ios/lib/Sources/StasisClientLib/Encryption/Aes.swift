@@ -1,7 +1,9 @@
 import CryptoKit
 import Foundation
 
-public enum Aes {
+public struct Aes: Encrypting, Decrypting {
+    public static let shared = Aes()
+
     // recommended IV size for GCM (96 bits); for more info see https://crypto.stackexchange.com/a/41610
     public static let ivSize: Int = 12 // bytes
 
@@ -11,9 +13,13 @@ public enum Aes {
     // various suggestions exist about the max plaintext size for GCM;
     // the limit here is set as 4 GB, well below all suggested maximum sizes
     // for more info see https://crypto.stackexchange.com/q/31793 and https://crypto.stackexchange.com/q/44113
-    public static let maximumPlaintextSize: Int64 = 4 * 1024 * 1024 * 1024
+    public static let maxPlaintextSize: Int64 = 4 * 1024 * 1024 * 1024
 
     static let tagSizeBytes: Int = tagSize / 8
+
+    private init() {}
+
+    public var maxPlaintextSize: Int64 { Self.maxPlaintextSize }
 
     public static func encrypt(plaintext: Data, key: Data, iv: Data) throws -> Data {
         let symmetricKey = SymmetricKey(data: key)
@@ -32,19 +38,19 @@ public enum Aes {
         return try AES.GCM.open(sealed, using: symmetricKey)
     }
 
-    public static func encrypt(_ plaintext: Data, fileSecret: DeviceFileSecret) throws -> Data {
+    public func encrypt(_ plaintext: Data, fileSecret: DeviceFileSecret) throws -> Data {
         try fileSecret.encrypt(plaintext)
     }
 
-    public static func encrypt(_ plaintext: Data, metadataSecret: DeviceMetadataSecret) throws -> Data {
+    public func encrypt(_ plaintext: Data, metadataSecret: DeviceMetadataSecret) throws -> Data {
         try metadataSecret.encrypt(plaintext)
     }
 
-    public static func decrypt(_ ciphertext: Data, fileSecret: DeviceFileSecret) throws -> Data {
+    public func decrypt(_ ciphertext: Data, fileSecret: DeviceFileSecret) throws -> Data {
         try fileSecret.decrypt(ciphertext)
     }
 
-    public static func decrypt(_ ciphertext: Data, metadataSecret: DeviceMetadataSecret) throws -> Data {
+    public func decrypt(_ ciphertext: Data, metadataSecret: DeviceMetadataSecret) throws -> Data {
         try metadataSecret.decrypt(ciphertext)
     }
 }

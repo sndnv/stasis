@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Synchronization
 
 public enum UserAuthenticationPassword: Secret, Equatable {
     case hashed(user: UserId, hashedPassword: Data, extractionGuard: ExtractionGuard = ExtractionGuard())
@@ -47,18 +48,15 @@ public enum UserAuthenticationPassword: Secret, Equatable {
     }
 }
 
-public final class ExtractionGuard: @unchecked Sendable {
-    private let lock = NSLock()
-    private var consumed = false
+public final class ExtractionGuard: Sendable {
+    private let consumed = Mutex<Bool>(false)
 
     public init() {}
 
     func consume() throws {
-        lock.lock()
-        defer { lock.unlock() }
-        if consumed {
-            throw SecretError.passwordAlreadyExtracted
+        try consumed.withLock { value in
+            guard !value else { throw SecretError.passwordAlreadyExtracted }
+            value = true
         }
-        consumed = true
     }
 }

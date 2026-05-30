@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 public actor CredentialsProvider {
     public struct Config: Sendable, Equatable {
@@ -293,31 +294,25 @@ private struct ManagedHttpCredentialsProvider: HttpCredentialsProvider {
     }
 }
 
-private final class TokenUpdateBroadcaster: @unchecked Sendable {
-    private let lock = NSLock()
-    private var subscribers: [UUID: AsyncStream<Result<AccessTokenResponse, Error>>.Continuation] = [:]
+private final class TokenUpdateBroadcaster: Sendable {
+    private let subscribers = Mutex<[UUID: AsyncStream<Result<AccessTokenResponse, Error>>.Continuation]>([:])
 
     func subscribe() -> AsyncStream<Result<AccessTokenResponse, Error>> {
         let (stream, continuation) = AsyncStream.makeStream(
             of: Result<AccessTokenResponse, Error>.self
         )
         let id = UUID()
-        lock.lock()
-        subscribers[id] = continuation
-        lock.unlock()
+        subscribers.withLock { $0[id] = continuation }
         continuation.onTermination = { [weak self] _ in self?.remove(id) }
         return stream
     }
 
     private func remove(_ id: UUID) {
-        lock.lock(); defer { lock.unlock() }
-        subscribers.removeValue(forKey: id)
+        subscribers.withLock { _ = $0.removeValue(forKey: id) }
     }
 
     func publish(_ value: Result<AccessTokenResponse, Error>) {
-        lock.lock()
-        let continuations = Array(subscribers.values)
-        lock.unlock()
+        let continuations = subscribers.withLock { Array($0.values) }
         for continuation in continuations { continuation.yield(value) }
     }
 }
