@@ -7,7 +7,7 @@ public struct Aes: Encrypting, Decrypting {
     // recommended IV size for GCM (96 bits); for more info see https://crypto.stackexchange.com/a/41610
     public static let ivSize: Int = 12 // bytes
 
-    // maximum tag size; for more info see javax.crypto.spec.GCMParameterSpec
+    // maximum tag size; 128 bits is the GCM standard authentication tag length
     public static let tagSize: Int = 128 // bits
 
     // various suggestions exist about the max plaintext size for GCM;

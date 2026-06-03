@@ -7,7 +7,6 @@ public extension Secret {
 }
 
 public enum SecretError: Error, Equatable {
-    case invalidArgument(String)
     case passwordAlreadyExtracted
 }
 
@@ -20,10 +19,10 @@ public struct EncryptionSecretConfig: Sendable, Equatable, Hashable {
 
     public init(keySize: Int, ivSize: Int) throws {
         guard keySize >= Self.minKeySize else {
-            throw SecretError.invalidArgument("key must not be smaller than 16 bytes")
+            throw InvalidArgumentError("key must not be smaller than 16 bytes")
         }
         guard ivSize >= Self.minIvSize else {
-            throw SecretError.invalidArgument("iv must not be smaller than 12 bytes")
+            throw InvalidArgumentError("iv must not be smaller than 12 bytes")
         }
         self.keySize = keySize
         self.ivSize = ivSize
@@ -40,10 +39,10 @@ public struct EncryptionKeyDerivationConfig: Sendable, Equatable, Hashable {
 
     public init(secretSize: Int, iterations: Int, saltPrefix: String) throws {
         guard secretSize >= Self.minSecretSize else {
-            throw SecretError.invalidArgument("secret must not be smaller than 16 bytes")
+            throw InvalidArgumentError("secret must not be smaller than 16 bytes")
         }
         guard iterations >= Self.minIterations else {
-            throw SecretError.invalidArgument("iterations must not be fewer than 100k")
+            throw InvalidArgumentError("iterations must not be fewer than 100k")
         }
         self.secretSize = secretSize
         self.iterations = iterations
@@ -62,10 +61,10 @@ public struct AuthenticationKeyDerivationConfig: Sendable, Equatable, Hashable {
 
     public init(enabled: Bool, secretSize: Int, iterations: Int, saltPrefix: String) throws {
         guard secretSize >= Self.minSecretSize else {
-            throw SecretError.invalidArgument("secret must not be smaller than 16 bytes")
+            throw InvalidArgumentError("secret must not be smaller than 16 bytes")
         }
         guard iterations >= Self.minIterations else {
-            throw SecretError.invalidArgument("iterations must not be fewer than 100k")
+            throw InvalidArgumentError("iterations must not be fewer than 100k")
         }
         self.enabled = enabled
         self.secretSize = secretSize

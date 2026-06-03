@@ -33,19 +33,68 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
     }
 
     private(set) var calls = CallCounts()
-    private var lastRequest: (any Sendable)?
+    private(set) var lastRequest: (any Sendable)?
+    private var datasetMetadataOverrides: [DatasetEntryId: DatasetMetadata] = [:]
+    private var datasetDefinitionsOverride: [DatasetDefinition]?
+    private var latestEntryOverrides: [DatasetDefinitionId: DatasetEntryId?] = [:]
+    private let pingDisabled: Bool
+    private let commandsDisabled: Bool
+    private let createDatasetEntryDelay: TimeInterval
+    private var datasetDefinitionFailure: (any Error)?
+    private var latestEntryFailure: (any Error)?
+    private var datasetEntryFailure: (any Error)?
 
-    init(selfDevice: DeviceId = UUID()) {
+    func lastRequest<T: Sendable>(as type: T.Type = T.self) -> T? {
+        lastRequest as? T
+    }
+
+    init(
+        selfDevice: DeviceId = UUID(),
+        pingDisabled: Bool = false,
+        commandsDisabled: Bool = false,
+        createDatasetEntryDelay: TimeInterval = 0
+    ) {
         self.selfDevice = selfDevice
+        self.pingDisabled = pingDisabled
+        self.commandsDisabled = commandsDisabled
+        self.createDatasetEntryDelay = createDatasetEntryDelay
+    }
+
+    func setDatasetDefinitionFailure(_ error: any Error) {
+        datasetDefinitionFailure = error
+    }
+
+    func setLatestEntryFailure(_ error: any Error) {
+        latestEntryFailure = error
+    }
+
+    func setDatasetEntryFailure(_ error: any Error) {
+        datasetEntryFailure = error
+    }
+
+    func setDatasetMetadataOverride(_ entry: DatasetEntryId, _ metadata: DatasetMetadata) {
+        datasetMetadataOverrides[entry] = metadata
+    }
+
+    func setDatasetDefinitionsOverride(_ definitions: [DatasetDefinition]) {
+        datasetDefinitionsOverride = definitions
+    }
+
+    func setLatestEntryOverride(_ definition: DatasetDefinitionId, _ entry: DatasetEntryId?) {
+        latestEntryOverrides[definition] = entry
     }
 
     func datasetDefinitions() async throws -> [DatasetDefinition] {
         calls.definitionsRetrieved += 1
+        if let override = datasetDefinitionsOverride { return override }
         return [TestGenerators.definition(), TestGenerators.definition()]
     }
 
     func datasetDefinition(definition: DatasetDefinitionId) async throws -> DatasetDefinition {
         calls.definitionRetrieved += 1
+        if let datasetDefinitionFailure {
+            throw datasetDefinitionFailure
+        }
         return TestGenerators.definition(id: definition)
     }
 
@@ -75,17 +124,29 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     func datasetEntry(entry: DatasetEntryId) async throws -> DatasetEntry {
         calls.entryRetrieved += 1
+        if let datasetEntryFailure {
+            throw datasetEntryFailure
+        }
         return TestGenerators.entry(id: entry)
     }
 
     func latestEntry(definition: DatasetDefinitionId, until: Date?) async throws -> DatasetEntry? {
         calls.entryLatestRetrieved += 1
+        if let latestEntryFailure {
+            throw latestEntryFailure
+        }
+        if let override = latestEntryOverrides[definition] {
+            return override.map { TestGenerators.entry(id: $0, definition: definition) }
+        }
         return TestGenerators.entry(definition: definition)
     }
 
     func createDatasetEntry(request: CreateDatasetEntry) async throws -> CreatedDatasetEntry {
         calls.entryCreated += 1
         lastRequest = request
+        if createDatasetEntryDelay > 0 {
+            try await Task.sleep(nanoseconds: UInt64(createDatasetEntryDelay * 1_000_000_000))
+        }
         return CreatedDatasetEntry(entry: UUID())
     }
 
@@ -109,12 +170,12 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     func datasetMetadata(entry: DatasetEntryId) async throws -> DatasetMetadata {
         calls.metadataWithIdRetrieved += 1
-        return TestGenerators.emptyDatasetMetadata
+        return datasetMetadataOverrides[entry] ?? TestGenerators.emptyDatasetMetadata
     }
 
     func datasetMetadata(entry: DatasetEntry) async throws -> DatasetMetadata {
         calls.metadataWithEntryRetrieved += 1
-        return TestGenerators.emptyDatasetMetadata
+        return datasetMetadataOverrides[entry.id] ?? TestGenerators.emptyDatasetMetadata
     }
 
     func user() async throws -> User {
@@ -153,11 +214,17 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     func ping() async throws -> Ping {
         calls.pinged += 1
+        if pingDisabled {
+            throw EndpointFailure(message: "[pingDisabled] is set to [true]")
+        }
         return Ping(id: UUID())
     }
 
     func commands(lastSequenceId: Int64?) async throws -> [CommandAsJson] {
         calls.commandsRetrieved += 1
+        if commandsDisabled {
+            throw EndpointFailure(message: "[commandsDisabled] is set to [true]")
+        }
         let logoutNone = CommandAsJson.CommandParametersAsJson(logoutUser: nil)
         let logoutWithReason = CommandAsJson.CommandParametersAsJson(logoutUser: .init(reason: "test"))
         let all = [

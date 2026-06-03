@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -71,10 +72,29 @@ run_command(
         "-configuration", "Debug",
         "-skipPackagePluginValidation",
         "-skipMacroValidation",
+        "-quiet",
         "build",
     ],
     description="Building iOS app",
     cwd=app_path,
 )
+
+if platform.system() == "Darwin":
+    profdata = os.path.join(lib_path, ".build/debug/codecov/default.profdata")
+    binary = os.path.join(
+        lib_path,
+        ".build/debug/StasisClientLibPackageTests.xctest/Contents/MacOS/StasisClientLibPackageTests",
+    )
+
+    run_command(
+        command=[
+            "xcrun", "llvm-cov", "report",
+            binary,
+            "-instr-profile={}".format(profdata),
+            "-ignore-filename-regex=.build|Tests",
+        ],
+        description="Coverage",
+        cwd=lib_path,
+    )
 
 print("\n>: Done")

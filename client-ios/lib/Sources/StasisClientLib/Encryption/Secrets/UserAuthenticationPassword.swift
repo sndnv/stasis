@@ -21,7 +21,7 @@ public enum UserAuthenticationPassword: Secret, Equatable {
         case let .unhashed(_, rawPassword, extractionGuard):
             try extractionGuard.consume()
             guard let decoded = String(bytes: rawPassword, encoding: .utf8) else {
-                throw SecretError.invalidArgument("raw password is not valid UTF-8")
+                throw InvalidArgumentError("raw password is not valid UTF-8")
             }
             return decoded
         }

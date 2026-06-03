@@ -105,12 +105,9 @@ struct AesTests {
         "pALCOEHukCm0dWCyqGSGAUKsl0oP3zCoBxY+gTsnHo" +
         "ock2RLli8jS2KLGt93LeQDuu3sM="
 
-    // Date components encoded with the same epoch-second values as the source-of-truth Android fixtures
-    // (`Instant.MIN/MAX` truncated to seconds). Using these here keeps the proto round-trip equal even
-    // across the JVM/Swift Date precision boundary.
     private static let crossPlatformDatasetMetadata: DatasetMetadata = {
         let earliest = Date(timeIntervalSince1970: -31_557_014_167_219_200)
-        let latest = Date(timeIntervalSince1970: 31_556_889_864_403_199)
+        let latest = Date(timeIntervalSince1970: 31_556_889_864_403_200)
 
         let fileOne = EntityMetadata.file(.init(
             path: "/tmp/file/one", link: nil, isHidden: false,
