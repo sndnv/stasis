@@ -21,15 +21,12 @@ struct DefaultCommandProcessorTests {
 
         try await runManaged(processor) {
             await waitUntil { await mockApi.calls.commandsRetrieved >= 1 }
-            #expect(await mockApi.calls.commandsRetrieved >= 1)
             #expect(handlers.snapshot.persistCalls >= 1)
             #expect(handlers.snapshot.retrieveCalls >= 1)
             #expect(handlers.snapshot.executeCalls >= 1)
             #expect(handlers.snapshot.lastSequenceId == 3)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 2_000_000_000))
-
-            #expect(await mockApi.calls.commandsRetrieved >= 2)
+            await waitUntil { await mockApi.calls.commandsRetrieved >= 2 }
             #expect(handlers.snapshot.persistCalls == 1)
             #expect(handlers.snapshot.retrieveCalls >= 2)
             #expect(handlers.snapshot.executeCalls == 1)
@@ -50,8 +47,7 @@ struct DefaultCommandProcessorTests {
         )
 
         try await runManaged(processor) {
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_000_000_000))
-
+            await waitUntil { handlers.snapshot.retrieveCalls >= 3 }
             #expect(handlers.snapshot.persistCalls == 0)
             #expect(handlers.snapshot.retrieveCalls >= 3)
             #expect(handlers.snapshot.executeCalls == 0)
@@ -81,9 +77,7 @@ struct DefaultCommandProcessorTests {
             #expect(handlers.snapshot.executeCalls == 1)
             #expect(handlers.snapshot.lastSequenceId == 3)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_500_000_000))
-
-            #expect(await mockApi.calls.commandsRetrieved >= 2)
+            await waitUntil { await mockApi.calls.commandsRetrieved >= 2 }
             #expect(handlers.snapshot.persistCalls == 1)
             #expect(handlers.snapshot.retrieveCalls >= 2)
             #expect(handlers.snapshot.executeCalls == 1)
@@ -112,8 +106,7 @@ struct DefaultCommandProcessorTests {
             #expect(handlers.snapshot.executeCalls == 0)
             #expect(handlers.snapshot.lastSequenceId == 0)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_000_000_000))
-
+            await waitUntil { handlers.snapshot.retrieveCalls >= 3 }
             #expect(handlers.snapshot.persistCalls == 0)
             #expect(handlers.snapshot.retrieveCalls >= 3)
             #expect(handlers.snapshot.executeCalls == 0)
@@ -152,9 +145,7 @@ struct DefaultCommandProcessorTests {
             #expect(handlers.snapshot.executeCalls == 1)
             #expect(handlers.snapshot.lastSequenceId == 3)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_500_000_000))
-
-            #expect(await mockApi.calls.commandsRetrieved >= 3)
+            await waitUntil { await mockApi.calls.commandsRetrieved >= 3 }
             #expect(handlers.snapshot.persistCalls == 1)
             #expect(handlers.snapshot.retrieveCalls >= 3)
             #expect(handlers.snapshot.executeCalls == 1)
@@ -184,8 +175,7 @@ struct DefaultCommandProcessorTests {
             #expect(handlers.snapshot.executeCalls == 0)
             #expect(handlers.snapshot.lastSequenceId == 0)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_000_000_000))
-
+            await waitUntil { handlers.snapshot.retrieveCalls >= 3 }
             #expect(handlers.snapshot.persistCalls == 0)
             #expect(handlers.snapshot.retrieveCalls >= 3)
             #expect(handlers.snapshot.executeCalls == 0)
@@ -205,9 +195,7 @@ struct DefaultCommandProcessorTests {
             handlers: handlers
         )
 
-        try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_500_000_000))
-
-        #expect(await mockApi.calls.commandsRetrieved >= 1)
+        await waitUntil { await mockApi.calls.commandsRetrieved >= 1 }
 
         await processor.stop()
 

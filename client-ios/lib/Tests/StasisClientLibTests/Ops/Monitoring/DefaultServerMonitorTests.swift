@@ -20,13 +20,10 @@ struct DefaultServerMonitorTests {
 
         try await runManaged(monitor) {
             await waitUntil { await mockApi.calls.pinged >= 1 }
-            #expect(await mockApi.calls.pinged >= 1)
             #expect((mockTracker.statistics[.serverReachable] ?? 0) >= 1)
             #expect(mockTracker.statistics[.serverUnreachable] == 0)
 
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 2_000_000_000))
-
-            #expect(await mockApi.calls.pinged >= 2)
+            await waitUntil { await mockApi.calls.pinged >= 2 }
             #expect((mockTracker.statistics[.serverReachable] ?? 0) >= 2)
             #expect(mockTracker.statistics[.serverUnreachable] == 0)
         }
@@ -45,8 +42,7 @@ struct DefaultServerMonitorTests {
         )
 
         try await runManaged(monitor) {
-            try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_000_000_000))
-
+            await waitUntil { (mockTracker.statistics[.serverUnreachable] ?? 0) >= 3 }
             #expect(mockTracker.statistics[.serverReachable] == 0)
             #expect((mockTracker.statistics[.serverUnreachable] ?? 0) >= 3)
         }
@@ -64,9 +60,7 @@ struct DefaultServerMonitorTests {
             tracker: mockTracker
         )
 
-        try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_500_000_000))
-
-        #expect((mockTracker.statistics[.serverReachable] ?? 0) >= 1)
+        await waitUntil { (mockTracker.statistics[.serverReachable] ?? 0) >= 1 }
         #expect(mockTracker.statistics[.serverUnreachable] == 0)
 
         await monitor.stop()

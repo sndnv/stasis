@@ -154,6 +154,12 @@ struct SpecificationTests {
 
         #expect(fileF.operation == .include)
         #expect(fileF.reason == [.init(operation: .include), .init(operation: .include)])
+
+        let explanation = spec.explanation
+        #expect(explanation.count == spec.entries.count)
+        for (url, entry) in spec.entries {
+            #expect(explanation[url] == entry.reason)
+        }
     }
 
     @Test("creates an empty spec if no rules are provided")

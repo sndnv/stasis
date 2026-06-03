@@ -409,4 +409,13 @@ struct CachedServerApiEndpointClientTests {
         for _ in 0..<3 { try await client.sendAnalyticsEntry(entry) }
         #expect(await underlying.calls.analyticsEntriesSent == 3)
     }
+
+    @Test("exposes the underlying selfDevice and server")
+    func exposesUnderlyingIdentity() {
+        let underlying = MockServerApiEndpointClient()
+        let client = makeClient(underlying: underlying)
+
+        #expect(client.selfDevice == underlying.selfDevice)
+        #expect(client.server == underlying.server)
+    }
 }

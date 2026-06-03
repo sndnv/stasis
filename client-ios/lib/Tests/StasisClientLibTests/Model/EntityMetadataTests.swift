@@ -31,4 +31,37 @@ struct EntityMetadataTests {
         #expect(!directoryOne.hasChanged(comparedTo: directoryOne))
         #expect(directoryOne.hasChanged(comparedTo: directoryTwo))
     }
+
+    @Test("exposes the inner entity's properties for each case")
+    func exposesInnerProperties() {
+        let file = Fixtures.Metadata.fileTwo
+        guard case .file(let fileInner) = file else {
+            Issue.record("Expected .file fixture")
+            return
+        }
+
+        #expect(file.path == fileInner.path)
+        #expect(file.link == fileInner.link)
+        #expect(file.isHidden == fileInner.isHidden)
+        #expect(file.created == fileInner.created)
+        #expect(file.updated == fileInner.updated)
+        #expect(file.owner == fileInner.owner)
+        #expect(file.group == fileInner.group)
+        #expect(file.permissions == fileInner.permissions)
+
+        let directory = Fixtures.Metadata.directoryTwo
+        guard case .directory(let directoryInner) = directory else {
+            Issue.record("Expected .directory fixture")
+            return
+        }
+
+        #expect(directory.path == directoryInner.path)
+        #expect(directory.link == directoryInner.link)
+        #expect(directory.isHidden == directoryInner.isHidden)
+        #expect(directory.created == directoryInner.created)
+        #expect(directory.updated == directoryInner.updated)
+        #expect(directory.owner == directoryInner.owner)
+        #expect(directory.group == directoryInner.group)
+        #expect(directory.permissions == directoryInner.permissions)
+    }
 }

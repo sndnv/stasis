@@ -65,6 +65,60 @@ struct DefaultFileStagingTests {
         #expect(!FileManager.default.fileExists(atPath: file.path))
     }
 
+    @Test("fails to create a temporary file when the directory does not exist")
+    func failsToCreateTemporaryFile() async {
+        let missingDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("staging-test-nonexistent-\(UUID().uuidString)")
+        let staging = DefaultFileStaging(
+            storeDirectory: missingDirectory,
+            prefix: "staging-test-",
+            suffix: ".tmp"
+        )
+
+        await #expect(throws: FileStagingError.self) {
+            _ = try await staging.temporary()
+        }
+    }
+
+    @Test("discards non-existent files without raising")
+    func discardsMissingFile() async throws {
+        let staging = DefaultFileStaging(
+            storeDirectory: nil,
+            prefix: "staging-test-",
+            suffix: ".tmp"
+        )
+
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("staging-test-\(UUID().uuidString).tmp")
+        #expect(!FileManager.default.fileExists(atPath: missing.path))
+
+        try await staging.discard(file: missing)
+    }
+
+    @Test("destages incoming files to a target that does not yet exist")
+    func destagesToMissingTarget() async throws {
+        let staging = DefaultFileStaging(
+            storeDirectory: nil,
+            prefix: "staging-test-",
+            suffix: ".tmp"
+        )
+
+        let sourceContent = "source-content"
+        let source = try await staging.temporary()
+        try Data(sourceContent.utf8).write(to: source)
+
+        let target = FileManager.default.temporaryDirectory
+            .appendingPathComponent("staging-test-\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: target) }
+        #expect(!FileManager.default.fileExists(atPath: target.path))
+
+        try await staging.destage(from: source, to: target)
+
+        #expect(!FileManager.default.fileExists(atPath: source.path))
+        let resulting = try String(contentsOf: target, encoding: .utf8)
+        #expect(resulting == sourceContent)
+    }
+
     @Test("destages incoming files")
     func destagesIncomingFiles() async throws {
         let staging = DefaultFileStaging(

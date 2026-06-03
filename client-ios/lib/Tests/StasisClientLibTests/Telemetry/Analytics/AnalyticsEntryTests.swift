@@ -201,4 +201,36 @@ struct AnalyticsEntryTests {
         #expect(updated.failures[0].message == "FileNotFoundError - *CONTENT_REMOVED*")
         #expect(updated.failures[1].message == "FileNotFoundError - *CONTENT_REMOVED*")
     }
+
+    @Test("exposes the inner entry's properties for each case")
+    func exposesInnerProperties() {
+        let now = Date()
+        let later = now.addingTimeInterval(60)
+        let runtime = AnalyticsEntry.RuntimeInformation(app: NoApplicationInformation())
+        let collected = AnalyticsEntry.Collected(
+            runtime: runtime,
+            events: [],
+            failures: [],
+            created: now,
+            updated: later
+        )
+        let json = AnalyticsEntry.AsJson(
+            entryType: "test",
+            runtime: runtime,
+            events: [],
+            failures: [],
+            created: now,
+            updated: later
+        )
+
+        let wrappedCollected: AnalyticsEntry = .collected(collected)
+        #expect(wrappedCollected.runtime == runtime)
+        #expect(wrappedCollected.created == now)
+        #expect(wrappedCollected.updated == later)
+
+        let wrappedJson: AnalyticsEntry = .asJson(json)
+        #expect(wrappedJson.runtime == runtime)
+        #expect(wrappedJson.created == now)
+        #expect(wrappedJson.updated == later)
+    }
 }

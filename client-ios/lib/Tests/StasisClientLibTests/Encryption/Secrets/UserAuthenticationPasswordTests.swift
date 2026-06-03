@@ -57,4 +57,32 @@ struct UserAuthenticationPasswordTests {
         let pwd = UserAuthenticationPassword.unhashed(user: UUID(), rawPassword: Data(original.utf8))
         #expect(pwd.digested() == expectedDigest)
     }
+
+    @Test("exposes the user id for each case")
+    func exposesUser() {
+        let user = UUID()
+        let hashed = UserAuthenticationPassword.hashed(user: user, hashedPassword: Data([0x01]))
+        let unhashed = UserAuthenticationPassword.unhashed(user: user, rawPassword: Data([0x01]))
+
+        #expect(hashed.user == user)
+        #expect(unhashed.user == user)
+    }
+
+    @Test("Unhashed: fails to extract when raw password is not valid UTF-8")
+    func unhashedExtractInvalidUtf8Fails() {
+        let pwd = UserAuthenticationPassword.unhashed(user: UUID(), rawPassword: Data([0xC3, 0x28]))
+        #expect(throws: InvalidArgumentError.self) {
+            _ = try pwd.extract()
+        }
+    }
+
+    @Test("equality returns false across different cases")
+    func equalityAcrossCases() {
+        let user = UUID()
+        let bytes = Data([0x01])
+        let hashed = UserAuthenticationPassword.hashed(user: user, hashedPassword: bytes)
+        let unhashed = UserAuthenticationPassword.unhashed(user: user, rawPassword: bytes)
+
+        #expect(hashed != unhashed)
+    }
 }

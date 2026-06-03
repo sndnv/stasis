@@ -211,4 +211,20 @@ struct StateStoreTests {
         let restoredAfterCorruptingAll = try await store.restore()
         #expect(restoredAfterCorruptingAll == nil)
     }
+
+    @Test("supports the convenience init with the default retained-versions")
+    func supportsConvenienceInit() async throws {
+        let target = makeTarget()
+        defer { try? FileManager.default.removeItem(at: target) }
+        let serdes = RecordSerdes()
+        let store = try StateStore<[String: Record]>(target: target, serdes: serdes)
+
+        for index in 0..<5 {
+            try await store.persist(["id-\(index)": Record(a: "a", b: index, c: true)])
+            try await Task.sleep(for: .milliseconds(2))
+        }
+
+        let persisted = try filesIn(target)
+        #expect(persisted.count == StateStore<[String: Record]>.minRetainedVersions)
+    }
 }

@@ -175,4 +175,17 @@ struct DefaultServerCoreEndpointClientTests {
             Issue.record("Unexpected error: \(error)")
         }
     }
+
+    @Test("trims trailing slashes from the server url")
+    func trimsTrailingSlashes() {
+        let node = UUID()
+        let client = DefaultServerCoreEndpointClient(
+            serverCoreUrl: "http://localhost:1234/",
+            credentialsProvider: StaticHttpCredentialsProvider(.none),
+            selfNode: node
+        )
+
+        #expect(client.server == "http://localhost:1234")
+        #expect(client.selfNode == node)
+    }
 }

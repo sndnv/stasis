@@ -18,7 +18,7 @@ interop_target = os.path.join(
     lib_path, "Tests", "StasisClientLibTests", "Resources", "interop"
 )
 
-simulator_destination = "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5"
+simulator_destination = "generic/platform=iOS Simulator"
 
 
 def run_command(command, description, cwd=None):

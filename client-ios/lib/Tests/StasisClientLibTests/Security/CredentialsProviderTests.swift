@@ -491,6 +491,35 @@ struct CredentialsProviderTests {
         }
     }
 
+    @Test("exposes core and api credentials providers backed by current tokens")
+    func exposesHttpCredentialsProviders() async {
+        let client = RecordingOAuthClient { .success(self.response) }
+        let store = MockCredentialsStore(
+            deviceSecret: secret, authenticationPassword: hashedPassword
+        )
+        let provider = CredentialsProvider(config: config, oAuthClient: client, store: store)
+
+        let coreCredentials = provider.coreCredentialsProvider()
+        let apiCredentials = provider.apiCredentialsProvider()
+
+        _ = await provider.login(username: "user", password: "password")
+
+        await eventually {
+            let core = await coreCredentials.credentials()
+            let api = await apiCredentials.credentials()
+            return core == .oauth2BearerToken(token: self.response.accessToken)
+                && api == .oauth2BearerToken(token: self.response.accessToken)
+        }
+
+        await provider.logout()
+
+        await eventually {
+            let core = await coreCredentials.credentials()
+            let api = await apiCredentials.credentials()
+            return core == .none && api == .none
+        }
+    }
+
     @Test("supports checking if the device's remote secret exists")
     func supportsCheckingRemoteSecretExists() async {
         let client = RecordingOAuthClient { .success(self.response) }

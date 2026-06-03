@@ -43,4 +43,15 @@ struct HttpServiceDiscoveryClientTests {
         let decoded = try JSONCoders.decoder().decode(ServiceDiscoveryRequest.self, from: body)
         #expect(decoded == ServiceDiscoveryRequest(isInitialRequest: false, attributes: [:]))
     }
+
+    @Test("trims trailing slashes from the api url")
+    func trimsTrailingSlashes() {
+        let client = HttpServiceDiscoveryClient(
+            apiUrl: "http://localhost/",
+            credentialsProvider: StaticHttpCredentialsProvider(.none),
+            attributes: TestAttributes()
+        )
+
+        #expect(client.server == "http://localhost")
+    }
 }

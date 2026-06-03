@@ -1,9 +1,13 @@
 @testable import StasisClientLib
+import Synchronization
 
 final class MockServiceDiscoveryClient: ServiceDiscoveryClient {
     let attributes: any ServiceDiscoveryClientAttributes
     private let initialDiscoveryResult: ServiceDiscoveryResult
     private let nextDiscoveryResult: ServiceDiscoveryResult
+    private let calls = Mutex<Int>(0)
+
+    var callCount: Int { calls.withLock { $0 } }
 
     init(
         initialDiscoveryResult: ServiceDiscoveryResult = .keepExisting,
@@ -15,7 +19,8 @@ final class MockServiceDiscoveryClient: ServiceDiscoveryClient {
     }
 
     func latest(isInitialRequest: Bool) async throws -> ServiceDiscoveryResult {
-        isInitialRequest ? initialDiscoveryResult : nextDiscoveryResult
+        calls.withLock { $0 += 1 }
+        return isInitialRequest ? initialDiscoveryResult : nextDiscoveryResult
     }
 
     struct TestAttributes: ServiceDiscoveryClientAttributes {

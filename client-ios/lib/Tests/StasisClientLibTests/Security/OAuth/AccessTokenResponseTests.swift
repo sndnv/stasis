@@ -80,6 +80,58 @@ struct AccessTokenResponseTests {
         #expect(invalidClaims.subject == nil)
     }
 
+    @Test("fails to decode a JWT with an unparseable payload segment")
+    func failsForUnparseableBase64UrlPayload() {
+        let header = Data(#"{"alg":"none"}"#.utf8).base64UrlEncodedString()
+        let signature = Data("fake-sig".utf8).base64UrlEncodedString()
+        let response = AccessTokenResponse(
+            accessToken: "\(header).!!!.\(signature)",
+            refreshToken: nil,
+            expiresIn: 1,
+            scope: nil
+        )
+
+        #expect(throws: JwtDecodingError.malformedPayloadEncoding) {
+            try response.claims.get()
+        }
+    }
+
+    @Test("fails to decode a JWT whose payload is not a JSON object")
+    func failsForNonObjectPayload() {
+        let header = Data(#"{"alg":"none"}"#.utf8).base64UrlEncodedString()
+        let arrayPayload = Data("[\"not\",\"an\",\"object\"]".utf8).base64UrlEncodedString()
+        let signature = Data("fake-sig".utf8).base64UrlEncodedString()
+        let response = AccessTokenResponse(
+            accessToken: "\(header).\(arrayPayload).\(signature)",
+            refreshToken: nil,
+            expiresIn: 1,
+            scope: nil
+        )
+
+        #expect(throws: JwtDecodingError.malformedPayloadJson) {
+            try response.claims.get()
+        }
+    }
+
+    @Test("flattens array, numeric, and null claim values to strings")
+    func flattensNonStringClaims() throws {
+        let response = AccessTokenResponse(
+            accessToken: TestJwt.create(payload: [
+                "roles": ["admin", "user"],
+                "age": 25,
+                "nullable": NSNull()
+            ]),
+            refreshToken: nil,
+            expiresIn: 1,
+            scope: nil
+        )
+
+        let claims = try response.claims.get()
+        #expect(claims.claims["roles"] == "admin, user")
+        #expect(claims.claims["age"] == "25")
+        #expect(claims.claims["nullable"] == "<null>")
+    }
+
     @Test("round-trips via JSON snake_case fields")
     func roundTripsJson() throws {
         let original = AccessTokenResponse(

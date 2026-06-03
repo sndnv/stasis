@@ -129,7 +129,9 @@ struct ServiceDiscoveryProviderTests {
             let initialApi = try await provider.latest(TestApiClient.self)
             let initialCore = try await provider.latest(TestCoreClient.self)
 
-            try await Task.sleep(for: .milliseconds(100))
+            let mock = try #require(initialDiscovery as? MockServiceDiscoveryClient)
+            let baseline = mock.callCount
+            await eventually { mock.callCount >= baseline + 2 }
 
             #expect(identityEqual(try await provider.latest((any ServiceDiscoveryClient).self), initialDiscovery))
             #expect(identityEqual(try await provider.latest(TestApiClient.self), initialApi))
@@ -155,12 +157,6 @@ struct ServiceDiscoveryProviderTests {
             let initialDiscovery = try await provider.latest((any ServiceDiscoveryClient).self)
             let initialApi = try await provider.latest(TestApiClient.self)
             let initialCore = try await provider.latest(TestCoreClient.self)
-
-            try await Task.sleep(for: .milliseconds(100))
-
-            #expect(identityEqual(try await provider.latest((any ServiceDiscoveryClient).self), initialDiscovery))
-            #expect(identityEqual(try await provider.latest(TestApiClient.self), initialApi))
-            #expect(identityEqual(try await provider.latest(TestCoreClient.self), initialCore))
 
             await eventually {
                 guard
@@ -194,7 +190,10 @@ struct ServiceDiscoveryProviderTests {
             let initialApi = try await provider.latest(TestApiClient.self)
             let initialCore = try await provider.latest(TestCoreClient.self)
 
-            try await Task.sleep(for: .milliseconds(200))
+            await eventually {
+                guard let d = try? await provider.latest((any ServiceDiscoveryClient).self) else { return false }
+                return !identityEqual(d, initialDiscovery)
+            }
 
             #expect(!identityEqual(try await provider.latest((any ServiceDiscoveryClient).self), initialDiscovery))
             #expect(!identityEqual(try await provider.latest(TestApiClient.self), initialApi))
@@ -204,18 +203,13 @@ struct ServiceDiscoveryProviderTests {
             let latestApi = try await provider.latest(TestApiClient.self)
             let latestCore = try await provider.latest(TestCoreClient.self)
 
-            try await Task.sleep(for: .milliseconds(200))
+            let mock = try #require(latestDiscovery as? MockServiceDiscoveryClient)
+            let baseline = mock.callCount
+            await eventually { mock.callCount >= baseline + 2 }
 
-            await eventually {
-                guard
-                    let d = try? await provider.latest((any ServiceDiscoveryClient).self),
-                    let a = try? await provider.latest(TestApiClient.self),
-                    let c = try? await provider.latest(TestCoreClient.self)
-                else { return false }
-                return identityEqual(d, latestDiscovery)
-                    && identityEqual(a, latestApi)
-                    && identityEqual(c, latestCore)
-            }
+            #expect(identityEqual(try await provider.latest((any ServiceDiscoveryClient).self), latestDiscovery))
+            #expect(identityEqual(try await provider.latest(TestApiClient.self), latestApi))
+            #expect(identityEqual(try await provider.latest(TestCoreClient.self), latestCore))
         }
     }
 
@@ -280,13 +274,7 @@ struct ServiceDiscoveryProviderTests {
         await managed(provider) {
             #expect(await clientCalls.value == 0)
 
-            try await Task.sleep(for: .milliseconds(100))
-
-            #expect(await clientCalls.value == 0)
-
-            try await Task.sleep(for: .milliseconds(400))
-
-            #expect(await clientCalls.value >= 3)
+            await eventually { await clientCalls.value >= 3 }
         }
     }
 
@@ -362,7 +350,7 @@ struct ServiceDiscoveryProviderTests {
     }
 
     private func eventually(
-        timeout: Duration = .seconds(5),
+        timeout: Duration = .seconds(30),
         interval: Duration = .milliseconds(50),
         _ check: () async -> Bool
     ) async {

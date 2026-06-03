@@ -681,4 +681,18 @@ struct DefaultServerApiEndpointClientTests {
         #expect(request.httpMethod == "POST")
         #expect(request.url?.path == "/v1/analytics")
     }
+
+    @Test("trims trailing slashes from the server url")
+    func trimsTrailingSlashes() {
+        let device = UUID()
+        let client = DefaultServerApiEndpointClient(
+            serverApiUrl: "http://localhost:1234/",
+            credentialsProvider: StaticHttpCredentialsProvider(.none),
+            decryption: .disabled,
+            selfDevice: device
+        )
+
+        #expect(client.server == "http://localhost:1234")
+        #expect(client.selfDevice == device)
+    }
 }

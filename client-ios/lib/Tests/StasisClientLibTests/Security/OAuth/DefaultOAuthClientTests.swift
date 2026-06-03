@@ -154,6 +154,17 @@ struct DefaultOAuthClientTests {
         try JSONEncoder().encode(response)
     }
 
+    @Test("fails to initialize with an unparseable token endpoint url")
+    func failsToInitializeWithUnparseableUrl() {
+        #expect(throws: EndpointFailure.self) {
+            _ = try DefaultOAuthClient(
+                tokenEndpoint: "",
+                client: "test-client",
+                clientSecret: "test-secret"
+            )
+        }
+    }
+
     private func assertRequest(_ request: URLRequest?, body expectedBody: String) throws {
         let request = try #require(request)
         #expect(request.httpMethod == "POST")

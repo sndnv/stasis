@@ -54,4 +54,17 @@ struct ChecksumTests {
     func unsupported() {
         #expect(throws: ChecksumError.self) { try Checksums.apply("bogus") }
     }
+
+    @Test("calculates SHA384 digest checksums for files")
+    func sha384() async throws {
+        let digest = try await Checksums.digest(file: sourceFile, algorithm: "SHA-384")
+        #expect(digest.count == 48)
+    }
+
+    @Test("rejects unsupported algorithms when computing a digest")
+    func unsupportedDigest() async {
+        await #expect(throws: ChecksumError.self) {
+            _ = try await Checksums.digest(file: sourceFile, algorithm: "bogus")
+        }
+    }
 }
