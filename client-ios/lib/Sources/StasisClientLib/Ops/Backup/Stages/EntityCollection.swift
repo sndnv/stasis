@@ -19,12 +19,12 @@ extension Backup {
                     do {
                         for try await collector in collectors {
                             for try await entity in collector.collect() {
-                                providers.track.entityExamined(operation: operation, entity: entity.path)
+                                await providers.track.entityExamined(operation: operation, entity: entity.path)
                                 if entity.hasChanged {
-                                    providers.track.entityCollected(operation: operation, entity: entity)
+                                    await providers.track.entityCollected(operation: operation, entity: entity)
                                     continuation.yield(entity)
                                 } else {
-                                    providers.track.entitySkipped(operation: operation, entity: entity.path)
+                                    await providers.track.entitySkipped(operation: operation, entity: entity.path)
                                 }
                             }
                         }

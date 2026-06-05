@@ -31,12 +31,12 @@ public final class DefaultServerMonitor: ServerMonitor {
             while !Task.isCancelled {
                 do {
                     _ = try await api.ping()
-                    tracker.reachable(server: api.server)
+                    await tracker.reachable(server: api.server)
                     try await Task.sleep(nanoseconds: Intervals.nanoseconds(Intervals.fuzzy(interval)))
                 } catch is CancellationError {
                     return
                 } catch {
-                    tracker.unreachable(server: api.server)
+                    await tracker.unreachable(server: api.server)
                     let reduced = max(
                         Intervals.fuzzy(interval / Double(Self.unreachableIntervalReduction)),
                         initialDelay

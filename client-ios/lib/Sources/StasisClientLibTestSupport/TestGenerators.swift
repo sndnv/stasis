@@ -1,9 +1,9 @@
 import Foundation
 import fsi
-@testable import StasisClientLib
+import StasisClientLib
 
-enum TestGenerators {
-    static func definition(
+public enum TestGenerators {
+    public static func definition(
         id: DatasetDefinitionId = UUID(),
         device: DeviceId = UUID(),
         info: String = "test-definition"
@@ -20,7 +20,7 @@ enum TestGenerators {
         )
     }
 
-    static func entry(
+    public static func entry(
         id: DatasetEntryId = UUID(),
         definition: DatasetDefinitionId = UUID()
     ) -> DatasetEntry {
@@ -36,7 +36,7 @@ enum TestGenerators {
         )
     }
 
-    static func schedule(
+    public static func schedule(
         id: ScheduleId = UUID(),
         isPublic: Bool = true
     ) -> Schedule {
@@ -51,7 +51,7 @@ enum TestGenerators {
         )
     }
 
-    static func user() -> User {
+    public static func user() -> User {
         User(
             id: UUID(),
             salt: "test-salt",
@@ -63,7 +63,7 @@ enum TestGenerators {
         )
     }
 
-    static func device() -> Device {
+    public static func device() -> Device {
         Device(
             id: UUID(),
             name: "test-device",
@@ -76,7 +76,7 @@ enum TestGenerators {
         )
     }
 
-    static var emptyDatasetMetadata: DatasetMetadata {
+    public static var emptyDatasetMetadata: DatasetMetadata {
         DatasetMetadata(
             contentChanged: [:],
             metadataChanged: [:],

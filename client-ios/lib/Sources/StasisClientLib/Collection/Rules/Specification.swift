@@ -72,16 +72,6 @@ public struct Specification: Sendable {
 
     public static func empty() -> Specification { Specification() }
 
-    public static func tracked(
-        operation: OperationId,
-        rules: [Rule],
-        tracker: any BackupTracker
-    ) -> Specification {
-        Specification.build(rules: rules) { url in
-            tracker.entityDiscovered(operation: operation, entity: url)
-        }
-    }
-
     public static func build(
         rules: [Rule],
         onMatchIncluded: (URL) -> Void

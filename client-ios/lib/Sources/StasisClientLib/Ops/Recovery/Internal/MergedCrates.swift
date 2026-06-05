@@ -3,7 +3,7 @@ import Foundation
 public enum MergedCrates {
     public static func merge(
         _ crates: [RecoveryCrate],
-        onPartProcessed: @escaping @Sendable () -> Void
+        onPartProcessed: @escaping @Sendable () async -> Void
     ) throws -> AsyncThrowingStream<Data, Error> {
         guard !crates.isEmpty else {
             throw MergedCratesError.noCrates
@@ -19,7 +19,7 @@ public enum MergedCrates {
                         for try await chunk in stream {
                             continuation.yield(chunk)
                         }
-                        onPartProcessed()
+                        await onPartProcessed()
                     }
                     continuation.finish()
                 } catch {

@@ -1,5 +1,6 @@
 import Foundation
 @testable import StasisClientLib
+import StasisClientLibTestSupport
 import Testing
 
 @Suite("DefaultOperationExecutor")
@@ -415,47 +416,47 @@ private final class StatefulBackupTracker: BackupTracker {
 
     var statistics: [MockBackupTracker.Statistic: Int] { tracker.statistics }
 
-    func started(operation: OperationId, definition: DatasetDefinitionId) {
-        tracker.started(operation: operation, definition: definition)
+    func started(operation: OperationId, definition: DatasetDefinitionId) async {
+        await tracker.started(operation: operation, definition: definition)
     }
-    func entityDiscovered(operation: OperationId, entity: URL) {
-        tracker.entityDiscovered(operation: operation, entity: entity)
+    func entityDiscovered(operation: OperationId, entity: URL) async {
+        await tracker.entityDiscovered(operation: operation, entity: entity)
     }
-    func specificationProcessed(operation: OperationId, unmatched: [(Rule, any Error)]) {
-        tracker.specificationProcessed(operation: operation, unmatched: unmatched)
+    func specificationProcessed(operation: OperationId, unmatched: [(Rule, any Error)]) async {
+        await tracker.specificationProcessed(operation: operation, unmatched: unmatched)
     }
-    func entityExamined(operation: OperationId, entity: URL) {
-        tracker.entityExamined(operation: operation, entity: entity)
+    func entityExamined(operation: OperationId, entity: URL) async {
+        await tracker.entityExamined(operation: operation, entity: entity)
     }
-    func entitySkipped(operation: OperationId, entity: URL) {
-        tracker.entitySkipped(operation: operation, entity: entity)
+    func entitySkipped(operation: OperationId, entity: URL) async {
+        await tracker.entitySkipped(operation: operation, entity: entity)
     }
-    func entityCollected(operation: OperationId, entity: SourceEntity) {
-        tracker.entityCollected(operation: operation, entity: entity)
+    func entityCollected(operation: OperationId, entity: SourceEntity) async {
+        await tracker.entityCollected(operation: operation, entity: entity)
     }
-    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) {
-        tracker.entityProcessingStarted(operation: operation, entity: entity, expectedParts: expectedParts)
+    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
+        await tracker.entityProcessingStarted(operation: operation, entity: entity, expectedParts: expectedParts)
     }
-    func entityPartProcessed(operation: OperationId, entity: URL) {
-        tracker.entityPartProcessed(operation: operation, entity: entity)
+    func entityPartProcessed(operation: OperationId, entity: URL) async {
+        await tracker.entityPartProcessed(operation: operation, entity: entity)
     }
-    func entityProcessed(operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) {
-        tracker.entityProcessed(operation: operation, entity: entity, metadata: metadata)
+    func entityProcessed(operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) async {
+        await tracker.entityProcessed(operation: operation, entity: entity, metadata: metadata)
     }
-    func metadataCollected(operation: OperationId) {
-        tracker.metadataCollected(operation: operation)
+    func metadataCollected(operation: OperationId) async {
+        await tracker.metadataCollected(operation: operation)
     }
-    func metadataPushed(operation: OperationId, entry: DatasetEntryId) {
-        tracker.metadataPushed(operation: operation, entry: entry)
+    func metadataPushed(operation: OperationId, entry: DatasetEntryId) async {
+        await tracker.metadataPushed(operation: operation, entry: entry)
     }
-    func failureEncountered(operation: OperationId, failure: any Error) {
-        tracker.failureEncountered(operation: operation, failure: failure)
+    func failureEncountered(operation: OperationId, failure: any Error) async {
+        await tracker.failureEncountered(operation: operation, failure: failure)
     }
-    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) {
-        tracker.failureEncountered(operation: operation, entity: entity, failure: failure)
+    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
+        await tracker.failureEncountered(operation: operation, entity: entity, failure: failure)
     }
-    func completed(operation: OperationId) {
-        tracker.completed(operation: operation)
+    func completed(operation: OperationId) async {
+        await tracker.completed(operation: operation)
     }
     func stateOf(operation: OperationId) async -> BackupState? { providedState }
 }

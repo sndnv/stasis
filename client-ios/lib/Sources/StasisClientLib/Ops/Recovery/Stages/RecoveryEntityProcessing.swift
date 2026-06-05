@@ -23,12 +23,12 @@ extension Recovery {
                                 if prepared.hasContentChanged {
                                     try await processContentChanged(operation: operation, entity: prepared)
                                 } else {
-                                    processMetadataChanged(operation: operation, entity: prepared)
+                                    await processMetadataChanged(operation: operation, entity: prepared)
                                 }
-                                providers.track.entityProcessed(operation: operation, entity: prepared.destinationPath)
+                                await providers.track.entityProcessed(operation: operation, entity: prepared.destinationPath)
                                 continuation.yield(prepared)
                             } catch let failure as EndpointFailure {
-                                providers.track.failureEncountered(
+                                await providers.track.failureEncountered(
                                     operation: operation,
                                     entity: prepared.path,
                                     failure: failure
@@ -36,7 +36,7 @@ extension Recovery {
                                 await providers.analytics.recordFailure(failure)
                                 throw failure
                             } catch {
-                                providers.track.failureEncountered(
+                                await providers.track.failureEncountered(
                                     operation: operation,
                                     entity: prepared.path,
                                     failure: error
@@ -78,7 +78,7 @@ extension Recovery {
         private func processContentChanged(operation: OperationId, entity: TargetEntity) async throws {
             let file = try Self.expectFileMetadata(entity: entity)
 
-            providers.track.entityProcessingStarted(
+            await providers.track.entityProcessingStarted(
                 operation: operation,
                 entity: entity.path,
                 expectedParts: file.crates.count
@@ -93,7 +93,7 @@ extension Recovery {
                 providers: providers
             )
             let merged = try MergedCrates.merge(decrypted, onPartProcessed: {
-                providers.track.entityPartProcessed(operation: operation, entity: entity.path)
+                await providers.track.entityPartProcessed(operation: operation, entity: entity.path)
             })
             let decompressor = try providers.compression.decoderFor(entity: entity)
             let decompressed = DecompressedSource.decompress(merged, decompressor: decompressor)
@@ -104,8 +104,8 @@ extension Recovery {
             )
         }
 
-        private func processMetadataChanged(operation: OperationId, entity: TargetEntity) {
-            providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
+        private func processMetadataChanged(operation: OperationId, entity: TargetEntity) async {
+            await providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
         }
 
         private func pull(crates: [String: CrateId], entity: URL) async throws -> [RecoveryCrate] {

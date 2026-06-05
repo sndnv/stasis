@@ -11,7 +11,7 @@ struct ContentView: View {
                 .foregroundStyle(.tint)
             Text("stasis")
                 .font(.largeTitle.weight(.semibold))
-            Text("lib version \(container.libVersion)")
+            Text("version \(container.appInfo.version)")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }

@@ -11,6 +11,6 @@ final class MockServerTracker: ServerTracker {
 
     var statistics: [Statistic: Int] { counter.snapshot }
 
-    func reachable(server: String) { counter.increment(.serverReachable) }
-    func unreachable(server: String) { counter.increment(.serverUnreachable) }
+    func reachable(server: String) async { counter.increment(.serverReachable) }
+    func unreachable(server: String) async { counter.increment(.serverUnreachable) }
 }

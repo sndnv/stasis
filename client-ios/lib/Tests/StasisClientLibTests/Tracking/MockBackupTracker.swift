@@ -22,27 +22,27 @@ final class MockBackupTracker: BackupTracker {
 
     var statistics: [Statistic: Int] { counter.snapshot }
 
-    func started(operation: OperationId, definition: DatasetDefinitionId) { counter.increment(.started) }
-    func entityDiscovered(operation: OperationId, entity: URL) { counter.increment(.entityDiscovered) }
-    func specificationProcessed(operation: OperationId, unmatched: [(Rule, any Error)]) {
+    func started(operation: OperationId, definition: DatasetDefinitionId) async { counter.increment(.started) }
+    func entityDiscovered(operation: OperationId, entity: URL) async { counter.increment(.entityDiscovered) }
+    func specificationProcessed(operation: OperationId, unmatched: [(Rule, any Error)]) async {
         counter.increment(.specificationProcessed)
     }
-    func entityExamined(operation: OperationId, entity: URL) { counter.increment(.entityExamined) }
-    func entitySkipped(operation: OperationId, entity: URL) { counter.increment(.entitySkipped) }
-    func entityCollected(operation: OperationId, entity: SourceEntity) { counter.increment(.entityCollected) }
-    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) {
+    func entityExamined(operation: OperationId, entity: URL) async { counter.increment(.entityExamined) }
+    func entitySkipped(operation: OperationId, entity: URL) async { counter.increment(.entitySkipped) }
+    func entityCollected(operation: OperationId, entity: SourceEntity) async { counter.increment(.entityCollected) }
+    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
         counter.increment(.entityProcessingStarted)
     }
-    func entityPartProcessed(operation: OperationId, entity: URL) { counter.increment(.entityPartProcessed) }
-    func entityProcessed(operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) {
+    func entityPartProcessed(operation: OperationId, entity: URL) async { counter.increment(.entityPartProcessed) }
+    func entityProcessed(operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) async {
         counter.increment(.entityProcessed)
     }
-    func metadataCollected(operation: OperationId) { counter.increment(.metadataCollected) }
-    func metadataPushed(operation: OperationId, entry: DatasetEntryId) { counter.increment(.metadataPushed) }
-    func failureEncountered(operation: OperationId, failure: any Error) { counter.increment(.failureEncountered) }
-    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) {
+    func metadataCollected(operation: OperationId) async { counter.increment(.metadataCollected) }
+    func metadataPushed(operation: OperationId, entry: DatasetEntryId) async { counter.increment(.metadataPushed) }
+    func failureEncountered(operation: OperationId, failure: any Error) async { counter.increment(.failureEncountered) }
+    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
         counter.increment(.failureEncountered)
     }
-    func completed(operation: OperationId) { counter.increment(.completed) }
+    func completed(operation: OperationId) async { counter.increment(.completed) }
     func stateOf(operation: OperationId) async -> BackupState? { nil }
 }

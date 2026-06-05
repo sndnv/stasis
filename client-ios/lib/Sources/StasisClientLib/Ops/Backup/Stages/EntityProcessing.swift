@@ -38,14 +38,14 @@ extension Backup {
                                 } else {
                                     result = .right(try await processMetadataChanged(operation: operation, entity: entity))
                                 }
-                                providers.track.entityProcessed(
+                                await providers.track.entityProcessed(
                                     operation: operation,
                                     entity: entity.path,
                                     metadata: result
                                 )
                                 continuation.yield(result)
                             } catch let failure as EndpointFailure {
-                                providers.track.failureEncountered(
+                                await providers.track.failureEncountered(
                                     operation: operation,
                                     entity: entity.path,
                                     failure: failure
@@ -53,7 +53,7 @@ extension Backup {
                                 await providers.analytics.recordFailure(failure)
                                 throw failure
                             } catch {
-                                providers.track.failureEncountered(
+                                await providers.track.failureEncountered(
                                     operation: operation,
                                     entity: entity.path,
                                     failure: error
@@ -96,7 +96,7 @@ extension Backup {
         }
 
         func processMetadataChanged(operation: OperationId, entity: SourceEntity) async throws -> EntityMetadata {
-            providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
+            await providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
             return entity.currentMetadata
         }
 
@@ -105,7 +105,7 @@ extension Backup {
             entity: SourceEntity,
             checksum: Data
         ) async throws -> [(file: String, path: URL)] {
-            providers.track.entityProcessingStarted(
+            await providers.track.entityProcessingStarted(
                 operation: operation,
                 entity: entity.path,
                 expectedParts: try Self.expectedParts(entity: entity, withMaximumPartSize: maximumPartSize)
@@ -130,7 +130,7 @@ extension Backup {
                     deviceSecret.toFileSecret(forFile: "\(entityPath)__part=\(partId)", checksum: checksum)
                 },
                 onPartStaged: {
-                    providers.track.entityPartProcessed(operation: operation, entity: entity.path)
+                    await providers.track.entityPartProcessed(operation: operation, entity: entity.path)
                 },
                 maximumPartSize: maximumPartSize
             ).partitionAndStage()

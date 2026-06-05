@@ -22,7 +22,7 @@ extension Backup {
         ) async throws {
             for try await datasetMetadata in metadata {
                 let entry = try await pushMetadata(datasetMetadata)
-                providers.track.metadataPushed(operation: operation, entry: entry)
+                await providers.track.metadataPushed(operation: operation, entry: entry)
             }
         }
 

@@ -15,14 +15,14 @@ extension Recovery {
                 let task = Task {
                     do {
                         for try await entity in collector.collect() {
-                            providers.track.entityExamined(
+                            await providers.track.entityExamined(
                                 operation: operation,
                                 entity: entity.path,
                                 metadataChanged: entity.hasChanged,
                                 contentChanged: entity.hasContentChanged
                             )
                             if entity.hasChanged {
-                                providers.track.entityCollected(operation: operation, entity: entity)
+                                await providers.track.entityCollected(operation: operation, entity: entity)
                                 continuation.yield(entity)
                             }
                         }

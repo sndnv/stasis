@@ -39,7 +39,7 @@ public final class Backup: Operation {
             if case .withState = descriptor.collector {
                 // resuming — do not re-track started
             } else {
-                providers.track.started(operation: id, definition: descriptor.targetDataset.id)
+                await providers.track.started(operation: id, definition: descriptor.targetDataset.id)
             }
 
             let discovery = EntityDiscovery(
@@ -78,9 +78,9 @@ public final class Backup: Operation {
             )
             try await metadataPush.push(operation: id, metadata: datasetMetadata)
 
-            providers.track.completed(operation: id)
+            await providers.track.completed(operation: id)
         } catch {
-            providers.track.failureEncountered(operation: id, failure: error)
+            await providers.track.failureEncountered(operation: id, failure: error)
             await providers.analytics.recordFailure(error)
             throw error
         }

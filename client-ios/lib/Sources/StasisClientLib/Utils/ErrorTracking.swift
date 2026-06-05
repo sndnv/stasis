@@ -1,6 +1,6 @@
 import Foundation
 
-extension Error {
+public extension Error {
     var tracked: String {
         "\(type(of: self)) - \(localizedDescription)"
     }

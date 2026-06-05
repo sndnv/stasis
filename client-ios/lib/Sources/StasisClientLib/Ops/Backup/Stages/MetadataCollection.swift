@@ -53,7 +53,7 @@ extension Backup {
                         filesystem: filesystem
                     )
 
-                    providers.track.metadataCollected(operation: operation)
+                    await providers.track.metadataCollected(operation: operation)
                     continuation.yield(metadata)
 
                     if let collectError {

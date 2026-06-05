@@ -1,5 +1,6 @@
 import Foundation
 @testable import StasisClientLib
+import StasisClientLibTestSupport
 import Synchronization
 import Testing
 

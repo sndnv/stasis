@@ -42,7 +42,6 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
         return Progress()
     }
 
-    // swiftlint:disable:next function_parameter_count
     func modifyItem(
         _ item: NSFileProviderItem,
         baseVersion _: NSFileProviderItemVersion,

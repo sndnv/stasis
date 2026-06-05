@@ -1,8 +1,8 @@
 import Foundation
 
 public protocol ServerTracker: Sendable {
-    func reachable(server: String)
-    func unreachable(server: String)
+    func reachable(server: String) async
+    func unreachable(server: String) async
 }
 
 public struct ServerState: Sendable, Equatable, Hashable {

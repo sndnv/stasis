@@ -6,14 +6,14 @@ public struct PartitionedSource: Sendable {
     private let source: Source
     private let providers: BackupProviders
     private let withPartSecret: @Sendable (Int) -> DeviceFileSecret
-    private let onPartStaged: @Sendable () -> Void
+    private let onPartStaged: @Sendable () async -> Void
     private let maximumPartSize: Int64
 
     public init(
         source: Source,
         providers: BackupProviders,
         withPartSecret: @escaping @Sendable (Int) -> DeviceFileSecret,
-        onPartStaged: @escaping @Sendable () -> Void,
+        onPartStaged: @escaping @Sendable () async -> Void,
         maximumPartSize: Int64
     ) {
         self.source = source
@@ -38,7 +38,7 @@ public struct PartitionedSource: Sendable {
                     let space = Int(maximumPartSize) - collected.count
                     if space == 0 {
                         try await flushPart(&collected, secret: secret, to: temporary)
-                        onPartStaged()
+                        await onPartStaged()
 
                         partId += 1
                         secret = withPartSecret(partId)
@@ -56,13 +56,13 @@ public struct PartitionedSource: Sendable {
             }
 
             try await flushPart(&collected, secret: secret, to: temporary)
-            onPartStaged()
+            await onPartStaged()
             return parts
         } catch {
             for (_, path) in parts {
                 try? await providers.staging.discard(file: path)
             }
-            onPartStaged()
+            await onPartStaged()
             throw error
         }
     }

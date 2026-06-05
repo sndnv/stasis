@@ -20,7 +20,7 @@ extension Recovery {
                                 metadata: entity.existingMetadata,
                                 entity: entity.destinationPath
                             )
-                            providers.track.metadataApplied(
+                            await providers.track.metadataApplied(
                                 operation: operation,
                                 entity: entity.destinationPath
                             )

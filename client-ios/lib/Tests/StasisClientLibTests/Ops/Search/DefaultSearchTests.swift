@@ -1,6 +1,7 @@
 import Foundation
 import fsi
 @testable import StasisClientLib
+import StasisClientLibTestSupport
 import Testing
 
 @Suite("DefaultSearch")

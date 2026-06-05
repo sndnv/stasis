@@ -28,20 +28,16 @@ extension Backup {
                     let entities: [URL]
                     switch collector {
                     case .withRules(let rules):
-                        let spec = Specification.tracked(
-                            operation: operation,
-                            rules: rules,
-                            tracker: providers.track
-                        )
-                        for parent in spec.includedParents {
-                            providers.track.entityDiscovered(operation: operation, entity: parent)
+                        let spec = Specification.build(rules: rules) { _ in }
+                        for url in spec.included {
+                            await providers.track.entityDiscovered(operation: operation, entity: url)
                         }
-                        providers.track.specificationProcessed(operation: operation, unmatched: spec.unmatched)
+                        await providers.track.specificationProcessed(operation: operation, unmatched: spec.unmatched)
                         entities = spec.included
                     case .withEntities(let provided):
                         let existing = provided.filter { FileManager.default.fileExists(atPath: $0.path) }
                         for entity in existing {
-                            providers.track.entityDiscovered(operation: operation, entity: entity)
+                            await providers.track.entityDiscovered(operation: operation, entity: entity)
                         }
                         entities = existing
                     case .withState(let state):

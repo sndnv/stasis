@@ -11,6 +11,10 @@ let package = Package(
         .library(
             name: "StasisClientLib",
             targets: ["StasisClientLib"]
+        ),
+        .library(
+            name: "StasisClientLibTestSupport",
+            targets: ["StasisClientLibTestSupport"]
         )
     ],
     dependencies: [
@@ -34,9 +38,16 @@ let package = Package(
                 .plugin(name: "SwiftProtobufPlugin", package: "swift-protobuf")
             ]
         ),
+        .target(
+            name: "StasisClientLibTestSupport",
+            dependencies: [
+                "StasisClientLib",
+                .product(name: "fsi", package: "fsi-swift")
+            ]
+        ),
         .testTarget(
             name: "StasisClientLibTests",
-            dependencies: ["StasisClientLib"],
+            dependencies: ["StasisClientLib", "StasisClientLibTestSupport"],
             exclude: ["Resources"]
         )
     ]

@@ -1,5 +1,6 @@
 import Foundation
 @testable import StasisClientLib
+import StasisClientLibTestSupport
 
 actor MockCacheRefreshHandler: CacheRefreshHandler {
     private let underlying: MockServerApiEndpointClient

@@ -46,6 +46,9 @@ targets:
       - path: StasisClient
         excludes:
           - "*.entitlements"
+    scheme:
+      testTargets:
+        - StasisClientTests
     resources:
       - path: StasisClient/Assets.xcassets
     info:
@@ -111,6 +114,23 @@ targets:
         CODE_SIGN_ENTITLEMENTS: StasisFileProvider/StasisFileProvider.entitlements
     dependencies:
       - package: StasisClientLib
+
+  StasisClientTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: StasisClientTests
+    dependencies:
+      - target: StasisClient
+      - package: StasisClientLib
+      - package: StasisClientLib
+        product: StasisClientLibTestSupport
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: stasis.client.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/StasisClient.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StasisClient
+        BUNDLE_LOADER: $(TEST_HOST)
 
   StasisShare:
     type: app-extension

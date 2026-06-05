@@ -36,7 +36,7 @@ public final class Recovery: Operation {
 
     private func runPipeline() async throws {
         do {
-            providers.track.started(operation: id)
+            await providers.track.started(operation: id)
 
             let collection = EntityCollection(
                 collector: descriptor.toRecoveryCollector(providers: providers),
@@ -54,9 +54,9 @@ public final class Recovery: Operation {
 
             for try await _ in applied {}
 
-            providers.track.completed(operation: id)
+            await providers.track.completed(operation: id)
         } catch {
-            providers.track.failureEncountered(operation: id, failure: error)
+            await providers.track.failureEncountered(operation: id, failure: error)
             await providers.analytics.recordFailure(error)
             throw error
         }
