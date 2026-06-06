@@ -604,3 +604,158 @@ struct TrackingCacheTests {
         #expect(await cache.all().isEmpty)
     }
 }
+
+@Suite("Refreshing Cache")
+struct RefreshingCacheTests {
+    @Test("supports caching and refreshing data")
+    func supportsCachingAndRefreshing() async throws {
+        let loadedValues = LoadCounter()
+        let refreshedValues = LoadCounter()
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+
+        await cache.register { _, _ in await refreshedValues.increment() }
+
+        #expect(await loadedValues.count == 0)
+        #expect(await refreshedValues.count == 0)
+        #expect(await cache.get(key) == nil)
+
+        let load: @Sendable (String) async throws -> String = { _ in
+            await loadedValues.increment()
+            return value
+        }
+
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        #expect(await loadedValues.count == 1)
+
+        await eventually(timeout: .seconds(2)) {
+            let refreshed = await refreshedValues.count
+            let loaded = await loadedValues.count
+            return refreshed >= 3 && loaded >= 4
+        }
+    }
+
+    @Test("supports explicitly adding data without scheduling a refresh")
+    func supportsPutWithoutRefresh() async throws {
+        let refreshedValues = LoadCounter()
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+
+        await cache.register { _, _ in await refreshedValues.increment() }
+
+        try await cache.put(key, value)
+        #expect(await cache.get(key) == value)
+
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        #expect(await refreshedValues.count == 0)
+    }
+
+    @Test("supports explicitly adding data in bulk without scheduling a refresh")
+    func supportsBulkPutWithoutRefresh() async throws {
+        let refreshedValues = LoadCounter()
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+
+        await cache.register { _, _ in await refreshedValues.increment() }
+
+        try await cache.put(entries: ["k1": value, "k2": value, "k3": value])
+        #expect(await cache.get("k1") == value)
+        #expect(await cache.get("k2") == value)
+        #expect(await cache.get("k3") == value)
+
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        #expect(await refreshedValues.count == 0)
+    }
+
+    @Test("keeps stale entries when a refresh fails")
+    func keepsStaleOnFailure() async throws {
+        let loadedValues = LoadCounter()
+        let successfulRefreshes = LoadCounter()
+        let failAfter = 3
+
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+        await cache.register { _, _ in await successfulRefreshes.increment() }
+
+        let load: @Sendable (String) async throws -> String = { _ in
+            let previous = await loadedValues.count
+            await loadedValues.increment()
+            if previous >= failAfter {
+                throw CacheTestError.testFailure
+            }
+            return value
+        }
+
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        try? await Task.sleep(nanoseconds: 600_000_000)
+
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        #expect(await successfulRefreshes.count >= 2)
+    }
+
+    @Test("supports removing data")
+    func supportsRemove() async throws {
+        let loadedValues = LoadCounter()
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+
+        let load: @Sendable (String) async throws -> String = { _ in
+            await loadedValues.increment()
+            return value
+        }
+
+        #expect(try await cache.getOrLoad(key, load: load) == value)
+        try await cache.remove(key)
+        #expect(await cache.get(key) == nil)
+    }
+
+    @Test("supports unregistering refresh listeners")
+    func supportsUnregister() async throws {
+        let listenerCalls = LoadCounter()
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.05)
+
+        let id = await cache.register { _, _ in await listenerCalls.increment() }
+
+        #expect(try await cache.getOrLoad(key, load: { _ in value }) == value)
+        await eventually(timeout: .seconds(2)) { await listenerCalls.count >= 5 }
+        let observed = await listenerCalls.count
+
+        await cache.unregister(id)
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        #expect(await listenerCalls.count == observed)
+    }
+
+    @Test("supports retrieving all cached data")
+    func supportsRetrievingAll() async throws {
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+        try await cache.put("k1", "v1")
+        try await cache.put("k2", "v2")
+        try await cache.put("k3", "v3")
+        try await cache.put("k4", "v4")
+        try await cache.put("k5", "v5")
+
+        #expect(await cache.all() == ["k1": "v1", "k2": "v2", "k3": "v3", "k4": "v4", "k5": "v5"])
+    }
+
+    @Test("supports clearing all cached data")
+    func supportsClearingRefreshing() async throws {
+        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+        try await cache.put("k1", "v1")
+        try await cache.put("k2", "v2")
+        try await cache.put("k3", "v3")
+        #expect(await cache.all().count == 3)
+
+        try await cache.clear()
+        #expect(await cache.all().isEmpty)
+    }
+}
+
+private func eventually(
+    timeout: Duration = .seconds(5),
+    interval: Duration = .milliseconds(50),
+    _ check: () async -> Bool
+) async {
+    let deadline = ContinuousClock.now.advanced(by: timeout)
+    while ContinuousClock.now < deadline {
+        if await check() { return }
+        try? await Task.sleep(for: interval)
+    }
+    Issue.record("eventually condition did not become true within \(timeout)")
+}

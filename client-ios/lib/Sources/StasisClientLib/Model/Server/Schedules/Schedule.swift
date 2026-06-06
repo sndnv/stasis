@@ -28,4 +28,23 @@ public struct Schedule: Sendable, Equatable, Hashable, Codable {
         self.created = created
         self.updated = updated
     }
+
+    public func nextInvocation(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        guard let startDate = calendar.date(from: start.components) else { return nil }
+        let intervalSeconds = max(interval.value, 1)
+        if startDate >= now { return startDate }
+        let elapsed = now.timeIntervalSince(startDate)
+        let invocations = Int64(elapsed / TimeInterval(intervalSeconds))
+        let offset = TimeInterval((invocations + 1) * intervalSeconds)
+        return startDate.addingTimeInterval(offset)
+    }
+
+    public func lastInvocation(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        guard let startDate = calendar.date(from: start.components) else { return nil }
+        if startDate > now { return nil }
+        let intervalSeconds = max(interval.value, 1)
+        let elapsed = now.timeIntervalSince(startDate)
+        let invocations = Int64(elapsed / TimeInterval(intervalSeconds))
+        return startDate.addingTimeInterval(TimeInterval(invocations * intervalSeconds))
+    }
 }

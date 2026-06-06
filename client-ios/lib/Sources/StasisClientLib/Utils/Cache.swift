@@ -28,7 +28,7 @@ public protocol Cache<Key, Value>: Sendable {
     ///   - key: the key associated with the needed value
     ///   - load: function used for loading the value if it is not already in the cache
     /// - Returns: the cached or loaded value
-    func getOrLoad(_ key: Key, load: @Sendable (Key) async throws -> Value?) async throws -> Value?
+    func getOrLoad(_ key: Key, load: @Sendable @escaping (Key) async throws -> Value?) async throws -> Value?
 
     /// Removes the cached value associated with `key`, if any.
     ///
@@ -113,7 +113,7 @@ public actor MapCache<Key: Hashable & Sendable, Value: Sendable>: Cache {
 
     public func getOrLoad(
         _ key: Key,
-        load: @Sendable (Key) async throws -> Value?
+        load: @Sendable @escaping (Key) async throws -> Value?
     ) async throws -> Value? {
         if let cached = storage[key] { return cached }
         guard let loaded = try await load(key) else { return nil }
@@ -184,7 +184,7 @@ public actor FileCache<Key: Hashable & Sendable, Value: Sendable>: Cache {
 
     public func getOrLoad(
         _ key: Key,
-        load: @Sendable (Key) async throws -> Value?
+        load: @Sendable @escaping (Key) async throws -> Value?
     ) async throws -> Value? {
         if let cached = get(key) { return cached }
         guard let loaded = try await load(key) else { return nil }
@@ -241,6 +241,145 @@ public actor FileCache<Key: Hashable & Sendable, Value: Sendable>: Cache {
     }
 }
 
+/// Time-based refreshing cache.
+///
+/// After `interval` has passed, values are reloaded using the `load` closure
+/// originally associated with the key on the first `getOrLoad(_:load:)` call.
+/// On failure, the next refresh attempt uses a reduced interval up to
+/// `maxRefreshIntervalOnFailure`.
+public actor RefreshingCache<Key: Hashable & Sendable, Value: Sendable>: Cache {
+    public static var refreshIntervalOnFailureReduction: Int { 10 }
+    public static var maxRefreshIntervalOnFailure: TimeInterval { 5 }
+
+    public typealias RefreshListener = @Sendable (Key, Value?) async -> Void
+
+    private let underlying: any Cache<Key, Value>
+    private let interval: TimeInterval
+    private var jobs: [Key: Task<Void, Never>] = [:]
+    private var listeners: [UUID: RefreshListener] = [:]
+
+    public init(underlying: any Cache<Key, Value>, interval: TimeInterval) {
+        self.underlying = underlying
+        self.interval = interval
+    }
+
+    public var readStatistics: OperationStatistics {
+        get async { await underlying.readStatistics }
+    }
+
+    public var writeStatistics: OperationStatistics {
+        get async { await underlying.writeStatistics }
+    }
+
+    public func get(_ key: Key) async -> Value? {
+        await underlying.get(key)
+    }
+
+    public func put(_ key: Key, _ value: Value) async throws {
+        try await underlying.put(key, value)
+    }
+
+    public func put(entries: [Key: Value]) async throws {
+        try await underlying.put(entries: entries)
+    }
+
+    public func getOrLoad(
+        _ key: Key,
+        load: @Sendable @escaping (Key) async throws -> Value?
+    ) async throws -> Value? {
+        let value = try await underlying.getOrLoad(key, load: load)
+        if value != nil, jobs[key] == nil {
+            scheduleRefresh(key: key, load: load, after: interval)
+        }
+        return value
+    }
+
+    public func remove(_ key: Key) async throws {
+        jobs.removeValue(forKey: key)?.cancel()
+        try await underlying.remove(key)
+    }
+
+    public func all() async -> [Key: Value] {
+        await underlying.all()
+    }
+
+    public func clear() async throws {
+        for job in jobs.values { job.cancel() }
+        jobs.removeAll()
+        try await underlying.clear()
+    }
+
+    @discardableResult
+    public func register(onEntryRefreshed listener: @escaping RefreshListener) -> UUID {
+        let id = UUID()
+        listeners[id] = listener
+        return id
+    }
+
+    public func unregister(_ id: UUID) {
+        listeners.removeValue(forKey: id)
+    }
+
+    private func scheduleRefresh(
+        key: Key,
+        load: @Sendable @escaping (Key) async throws -> Value?,
+        after delay: TimeInterval
+    ) {
+        let task = Task<Void, Never> { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await self?.performRefresh(key: key, load: load)
+        }
+        jobs[key] = task
+    }
+
+    private func performRefresh(
+        key: Key,
+        load: @Sendable @escaping (Key) async throws -> Value?
+    ) async {
+        let result: Result<Value?, any Error>
+        do {
+            result = .success(try await load(key))
+        } catch {
+            result = .failure(error)
+        }
+        guard !Task.isCancelled else { return }
+
+        switch result {
+        case .success(let refreshed):
+            if let refreshed {
+                try? await underlying.put(key, refreshed)
+            } else {
+                try? await underlying.remove(key)
+            }
+            await notify(key: key, value: refreshed)
+            rescheduleIfActive(key: key, load: load, after: interval)
+        case .failure:
+            let nextDelay = min(
+                interval / Double(Self.refreshIntervalOnFailureReduction),
+                Self.maxRefreshIntervalOnFailure
+            )
+            rescheduleIfActive(key: key, load: load, after: nextDelay)
+        }
+    }
+
+    private func rescheduleIfActive(
+        key: Key,
+        load: @Sendable @escaping (Key) async throws -> Value?,
+        after delay: TimeInterval
+    ) {
+        guard !Task.isCancelled else { return }
+        scheduleRefresh(key: key, load: load, after: delay)
+    }
+
+    private func notify(key: Key, value: Value?) async {
+        let snapshot = Array(listeners.values)
+        for listener in snapshot {
+            await listener(key, value)
+        }
+    }
+}
+
 /// Statistics-tracking cache.
 ///
 /// Statistics about cache hits and misses are kept and provided.
@@ -289,7 +428,7 @@ public actor TrackingCache<Key: Hashable & Sendable, Value: Sendable>: Cache {
 
     public func getOrLoad(
         _ key: Key,
-        load: @Sendable (Key) async throws -> Value?
+        load: @Sendable @escaping (Key) async throws -> Value?
     ) async throws -> Value? {
         if let cached = await get(key) { return cached }
         guard let loaded = try await load(key) else { return nil }

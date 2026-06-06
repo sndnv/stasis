@@ -1,3 +1,4 @@
+import BackgroundTasks
 import FileProvider
 import StasisClientLib
 import SwiftUI
@@ -7,7 +8,19 @@ struct StasisClientApp: App {
     @State private var container = AppContainer()
 
     init() {
+        let scheduler = container.backgroundScheduler
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: BackgroundScheduler.processingTaskIdentifier,
+            using: nil
+        ) { task in
+            let handlerTask = Task { @Sendable in
+                await scheduler.executeReady()
+                task.setTaskCompleted(success: !Task.isCancelled)
+            }
+            task.expirationHandler = { handlerTask.cancel() }
+        }
         Task { await Self.registerFileProviderDomain() }
+        Task { [scheduler] in await scheduler.start() }
     }
 
     var body: some Scene {
@@ -25,7 +38,6 @@ struct StasisClientApp: App {
         do {
             try await NSFileProviderManager.add(domain)
         } catch {
-            // Re-registering an existing domain is benign; log and continue.
             print("FileProvider domain registration: \(error)")
         }
     }

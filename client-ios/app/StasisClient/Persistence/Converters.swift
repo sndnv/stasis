@@ -63,7 +63,8 @@ public extension ActiveSchedule {
             id: 0,
             schedule: assignment.schedule,
             type: type,
-            data: data
+            data: data,
+            lastFiredAt: lastFiredAt
         )
     }
 }
@@ -71,7 +72,7 @@ public extension ActiveSchedule {
 public extension ActiveScheduleEntity {
     func toActiveSchedule() throws -> ActiveSchedule {
         let assignment = try ActiveScheduleConverter.decode(schedule: schedule, type: type, data: data)
-        return ActiveSchedule(id: id, assignment: assignment)
+        return ActiveSchedule(id: id, assignment: assignment, lastFiredAt: lastFiredAt)
     }
 }
 

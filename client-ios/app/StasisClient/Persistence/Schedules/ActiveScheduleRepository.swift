@@ -33,6 +33,15 @@ public actor ActiveScheduleRepository {
         try modelContext.save()
     }
 
+    public func markFired(scheduleId: Int64, firedAt: Date) throws {
+        let existing = try modelContext.fetch(
+            FetchDescriptor<ActiveScheduleEntity>(predicate: #Predicate { $0.id == scheduleId })
+        ).first
+        guard let existing else { return }
+        existing.lastFiredAt = firedAt
+        try modelContext.save()
+    }
+
     public func clear() throws {
         try modelContext.delete(model: ActiveScheduleEntity.self)
         try modelContext.save()

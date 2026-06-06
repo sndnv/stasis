@@ -53,3 +53,78 @@ public enum OperationExecutorError: Error, Equatable {
     case cannotResumeCompleted(operation: OperationId)
     case cannotResumeMissing(operation: OperationId)
 }
+
+public struct NoOpOperationExecutor: OperationExecutor {
+    public init() {}
+
+    public func active() async -> [OperationId: OperationType] { [:] }
+    public func completed() async -> [OperationId: OperationType] { [:] }
+    public func find(operation: OperationId) async -> OperationType? { nil }
+
+    public func startBackupWithRules(
+        definition: DatasetDefinitionId,
+        rules: [Rule],
+        callback: @escaping OperationCallback
+    ) async -> OperationId {
+        let id = UUID()
+        callback(OperationExecutorError.notImplemented("no executor available"))
+        return id
+    }
+
+    public func startBackupWithEntities(
+        definition: DatasetDefinitionId,
+        entities: [URL],
+        callback: @escaping OperationCallback
+    ) async -> OperationId {
+        let id = UUID()
+        callback(OperationExecutorError.notImplemented("no executor available"))
+        return id
+    }
+
+    public func resumeBackup(
+        operation: OperationId,
+        callback: @escaping OperationCallback
+    ) async -> OperationId {
+        callback(OperationExecutorError.notImplemented("no executor available"))
+        return operation
+    }
+
+    public func startRecoveryWithDefinition(
+        definition: DatasetDefinitionId,
+        until: Date?,
+        query: Recovery.PathQuery?,
+        destination: Recovery.Destination?,
+        callback: @escaping OperationCallback
+    ) async -> OperationId {
+        let id = UUID()
+        callback(OperationExecutorError.notImplemented("no executor available"))
+        return id
+    }
+
+    public func startRecoveryWithEntry(
+        entry: DatasetEntryId,
+        query: Recovery.PathQuery?,
+        destination: Recovery.Destination?,
+        callback: @escaping OperationCallback
+    ) async -> OperationId {
+        let id = UUID()
+        callback(OperationExecutorError.notImplemented("no executor available"))
+        return id
+    }
+
+    public func startExpiration(callback: @escaping OperationCallback) async throws -> OperationId {
+        throw OperationExecutorError.notImplemented("no executor available")
+    }
+
+    public func startValidation(callback: @escaping OperationCallback) async throws -> OperationId {
+        throw OperationExecutorError.notImplemented("no executor available")
+    }
+
+    public func startKeyRotation(callback: @escaping OperationCallback) async throws -> OperationId {
+        throw OperationExecutorError.notImplemented("no executor available")
+    }
+
+    public func stop(operation: OperationId) async throws {
+        throw OperationExecutorError.operationNotFound(operation)
+    }
+}

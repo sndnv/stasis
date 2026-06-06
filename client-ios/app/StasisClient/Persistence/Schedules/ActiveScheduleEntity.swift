@@ -7,11 +7,19 @@ public final class ActiveScheduleEntity {
     public var schedule: UUID
     public var type: String
     public var data: String?
+    public var lastFiredAt: Date?
 
-    public init(id: Int64 = 0, schedule: UUID, type: String, data: String? = nil) {
+    public init(
+        id: Int64 = 0,
+        schedule: UUID,
+        type: String,
+        data: String? = nil,
+        lastFiredAt: Date? = nil
+    ) {
         self.id = id
         self.schedule = schedule
         self.type = type
         self.data = data
+        self.lastFiredAt = lastFiredAt
     }
 }
