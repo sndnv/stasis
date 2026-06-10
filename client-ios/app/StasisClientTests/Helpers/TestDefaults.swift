@@ -11,6 +11,13 @@ enum TestDefaults {
     }
 
     static func bootstrapParams() -> DeviceBootstrapParameters {
+        bootstrapParamsWithApi()
+    }
+
+    static func bootstrapParamsWithApi(
+        user: String = UUID().uuidString,
+        device: String = UUID().uuidString
+    ) -> DeviceBootstrapParameters {
         DeviceBootstrapParameters(
             authentication: .init(
                 tokenEndpoint: "http://localhost/token",
@@ -20,9 +27,9 @@ enum TestDefaults {
             ),
             serverApi: .init(
                 url: "http://localhost/api",
-                user: UUID().uuidString,
+                user: user,
                 userSalt: "salt-value",
-                device: UUID().uuidString
+                device: device
             ),
             serverCore: .init(address: "http://localhost/core", nodeId: UUID().uuidString),
             secrets: .init(
@@ -36,6 +43,14 @@ enum TestDefaults {
                     deviceSecret: .init(keySize: 16, ivSize: 12)
                 )
             )
+        )
+    }
+
+    static func trackers() throws -> DefaultTrackers {
+        DefaultTrackers(
+            backup: DefaultBackupTracker(store: try TestStateStore.backups()),
+            recovery: DefaultRecoveryTracker(store: try TestStateStore.recoveries()),
+            server: DefaultServerTracker()
         )
     }
 

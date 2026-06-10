@@ -1,7 +1,10 @@
 import BackgroundTasks
 import FileProvider
+import OSLog
 import StasisClientLib
 import SwiftUI
+
+private let appLogger = Logger(subsystem: "stasis.client.ios", category: "StasisClientApp")
 
 @main
 struct StasisClientApp: App {
@@ -19,14 +22,21 @@ struct StasisClientApp: App {
             }
             task.expirationHandler = { handlerTask.cancel() }
         }
-        Task { await Self.registerFileProviderDomain() }
-        Task { [scheduler] in await scheduler.start() }
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environment(container)
+                .task { await onAppLaunch() }
+        }
+    }
+
+    private func onAppLaunch() async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await Self.registerFileProviderDomain() }
+            group.addTask { await container.backgroundScheduler.start() }
+            group.addTask { await container.restoreSession() }
         }
     }
 
@@ -38,7 +48,7 @@ struct StasisClientApp: App {
         do {
             try await NSFileProviderManager.add(domain)
         } catch {
-            print("FileProvider domain registration: \(error)")
+            appLogger.error("FileProvider domain registration failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

@@ -24,6 +24,12 @@ final class AppContainer {
     let schedulingNotifications: any SchedulingNotifications
     let backgroundScheduler: BackgroundScheduler
 
+    let appStateModel: AppStateModel
+    let sessionTokenStore: SessionTokenStore
+
+    private(set) var session: AuthenticatedSession?
+    private var tokenPersistenceTask: Task<Void, Never>?
+
     init(
         appInfo: StasisApplicationInformation = StasisApplicationInformation(),
         settings: UserDefaults = .standard,
@@ -40,8 +46,15 @@ final class AppContainer {
     ) {
         self.appInfo = appInfo
         self.settings = settings
-        self.configRepository = configRepository ?? Self.makeConfigRepository()
+        let resolvedConfigRepository = configRepository ?? Self.makeConfigRepository()
+        self.configRepository = resolvedConfigRepository
         self.credentialsKeychain = credentialsKeychain
+        let tokenStore = SessionTokenStore(keychain: credentialsKeychain)
+        self.sessionTokenStore = tokenStore
+        self.appStateModel = Self.makeAppStateModel(
+            configRepository: resolvedConfigRepository,
+            sessionTokenStore: tokenStore
+        )
 
         let container = modelContainer ?? Self.makeModelContainer()
         self.modelContainer = container
@@ -76,6 +89,216 @@ final class AppContainer {
             publicSchedulesLoader: publicSchedulesLoader,
             taskScheduler: backgroundTaskScheduler ?? Self.makeBackgroundTaskScheduler()
         )
+    }
+
+    func bootstrap(request: BootstrapRequest) async throws {
+        await tearDownExistingSession()
+        let outcome = try await Bootstrap.execute(
+            request: request,
+            configRepository: configRepository,
+            ruleRepository: ruleRepository,
+            credentialsKeychain: credentialsKeychain
+        )
+        sessionTokenStore.storePlaintextDeviceSecret(outcome.plaintextDeviceSecret)
+        try await activateSession(provider: outcome.provider)
+    }
+
+    func login(username: String, password: String, rememberUsername: Bool) async throws {
+        await tearDownExistingSession()
+        let provider = try await Login.execute(
+            username: username,
+            password: password,
+            configRepository: configRepository,
+            credentialsKeychain: credentialsKeychain
+        )
+        configRepository.preferencesStore.saveUsername(rememberUsername ? username : nil)
+        if let secret = try? await provider.currentDeviceSecret().get().secret {
+            sessionTokenStore.storePlaintextDeviceSecret(secret)
+        }
+        try await activateSession(provider: provider)
+    }
+
+    func reEncryptDeviceSecret(currentPassword: String, oldPassword: String) async throws {
+        if let session {
+            let result = await session.credentialsProvider.reEncryptDeviceSecret(
+                currentPassword: currentPassword, oldPassword: oldPassword
+            )
+            try result.get()
+            try await session.refreshDeviceSecret()
+            return
+        }
+        let preferences = configRepository.preferencesStore
+        guard let apiConfig = try preferences.serverApiConfig() else {
+            throw AppContainerError.notConfigured
+        }
+        let store = try KeychainCredentialsStore(
+            apiConfig: apiConfig,
+            preferences: preferences,
+            keychain: credentialsKeychain
+        )
+        let result = await store.reEncryptDeviceSecret(
+            currentUserPassword: currentPassword,
+            oldUserPassword: oldPassword
+        )
+        try result.get()
+    }
+
+    func reinitializeDevice() async throws {
+        try await resetConfiguration()
+    }
+
+    func restoreSession() async {
+        guard appStateModel.state == .restoring else { return }
+        guard let provider = await buildProviderForRestore() else {
+            sessionTokenStore.clear()
+            appStateModel.transition(to: .configured)
+            return
+        }
+        do {
+            try await finishActivation(provider: provider)
+        } catch {
+            sessionTokenStore.clear()
+            await provider.logout()
+            appStateModel.transition(to: .configured)
+        }
+    }
+
+    func logout() async {
+        await tearDownExistingSession()
+        sessionTokenStore.clear()
+        appStateModel.transition(to: .configured)
+    }
+
+    func resetConfiguration() async throws {
+        await tearDownExistingSession()
+        sessionTokenStore.clear()
+        configRepository.reset()
+        try await ruleRepository.clear()
+        try await activeScheduleRepository.clear()
+        try await localScheduleRepository.clear()
+        appStateModel.transition(to: .unconfigured)
+    }
+
+    private func tearDownExistingSession() async {
+        tokenPersistenceTask?.cancel()
+        tokenPersistenceTask = nil
+        if let session {
+            await session.credentialsProvider.logout()
+        }
+        session = nil
+    }
+
+    private func activateSession(provider: CredentialsProvider) async throws {
+        if let core = try? await provider.core().get() {
+            sessionTokenStore.storeCoreToken(core)
+        }
+        if let api = try? await provider.api().get() {
+            sessionTokenStore.storeApiToken(api)
+        }
+        try await finishActivation(provider: provider)
+    }
+
+    private func finishActivation(provider: CredentialsProvider) async throws {
+        session = try await AuthenticatedSession.make(
+            credentialsProvider: provider,
+            configRepository: configRepository,
+            trackers: trackers,
+            analytics: analyticsCollector
+        )
+        startTokenPersistence(provider: provider)
+        appStateModel.transition(to: .authenticated)
+    }
+
+    private func startTokenPersistence(provider: CredentialsProvider) {
+        let tokenStore = sessionTokenStore
+        let coreUpdates = provider.coreTokenUpdates()
+        let apiUpdates = provider.apiTokenUpdates()
+        tokenPersistenceTask = Task.detached {
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    for await update in coreUpdates {
+                        switch update {
+                        case .success(let token): tokenStore.storeCoreToken(token)
+                        case .failure: tokenStore.clear()
+                        }
+                    }
+                }
+                group.addTask {
+                    for await update in apiUpdates {
+                        switch update {
+                        case .success(let token): tokenStore.storeApiToken(token)
+                        case .failure: tokenStore.clear()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func buildProviderForRestore() async -> CredentialsProvider? {
+        guard let coreToken = sessionTokenStore.loadCoreToken(), coreToken.hasNotExpired,
+              let apiToken = sessionTokenStore.loadApiToken(), apiToken.hasNotExpired,
+              let plaintextSecret = sessionTokenStore.loadPlaintextDeviceSecret(),
+              let digestedPassword = try? credentialsKeychain.string(account: KeychainCredentialsStore.digestedPasswordAccount)
+        else { return nil }
+        let preferences = configRepository.preferencesStore
+        guard let authConfig = (try? preferences.authenticationConfig()) ?? nil,
+              let apiConfig = (try? preferences.serverApiConfig()) ?? nil
+        else { return nil }
+        let oAuthClient: any OAuthClient
+        let store: KeychainCredentialsStore
+        do {
+            oAuthClient = try DefaultOAuthClient(
+                tokenEndpoint: authConfig.tokenEndpoint,
+                client: authConfig.clientId,
+                clientSecret: authConfig.clientSecret
+            )
+            store = try KeychainCredentialsStore(
+                apiConfig: apiConfig,
+                preferences: preferences,
+                keychain: credentialsKeychain
+            )
+        } catch {
+            return nil
+        }
+        let provider = CredentialsProvider(
+            config: CredentialsProvider.Config(
+                coreScope: authConfig.scopeCore,
+                apiScope: authConfig.scopeApi,
+                expirationTolerance: Bootstrap.defaultExpirationTolerance
+            ),
+            oAuthClient: oAuthClient,
+            store: store
+        )
+        await provider.initialize(
+            coreToken: coreToken,
+            apiToken: apiToken,
+            plaintextDeviceSecret: plaintextSecret,
+            digestedUserPassword: digestedPassword
+        )
+        return provider
+    }
+
+    enum AppContainerError: Error, Equatable {
+        case notConfigured
+    }
+
+    private static func makeAppStateModel(
+        configRepository: ConfigRepository,
+        sessionTokenStore: SessionTokenStore
+    ) -> AppStateModel {
+        AppStateModel(
+            configRepository: configRepository,
+            restorableSession: Self.canRestoreSession(sessionTokenStore: sessionTokenStore)
+        )
+    }
+
+    private static func canRestoreSession(sessionTokenStore: SessionTokenStore) -> Bool {
+        guard let core = sessionTokenStore.loadCoreToken(), core.hasNotExpired,
+              let api = sessionTokenStore.loadApiToken(), api.hasNotExpired,
+              sessionTokenStore.loadPlaintextDeviceSecret() != nil
+        else { return false }
+        return true
     }
 
     private static func makeConfigRepository() -> ConfigRepository {

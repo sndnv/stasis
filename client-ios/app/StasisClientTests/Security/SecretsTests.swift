@@ -135,7 +135,7 @@ struct SecretsTests {
             user: user, userSalt: "s", userPassword: "pw", device: device, preferences: defaults
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         let result = await Secrets.pushDeviceSecret(
             user: user, userSalt: "s", userPassword: "pw", remotePassword: nil,
             device: device, preferences: defaults, api: api
@@ -154,7 +154,7 @@ struct SecretsTests {
             user: user, userSalt: "s", userPassword: "pw", device: device, preferences: defaults
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         let result = await Secrets.pushDeviceSecret(
             user: user, userSalt: "s", userPassword: "pw", remotePassword: "remote",
             device: device, preferences: defaults, api: api
@@ -176,7 +176,7 @@ struct SecretsTests {
             user: user, userSalt: "s", userPassword: "pw", device: device, preferences: defaults
         ).get().secret
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
 
         _ = await Secrets.pushDeviceSecret(
             user: user, userSalt: "s", userPassword: "pw", remotePassword: nil,
@@ -208,7 +208,7 @@ struct SecretsTests {
             user: user, userSalt: "s1", userPassword: "old", device: device, preferences: defaults
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         await api.setDeviceKeyExistsOverride(true)
         let result = await Secrets.reEncryptDeviceSecret(
             user: user,
@@ -243,7 +243,7 @@ struct SecretsTests {
             user: user, userSalt: "s1", userPassword: "old", device: device, preferences: defaults
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         await api.setDeviceKeyExistsOverride(false)
         let result = await Secrets.reEncryptDeviceSecret(
             user: user,

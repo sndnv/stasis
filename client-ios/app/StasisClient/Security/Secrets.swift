@@ -15,7 +15,7 @@ public enum Secrets {
         userPassword: String,
         device: DeviceId,
         preferences: UserDefaults
-    ) async -> Result<Void, Error> {
+    ) async -> Result<DeviceSecret, Error> {
         Result {
             let secretsConfig = try preferences.secretsConfig()
             let raw = Self.generateRawDeviceSecret(secretSize: Self.defaultDeviceSecretSize)
@@ -27,6 +27,7 @@ public enum Secrets {
             .toLocalEncryptionSecret()
             .encryptDeviceSecret(decrypted)
             preferences.putEncryptedDeviceSecret(encrypted)
+            return decrypted
         }
     }
 

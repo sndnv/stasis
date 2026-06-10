@@ -16,6 +16,7 @@ ANDROID_FASTLANE_DESCRIPTION_ASSETS = 'fastlane/metadata/android/en-US'
 FLUTTER_WEB_ASSETS = 'web/assets'
 FLUTTER_DESKTOP_ASSETS = 'assets'
 FLUTTER_DESKTOP_MACOS_ASSETS = 'macos/Runner/Assets.xcassets/AppIcon.appiconset'
+IOS_ASSETS = 'app/StasisClient/Assets.xcassets'
 
 
 class Paths:
@@ -109,6 +110,10 @@ def main():
             {'asset': 'descriptions/short.txt', 'target': '{}/short_description.txt'.format(ANDROID_FASTLANE_DESCRIPTION_ASSETS)},
             {'asset': 'descriptions/full.txt', 'target': '{}/full_description.txt'.format(ANDROID_FASTLANE_DESCRIPTION_ASSETS)},
             {'asset': 'icons/stasis.logo.256.png', 'target': '{}/icon.png'.format(ANDROID_FASTLANE_IMAGE_ASSETS)},
+        ],
+        'client-ios': [
+            {'asset': 'stasis.logo.svg', 'target': '{}/StasisLogo.imageset/stasis.logo.svg'.format(IOS_ASSETS)},
+            {'asset': 'icons/stasis.logo.1024.png', 'target': '{}/AppIcon.appiconset/icon.png'.format(IOS_ASSETS)},
         ],
         'identity-ui': [
             {'asset': 'identity.logo.svg', 'target': '{}/logo.svg'.format(FLUTTER_WEB_ASSETS)},

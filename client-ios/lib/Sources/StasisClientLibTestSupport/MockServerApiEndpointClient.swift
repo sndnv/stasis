@@ -42,12 +42,18 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
     private let pingDisabled: Bool
     private let commandsDisabled: Bool
     private let createDatasetEntryDelay: TimeInterval
+    private var datasetDefinitionsFailure: (any Error)?
     private var datasetDefinitionFailure: (any Error)?
     private var latestEntryFailure: (any Error)?
     private var datasetEntryFailure: (any Error)?
+    private var datasetEntriesFailure: (any Error)?
+    private var datasetMetadataFailure: (any Error)?
+    private var datasetEntriesOverride: [DatasetEntry]?
     private var pushDeviceKeyFailure: (any Error)?
     private var pullDeviceKeyFailure: (any Error)?
     private var deviceKeyExistsFailure: (any Error)?
+    private var userFailure: (any Error)?
+    private var deviceFailure: (any Error)?
 
     public func lastRequest<T: Sendable>(as type: T.Type = T.self) -> T? {
         lastRequest as? T
@@ -65,12 +71,18 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
         self.createDatasetEntryDelay = createDatasetEntryDelay
     }
 
+    public func setDatasetDefinitionsFailure(_ error: any Error) { datasetDefinitionsFailure = error }
     public func setDatasetDefinitionFailure(_ error: any Error) { datasetDefinitionFailure = error }
     public func setLatestEntryFailure(_ error: any Error) { latestEntryFailure = error }
     public func setDatasetEntryFailure(_ error: any Error) { datasetEntryFailure = error }
+    public func setDatasetEntriesFailure(_ error: any Error) { datasetEntriesFailure = error }
+    public func setDatasetMetadataFailure(_ error: any Error) { datasetMetadataFailure = error }
+    public func setDatasetEntriesOverride(_ entries: [DatasetEntry]) { datasetEntriesOverride = entries }
     public func setPushDeviceKeyFailure(_ error: any Error) { pushDeviceKeyFailure = error }
     public func setPullDeviceKeyFailure(_ error: any Error) { pullDeviceKeyFailure = error }
     public func setDeviceKeyExistsFailure(_ error: any Error) { deviceKeyExistsFailure = error }
+    public func setUserFailure(_ error: any Error) { userFailure = error }
+    public func setDeviceFailure(_ error: any Error) { deviceFailure = error }
 
     public func setDatasetMetadataOverride(_ entry: DatasetEntryId, _ metadata: DatasetMetadata) {
         datasetMetadataOverrides[entry] = metadata
@@ -89,6 +101,7 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     public func datasetDefinitions() async throws -> [DatasetDefinition] {
         calls.definitionsRetrieved += 1
+        if let datasetDefinitionsFailure { throw datasetDefinitionsFailure }
         if let override = datasetDefinitionsOverride { return override }
         return [TestGenerators.definition(), TestGenerators.definition()]
     }
@@ -119,6 +132,8 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     public func datasetEntries(definition: DatasetDefinitionId) async throws -> [DatasetEntry] {
         calls.entriesRetrieved += 1
+        if let datasetEntriesFailure { throw datasetEntriesFailure }
+        if let datasetEntriesOverride { return datasetEntriesOverride }
         return [
             TestGenerators.entry(definition: definition),
             TestGenerators.entry(definition: definition),
@@ -170,16 +185,19 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     public func datasetMetadata(entry: DatasetEntryId) async throws -> DatasetMetadata {
         calls.metadataWithIdRetrieved += 1
+        if let datasetMetadataFailure { throw datasetMetadataFailure }
         return datasetMetadataOverrides[entry] ?? TestGenerators.emptyDatasetMetadata
     }
 
     public func datasetMetadata(entry: DatasetEntry) async throws -> DatasetMetadata {
         calls.metadataWithEntryRetrieved += 1
+        if let datasetMetadataFailure { throw datasetMetadataFailure }
         return datasetMetadataOverrides[entry.id] ?? TestGenerators.emptyDatasetMetadata
     }
 
     public func user() async throws -> User {
         calls.userRetrieved += 1
+        if let userFailure { throw userFailure }
         return TestGenerators.user()
     }
 
@@ -195,6 +213,7 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     public func device() async throws -> Device {
         calls.deviceRetrieved += 1
+        if let deviceFailure { throw deviceFailure }
         return TestGenerators.device()
     }
 

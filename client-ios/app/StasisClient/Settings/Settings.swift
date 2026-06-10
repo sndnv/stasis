@@ -128,9 +128,11 @@ public extension UserDefaults {
     }
 
     private func seconds(forKey key: String, default fallback: TimeInterval) -> TimeInterval {
-        guard let raw = string(forKey: key), let value = Int64(raw) else {
-            return fallback
+        switch object(forKey: key) {
+        case let value as Double: return value
+        case let value as Int: return TimeInterval(value)
+        case let raw as String: return Int64(raw).map(TimeInterval.init) ?? fallback
+        default: return fallback
         }
-        return TimeInterval(value)
     }
 }

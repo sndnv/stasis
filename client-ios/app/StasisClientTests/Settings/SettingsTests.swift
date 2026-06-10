@@ -111,4 +111,13 @@ struct SettingsTests {
         defaults.set(false, forKey: Settings.Keys.analyticsKeepEvents)
         #expect(!defaults.analyticsKeepEvents())
     }
+
+    @Test("reads Double-encoded intervals written by @AppStorage")
+    func intervalsFromAppStorageDouble() {
+        let defaults = TestDefaults.isolatedDefaults()
+        defaults.set(180.0 as Double, forKey: Settings.Keys.pingInterval)
+        defaults.set(900.0 as Double, forKey: Settings.Keys.analyticsTransmissionInterval)
+        #expect(defaults.pingInterval() == 180)
+        #expect(defaults.analyticsTransmissionInterval() == 900)
+    }
 }

@@ -103,7 +103,7 @@ struct KeychainCredentialsStoreTests {
             Secrets.generateRawDeviceSecret(secretSize: 64), userPassword: "pw"
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         let result = await bundle.store.pushDeviceSecret(api: api, userPassword: "pw", remotePassword: nil)
         if case .failure(let error) = result { Issue.record("push failed: \(error)"); return }
         #expect(await api.calls.deviceKeyPushed == 1)
@@ -115,7 +115,7 @@ struct KeychainCredentialsStoreTests {
         let raw = Secrets.generateRawDeviceSecret(secretSize: 64)
         _ = await bundle.store.storeDeviceSecret(raw, userPassword: "pw")
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         _ = await bundle.store.pushDeviceSecret(api: api, userPassword: "pw", remotePassword: nil)
 
         let result = await bundle.store.pullDeviceSecret(api: api, userPassword: "pw", remotePassword: nil)
@@ -135,7 +135,7 @@ struct KeychainCredentialsStoreTests {
             Secrets.generateRawDeviceSecret(secretSize: 64), userPassword: "old"
         )
 
-        let api = MockServerApiEndpointClient()
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         let result = await bundle.store.updateUserCredentials(
             api: api,
             currentUserPassword: "old",
