@@ -8,14 +8,16 @@ enum TestSession {
     static func make(
         api: StasisClientLibTestSupport.MockServerApiEndpointClient = StasisClientLibTestSupport.MockServerApiEndpointClient(),
         core: any ServerCoreEndpointClient = StubServerCoreEndpointClient(),
-        executor: any OperationExecutor = MockOperationExecutor()
+        executor: any OperationExecutor = MockOperationExecutor(),
+        caches: AuthenticatedSession.CachesBundle? = nil
     ) throws -> AuthenticatedSession {
         AuthenticatedSession(
             credentialsProvider: try makeProvider(),
             serverApiClient: api,
             serverCoreClient: core,
             operationExecutor: executor,
-            secretRef: AuthenticatedSession.SecretRef()
+            secretRef: AuthenticatedSession.SecretRef(),
+            caches: caches
         )
     }
 

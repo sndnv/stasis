@@ -147,6 +147,87 @@ final class AppContainer {
         try await resetConfiguration()
     }
 
+    func updateUserPassword(currentPassword: String, newPassword: String) async throws {
+        try await updateUserCredentials(
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+            newSalt: nil
+        )
+    }
+
+    func updateUserSalt(currentPassword: String, newSalt: String) async throws {
+        try await updateUserCredentials(
+            currentPassword: currentPassword,
+            newPassword: currentPassword,
+            newSalt: newSalt
+        )
+    }
+
+    private func updateUserCredentials(
+        currentPassword: String,
+        newPassword: String,
+        newSalt: String?
+    ) async throws {
+        guard let session else { throw AppContainerError.notConfigured }
+        guard await session.credentialsProvider.verifyUserPassword(currentPassword) else {
+            throw InvalidUserCredentials()
+        }
+        let result = await session.credentialsProvider.updateUserCredentials(
+            api: session.serverApiClient,
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+            newSalt: newSalt
+        )
+        _ = try result.get()
+    }
+
+    func importDeviceSecret(plaintext: Data, password: String) async throws {
+        guard let session else { throw AppContainerError.notConfigured }
+        guard await session.credentialsProvider.verifyUserPassword(password) else {
+            throw InvalidUserCredentials()
+        }
+        let result = await session.credentialsProvider.updateDeviceSecret(
+            plaintextDeviceSecret: plaintext, password: password
+        )
+        _ = try result.get()
+        try await session.refreshDeviceSecret()
+        sessionTokenStore.storePlaintextDeviceSecret(plaintext)
+    }
+
+    func pushDeviceSecret(password: String, remotePassword: String?) async throws {
+        guard let session else { throw AppContainerError.notConfigured }
+        guard await session.credentialsProvider.verifyUserPassword(password) else {
+            throw InvalidUserCredentials()
+        }
+        let result = await session.credentialsProvider.pushDeviceSecret(
+            api: session.serverApiClient, password: password, remotePassword: remotePassword
+        )
+        try result.get()
+    }
+
+    func pullDeviceSecret(password: String, remotePassword: String?) async throws {
+        guard let session else { throw AppContainerError.notConfigured }
+        guard await session.credentialsProvider.verifyUserPassword(password) else {
+            throw InvalidUserCredentials()
+        }
+        let result = await session.credentialsProvider.pullDeviceSecret(
+            api: session.serverApiClient, password: password, remotePassword: remotePassword
+        )
+        try result.get()
+        try await session.refreshDeviceSecret()
+        if let value = try? await session.credentialsProvider.currentDeviceSecret().get() {
+            sessionTokenStore.storePlaintextDeviceSecret(value.secret)
+        }
+    }
+
+    func remoteDeviceSecretExists() async throws -> Bool {
+        guard let session else { throw AppContainerError.notConfigured }
+        let result = await session.credentialsProvider.remoteDeviceSecretExists(
+            api: session.serverApiClient
+        )
+        return try result.get()
+    }
+
     func restoreSession() async {
         guard appStateModel.state == .restoring else { return }
         guard let provider = await buildProviderForRestore() else {

@@ -14,14 +14,19 @@ final actor MockOperationExecutor: OperationExecutor {
 
     private(set) var calls: [StartCall] = []
     private(set) var captured: [OperationCallback] = []
+    private(set) var stopCalls: [OperationId] = []
+    private(set) var resumeCalls: [OperationId] = []
     var fireCallbacksImmediately: Bool = true
     var callbackError: (any Error)?
     var startExpirationError: (any Error)?
     var startValidationError: (any Error)?
     var startKeyRotationError: (any Error)?
+    var stopError: (any Error)?
+    var activeOverride: [OperationId: OperationType] = [:]
+    var completedOverride: [OperationId: OperationType] = [:]
 
-    func active() async -> [OperationId: OperationType] { [:] }
-    func completed() async -> [OperationId: OperationType] { [:] }
+    func active() async -> [OperationId: OperationType] { activeOverride }
+    func completed() async -> [OperationId: OperationType] { completedOverride }
     func find(operation: OperationId) async -> OperationType? { nil }
 
     func startBackupWithRules(
@@ -45,6 +50,7 @@ final actor MockOperationExecutor: OperationExecutor {
     }
 
     func resumeBackup(operation: OperationId, callback: @escaping OperationCallback) async -> OperationId {
+        resumeCalls.append(operation)
         deliver(callback: callback)
         return operation
     }
@@ -98,12 +104,18 @@ final actor MockOperationExecutor: OperationExecutor {
         return UUID()
     }
 
-    func stop(operation: OperationId) async throws {}
+    func stop(operation: OperationId) async throws {
+        if let error = stopError { throw error }
+        stopCalls.append(operation)
+    }
 
     func setCallbackError(_ error: (any Error)?) { callbackError = error }
     func setStartExpirationError(_ error: (any Error)?) { startExpirationError = error }
     func setStartValidationError(_ error: (any Error)?) { startValidationError = error }
     func setStartKeyRotationError(_ error: (any Error)?) { startKeyRotationError = error }
+    func setStopError(_ error: (any Error)?) { stopError = error }
+    func setActiveOverride(_ value: [OperationId: OperationType]) { activeOverride = value }
+    func setCompletedOverride(_ value: [OperationId: OperationType]) { completedOverride = value }
 
     private func deliver(callback: @escaping OperationCallback) {
         if fireCallbacksImmediately {

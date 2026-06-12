@@ -20,7 +20,6 @@ public enum CacheRefreshTarget: Sendable, Equatable, Hashable {
 
 public protocol CacheRefreshHandler: Sendable {
     func refreshNow(target: CacheRefreshTarget) async throws
-    func stop() async
 }
 
 public enum CacheRefreshHandlerDefaults {

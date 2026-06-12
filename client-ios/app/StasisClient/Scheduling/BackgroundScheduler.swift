@@ -14,6 +14,7 @@ public actor BackgroundScheduler {
     private let executor: any OperationExecutor
     private let notifications: any SchedulingNotifications
     private let publicSchedulesCache: RefreshingCache<Int, [Schedule]>
+    public let publicSchedulesTracking: TrackingCache<Int, [Schedule]>
     private let publicSchedulesLoader: @Sendable () async throws -> [Schedule]
     private let taskScheduler: any BackgroundTaskScheduling
 
@@ -38,8 +39,10 @@ public actor BackgroundScheduler {
         self.executor = executor
         self.notifications = notifications
         self.publicSchedulesLoader = publicSchedulesLoader
+        let tracking = TrackingCache<Int, [Schedule]>(underlying: MapCache())
+        self.publicSchedulesTracking = tracking
         self.publicSchedulesCache = RefreshingCache(
-            underlying: MapCache(),
+            underlying: tracking,
             interval: publicSchedulesRefreshInterval
         )
         self.taskScheduler = taskScheduler

@@ -24,12 +24,12 @@ struct MainView: View {
                     RecoverView()
                 }
                 Tab("Search", systemImage: "magnifyingglass", value: TabId.search) {
-                    PlaceholderTabView(title: "Search")
+                    SearchView()
                 }
             }
             TabSection("Manage") {
                 Tab("Operations", systemImage: "text.justifyleft", value: TabId.operations) {
-                    PlaceholderTabView(title: "Operations")
+                    OperationsView()
                 }
                 Tab("Status", systemImage: "info.circle", value: TabId.status) {
                     StatusView()
@@ -38,7 +38,7 @@ struct MainView: View {
                     RulesView()
                 }
                 Tab("Schedules", systemImage: "clock", value: TabId.schedules) {
-                    PlaceholderTabView(title: "Schedules")
+                    SchedulesView()
                 }
             }
             TabSection("More") {

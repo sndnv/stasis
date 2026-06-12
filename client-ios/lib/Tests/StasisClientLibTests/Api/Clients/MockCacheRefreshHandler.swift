@@ -55,5 +55,4 @@ actor MockCacheRefreshHandler: CacheRefreshHandler {
         }
     }
 
-    func stop() {}
 }

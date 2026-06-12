@@ -1,3 +1,4 @@
+import Foundation
 @testable import StasisClient
 import Testing
 
@@ -49,5 +50,53 @@ struct AppContainerTests {
         #expect(container.session == nil)
         #expect(try repository.available() == false)
         #expect(container.appStateModel.state == .unconfigured)
+    }
+
+    @Test("updateUserPassword throws notConfigured when no session is active")
+    func updateUserPasswordRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            try await container.updateUserPassword(currentPassword: "old", newPassword: "new")
+        }
+    }
+
+    @Test("updateUserSalt throws notConfigured when no session is active")
+    func updateUserSaltRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            try await container.updateUserSalt(currentPassword: "old", newSalt: "salt")
+        }
+    }
+
+    @Test("importDeviceSecret throws notConfigured when no session is active")
+    func importDeviceSecretRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            try await container.importDeviceSecret(plaintext: Data([0x01]), password: "pw")
+        }
+    }
+
+    @Test("pushDeviceSecret throws notConfigured when no session is active")
+    func pushDeviceSecretRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            try await container.pushDeviceSecret(password: "pw", remotePassword: nil)
+        }
+    }
+
+    @Test("pullDeviceSecret throws notConfigured when no session is active")
+    func pullDeviceSecretRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            try await container.pullDeviceSecret(password: "pw", remotePassword: nil)
+        }
+    }
+
+    @Test("remoteDeviceSecretExists throws notConfigured when no session is active")
+    func remoteDeviceSecretExistsRequiresSession() async {
+        let container = AppContainer()
+        await #expect(throws: AppContainer.AppContainerError.notConfigured) {
+            _ = try await container.remoteDeviceSecretExists()
+        }
     }
 }

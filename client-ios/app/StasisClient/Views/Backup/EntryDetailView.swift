@@ -5,7 +5,12 @@ struct EntryDetailView: View {
     @Environment(AppContainer.self) private var container
     let entry: DatasetEntry
     @State private var model: EntryDetailModel?
-    @State private var filters: EntryMetadataFilters = .default
+    @State private var filters: EntryMetadataFilters
+
+    init(entry: DatasetEntry, initialFilters: EntryMetadataFilters = .default) {
+        self.entry = entry
+        _filters = State(initialValue: initialFilters)
+    }
 
     var body: some View {
         EntryDetailContent(
@@ -49,6 +54,7 @@ struct EntryMetadataFilters: Equatable {
     var filesOnly: Bool = true
     var noHidden: Bool = true
     var pathQuery: String = ""
+    var exactPath: Bool = false
 
     static let `default` = EntryMetadataFilters()
 
@@ -58,7 +64,14 @@ struct EntryMetadataFilters: Equatable {
             if updatesOnly, case .existing = entry.state { return false }
             if filesOnly, case .directory = entry.metadata { return false }
             if noHidden, EntryMetadataFilters.isPathHidden(entry: entry) { return false }
-            if !query.isEmpty, !entry.path.lowercased().contains(query) { return false }
+            if !query.isEmpty {
+                let path = entry.path.lowercased()
+                if exactPath {
+                    if path != query { return false }
+                } else if !path.contains(query) {
+                    return false
+                }
+            }
             return true
         }
     }

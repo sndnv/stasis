@@ -8,6 +8,14 @@ struct AuthenticatedSession: Sendable {
     let serverCoreClient: any ServerCoreEndpointClient
     let operationExecutor: any OperationExecutor
     let secretRef: SecretRef
+    let caches: CachesBundle?
+
+    struct CachesBundle: Sendable {
+        let datasetDefinitions: TrackingCache<DatasetDefinitionId, DatasetDefinition>
+        let datasetEntries: TrackingCache<DatasetEntryId, DatasetEntry>
+        let datasetEntriesForDefinition: TrackingCache<DatasetDefinitionId, DatasetEntriesForDefinition>
+        let datasetMetadata: TrackingCache<DatasetEntryId, DatasetMetadata>
+    }
 
     func refreshDeviceSecret() async throws {
         let updated = try await credentialsProvider.currentDeviceSecret().get()
@@ -24,38 +32,12 @@ struct AuthenticatedSession: Sendable {
         let initialSecret = try await credentialsProvider.currentDeviceSecret().get()
         let ref = SecretRef(initial: initialSecret)
         let resolveSecret: @Sendable () -> DeviceSecret = { ref.get() }
-        let serverCore: any ServerCoreEndpointClient
-        let serverApi: any ServerApiEndpointClient
-        #if DEBUG
-        if MockConfig.isMockServer(identities.apiUrl) {
-            serverCore = MockServerCoreEndpointClient()
-            serverApi = MockServerApiEndpointClient()
-        } else {
-            serverCore = DefaultServerCoreEndpointClient(
-                serverCoreUrl: identities.coreAddress,
-                credentialsProvider: credentialsProvider.coreCredentialsProvider(),
-                selfNode: identities.selfNode
-            )
-            serverApi = DefaultServerApiEndpointClient(
-                serverApiUrl: identities.apiUrl,
-                credentialsProvider: credentialsProvider.apiCredentialsProvider(),
-                decryption: .enabled(core: serverCore, deviceSecret: resolveSecret),
-                selfDevice: identities.selfDevice
-            )
-        }
-        #else
-        serverCore = DefaultServerCoreEndpointClient(
-            serverCoreUrl: identities.coreAddress,
-            credentialsProvider: credentialsProvider.coreCredentialsProvider(),
-            selfNode: identities.selfNode
+        let (serverCore, underlyingApi) = Self.makeUnderlyingClients(
+            identities: identities,
+            credentialsProvider: credentialsProvider,
+            resolveSecret: resolveSecret
         )
-        serverApi = DefaultServerApiEndpointClient(
-            serverApiUrl: identities.apiUrl,
-            credentialsProvider: credentialsProvider.apiCredentialsProvider(),
-            decryption: .enabled(core: serverCore, deviceSecret: resolveSecret),
-            selfDevice: identities.selfDevice
-        )
-        #endif
+        let (serverApi, caches) = Self.makeCachedApi(underlying: underlyingApi)
         let executor = Self.makeExecutor(
             resolveSecret: resolveSecret,
             serverApi: serverApi,
@@ -68,8 +50,67 @@ struct AuthenticatedSession: Sendable {
             serverApiClient: serverApi,
             serverCoreClient: serverCore,
             operationExecutor: executor,
-            secretRef: ref
+            secretRef: ref,
+            caches: caches
         )
+    }
+
+    private static func makeUnderlyingClients(
+        identities: Identities,
+        credentialsProvider: CredentialsProvider,
+        resolveSecret: @escaping @Sendable () -> DeviceSecret
+    ) -> (any ServerCoreEndpointClient, any ServerApiEndpointClient) {
+        #if DEBUG
+        if MockConfig.isMockServer(identities.apiUrl) {
+            return (MockServerCoreEndpointClient(), MockServerApiEndpointClient())
+        }
+        #endif
+        let core = DefaultServerCoreEndpointClient(
+            serverCoreUrl: identities.coreAddress,
+            credentialsProvider: credentialsProvider.coreCredentialsProvider(),
+            selfNode: identities.selfNode
+        )
+        let api = DefaultServerApiEndpointClient(
+            serverApiUrl: identities.apiUrl,
+            credentialsProvider: credentialsProvider.apiCredentialsProvider(),
+            decryption: .enabled(core: core, deviceSecret: resolveSecret),
+            selfDevice: identities.selfDevice
+        )
+        return (core, api)
+    }
+
+    private static func makeCachedApi(
+        underlying: any ServerApiEndpointClient
+    ) -> (any ServerApiEndpointClient, CachesBundle) {
+        let definitionsCache = TrackingCache<DatasetDefinitionId, DatasetDefinition>(
+            underlying: MapCache()
+        )
+        let entriesCache = TrackingCache<DatasetEntryId, DatasetEntry>(underlying: MapCache())
+        let entriesForDefCache = TrackingCache<DatasetDefinitionId, DatasetEntriesForDefinition>(
+            underlying: MapCache()
+        )
+        let metadataCache = TrackingCache<DatasetEntryId, DatasetMetadata>(underlying: MapCache())
+        let refreshHandler = DefaultCacheRefreshHandler(
+            underlying: underlying,
+            datasetDefinitionsCache: definitionsCache,
+            datasetEntriesCache: entriesCache,
+            datasetEntriesForDefinitionCache: entriesForDefCache
+        )
+        let cached = CachedServerApiEndpointClient(
+            underlying: underlying,
+            datasetDefinitionsCache: definitionsCache,
+            datasetEntriesCache: entriesCache,
+            datasetEntriesForDefinitionCache: entriesForDefCache,
+            datasetMetadataCache: metadataCache,
+            refreshHandler: refreshHandler
+        )
+        let bundle = CachesBundle(
+            datasetDefinitions: definitionsCache,
+            datasetEntries: entriesCache,
+            datasetEntriesForDefinition: entriesForDefCache,
+            datasetMetadata: metadataCache
+        )
+        return (cached, bundle)
     }
 
     final class SecretRef: Sendable {

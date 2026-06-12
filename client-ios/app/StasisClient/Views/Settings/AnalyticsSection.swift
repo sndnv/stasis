@@ -11,6 +11,7 @@ struct AnalyticsSection: View {
     private var persistenceInterval: TimeInterval = Settings.Defaults.analyticsPersistenceInterval
     @AppStorage(Settings.Keys.analyticsTransmissionInterval)
     private var transmissionInterval: TimeInterval = Settings.Defaults.analyticsTransmissionInterval
+    @State private var showCollected: Bool = false
 
     var body: some View {
         Section {
@@ -27,12 +28,18 @@ struct AnalyticsSection: View {
                 seconds: $transmissionInterval,
                 options: SettingsIntervalOptions.allLong
             ).disabled(!enabled)
-            PlaceholderActionRow(title: "Show Collected").disabled(!enabled)
+            Button {
+                showCollected = true
+            } label: {
+                Label("Show Collected", systemImage: "chart.bar.doc.horizontal")
+            }
+            .disabled(!enabled)
         } header: {
             Text("Analytics")
         } footer: {
             Text("Changes to intervals apply after restart.")
         }
+        .sheet(isPresented: $showCollected) { CollectedAnalyticsSheet() }
     }
 }
 

@@ -12,6 +12,8 @@ struct DebugSection: View {
 
     let onResetTapped: () -> Void
 
+    @State private var showCacheStats: Bool = false
+
     var body: some View {
         Section {
             IntervalPicker(
@@ -30,7 +32,11 @@ struct DebugSection: View {
                 title: "Cache Active Interval", seconds: $cacheActiveInterval,
                 options: SettingsIntervalOptions.allShort
             )
-            PlaceholderActionRow(title: "Show Cache Statistics")
+            Button {
+                showCacheStats = true
+            } label: {
+                Label("Show Cache Statistics", systemImage: "chart.bar.doc.horizontal")
+            }
             Button(role: .destructive, action: onResetTapped) {
                 Label("Reset Configuration", systemImage: "arrow.counterclockwise")
             }
@@ -39,9 +45,13 @@ struct DebugSection: View {
         } footer: {
             Text("Changes to intervals apply after restart.")
         }
+        .sheet(isPresented: $showCacheStats) {
+            CacheStatsSheet()
+        }
     }
 }
 
 #Preview {
     Form { DebugSection(onResetTapped: {}) }
+        .environment(AppContainer())
 }
