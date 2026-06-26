@@ -12,32 +12,45 @@ class RuleSpec extends UnitSpec {
 
     val rule1 = Rule(
       operation = Rule.Operation.Include,
-      directory = "/work",
+      source = "/work",
       pattern = "?",
+      options = Map.empty,
       comment = None,
       original = original
     )
 
     val rule2 = Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/work",
+      source = "/work",
       pattern = "[a-z]",
+      options = Map.empty,
       comment = None,
       original = original
     )
 
     val rule3 = Rule(
       operation = Rule.Operation.Include,
-      directory = "/work",
+      source = "/work",
       pattern = "{0|1}",
+      options = Map.empty,
       comment = None,
       original = original
     )
 
     val rule4 = Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/work/root",
+      source = "/work/root",
       pattern = "**/q",
+      options = Map.empty,
+      comment = None,
+      original = original
+    )
+
+    val rule5 = Rule(
+      operation = Rule.Operation.Include,
+      source = "photos:/test",
+      pattern = "*",
+      options = Map("recursive" -> "true", "album" -> "test a"),
       comment = None,
       original = original
     )
@@ -46,6 +59,22 @@ class RuleSpec extends UnitSpec {
     rule2.asString should be("- /work [a-z]")
     rule3.asString should be("+ /work {0|1}")
     rule4.asString should be("- /work/root **/q")
+    rule5.asString should be("""+ photos:/test * @album="test a" @recursive=true""")
+  }
+
+  it should "support extracting options from rule markers" in {
+    Rule.extractOptions("photos:/test *", lineNumber = 0) should be(
+      Success(("photos:/test *", Map.empty[String, String]))
+    )
+
+    Rule.extractOptions("""photos:/test * @recursive=true @album="test a"""", lineNumber = 0) should be(
+      Success(("photos:/test *", Map("recursive" -> "true", "album" -> "test a")))
+    )
+
+    Rule.extractOptions("photos:/test * @recursive=true @recursive=false", lineNumber = 0) match {
+      case Success(result) => fail(s"Unexpected result received: [$result]")
+      case Failure(e)      => e.getMessage should be("Duplicate option [recursive] provided on line [0]")
+    }
   }
 
   it should "support trimming quoted strings" in {
@@ -88,8 +117,8 @@ class RuleSpec extends UnitSpec {
     }
   }
 
-  it should "support extracting directories and patterns from a raw directory/pattern string" in {
-    val validDirectoryPatternRules = Map(
+  it should "support extracting sources and patterns from a raw source/pattern string" in {
+    val validSourcePatternRules = Map(
       "/home/user   *               " -> ("/home/user", "*"),
       "/home/user   .*/             " -> ("/home/user", ".*/"),
       "/home/user   .sbt/*.sbt      " -> ("/home/user", ".sbt/*.sbt"),
@@ -106,28 +135,28 @@ class RuleSpec extends UnitSpec {
       )
     )
 
-    val invalidDirectoryPatternsRules = Seq(
-      "/directory-without-pattern",
+    val invalidSourcePatternRules = Seq(
+      "/source-without-pattern",
       "/",
       ".*",
       ""
     )
 
-    validDirectoryPatternRules.foreach { case (rule, (directory, pattern)) =>
-      val actualDirectoryPattern = Rule.extractDirectoryPattern(rule, lineNumber = 0)
-      withClue(s"Extracted directory/pattern rule [$rule] to [$actualDirectoryPattern]") {
-        actualDirectoryPattern should be(Success((directory, pattern)))
+    validSourcePatternRules.foreach { case (rule, (source, pattern)) =>
+      val actualSourcePattern = Rule.extractSourcePattern(rule, lineNumber = 0)
+      withClue(s"Extracted source/pattern rule [$rule] to [$actualSourcePattern]") {
+        actualSourcePattern should be(Success((source, pattern)))
       }
     }
 
-    invalidDirectoryPatternsRules.foreach { rule =>
-      withClue(s"Attempting to extract directory/pattern from invalid rule [$rule]") {
-        Rule.extractDirectoryPattern(rule, lineNumber = 0) match {
+    invalidSourcePatternRules.foreach { rule =>
+      withClue(s"Attempting to extract source/pattern from invalid rule [$rule]") {
+        Rule.extractSourcePattern(rule, lineNumber = 0) match {
           case Success(result) =>
             fail(s"Unexpected result received: [$result]")
 
           case Failure(e) =>
-            e.getMessage should be(s"Invalid rule directory and/or pattern provided on line [0]: [$rule]")
+            e.getMessage should be(s"Invalid rule source and/or pattern provided on line [0]: [$rule]")
         }
       }
     }
@@ -137,37 +166,50 @@ class RuleSpec extends UnitSpec {
     val validRules = Map(
       "+ /home/user   *         #  include all user files " -> Rule(
         operation = Rule.Operation.Include,
-        directory = "/home/user",
+        source = "/home/user",
         pattern = "*",
+        options = Map.empty,
         comment = Some("include all user files"),
         original = Rule.Original(line = "", lineNumber = 0)
       ),
       "- /home/user   .ssh      #  exclude ssh directory  " -> Rule(
         operation = Rule.Operation.Exclude,
-        directory = "/home/user",
+        source = "/home/user",
         pattern = ".ssh",
+        options = Map.empty,
         comment = Some("exclude ssh directory"),
         original = Rule.Original(line = "", lineNumber = 0)
       ),
       "+ /etc         *.conf    // include all conf files " -> Rule(
         operation = Rule.Operation.Include,
-        directory = "/etc",
+        source = "/etc",
         pattern = "*.conf",
+        options = Map.empty,
         comment = Some("include all conf files"),
         original = Rule.Original(line = "", lineNumber = 0)
       ),
       "- /etc/test    *cache*   // exclude all cache files" -> Rule(
         operation = Rule.Operation.Exclude,
-        directory = "/etc/test",
+        source = "/etc/test",
         pattern = "*cache*",
+        options = Map.empty,
         comment = Some("exclude all cache files"),
         original = Rule.Original(line = "", lineNumber = 0)
       ),
       "+   \"/var/log/some service\" *" -> Rule(
         operation = Rule.Operation.Include,
-        directory = "/var/log/some service",
+        source = "/var/log/some service",
         pattern = "*",
+        options = Map.empty,
         comment = None,
+        original = Rule.Original(line = "", lineNumber = 0)
+      ),
+      "+ photos:/test * @recursive=true @album=\"test a\" # include test album" -> Rule(
+        operation = Rule.Operation.Include,
+        source = "photos:/test",
+        pattern = "*",
+        options = Map("recursive" -> "true", "album" -> "test a"),
+        comment = Some("include test album"),
         original = Rule.Original(line = "", lineNumber = 0)
       )
     )

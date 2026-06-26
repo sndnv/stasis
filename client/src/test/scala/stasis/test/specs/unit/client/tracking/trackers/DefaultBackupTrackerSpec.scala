@@ -29,16 +29,17 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
 
     implicit val operation: Operation.Id = Operation.generateId()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
-    val sourceEntity = SourceEntity(path = entity, existingMetadata = None, currentMetadata = Fixtures.Metadata.FileOneMetadata)
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asRef
+    val sourceEntity = SourceEntity(ref = entity, existingMetadata = None, currentMetadata = Fixtures.Metadata.FileOneMetadata)
 
     val initialState = tracker.state.await
     initialState should be(empty)
 
     val rule = Rule(
       operation = Rule.Operation.Include,
-      directory = "/work",
+      source = "/work",
       pattern = "?",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(line = "", lineNumber = 0)
     )
@@ -56,7 +57,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
     tracker.metadataCollected()
     tracker.metadataPushed(entry = Fixtures.Entries.Default.id)
     tracker.failureEncountered(new RuntimeException("Test failure #2"))
-    tracker.failureEncountered(entity = Fixtures.Metadata.FileTwoMetadata.path.asPath, new RuntimeException("Test failure #3"))
+    tracker.failureEncountered(entity = Fixtures.Metadata.FileTwoMetadata.path.asRef, new RuntimeException("Test failure #3"))
     tracker.completed()
 
     eventually[Assertion] {
@@ -79,7 +80,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
             entity -> ProcessedSourceEntity(expectedParts = 1, processedParts = 1, metadata = Left(sourceEntity.currentMetadata))
           ),
           failed = Map(
-            Fixtures.Metadata.FileTwoMetadata.path.asPath -> "RuntimeException - Test failure #3"
+            Fixtures.Metadata.FileTwoMetadata.path.asRef -> "RuntimeException - Test failure #3"
           )
         )
       )
@@ -94,7 +95,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
   it should "provide state updates" in withRetry {
     val tracker = createTracker()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asRef
 
     val initialState = tracker.state.await
     initialState should be(empty)
@@ -186,7 +187,7 @@ class DefaultBackupTrackerSpec extends AsyncUnitSpec with Eventually with Before
   it should "support providing at least one state update" in withRetry {
     val tracker = createTracker()
 
-    val entity = Fixtures.Metadata.FileOneMetadata.path.asPath
+    val entity = Fixtures.Metadata.FileOneMetadata.path.asRef
 
     val initialState = tracker.state.await
     initialState should be(empty)

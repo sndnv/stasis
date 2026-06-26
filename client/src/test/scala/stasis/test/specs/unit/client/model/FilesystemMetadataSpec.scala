@@ -13,7 +13,7 @@ class FilesystemMetadataSpec extends UnitSpec {
   "A FilesystemMetadata" should "be serializable to protobuf data" in {
     FilesystemMetadata.toProto(
       filesystem = createFilesystemMetadata()
-    ) should be(filesystemMetadataProtoWithoutSeparator) // default separator used
+    ) should be(filesystemMetadataProtoWithDefaultSeparator)
   }
 
   it should "be deserializable from valid protobuf data (with separator)" in {
@@ -178,6 +178,15 @@ class FilesystemMetadataSpec extends UnitSpec {
       Fixtures.Metadata.FileThreeMetadata.path -> protoEntityStateExisting(Some(entry))
     ),
     separator = "?"
+  )
+
+  private val filesystemMetadataProtoWithDefaultSeparator = proto.metadata.FilesystemMetadata(
+    entities = Map(
+      Fixtures.Metadata.FileOneMetadata.path -> protoEntityStateNew(),
+      Fixtures.Metadata.FileTwoMetadata.path -> protoEntityStateUpdated(),
+      Fixtures.Metadata.FileThreeMetadata.path -> protoEntityStateExisting(Some(entry))
+    ),
+    separator = "/"
   )
 
   private val filesystemMetadataProtoWithoutSeparator = proto.metadata.FilesystemMetadata(

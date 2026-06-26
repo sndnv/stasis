@@ -20,5 +20,6 @@ final case class Providers(
   clients: Clients,
   track: BackupTracker,
   telemetry: TelemetryContext,
-  filesystem: FileSystem
+  filesystem: FileSystem,
+  kinds: Seq[BackupEntityKind]
 )

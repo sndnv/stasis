@@ -1,8 +1,6 @@
 package stasis.client.ops.recovery.stages
 
 import java.nio.file.FileSystem
-import java.nio.file.Files
-import java.nio.file.Path
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -17,7 +15,6 @@ import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import stasis.client.analysis.PlatformMetadata
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.EntityMetadata
 import stasis.client.model.TargetEntity
@@ -27,6 +24,7 @@ import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.EntityProcessingFailure
 import stasis.client.ops.exceptions.OperationStopped
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.utils.StringPaths.StringAsPath
 import stasis.core.packaging.Crate
 import stasis.core.routing.exceptions.PullFailure
@@ -47,73 +45,70 @@ trait EntityProcessing {
     killSwitch: SharedKillSwitch
   ): Flow[TargetEntity, TargetEntity, NotUsed] =
     Flow[TargetEntity]
-      .collect {
-        case entity @ TargetEntity(_, Destination.Default, _, _)                                  => createEntityDirectory(entity)
-        case entity @ TargetEntity(_, Destination.Directory(_, true), _, _)                       => createEntityDirectory(entity)
-        case entity @ TargetEntity(_, Destination.Directory(_, false), _: EntityMetadata.File, _) => entity
+      .filter {
+        case TargetEntity(_, Destination.Default, _, _)                                       => true
+        case TargetEntity(_, Destination.Directory(_, true), _, _)                            => true
+        case TargetEntity(_, Destination.Directory(_, false), _: EntityMetadata.File, _)      => true
+        case TargetEntity(_, Destination.Directory(_, false), _: EntityMetadata.Library, _)   => true
+        case TargetEntity(_, Destination.Directory(_, false), _: EntityMetadata.Directory, _) => false
       }
-      .map(createEntityDirectory)
+      .map { entity =>
+        RecoveryEntityKind.prepare(kinds = providers.kinds, entity = entity, providers = providers)
+        entity
+      }
       .mapAsync(parallelism.entities) {
         case entity if entity.hasContentChanged => processContentChanged(entity)
         case entity                             => processMetadataChanged(entity)
       }
       .wireTap { targetEntity =>
         metrics.recordEntityProcessed(entity = targetEntity)
-        providers.track.entityProcessed(entity = targetEntity.destinationPath)
+        providers.track.entityProcessed(entity = targetEntity.destinationRef)
       }
-
-  private def createEntityDirectory(entity: TargetEntity): TargetEntity = {
-    val entityDirectory = entity.existingMetadata match {
-      case _: EntityMetadata.File      => entity.destinationPath.getParent
-      case _: EntityMetadata.Directory => entity.destinationPath
-    }
-
-    val _ = Files.createDirectories(entityDirectory, targetDirectoryAttributes: _*)
-
-    entity
-  }
 
   private def processContentChanged(
     entity: TargetEntity
   )(implicit killSwitch: SharedKillSwitch, operation: Operation.Id): Future[TargetEntity] =
-    EntityProcessing.expectFileMetadata(entity).flatMap { file =>
-      val crates = pull(file.crates, entity.originalPath)
+    EntityProcessing.expectContentMetadata(entity).flatMap { contentMetadata =>
+      val crates = pull(contentMetadata.crates, entity)
       implicit val prv: Providers = providers
 
       val decompressor = providers.compression.decoderFor(entity)
 
       providers.track.entityProcessingStarted(
-        entity = entity.path,
+        entity = entity.ref,
         expectedParts = crates.size
       )
 
       def recordPartProcessed(): Unit =
-        providers.track.entityPartProcessed(entity = entity.path)
+        providers.track.entityPartProcessed(entity = entity.ref)
 
-      crates
-        .decrypt(withPartSecret = deviceSecret.toFileSecret(_, file.checksum))
-        .merge(onPartProcessed = recordPartProcessed)
-        .via(killSwitch.flow)
-        .decompress(decompressor = decompressor)
-        .wireTap(bytes =>
-          metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)
-        )
-        .destage(to = entity.destinationPath)
+      val content: Source[ByteString, NotUsed] =
+        crates
+          .decrypt(withPartSecret = deviceSecret.toFileSecret(_, contentMetadata.checksum))
+          .merge(onPartProcessed = recordPartProcessed)
+          .via(killSwitch.flow)
+          .decompress(decompressor = decompressor)
+          .wireTap(bytes =>
+            metrics.recordEntityChunkProcessed(step = "decompressed", extra = decompressor.name, bytes = bytes.length)
+          )
+
+      RecoveryEntityKind
+        .write(kinds = providers.kinds, entity = entity, content = content, providers = providers)
         .map(_ => entity)
         .recoverWith {
           case OperationStopped(e) => Future.failed(e)
-          case NonFatal(e)         => Future.failed(EntityProcessingFailure(entity = entity.path, cause = e))
+          case NonFatal(e)         => Future.failed(EntityProcessingFailure(entity = entity.ref, cause = e))
         }
     }
 
   private def processMetadataChanged(entity: TargetEntity)(implicit operation: Operation.Id): Future[TargetEntity] = {
-    providers.track.entityProcessingStarted(entity = entity.path, expectedParts = 0)
+    providers.track.entityProcessingStarted(entity = entity.ref, expectedParts = 0)
     Future.successful(entity)
   }
 
-  private def pull(crates: Map[String, Crate.Id], entity: Path): Iterable[(Int, String, Source[ByteString, NotUsed])] = {
+  private def pull(crates: Map[String, Crate.Id], entity: TargetEntity): Iterable[(Int, String, Source[ByteString, NotUsed])] = {
     val sources = crates.map { case (partPath, crate) =>
-      val partId = EntityProcessing.partIdFromPath(path = partPath, fs = entity.getFileSystem)
+      val partId = EntityProcessing.partIdFromPath(path = partPath, fs = providers.filesystem)
 
       val source: Source[ByteString, NotUsed] = Source
         .lazyFutureSource { () =>
@@ -126,7 +121,7 @@ trait EntityProcessing {
               case None =>
                 Future.failed(
                   PullFailure(
-                    s"Failed to pull crate [${crate.toString}] for entity [${entity.toString}]"
+                    s"Failed to pull crate [${crate.toString}] for entity [${entity.originalRef.key}]"
                   )
                 )
             }
@@ -145,16 +140,12 @@ trait EntityProcessing {
     sources
   }
 
-  private val targetDirectoryAttributes =
-    PlatformMetadata.current.ownerOnlyDirectoryAttributes
-
   private type CratesSources = Iterable[(Int, String, Source[ByteString, NotUsed])]
   private type EntitySource = Source[ByteString, NotUsed]
 
   private implicit class DecryptedCrates(crates: CratesSources) extends internal.DecryptedCrates(crates)
   private implicit class MergedCrates(crates: CratesSources) extends internal.MergedCrates(crates)
   private implicit class DecompressedByteStringSource(source: EntitySource) extends internal.DecompressedByteStringSource(source)
-  private implicit class DestagedByteStringSource(source: EntitySource) extends internal.DestagedByteStringSource(source)
 }
 
 object EntityProcessing {
@@ -166,10 +157,10 @@ object EntityProcessing {
       case _              => 0
     }
 
-  def expectFileMetadata(entity: TargetEntity): Future[EntityMetadata.File] =
+  def expectContentMetadata(entity: TargetEntity): Future[EntityMetadata.WithContent] =
     entity.existingMetadata match {
-      case file: EntityMetadata.File =>
-        Future.successful(file)
+      case content: EntityMetadata.WithContent =>
+        Future.successful(content)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(

@@ -12,7 +12,6 @@ import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SubFlow
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.SharedKillSwitch
 import org.apache.pekko.util.ByteString
@@ -23,6 +22,7 @@ import stasis.client.encryption.secrets.DeviceFileSecret
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.EntityMetadata
 import stasis.client.model.SourceEntity
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.exceptions.EntityProcessingFailure
 import stasis.client.ops.exceptions.OperationStopped
@@ -61,7 +61,7 @@ trait EntityProcessing {
       .map { case (entity, metadata) =>
         metrics.recordEntityProcessed(metadata = metadata)
         providers.track.entityProcessed(
-          entity = entity.path,
+          entity = entity.ref,
           metadata = metadata
         )
 
@@ -72,24 +72,24 @@ trait EntityProcessing {
     entity: SourceEntity
   )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[EntityMetadata] = {
     val result = for {
-      file <- EntityProcessing.expectFileMetadata(entity)
-      staged <- stage(entity, file.checksum)
+      content <- EntityProcessing.expectContentMetadata(entity)
+      staged <- stage(entity, content.checksum)
       crates <- push(staged)
       _ <- discard(staged)
     } yield {
-      file.copy(crates = crates.toMap)
+      content.withCrates(crates.toMap)
     }
 
     result.recoverWith {
       case NonFatal(e: OperationStopped) => Future.failed(e)
-      case NonFatal(e)                   => Future.failed(EntityProcessingFailure(entity = entity.path, cause = e))
+      case NonFatal(e)                   => Future.failed(EntityProcessingFailure(entity = entity.ref, cause = e))
     }
   }
 
   private def processMetadataChanged(
     entity: SourceEntity
   )(implicit operation: Operation.Id): Future[EntityMetadata] = {
-    providers.track.entityProcessingStarted(entity = entity.path, expectedParts = 0)
+    providers.track.entityProcessingStarted(entity = entity.ref, expectedParts = 0)
     Future.successful(entity.currentMetadata)
   }
 
@@ -98,25 +98,25 @@ trait EntityProcessing {
     checksum: BigInt
   )(implicit operation: Operation.Id, killSwitch: SharedKillSwitch): Future[Seq[(String, Path)]] = {
     providers.track.entityProcessingStarted(
-      entity = entity.path,
+      entity = entity.ref,
       expectedParts = EntityProcessing.expectedParts(entity, maximumPartSize)
     )
 
     def createPartSecret(partId: Int): DeviceFileSecret =
       deviceSecret.toFileSecret(
-        forFile = s"${entity.path.toAbsolutePath.toString}__part=${partId.toString}",
+        forFile = s"${entity.ref.key}__part=${partId.toString}",
         checksum = checksum
       )
 
     def recordPartProcessed(): Unit =
-      providers.track.entityPartProcessed(entity = entity.path)
+      providers.track.entityPartProcessed(entity = entity.ref)
 
     implicit val prv: Providers = providers
 
     val compressor = providers.compression.encoderFor(entity)
 
-    FileIO
-      .fromPath(f = entity.path, chunkSize = maxChunkSize)
+    BackupEntityKind
+      .read(kinds = providers.kinds, entity = entity, chunkSize = maxChunkSize)
       .via(killSwitch.flow)
       .wireTap(bytes => metrics.recordEntityChunkProcessed(step = "read", bytes.length))
       .compress(compressor = compressor)
@@ -166,8 +166,8 @@ trait EntityProcessing {
       )
       .map(_ => Done)
 
-  private type EntitySource = Source[ByteString, Future[IOResult]]
-  private type EntitySubFlow = SubFlow[ByteString, Future[IOResult], EntitySource#Repr, EntitySource#Closed]
+  private type EntitySource = Source[ByteString, NotUsed]
+  private type EntitySubFlow = SubFlow[ByteString, NotUsed, EntitySource#Repr, EntitySource#Closed]
 
   private implicit class CompressedByteStringSource(source: EntitySource) extends internal.CompressedByteStringSource(source)
   private implicit class PartitionedByteStringSource(source: EntitySource) extends internal.PartitionedByteStringSource(source)
@@ -175,10 +175,10 @@ trait EntityProcessing {
 }
 
 object EntityProcessing {
-  def expectFileMetadata(entity: SourceEntity): Future[EntityMetadata.File] =
+  def expectContentMetadata(entity: SourceEntity): Future[EntityMetadata.WithContent] =
     entity.currentMetadata match {
-      case file: EntityMetadata.File =>
-        Future.successful(file)
+      case content: EntityMetadata.WithContent =>
+        Future.successful(content)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
@@ -192,9 +192,9 @@ object EntityProcessing {
     require(withMaximumPartSize > 0, s"Invalid [maximumPartSize] provided: [${withMaximumPartSize.toString}]")
 
     entity.currentMetadata match {
-      case file: EntityMetadata.File if entity.hasContentChanged =>
-        val fullParts = (file.size / withMaximumPartSize).toInt
-        if (file.size % withMaximumPartSize == 0) fullParts else fullParts + 1
+      case content: EntityMetadata.WithContent if entity.hasContentChanged =>
+        val fullParts = (content.size / withMaximumPartSize).toInt
+        if (content.size % withMaximumPartSize == 0) fullParts else fullParts + 1
 
       case _ => 0
     }

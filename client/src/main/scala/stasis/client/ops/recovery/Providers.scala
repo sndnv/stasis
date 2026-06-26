@@ -21,5 +21,6 @@ final case class Providers(
   track: RecoveryTracker,
   telemetry: TelemetryContext,
   filesystem: FileSystem,
-  metadataDefaults: PlatformMetadata.Defaults
+  metadataDefaults: PlatformMetadata.Defaults,
+  kinds: Seq[RecoveryEntityKind]
 )

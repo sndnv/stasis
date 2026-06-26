@@ -62,7 +62,8 @@ object Ops {
         clients = clients,
         track = trackers.backup,
         telemetry = telemetry,
-        filesystem = directory.appDirectory.getFileSystem
+        filesystem = directory.appDirectory.getFileSystem,
+        kinds = Seq(ops.backup.BackupEntityKind.Filesystem)
       )
 
       val recoveryMetadataDefaults = PlatformMetadata.Defaults(
@@ -78,7 +79,8 @@ object Ops {
         track = trackers.recovery,
         telemetry = telemetry,
         filesystem = directory.appDirectory.getFileSystem,
-        metadataDefaults = recoveryMetadataDefaults
+        metadataDefaults = recoveryMetadataDefaults,
+        kinds = Seq(ops.recovery.RecoveryEntityKind.Filesystem)
       )
 
       new Ops {

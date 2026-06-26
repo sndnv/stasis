@@ -2,9 +2,11 @@ package stasis.client.api.http
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.Base64
 
 import scala.jdk.CollectionConverters._
 
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.Format.GenericFormat
 
 import stasis.client.collection.rules.Rule
@@ -41,6 +43,11 @@ object Formats {
   implicit val pathFormat: Format[Path] = Format(
     fjs = _.validate[String].map(Paths.get(_)),
     tjs = path => Json.toJson(path.toAbsolutePath.toString)
+  )
+
+  implicit val byteStringFormat: Format[ByteString] = Format(
+    fjs = _.validate[String].map(encoded => ByteString(Base64.getDecoder.decode(encoded))),
+    tjs = bytes => Json.toJson(Base64.getEncoder.encodeToString(bytes.toArray))
   )
 
   implicit val entityStateFormat: Format[FilesystemMetadata.EntityState] = Format(
@@ -141,12 +148,14 @@ object Formats {
 
   implicit val fileEntityMetadataFormat: Format[EntityMetadata.File] = Json.format[EntityMetadata.File]
   implicit val directoryEntityMetadataFormat: Format[EntityMetadata.Directory] = Json.format[EntityMetadata.Directory]
+  implicit val libraryEntityMetadataFormat: Format[EntityMetadata.Library] = Json.format[EntityMetadata.Library]
 
   implicit val entityMetadataFormat: Format[EntityMetadata] = Format(
     fjs = _.validate[JsObject].flatMap { entity =>
       (entity \ "entity_type").validate[String].map {
         case "file"      => entity.as[EntityMetadata.File]
         case "directory" => entity.as[EntityMetadata.Directory]
+        case "library"   => entity.as[EntityMetadata.Library]
       }
     },
     tjs = {
@@ -155,6 +164,9 @@ object Formats {
 
       case directory: EntityMetadata.Directory =>
         Json.toJson(directory)(directoryEntityMetadataFormat).as[JsObject] + ("entity_type" -> Json.toJson("directory"))
+
+      case library: EntityMetadata.Library =>
+        Json.toJson(library)(libraryEntityMetadataFormat).as[JsObject] + ("entity_type" -> Json.toJson("library"))
     }
   )
 
@@ -235,14 +247,14 @@ object Formats {
         "definition" -> Json.toJson(backup.definition),
         "started" -> Json.toJson(backup.started),
         "entities" -> Json.obj(
-          "discovered" -> Json.toJson(backup.entities.discovered),
+          "discovered" -> Json.toJson(backup.entities.discovered.map(_.key)),
           "unmatched" -> Json.toJson(backup.entities.unmatched),
-          "examined" -> Json.toJson(backup.entities.examined),
-          "skipped" -> Json.toJson(backup.entities.skipped),
-          "collected" -> Json.toJson(backup.entities.collected.keySet),
-          "pending" -> Json.toJson(backup.entities.pending.map(e => e._1.toAbsolutePath.toString -> e._2)),
-          "processed" -> Json.toJson(backup.entities.processed.map(e => e._1.toAbsolutePath.toString -> e._2)),
-          "failed" -> Json.toJson(backup.entities.failed.map(e => e._1.toAbsolutePath.toString -> e._2))
+          "examined" -> Json.toJson(backup.entities.examined.map(_.key)),
+          "skipped" -> Json.toJson(backup.entities.skipped.map(_.key)),
+          "collected" -> Json.toJson(backup.entities.collected.keySet.map(_.key)),
+          "pending" -> Json.toJson(backup.entities.pending.map(e => e._1.key -> e._2)),
+          "processed" -> Json.toJson(backup.entities.processed.map(e => e._1.key -> e._2)),
+          "failed" -> Json.toJson(backup.entities.failed.map(e => e._1.key -> e._2))
         ),
         "metadata_collected" -> Json.toJson(backup.metadataCollected),
         "metadata_pushed" -> Json.toJson(backup.metadataPushed),
@@ -258,12 +270,12 @@ object Formats {
         "type" -> Json.toJson("recovery"),
         "started" -> Json.toJson(recovery.started),
         "entities" -> Json.obj(
-          "examined" -> Json.toJson(recovery.entities.examined),
-          "collected" -> Json.toJson(recovery.entities.collected.keySet),
-          "pending" -> Json.toJson(recovery.entities.pending.map(e => e._1.toAbsolutePath.toString -> e._2)),
-          "processed" -> Json.toJson(recovery.entities.processed.map(e => e._1.toAbsolutePath.toString -> e._2)),
-          "metadata_applied" -> Json.toJson(recovery.entities.metadataApplied),
-          "failed" -> Json.toJson(recovery.entities.failed.map(e => e._1.toAbsolutePath.toString -> e._2))
+          "examined" -> Json.toJson(recovery.entities.examined.map(_.key)),
+          "collected" -> Json.toJson(recovery.entities.collected.keySet.map(_.key)),
+          "pending" -> Json.toJson(recovery.entities.pending.map(e => e._1.key -> e._2)),
+          "processed" -> Json.toJson(recovery.entities.processed.map(e => e._1.key -> e._2)),
+          "metadata_applied" -> Json.toJson(recovery.entities.metadataApplied.map(_.key)),
+          "failed" -> Json.toJson(recovery.entities.failed.map(e => e._1.key -> e._2))
         ),
         "failures" -> Json.toJson(recovery.failures),
         "completed" -> Json.toJson(recovery.completed)

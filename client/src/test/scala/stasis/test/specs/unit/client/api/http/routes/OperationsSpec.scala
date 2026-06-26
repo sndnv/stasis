@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.api.Context
 import stasis.client.api.http.routes.Operations
+import stasis.client.model.EntityRef
 import stasis.client.api.http.routes.Operations.SpecificationRules
 import stasis.client.collection.rules.Rule
 import stasis.client.ops.recovery.Recovery.PathQuery
@@ -215,14 +216,14 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
         case ("default", defaultRules) :: (_, otherRules) :: Nil =>
           defaultRules should be(
             Seq(
-              Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
-              Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+              Rule(Rule.Operation.Include, "/tmp/file", "*", Map.empty, None, Rule.Original("+ /tmp/file *", 0)),
+              Rule(Rule.Operation.Include, "/tmp/other", "*", Map.empty, None, Rule.Original("+ /tmp/other *", 1))
             )
           )
 
           otherRules should be(
             Seq(
-              Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", None, Rule.Original("- /tmp/other/def1 *", 0))
+              Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", Map.empty, None, Rule.Original("- /tmp/other/def1 *", 0))
             )
           )
 
@@ -259,8 +260,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       val rules = responseAs[Seq[Rule]]
       rules should be(
         Seq(
-          Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
-          Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+          Rule(Rule.Operation.Include, "/tmp/file", "*", Map.empty, None, Rule.Original("+ /tmp/file *", 0)),
+          Rule(Rule.Operation.Include, "/tmp/other", "*", Map.empty, None, Rule.Original("+ /tmp/other *", 1))
         )
       )
 
@@ -296,7 +297,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
       val rules = responseAs[Seq[Rule]]
       rules should be(
         Seq(
-          Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", None, Rule.Original("- /tmp/other/def1 *", 0))
+          Rule(Rule.Operation.Exclude, "/tmp/other/def1", "*", Map.empty, None, Rule.Original("- /tmp/other/def1 *", 0))
         )
       )
     }
@@ -308,8 +309,8 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
       rules should be(
         Seq(
-          Rule(Rule.Operation.Include, "/tmp/file", "*", None, Rule.Original("+ /tmp/file *", 0)),
-          Rule(Rule.Operation.Include, "/tmp/other", "*", None, Rule.Original("+ /tmp/other *", 1))
+          Rule(Rule.Operation.Include, "/tmp/file", "*", Map.empty, None, Rule.Original("+ /tmp/file *", 0)),
+          Rule(Rule.Operation.Include, "/tmp/other", "*", Map.empty, None, Rule.Original("+ /tmp/other *", 1))
         )
       )
     }
@@ -596,7 +597,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val backup = BackupState.start(operation = operation, definition = DatasetDefinition.generateId())
 
-    val entity1 = Paths.get("/tmp/a")
+    val entity1 = EntityRef.Filesystem(Paths.get("/tmp/a"))
 
     val events = List(
       backup,
@@ -661,7 +662,7 @@ class OperationsSpec extends AsyncUnitSpec with ScalatestRouteTest {
 
     val recovery = RecoveryState.start(operation = operation)
 
-    val entity1 = Paths.get("/tmp/a")
+    val entity1 = EntityRef.Filesystem(Paths.get("/tmp/a"))
 
     val events = List(
       recovery,

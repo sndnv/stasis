@@ -15,7 +15,7 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file2 = "/collection/file-2".asTestResource
     val file3 = "/collection/file-3".asTestResource
 
-    val collector = new RecoveryMetadataCollector.Default(
+    val collector = new RecoveryMetadataCollector.Filesystem(
       checksum = Checksum.MD5
     )
 
@@ -34,19 +34,19 @@ class RecoveryMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
         existingMetadata = file3Metadata
       )
     } yield {
-      targetFile2.path should be(file2)
+      targetFile2.ref should be(file2.asRef)
       targetFile2.existingMetadata should be(file2Metadata)
       targetFile2.currentMetadata match {
         case Some(metadata: EntityMetadata.File) => metadata.size should be(2)
-        case Some(_: EntityMetadata.Directory)   => fail("Expected file but received directory metadata")
+        case Some(other)                         => fail(s"Expected file but received [$other]")
         case None                                => fail("Expected metadata but not received")
       }
 
-      targetFile3.path should be(file3)
+      targetFile3.ref should be(file3.asRef)
       targetFile3.existingMetadata should be(file3Metadata)
       targetFile3.currentMetadata match {
         case Some(metadata: EntityMetadata.File) => metadata.size should be(3)
-        case Some(_: EntityMetadata.Directory)   => fail("Expected file but received directory metadata")
+        case Some(other)                         => fail(s"Expected file but received [$other]")
         case None                                => fail("Expected metadata but not received")
       }
     }

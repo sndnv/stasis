@@ -1,6 +1,5 @@
 package stasis.client.tracking.state
 
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 
@@ -10,6 +9,7 @@ import scala.util.Try
 
 import stasis.client.model.TargetEntity.Destination
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.client.model.proto
 import stasis.shared.ops.Operation
@@ -25,13 +25,13 @@ final case class RecoveryState(
 
   override val isCompleted: Boolean = completed.isDefined
 
-  def entityExamined(entity: Path): RecoveryState =
+  def entityExamined(entity: EntityRef): RecoveryState =
     copy(entities = entities.copy(examined = entities.examined + entity))
 
   def entityCollected(entity: TargetEntity): RecoveryState =
-    copy(entities = entities.copy(collected = entities.collected + (entity.path -> entity)))
+    copy(entities = entities.copy(collected = entities.collected + (entity.ref -> entity)))
 
-  def entityProcessingStarted(entity: Path, expectedParts: Int): RecoveryState =
+  def entityProcessingStarted(entity: EntityRef, expectedParts: Int): RecoveryState =
     copy(
       entities = entities.copy(
         pending =
@@ -39,10 +39,10 @@ final case class RecoveryState(
       )
     )
 
-  def entityPartProcessed(entity: Path): RecoveryState =
+  def entityPartProcessed(entity: EntityRef): RecoveryState =
     copy(entities = entities.copy(pending = entities.pending + (entity -> entities.pending(entity).inc())))
 
-  def entityProcessed(entity: Path): RecoveryState = {
+  def entityProcessed(entity: EntityRef): RecoveryState = {
     val processed = entities.pending.get(entity) match {
       case Some(pending) =>
         RecoveryState.ProcessedTargetEntity(
@@ -65,10 +65,10 @@ final case class RecoveryState(
     )
   }
 
-  def entityMetadataApplied(entity: Path): RecoveryState =
+  def entityMetadataApplied(entity: EntityRef): RecoveryState =
     copy(entities = entities.copy(metadataApplied = entities.metadataApplied + entity))
 
-  def entityFailed(entity: Path, reason: Throwable): RecoveryState =
+  def entityFailed(entity: EntityRef, reason: Throwable): RecoveryState =
     copy(entities =
       entities.copy(failed = entities.failed + (entity -> s"${reason.getClass.getSimpleName} - ${reason.getMessage}"))
     )
@@ -99,12 +99,12 @@ object RecoveryState {
     )
 
   final case class Entities(
-    examined: Set[Path],
-    collected: Map[Path, TargetEntity],
-    pending: Map[Path, PendingTargetEntity],
-    processed: Map[Path, ProcessedTargetEntity],
-    metadataApplied: Set[Path],
-    failed: Map[Path, String]
+    examined: Set[EntityRef],
+    collected: Map[EntityRef, TargetEntity],
+    pending: Map[EntityRef, PendingTargetEntity],
+    processed: Map[EntityRef, ProcessedTargetEntity],
+    metadataApplied: Set[EntityRef],
+    failed: Map[EntityRef, String]
   )
 
   object Entities {
@@ -136,18 +136,12 @@ object RecoveryState {
       started = state.started.toEpochMilli,
       entities = Some(
         proto.state.RecoveryEntities(
-          examined = state.entities.examined.map(_.toAbsolutePath.toString).toSeq,
-          collected = state.entities.collected.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoTargetEntity(v)
-          },
-          pending = state.entities.pending.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoPendingTargetEntity(v)
-          },
-          processed = state.entities.processed.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoProcessedTargetEntity(v)
-          },
-          metadataApplied = state.entities.metadataApplied.map(_.toAbsolutePath.toString).toSeq,
-          failed = state.entities.failed.map { case (k, v) => k.toAbsolutePath.toString -> v }
+          examined = state.entities.examined.map(_.key).toSeq,
+          collected = state.entities.collected.map { case (k, v) => k.key -> toProtoTargetEntity(v) },
+          pending = state.entities.pending.map { case (k, v) => k.key -> toProtoPendingTargetEntity(v) },
+          processed = state.entities.processed.map { case (k, v) => k.key -> toProtoProcessedTargetEntity(v) },
+          metadataApplied = state.entities.metadataApplied.map(_.key).toSeq,
+          failed = state.entities.failed.map { case (k, v) => k.key -> v }
         )
       ),
       failures = state.failures,
@@ -162,12 +156,12 @@ object RecoveryState {
             operation = operation,
             started = Instant.ofEpochMilli(state.started),
             entities = RecoveryState.Entities(
-              examined = entities.examined.map(Paths.get(_)).toSet,
-              collected = entities.collected.map { case (k, v) => Paths.get(k) -> fromProtoTargetEntity(v) },
-              pending = entities.pending.map { case (k, v) => Paths.get(k) -> fromProtoPendingTargetEntity(v) },
-              processed = entities.processed.map { case (k, v) => Paths.get(k) -> fromProtoProcessedTargetEntity(v) },
-              metadataApplied = entities.metadataApplied.map(Paths.get(_)).toSet,
-              failed = entities.failed.map { case (k, v) => Paths.get(k) -> v }
+              examined = entities.examined.map(EntityRef.default).toSet,
+              collected = entities.collected.map { case (k, v) => EntityRef.default(k) -> fromProtoTargetEntity(v) },
+              pending = entities.pending.map { case (k, v) => EntityRef.default(k) -> fromProtoPendingTargetEntity(v) },
+              processed = entities.processed.map { case (k, v) => EntityRef.default(k) -> fromProtoProcessedTargetEntity(v) },
+              metadataApplied = entities.metadataApplied.map(EntityRef.default).toSet,
+              failed = entities.failed.map { case (k, v) => EntityRef.default(k) -> v }
             ),
             failures = state.failures,
             completed = state.completed.map(Instant.ofEpochMilli)
@@ -181,11 +175,12 @@ object RecoveryState {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   private def fromProtoTargetEntity(entity: proto.state.TargetEntity): TargetEntity =
     TargetEntity(
-      path = Paths.get(entity.path),
+      // TODO - refactor
+      ref = EntityRef.default(entity.ref),
       destination = entity.destination match {
         case directory: proto.state.TargetEntityDestinationDirectory =>
           TargetEntity.Destination.Directory(
-            path = Paths.get(directory.path),
+            path = Paths.get(directory.path), // TODO
             keepDefaultStructure = directory.keepDefaultStructure
           )
 
@@ -206,7 +201,8 @@ object RecoveryState {
 
   private def toProtoTargetEntity(entity: TargetEntity): proto.state.TargetEntity =
     proto.state.TargetEntity(
-      path = entity.path.toAbsolutePath.toString,
+      // TODO - refactor
+      ref = entity.ref.key,
       destination = entity.destination match {
         case directory: Destination.Directory =>
           proto.state.TargetEntityDestinationDirectory(

@@ -536,13 +536,13 @@ COMMANDS = [
 
 BACKUP_RULES = {
     'default': [
-        {'operation': 'include', 'directory': '/some/path', 'pattern': '*', 'comment': '',
+        {'operation': 'include', 'source': '/some/path', 'pattern': '*', 'comment': '',
          'original': {'line': '+ /some/path *', 'line_number': 0}},
-        {'operation': 'exclude', 'directory': '/', 'pattern': 'other', 'comment': '',
+        {'operation': 'exclude', 'source': '/', 'pattern': 'other', 'comment': '',
          'original': {'line': '- / other', 'line_number': 1}},
     ],
     DEFINITIONS[0]['id']: [
-        {'operation': 'include', 'directory': '/a/b', 'pattern': '*', 'comment': '',
+        {'operation': 'include', 'source': '/a/b', 'pattern': '*', 'comment': '',
          'original': {'line': '+ /a/b *', 'line_number': 0}},
     ],
 }

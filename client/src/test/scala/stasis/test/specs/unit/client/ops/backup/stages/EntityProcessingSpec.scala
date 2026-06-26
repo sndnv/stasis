@@ -21,8 +21,10 @@ import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityProcessing
 import stasis.client.ops.exceptions.EntityProcessingFailure
@@ -37,52 +39,66 @@ import stasis.test.specs.unit.client.ResourceHelpers
 import stasis.test.specs.unit.client.mocks._
 
 class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Eventually { spec =>
-  "A Backup EntityProcessing stage" should "extract and expect file metadata" in {
-    val entity = SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+  "A Backup EntityProcessing stage" should "extract and expect content metadata" in {
+    val fileEntity = SourceEntity(
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
-    EntityProcessing
-      .expectFileMetadata(entity = entity)
-      .map { metadata =>
-        metadata should be(Fixtures.Metadata.FileOneMetadata)
-      }
+    val libraryEntity = SourceEntity(
+      ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.LibraryOneMetadata
+    )
+
+    for {
+      file <- EntityProcessing.expectContentMetadata(entity = fileEntity)
+      library <- EntityProcessing.expectContentMetadata(entity = libraryEntity)
+    } yield {
+      file should be(Fixtures.Metadata.FileOneMetadata)
+      library should be(Fixtures.Metadata.LibraryOneMetadata)
+    }
   }
 
   it should "fail if unexpected target entity metadata is provided" in {
     val entity = SourceEntity(
-      path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
     )
 
     EntityProcessing
-      .expectFileMetadata(entity = entity)
+      .expectContentMetadata(entity = entity)
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
       .recover { case NonFatal(e: IllegalArgumentException) =>
-        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
+        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.currentMetadata.path}] provided")
       }
   }
 
   it should "calculate expected parts for an entity" in {
     val fileEntity = SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 10)
     )
 
     val directoryEntity = SourceEntity(
-      path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
     )
 
+    val libraryEntity = SourceEntity(
+      ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+      existingMetadata = None,
+      currentMetadata = Fixtures.Metadata.LibraryOneMetadata.copy(size = 10)
+    )
+
     val fileEntityWithoutChanges = SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
       existingMetadata = Some(Fixtures.Metadata.FileOneMetadata),
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
@@ -104,6 +120,9 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 1) should be(0)
     EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 10) should be(0)
     EntityProcessing.expectedParts(entity = directoryEntity, withMaximumPartSize = 100) should be(0)
+
+    EntityProcessing.expectedParts(entity = libraryEntity, withMaximumPartSize = 4) should be(3)
+    EntityProcessing.expectedParts(entity = libraryEntity, withMaximumPartSize = 10) should be(1)
 
     EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 1) should be(0)
     EntityProcessing.expectedParts(entity = fileEntityWithoutChanges, withMaximumPartSize = 10) should be(0)
@@ -127,19 +146,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val sourceFile1 = SourceEntity(
-      path = sourceFile1Metadata.path.asPath,
+      ref = sourceFile1Metadata.path.asRef,
       existingMetadata = None,
       currentMetadata = sourceFile1Metadata
     )
 
     val sourceFile2 = SourceEntity(
-      path = sourceFile2Metadata.path.asPath,
+      ref = sourceFile2Metadata.path.asRef,
       existingMetadata = Some(sourceFile2Metadata.copy(isHidden = true)),
       currentMetadata = sourceFile2Metadata
     )
 
     val sourceFile3 = SourceEntity(
-      path = sourceFile3Metadata.path.asPath,
+      ref = sourceFile3Metadata.path.asRef,
       existingMetadata = Some(sourceFile3Metadata.copy(checksum = BigInt(9999))),
       currentMetadata = sourceFile3Metadata
     )
@@ -169,7 +188,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           ),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192
@@ -247,7 +267,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val largeSourceFile = SourceEntity(
-      path = largeSourceFileMetadata.path.asPath,
+      ref = largeSourceFileMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = largeSourceFileMetadata
     )
@@ -279,7 +299,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           ),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 5
@@ -348,7 +369,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val sourceFile1 = SourceEntity(
-      path = sourceFile1Metadata.path.asPath,
+      ref = sourceFile1Metadata.path.asRef,
       existingMetadata = None,
       currentMetadata = sourceFile1Metadata
     )
@@ -382,7 +403,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           ),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192
@@ -454,7 +476,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val largeSourceFile = SourceEntity(
-      path = largeSourceFileMetadata.path.asPath,
+      ref = largeSourceFileMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = largeSourceFileMetadata
     )
@@ -493,7 +515,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           ),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 5
@@ -568,19 +591,19 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val sourceFile1 = SourceEntity(
-      path = sourceFile1Metadata.path.asPath,
+      ref = sourceFile1Metadata.path.asRef,
       existingMetadata = None,
       currentMetadata = sourceFile1Metadata
     )
 
     val sourceFile2 = SourceEntity(
-      path = sourceFile2Metadata.path.asPath,
+      ref = sourceFile2Metadata.path.asRef,
       existingMetadata = Some(sourceFile2Metadata.copy(isHidden = true)),
       currentMetadata = sourceFile2Metadata
     )
 
     val sourceFile3 = SourceEntity(
-      path = sourceFile3Metadata.path.asPath,
+      ref = sourceFile3Metadata.path.asRef,
       existingMetadata = Some(sourceFile3Metadata.copy(checksum = BigInt(9999))),
       currentMetadata = sourceFile3Metadata
     )
@@ -609,7 +632,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           ),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected def maxChunkSize: Int = 8192

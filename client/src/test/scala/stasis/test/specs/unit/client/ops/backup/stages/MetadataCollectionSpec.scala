@@ -9,6 +9,7 @@ import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataCollection
 import stasis.client.tracking.BackupTracker
@@ -179,7 +180,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
       .copy(
         entities = Fixtures.State.BackupOneState.entities.copy(
           processed = Map(
-            Fixtures.Metadata.FileThreeMetadata.path.asPath -> BackupState.ProcessedSourceEntity(
+            Fixtures.Metadata.FileThreeMetadata.path.asRef -> BackupState.ProcessedSourceEntity(
               expectedParts = 1,
               processedParts = 1,
               metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
@@ -243,6 +244,7 @@ class MetadataCollectionSpec extends AsyncUnitSpec {
       ),
       track = tracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 }

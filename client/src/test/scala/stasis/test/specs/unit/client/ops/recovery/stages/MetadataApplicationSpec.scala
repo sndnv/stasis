@@ -19,6 +19,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.model.EntityMetadata
 import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.MetadataApplication
 import stasis.core.packaging.Crate
@@ -65,7 +66,8 @@ class MetadataApplicationSpec extends AsyncUnitSpec with ResourceHelpers { spec 
           track = mockTracker,
           telemetry = mockTelemetry,
           filesystem = FileSystems.getDefault,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
 
       override implicit protected def ec: ExecutionContext = spec.system.dispatcher
@@ -74,7 +76,7 @@ class MetadataApplicationSpec extends AsyncUnitSpec with ResourceHelpers { spec 
     implicit val operationId: Operation.Id = Operation.generateId()
 
     val target = TargetEntity(
-      path = metadata.path.asPath,
+      ref = metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = metadata,
       currentMetadata = None

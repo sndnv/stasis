@@ -17,7 +17,7 @@ trait RecoveryMetadataCollector {
 }
 
 object RecoveryMetadataCollector {
-  class Default(checksum: Checksum)(implicit mat: Materializer) extends RecoveryMetadataCollector {
+  class Filesystem(checksum: Checksum)(implicit mat: Materializer) extends RecoveryMetadataCollector {
     override def collect(
       entity: Path,
       destination: TargetEntity.Destination,
@@ -31,7 +31,7 @@ object RecoveryMetadataCollector {
       )
   }
 
-  object Default {
-    def apply(checksum: Checksum)(implicit mat: Materializer): Default = new Default(checksum)
+  object Filesystem {
+    def apply(checksum: Checksum)(implicit mat: Materializer): Filesystem = new Filesystem(checksum)
   }
 }

@@ -32,6 +32,7 @@ import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.backup.Backup
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityDiscovery
 import stasis.client.ops.exceptions.OperationStopped
@@ -250,9 +251,9 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
         state = Fixtures.State.BackupTwoState.copy(
           entities = Fixtures.State.BackupTwoState.entities.copy(
             discovered = Set(
-              sourceFile1Metadata.path.asPath,
-              sourceFile2Metadata.path.asPath,
-              sourceFile3Metadata.path.asPath
+              sourceFile1Metadata.path.asRef,
+              sourceFile2Metadata.path.asRef,
+              sourceFile3Metadata.path.asRef
             )
           )
         )
@@ -719,7 +720,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       ),
       track = new MockBackupTracker(),
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     val collectorDescriptor = Backup.Descriptor.Collector.WithEntities(entities = Seq.empty)
@@ -847,7 +849,8 @@ class BackupSpec extends AsyncUnitSpec with ResourceHelpers with Eventually with
       clients = clients,
       track = tracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     new Backup(

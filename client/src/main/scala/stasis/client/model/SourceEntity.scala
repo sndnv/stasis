@@ -1,16 +1,14 @@
 package stasis.client.model
 
-import java.nio.file.Path
-
 final case class SourceEntity(
-  path: Path,
+  ref: EntityRef,
   existingMetadata: Option[EntityMetadata],
   currentMetadata: EntityMetadata
 ) {
   existingMetadata.foreach(existing =>
     require(
       existing.getClass == currentMetadata.getClass,
-      s"Mismatched current metadata for [${currentMetadata.path.toString}] and existing metadata for [${existing.path.toString}]"
+      s"Mismatched current metadata for [${currentMetadata.path}] and existing metadata for [${existing.path}]"
     )
   )
 
@@ -22,10 +20,10 @@ final case class SourceEntity(
 
   lazy val hasContentChanged: Boolean =
     (existingMetadata, currentMetadata) match {
-      case (Some(existing: EntityMetadata.File), current: EntityMetadata.File) =>
+      case (Some(existing: EntityMetadata.WithContent), current: EntityMetadata.WithContent) =>
         existing.size != current.size || existing.checksum != current.checksum
 
-      case (None, _: EntityMetadata.File) =>
+      case (None, _: EntityMetadata.WithContent) =>
         true
 
       case _ =>

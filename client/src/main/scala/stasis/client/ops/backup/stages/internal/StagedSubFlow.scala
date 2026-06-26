@@ -28,9 +28,9 @@ import stasis.client.ops.exceptions.EntityDiscardFailure
 class StagedSubFlow(
   subFlow: SubFlow[
     ByteString,
-    Future[IOResult],
-    Source[ByteString, Future[IOResult]]#Repr,
-    Source[ByteString, Future[IOResult]]#Closed
+    NotUsed,
+    Source[ByteString, NotUsed]#Repr,
+    Source[ByteString, NotUsed]#Closed
   ]
 )(implicit mat: Materializer) {
   import StagedSubFlow._

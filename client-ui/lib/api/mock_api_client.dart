@@ -245,14 +245,14 @@ class MockApiClient extends ApiClient implements ClientApi, InitApi {
       'default': [
         const Rule(
           operation: 'include',
-          directory: '/some/path',
+          source: '/some/path',
           pattern: '*',
           comment: null,
           original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
         ),
         const Rule(
           operation: 'exclude',
-          directory: '/',
+          source: '/',
           pattern: 'other',
           comment: null,
           original: OriginalRule(line: '- / other', lineNumber: 1),
@@ -262,7 +262,7 @@ class MockApiClient extends ApiClient implements ClientApi, InitApi {
       defaultDefinition.id: [
         const Rule(
           operation: 'include',
-          directory: '/a/b',
+          source: '/a/b',
           pattern: '**',
           comment: 'Some test comment',
           original: OriginalRule(line: '+ /a/b **  # Some test comment', lineNumber: 0),

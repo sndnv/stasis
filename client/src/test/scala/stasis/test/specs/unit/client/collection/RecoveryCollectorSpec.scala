@@ -60,7 +60,7 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
       compression = "none"
     )
 
-    val collector = new RecoveryCollector.Default(
+    val collector = new RecoveryCollector.Filesystem(
       targetMetadata = DatasetMetadata(
         contentChanged = Map(
           file2Metadata.path -> file2Metadata
@@ -90,14 +90,14 @@ class RecoveryCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     collector
       .collect(FileSystems.getDefault)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
-      .map(_.sortBy(_.path.toAbsolutePath.toString))
+      .map(_.sortBy(_.ref.key))
       .map {
         case targetFile2 :: targetFile3 :: Nil =>
-          targetFile2.path.toString should be(file2Metadata.path)
+          targetFile2.ref.key should be(file2Metadata.path)
           targetFile2.existingMetadata should be(file2Metadata)
           targetFile2.currentMetadata should not be empty
 
-          targetFile3.path.toString should be(file3Metadata.path)
+          targetFile3.ref.key should be(file3Metadata.path)
           targetFile3.existingMetadata should be(file3Metadata)
           targetFile3.currentMetadata should not be empty
 

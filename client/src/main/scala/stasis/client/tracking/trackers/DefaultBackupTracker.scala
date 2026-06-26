@@ -1,6 +1,5 @@
 package stasis.client.tracking.trackers
 
-import java.nio.file.Path
 import java.time.Instant
 
 import scala.concurrent.duration.FiniteDuration
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory
 
 import stasis.client.collection.rules.Rule
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
@@ -65,7 +65,7 @@ class DefaultBackupTracker(
   }
 
   override def entityDiscovered(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (backup) - Entity [{}] discovered", operation, entity)
 
@@ -93,7 +93,7 @@ class DefaultBackupTracker(
     }
 
   override def entityExamined(
-    entity: Path,
+    entity: EntityRef,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit = {
@@ -109,7 +109,7 @@ class DefaultBackupTracker(
   }
 
   override def entitySkipped(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (backup) - Entity [{}] skipped", operation, entity)
 
@@ -119,13 +119,13 @@ class DefaultBackupTracker(
   override def entityCollected(
     entity: SourceEntity
   )(implicit operation: Operation.Id): Unit = {
-    log.debugN("[{}] (backup) - Entity [{}] collected", operation, entity.path)
+    log.debugN("[{}] (backup) - Entity [{}] collected", operation, entity.ref)
 
     val _ = events.store(event = BackupEvent.EntityCollected(operation, entity))
   }
 
   override def entityProcessingStarted(
-    entity: Path,
+    entity: EntityRef,
     expectedParts: Int
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (backup) - Entity [{}] processing started; expected parts: [{}]", operation, entity, expectedParts)
@@ -134,7 +134,7 @@ class DefaultBackupTracker(
   }
 
   override def entityPartProcessed(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (backup) - Part for entity [{}] processed", operation, entity)
 
@@ -142,7 +142,7 @@ class DefaultBackupTracker(
   }
 
   override def entityProcessed(
-    entity: Path,
+    entity: EntityRef,
     metadata: Either[EntityMetadata, EntityMetadata]
   )(implicit operation: Operation.Id): Unit = {
     val contentChanged = metadata.isLeft
@@ -179,7 +179,7 @@ class DefaultBackupTracker(
   }
 
   override def failureEncountered(
-    entity: Path,
+    entity: EntityRef,
     failure: Throwable
   )(implicit operation: Operation.Id): Unit = {
     log.debugN(
@@ -219,7 +219,7 @@ object DefaultBackupTracker {
 
     final case class EntityDiscovered(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends BackupEvent
 
     final case class SpecificationProcessed(
@@ -229,12 +229,12 @@ object DefaultBackupTracker {
 
     final case class EntityExamined(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends BackupEvent
 
     final case class EntitySkipped(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends BackupEvent
 
     final case class EntityCollected(
@@ -244,24 +244,24 @@ object DefaultBackupTracker {
 
     final case class EntityProcessingStarted(
       override val operation: Operation.Id,
-      entity: Path,
+      entity: EntityRef,
       expectedParts: Int
     ) extends BackupEvent
 
     final case class EntityPartProcessed(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends BackupEvent
 
     final case class EntityProcessed(
       override val operation: Operation.Id,
-      entity: Path,
+      entity: EntityRef,
       metadata: Either[EntityMetadata, EntityMetadata]
     ) extends BackupEvent
 
     final case class EntityFailed(
       override val operation: Operation.Id,
-      entity: Path,
+      entity: EntityRef,
       reason: Throwable
     ) extends BackupEvent
 

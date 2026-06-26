@@ -5,6 +5,7 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
+import org.apache.pekko.util.ByteString
 import play.api.libs.json._
 
 import stasis.client.api.http.Formats._
@@ -187,6 +188,19 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       permissions = "rwxrwxrwx"
     )
 
+    val libraryMetadata = EntityMetadata.Library(
+      path = "photos:/album/img.heic",
+      size = 3,
+      created = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      updated = Instant.now().truncatedTo(ChronoUnit.SECONDS),
+      checksum = 7,
+      crates = Map(
+        "photos:/album/img.heic_0" -> java.util.UUID.fromString("1af8926d-7226-404a-9c7f-40fdc0e27145")
+      ),
+      compression = "none",
+      attributes = ByteString("favorite=true")
+    )
+
     val baseFileMetadataJson = fileEntityMetadataFormat
       .writes(fileMetadata)
       .as[JsObject] ++ Json.obj("entity_type" -> "file")
@@ -195,9 +209,14 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
       .writes(directoryMetadata)
       .as[JsObject] ++ Json.obj("entity_type" -> "directory")
 
+    val baseLibraryMetadataJson = libraryEntityMetadataFormat
+      .writes(libraryMetadata)
+      .as[JsObject] ++ Json.obj("entity_type" -> "library")
+
     val metadata = Map[EntityMetadata, String](
       fileMetadata -> baseFileMetadataJson.toString,
-      directoryMetadata -> baseDirectoryMetadataJson.toString
+      directoryMetadata -> baseDirectoryMetadataJson.toString,
+      libraryMetadata -> baseLibraryMetadataJson.toString
     )
 
     metadata.foreach { case (entity, json) =>
@@ -235,12 +254,12 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
   }
 
   they should "convert backup state to JSON" in withRetry {
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef
 
     val sourceEntity = SourceEntity(
-      path = entity1,
+      ref = entity1,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
@@ -255,7 +274,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
         discovered = Set(entity1),
         unmatched = Seq("a", "b", "c"),
         examined = Set(entity2),
-        skipped = Set.empty,
+        skipped = Set(entity3),
         collected = Map(entity1 -> sourceEntity),
         pending = Map(entity2 -> PendingSourceEntity(expectedParts = 1, processedParts = 2)),
         processed = Map(
@@ -289,7 +308,7 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
          |"discovered":["/tmp/file/one"],
          |"unmatched":["a","b","c"],
          |"examined":["/tmp/file/two"],
-         |"skipped":[],
+         |"skipped":["/tmp/file/four"],
          |"collected":["/tmp/file/one"],
          |"pending":{"/tmp/file/two":{"expected_parts":1,"processed_parts":2}},
          |"processed":{"/tmp/file/one":{"expected_parts":1,"processed_parts":1},"/tmp/file/two":{"expected_parts":0,"processed_parts":0}},
@@ -305,12 +324,12 @@ class FormatsSpec extends UnitSpec with ResourceHelpers {
   }
 
   they should "convert recovery state to JSON" in withRetry {
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef
 
     val targetEntity = TargetEntity(
-      path = entity1,
+      ref = entity1,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None,
       destination = TargetEntity.Destination.Default

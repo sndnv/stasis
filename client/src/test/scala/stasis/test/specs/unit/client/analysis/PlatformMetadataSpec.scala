@@ -1,5 +1,6 @@
 package stasis.test.specs.unit.client.analysis
 
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
@@ -38,11 +39,25 @@ class PlatformMetadataSpec extends AsyncUnitSpec with ResourceHelpers {
   }
 
   "PlatformMetadata" should "support creation based on OS name" in {
-    PlatformMetadata.getPlatformMetadataFor(osName = "Windows") should be(PlatformMetadata.Windows)
-    PlatformMetadata.getPlatformMetadataFor(osName = "Linux") should be(PlatformMetadata.Posix)
-    PlatformMetadata.getPlatformMetadataFor(osName = "Mac OS X") should be(PlatformMetadata.Posix)
-    PlatformMetadata.getPlatformMetadataFor(osName = "AIX") should be(PlatformMetadata.Posix)
-    PlatformMetadata.getPlatformMetadataFor(osName = "Other") should be(PlatformMetadata.Posix)
+    PlatformMetadata.forOperatingSystem(osName = "Windows") should be(PlatformMetadata.Windows)
+    PlatformMetadata.forOperatingSystem(osName = "Linux") should be(PlatformMetadata.Posix)
+    PlatformMetadata.forOperatingSystem(osName = "Mac OS X") should be(PlatformMetadata.Posix)
+    PlatformMetadata.forOperatingSystem(osName = "AIX") should be(PlatformMetadata.Posix)
+    PlatformMetadata.forOperatingSystem(osName = "Other") should be(PlatformMetadata.Posix)
+  }
+
+  it should "support creation based on a file system" in {
+    val (unixFilesystem, _) = createMockFileSystem(setup = FileSystemSetup.Unix)
+    val (macosFilesystem, _) = createMockFileSystem(setup = FileSystemSetup.MacOS)
+    val (windowsFilesystem, _) = createMockFileSystem(setup = FileSystemSetup.Windows)
+
+    PlatformMetadata.forFileSystem(unixFilesystem) should be(PlatformMetadata.Posix)
+    PlatformMetadata.forFileSystem(macosFilesystem) should be(PlatformMetadata.Posix)
+    PlatformMetadata.forFileSystem(windowsFilesystem) should be(PlatformMetadata.Windows)
+
+    PlatformMetadata.forFileSystem(FileSystems.getDefault) should be(
+      PlatformMetadata.forOperatingSystem(System.getProperty("os.name"))
+    )
   }
 
   "PlatformMetadata Defaults" should "be created with default values" in {

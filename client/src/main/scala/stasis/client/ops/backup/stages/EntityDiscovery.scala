@@ -1,21 +1,20 @@
 package stasis.client.ops.backup.stages
 
-import java.nio.file.Files
 import java.nio.file.Path
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 
 import stasis.client.collection.BackupCollector
-import stasis.client.collection.BackupMetadataCollector
 import stasis.client.collection.rules.Rule
-import stasis.client.collection.rules.Specification
+import stasis.client.collection.rules.SourceUri
+import stasis.client.collection.rules.exceptions.RuleParsingFailure
 import stasis.client.model.DatasetMetadata
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.tracking.state.BackupState
 import stasis.shared.ops.Operation
@@ -30,40 +29,31 @@ trait EntityDiscovery {
   protected implicit def ec: ExecutionContext
 
   def entityDiscovery(implicit operation: Operation.Id): Source[BackupCollector, NotUsed] = {
-    val discovered = Source.lazyFuture(() =>
-      collector match {
-        case EntityDiscovery.Collector.WithRules(rules) =>
-          Specification
-            .tracked(rules = rules, tracker = providers.track, filesystem = providers.filesystem)
-            .map { spec =>
-              spec.includedParents.foreach(providers.track.entityDiscovered)
-              providers.track.specificationProcessed(unmatched = spec.unmatched)
-              spec.included
-            }
+    reportUnsupportedSources()
 
-        case EntityDiscovery.Collector.WithEntities(entities) =>
-          val existing = entities.filter(entity => Files.exists(entity))
-          existing.foreach(providers.track.entityDiscovered)
-          Future.successful(existing)
-
-        case EntityDiscovery.Collector.WithState(state) =>
-          Future.successful(state.remainingEntities())
-      }
-    )
-
-    discovered
-      .map { entities =>
-        new BackupCollector.Default(
-          entities = entities.toList,
-          latestMetadata = latestMetadata,
-          metadataCollector = BackupMetadataCollector.Default(
-            checksum = providers.checksum,
-            compression = providers.compression
-          ),
-          clients = providers.clients
-        )(ec, parallelism)
-      }
+    Source(providers.kinds.toList)
+      .mapAsync(parallelism = 1)(_.collector(collector, latestMetadata, providers, parallelism))
   }
+
+  private def reportUnsupportedSources()(implicit operation: Operation.Id): Unit =
+    collector match {
+      case EntityDiscovery.Collector.WithRules(rules) =>
+        val handledSchemes: Set[Option[String]] = providers.kinds.collect {
+          case _: BackupEntityKind.Filesystem => None
+          case kind: BackupEntityKind.Library => Some(kind.scheme)
+        }.toSet
+
+        rules.foreach { rule =>
+          if (!handledSchemes.contains(SourceUri.scheme(rule.source))) {
+            providers.track.failureEncountered(
+              new RuleParsingFailure(s"No backup kind was registered for source [${rule.source}]")
+            )
+          }
+        }
+
+      case _ =>
+        () // do nothing
+    }
 }
 
 object EntityDiscovery {

@@ -129,8 +129,9 @@ object Metrics {
         val state = if (from.currentMetadata.isDefined) "available" else "missing"
 
         from.currentMetadata.getOrElse(from.existingMetadata) match {
-          case file: EntityMetadata.File   => ("file", state, file.size)
-          case _: EntityMetadata.Directory => ("directory", state, 0L)
+          case file: EntityMetadata.File       => ("file", state, file.size)
+          case library: EntityMetadata.Library => ("library", state, library.size)
+          case _: EntityMetadata.Directory     => ("directory", state, 0L)
         }
       }
     }
@@ -238,8 +239,9 @@ object Metrics {
 
       private def getEntityLabelsAndSize(from: EntityMetadata): (String, Long) =
         from match {
-          case file: EntityMetadata.File   => ("file", file.size)
-          case _: EntityMetadata.Directory => ("directory", 0L)
+          case file: EntityMetadata.File       => ("file", file.size)
+          case library: EntityMetadata.Library => ("library", library.size)
+          case _: EntityMetadata.Directory     => ("directory", 0L)
         }
     }
   }

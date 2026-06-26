@@ -184,19 +184,19 @@ class RecoveryStateSpec extends UnitSpec {
     actualEntity should be(expectedEntity)
   }
 
-  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
-  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
-  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
+  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef
+  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef
+  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef
 
   private val targetEntity1 = TargetEntity(
-    path = entity1,
+    ref = entity1,
     existingMetadata = Fixtures.Metadata.FileOneMetadata,
     currentMetadata = None,
     destination = TargetEntity.Destination.Default
   )
 
   private val targetEntity3 = TargetEntity(
-    path = entity3,
+    ref = entity3,
     existingMetadata = Fixtures.Metadata.FileThreeMetadata,
     currentMetadata = None,
     destination = TargetEntity.Destination.Default

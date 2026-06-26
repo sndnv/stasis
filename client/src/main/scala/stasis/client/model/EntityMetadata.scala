@@ -5,25 +5,44 @@ import java.time.Instant
 import scala.util.Failure
 import scala.util.Try
 
+import org.apache.pekko.util.ByteString
+
 import stasis.core.packaging.Crate
 
 sealed trait EntityMetadata {
   def path: String
-  def link: Option[String]
-  def isHidden: Boolean
   def created: Instant
   def updated: Instant
-  def owner: String
-  def group: String
-  def permissions: String
+
+  def asFilesystem: EntityMetadata.Filesystem
 
   def hasChanged(comparedTo: EntityMetadata): Boolean = (this, comparedTo) match {
-    case (a: EntityMetadata.File, b: EntityMetadata.File) => a != b.copy(compression = a.compression)
-    case _                                                => this != comparedTo
+    case (a: EntityMetadata.WithContent, b: EntityMetadata.WithContent) => a != b.withCompression(a.compression)
+    case _                                                              => this != comparedTo
   }
 }
 
 object EntityMetadata {
+  sealed trait Filesystem extends EntityMetadata {
+    def link: Option[String]
+    def isHidden: Boolean
+    def owner: String
+    def group: String
+    def permissions: String
+
+    override def asFilesystem: Filesystem = this
+  }
+
+  sealed trait WithContent extends EntityMetadata {
+    def size: Long
+    def checksum: BigInt
+    def crates: Map[String, Crate.Id]
+    def compression: String
+
+    def withCrates(crates: Map[String, Crate.Id]): WithContent
+    def withCompression(compression: String): WithContent
+  }
+
   final case class File private (
     override val path: String,
     override val link: Option[String],
@@ -33,11 +52,15 @@ object EntityMetadata {
     override val owner: String,
     override val group: String,
     override val permissions: String,
-    size: Long,
-    checksum: BigInt,
-    crates: Map[String, Crate.Id],
-    compression: String
-  ) extends EntityMetadata
+    override val size: Long,
+    override val checksum: BigInt,
+    override val crates: Map[String, Crate.Id],
+    override val compression: String
+  ) extends Filesystem
+      with WithContent {
+    override def withCrates(crates: Map[String, Crate.Id]): WithContent = copy(crates = crates)
+    override def withCompression(compression: String): WithContent = copy(compression = compression)
+  }
 
   final case class Directory(
     override val path: String,
@@ -48,7 +71,25 @@ object EntityMetadata {
     override val owner: String,
     override val group: String,
     override val permissions: String
-  ) extends EntityMetadata
+  ) extends Filesystem
+
+  final case class Library(
+    override val path: String,
+    override val created: Instant,
+    override val updated: Instant,
+    override val size: Long,
+    override val checksum: BigInt,
+    override val crates: Map[String, Crate.Id],
+    override val compression: String,
+    attributes: ByteString
+  ) extends WithContent {
+    override def withCrates(crates: Map[String, Crate.Id]): WithContent = copy(crates = crates)
+    override def withCompression(compression: String): WithContent = copy(compression = compression)
+
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    override def asFilesystem: Filesystem =
+      throw new IllegalArgumentException(s"Requested filesystem metadata but library metadata for [$path] found")
+  }
 
   def toProto(entityMetadata: EntityMetadata): proto.metadata.EntityMetadata =
     entityMetadata match {
@@ -83,6 +124,20 @@ object EntityMetadata {
         )
 
         proto.metadata.EntityMetadata(entity = proto.metadata.EntityMetadata.Entity.Directory(metadata))
+
+      case libraryMetadata: Library =>
+        val metadata = proto.metadata.LibraryMetadata(
+          key = libraryMetadata.path,
+          size = libraryMetadata.size,
+          created = libraryMetadata.created.getEpochSecond,
+          updated = libraryMetadata.updated.getEpochSecond,
+          checksum = com.google.protobuf.ByteString.copyFrom(libraryMetadata.checksum.toByteArray),
+          crates = libraryMetadata.crates.map(toProtoCrateData),
+          compression = libraryMetadata.compression,
+          attributes = com.google.protobuf.ByteString.copyFrom(libraryMetadata.attributes.toArray)
+        )
+
+        proto.metadata.EntityMetadata(entity = proto.metadata.EntityMetadata.Entity.Library(metadata))
     }
 
   def fromProto(entityMetadata: proto.metadata.EntityMetadata): Try[EntityMetadata] =
@@ -116,6 +171,20 @@ object EntityMetadata {
             owner = directoryMetadata.owner,
             group = directoryMetadata.group,
             permissions = directoryMetadata.permissions
+          )
+        }
+
+      case proto.metadata.EntityMetadata.Entity.Library(libraryMetadata) =>
+        Try {
+          Library(
+            path = libraryMetadata.key,
+            size = libraryMetadata.size,
+            created = Instant.ofEpochSecond(libraryMetadata.created),
+            updated = Instant.ofEpochSecond(libraryMetadata.updated),
+            checksum = BigInt(libraryMetadata.checksum.toByteArray),
+            crates = libraryMetadata.crates.map(fromProtoCrateData),
+            compression = libraryMetadata.compression,
+            attributes = ByteString(libraryMetadata.attributes.toByteArray)
           )
         }
 

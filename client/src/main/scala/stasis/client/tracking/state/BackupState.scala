@@ -1,7 +1,5 @@
 package stasis.client.tracking.state
 
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
@@ -10,6 +8,7 @@ import scala.util.Success
 import scala.util.Try
 
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.model.proto
 import stasis.shared.model.datasets.DatasetDefinition
@@ -29,32 +28,32 @@ final case class BackupState(
 
   override val isCompleted: Boolean = completed.isDefined
 
-  def entityDiscovered(entity: Path): BackupState =
+  def entityDiscovered(entity: EntityRef): BackupState =
     copy(entities = entities.copy(discovered = entities.discovered + entity))
 
   def specificationProcessed(unmatched: Seq[String]): BackupState =
     copy(entities = entities.copy(unmatched = unmatched))
 
-  def entityExamined(entity: Path): BackupState =
+  def entityExamined(entity: EntityRef): BackupState =
     copy(entities = entities.copy(examined = entities.examined + entity))
 
-  def entitySkipped(entity: Path): BackupState =
+  def entitySkipped(entity: EntityRef): BackupState =
     copy(entities = entities.copy(skipped = entities.skipped + entity))
 
   def entityCollected(entity: SourceEntity): BackupState =
-    copy(entities = entities.copy(collected = entities.collected + (entity.path -> entity)))
+    copy(entities = entities.copy(collected = entities.collected + (entity.ref -> entity)))
 
-  def entityProcessingStarted(entity: Path, expectedParts: Int): BackupState =
+  def entityProcessingStarted(entity: EntityRef, expectedParts: Int): BackupState =
     copy(
       entities = entities.copy(pending =
         entities.pending + (entity -> BackupState.PendingSourceEntity(expectedParts = expectedParts, processedParts = 0))
       )
     )
 
-  def entityPartProcessed(entity: Path): BackupState =
+  def entityPartProcessed(entity: EntityRef): BackupState =
     copy(entities = entities.copy(pending = entities.pending + (entity -> entities.pending(entity).inc())))
 
-  def entityProcessed(entity: Path, metadata: Either[EntityMetadata, EntityMetadata]): BackupState = {
+  def entityProcessed(entity: EntityRef, metadata: Either[EntityMetadata, EntityMetadata]): BackupState = {
     val processed = entities.pending.get(entity) match {
       case Some(pending) =>
         BackupState.ProcessedSourceEntity(
@@ -79,7 +78,7 @@ final case class BackupState(
     )
   }
 
-  def entityFailed(entity: Path, reason: Throwable): BackupState =
+  def entityFailed(entity: EntityRef, reason: Throwable): BackupState =
     copy(
       entities = entities.copy(
         failed = entities.failed + (entity -> s"${reason.getClass.getSimpleName} - ${reason.getMessage}")
@@ -98,7 +97,7 @@ final case class BackupState(
   def backupCompleted(): BackupState =
     copy(completed = Some(Instant.now()))
 
-  def remainingEntities(): Seq[Path] =
+  def remainingEntities(): Seq[EntityRef] =
     completed match {
       case Some(_) =>
         Seq.empty
@@ -141,14 +140,14 @@ object BackupState {
   )
 
   final case class Entities(
-    discovered: Set[Path],
+    discovered: Set[EntityRef],
     unmatched: Seq[String],
-    examined: Set[Path],
-    skipped: Set[Path],
-    collected: Map[Path, SourceEntity],
-    pending: Map[Path, PendingSourceEntity],
-    processed: Map[Path, ProcessedSourceEntity],
-    failed: Map[Path, String]
+    examined: Set[EntityRef],
+    skipped: Set[EntityRef],
+    collected: Map[EntityRef, SourceEntity],
+    pending: Map[EntityRef, PendingSourceEntity],
+    processed: Map[EntityRef, ProcessedSourceEntity],
+    failed: Map[EntityRef, String]
   )
 
   object Entities {
@@ -191,20 +190,14 @@ object BackupState {
       definition = state.definition.toString,
       entities = Some(
         proto.state.BackupEntities(
-          discovered = state.entities.discovered.map(_.toAbsolutePath.toString).toSeq,
+          discovered = state.entities.discovered.map(_.key).toSeq,
           unmatched = state.entities.unmatched,
-          examined = state.entities.examined.map(_.toAbsolutePath.toString).toSeq,
-          skipped = state.entities.skipped.map(_.toAbsolutePath.toString).toSeq,
-          collected = state.entities.collected.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoSourceEntity(v)
-          },
-          pending = state.entities.pending.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoPendingSourceEntity(v)
-          },
-          processed = state.entities.processed.map { case (k, v) =>
-            k.toAbsolutePath.toString -> toProtoProcessedSourceEntity(v)
-          },
-          failed = state.entities.failed.map { case (k, v) => k.toAbsolutePath.toString -> v }
+          examined = state.entities.examined.map(_.key).toSeq,
+          skipped = state.entities.skipped.map(_.key).toSeq,
+          collected = state.entities.collected.map { case (k, v) => k.key -> toProtoSourceEntity(v) },
+          pending = state.entities.pending.map { case (k, v) => k.key -> toProtoPendingSourceEntity(v) },
+          processed = state.entities.processed.map { case (k, v) => k.key -> toProtoProcessedSourceEntity(v) },
+          failed = state.entities.failed.map { case (k, v) => k.key -> v }
         )
       ),
       metadataCollected = state.metadataCollected.map(_.toEpochMilli),
@@ -222,14 +215,14 @@ object BackupState {
             definition = UUID.fromString(state.definition),
             started = Instant.ofEpochMilli(state.started),
             entities = BackupState.Entities(
-              discovered = entities.discovered.map(Paths.get(_)).toSet,
+              discovered = entities.discovered.map(EntityRef.default).toSet,
               unmatched = entities.unmatched,
-              examined = entities.examined.map(Paths.get(_)).toSet,
-              skipped = entities.skipped.map(Paths.get(_)).toSet,
-              collected = entities.collected.map { case (k, v) => Paths.get(k) -> fromProtoSourceEntity(v) },
-              pending = entities.pending.map { case (k, v) => Paths.get(k) -> fromProtoPendingSourceEntity(v) },
-              processed = entities.processed.map { case (k, v) => Paths.get(k) -> fromProtoProcessedSourceEntity(v) },
-              failed = entities.failed.map { case (k, v) => Paths.get(k) -> v }
+              examined = entities.examined.map(EntityRef.default).toSet,
+              skipped = entities.skipped.map(EntityRef.default).toSet,
+              collected = entities.collected.map { case (k, v) => EntityRef.default(k) -> fromProtoSourceEntity(v) },
+              pending = entities.pending.map { case (k, v) => EntityRef.default(k) -> fromProtoPendingSourceEntity(v) },
+              processed = entities.processed.map { case (k, v) => EntityRef.default(k) -> fromProtoProcessedSourceEntity(v) },
+              failed = entities.failed.map { case (k, v) => EntityRef.default(k) -> v }
             ),
             metadataCollected = state.metadataCollected.map(Instant.ofEpochMilli),
             metadataPushed = state.metadataPushed.map(Instant.ofEpochMilli),
@@ -245,7 +238,7 @@ object BackupState {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   private def fromProtoSourceEntity(entity: proto.state.SourceEntity): SourceEntity =
     SourceEntity(
-      path = Paths.get(entity.path),
+      ref = EntityRef.default(entity.ref), // TODO
       existingMetadata = entity.existingMetadata.map { metadata =>
         EntityMetadata.fromProto(metadata) match {
           case Success(metadata) => metadata
@@ -259,8 +252,9 @@ object BackupState {
     )
 
   private def toProtoSourceEntity(entity: SourceEntity): proto.state.SourceEntity =
+    // TODO - refactor
     proto.state.SourceEntity(
-      path = entity.path.toAbsolutePath.toString,
+      ref = entity.ref.key,
       existingMetadata = entity.existingMetadata.map(EntityMetadata.toProto),
       currentMetadata = Some(EntityMetadata.toProto(entity.currentMetadata))
     )

@@ -3,12 +3,16 @@ package stasis.test.specs.unit.client.ops.recovery.stages
 import java.nio.file.FileSystems
 
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.SystemMaterializer
 
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
-import stasis.client.collection.RecoveryCollector
+import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.model.TargetEntity
+import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.EntityCollection
 import stasis.shared.ops.Operation
@@ -20,21 +24,21 @@ import stasis.test.specs.unit.client.mocks._
 class EntityCollectionSpec extends AsyncUnitSpec {
   "A Recovery EntityCollection stage" should "collect and filter files" in {
     val targetFile1 = TargetEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None
     )
 
     val targetFile2 = TargetEntity(
-      path = Fixtures.Metadata.FileTwoMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileTwoMetadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileTwoMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileTwoMetadata)
     )
 
     val targetFile3 = TargetEntity(
-      path = Fixtures.Metadata.FileThreeMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileThreeMetadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileThreeMetadata,
       currentMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true))
@@ -44,8 +48,9 @@ class EntityCollectionSpec extends AsyncUnitSpec {
     val mockTelemetry = MockClientTelemetryContext()
 
     val stage = new EntityCollection {
-      override protected def collector: RecoveryCollector =
-        new MockRecoveryCollector(List(targetFile1, targetFile2, targetFile3))
+      override protected def targetMetadata: DatasetMetadata = DatasetMetadata.empty(filesystemSeparator = "/")
+      override protected def keep: (String, FilesystemMetadata.EntityState) => Boolean = (_, _) => true
+      override protected def destination: TargetEntity.Destination = TargetEntity.Destination.Default
 
       override protected def providers: Providers =
         Providers(
@@ -57,8 +62,12 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           track = mockTracker,
           telemetry = mockTelemetry,
           filesystem = FileSystems.getDefault,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(new MockRecoveryEntityKind(new MockRecoveryCollector(List(targetFile1, targetFile2, targetFile3))))
         )
+
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
+      override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
     }
 
     implicit val operationId: Operation.Id = Operation.generateId()

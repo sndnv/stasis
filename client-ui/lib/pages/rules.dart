@@ -73,7 +73,7 @@ class Rules extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
                 visualDensity: VisualDensity.compact,
                 leading: icon,
-                title: Text(rule.directory, style: theme.textTheme.titleSmall),
+                title: Text(rule.source, style: theme.textTheme.titleSmall),
                 subtitle: Text(rule.pattern),
               );
             }).toList();

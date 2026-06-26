@@ -416,8 +416,9 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       "AAkxSSsSUZRampGjDHGCAciNNdWlGayO4Cmgh0lxhH" +
       "S9vVKw9Xrdr5jFFg188J7f3NS390AR2WXpVZIBTOJQ" +
       "TWkJJZlJpckl9UCQ4hRyF7bOIKCDfA3WUEdgbUSQjH" +
-      "CGVgGADydZBQAFZxdG8rwIxHihccNknFcUlg9QQTFw" +
-      "OXMHqwM0kxYFEOlkFXDjUDAAAA//8DAKzONQFBAgAA"
+      "CGVgGADydZBQAFZxdG8rwIxHihccNkklcklg9QQTFw" +
+      "OXMHqwM0kxYFEOlkFXDjVDiFEfAAAA//8DAHOsUoFE" +
+      "AgAA"
 
   private val encryptedDatasetMetadataOriginal =
     "v+fJfvEvfQ1b7Ra25wpP5nB0bDKod5n6dsNhYmphKWy2" +
@@ -439,7 +440,7 @@ class DatasetMetadataSpec extends AsyncUnitSpec with EncodingHelpers {
       "kwKGPH6rVF9iimrCUHTnNXqfCpMsjtTxmyvGUVYpcd" +
       "8FQJ/zSOBROe9WZidltAtU1namFZTg+k2Ot9kBBt5r" +
       "X8AJ/4DA0jzdwSO0Apu0HL4i0mf0YBihD/mfzgLYck" +
-      "YL6F+PW77xTJMizuhEGDNQMc2tzw8W3RFtQMmqNg6v" +
-      "/zY+oXxRFmkQo3SkYiI7y7+ovgBMpfxMLJq01XRgUM" +
-      "xqmkkTU6wNtVE4KPGpWM1A=="
+      "YL6F+PW77xTJMizuhEGDNQMc2tzw8W0xFdQMmqNg6v" +
+      "/zY+oXxRFmkQo3SkYiI7z7ctr/+zVcO5EEnj+6FoRI" +
+      "lNLNXypaM4AQiLzo7bWbZI6r+g=="
 }

@@ -3,6 +3,7 @@ package stasis.test.specs.unit.client.analysis
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Paths
+import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.PosixFileAttributes
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -12,6 +13,9 @@ import scala.util.control.NonFatal
 
 import org.apache.pekko.actor.ActorSystem
 
+import io.github.sndnv.layers.testing.FileSystemHelpers.FileSystemSetup
+
+import stasis.client.analysis.BaseEntityMetadata
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.Metadata
 import stasis.client.analysis.PlatformMetadata
@@ -197,8 +201,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
           metadata.crates should be(Map(expectedCratePart -> expectedCrateId))
           metadata.compression should be("test")
 
-        case _: EntityMetadata.Directory =>
-          fail("Expected file but received directory metadata")
+        case other => fail(s"Expected file but received [$other]")
       }
     }
   }
@@ -228,10 +231,40 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
           metadata.group should not be empty
           metadata.permissions should not be empty
 
-        case _: EntityMetadata.File =>
-          fail("Expected directory but received file metadata")
+        case other => fail(s"Expected directory but received [$other]")
       }
     }
+  }
+
+  it should "collect directory metadata with a link" in {
+    val (filesystem, _) = createMockFileSystem(setup = FileSystemSetup.Unix)
+    val directory = Files.createDirectory(filesystem.getPath("/dir"))
+    val link = filesystem.getPath("/link")
+
+    val baseMetadata = BaseEntityMetadata(
+      path = directory,
+      isDirectory = true,
+      link = Some(link),
+      isHidden = false,
+      created = Instant.now(),
+      updated = Instant.now(),
+      owner = "test-owner",
+      group = "test-group",
+      permissions = "rwxr-xr-x",
+      attributes = Files.readAttributes(directory, classOf[BasicFileAttributes])
+    )
+
+    Metadata
+      .collectEntityMetadata(
+        currentMetadata = baseMetadata,
+        checksum = Checksum.MD5,
+        collectCrates = _ => Future.failed(new IllegalStateException("Not available")),
+        collectCompression = () => Future.failed(new IllegalStateException("Not available"))
+      )
+      .map {
+        case metadata: EntityMetadata.Directory => metadata.link should be(Some(link.toAbsolutePath.toString))
+        case other                              => fail(s"Expected directory but received [$other]")
+      }
   }
 
   it should "apply metadata to a file" in {
@@ -349,8 +382,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.crates should be(existingFileMetadata.crates)
             metadata.compression should be("mock")
 
-          case _: EntityMetadata.Directory =>
-            fail("Expected file but received directory metadata")
+          case other => fail(s"Expected file but received [$other]")
         }
       }
   }
@@ -400,8 +432,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             metadata.crates should not be existingFileMetadata.crates
             metadata.compression should be("mock")
 
-          case _: EntityMetadata.Directory =>
-            fail("Expected file but received directory metadata")
+          case other => fail(s"Expected file but received [$other]")
         }
       }
   }
@@ -450,8 +481,7 @@ class MetadataSpec extends AsyncUnitSpec with ResourceHelpers {
             currentMetadata.checksum should be(expectedChecksum)
             currentMetadata.crates should be(existingFileMetadata.crates)
 
-          case Some(_: EntityMetadata.Directory) =>
-            fail("Expected file but received directory metadata")
+          case Some(other) => fail(s"Expected file but received [$other]")
 
           case None =>
             fail("Expected current target file metadata but none was found")

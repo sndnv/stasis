@@ -99,11 +99,11 @@ class BackupStateSpec extends UnitSpec {
   it should "support providing entities that have not been processed" in {
     val backup = BackupState
       .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
-      .entityDiscovered(entity = sourceEntity1.path)
-      .entityDiscovered(entity = sourceEntity3.path)
+      .entityDiscovered(entity = sourceEntity1.ref)
+      .entityDiscovered(entity = sourceEntity3.ref)
       .entityProcessed(entity = entity1, metadata = Left(Fixtures.Metadata.FileOneMetadata))
 
-    backup.remainingEntities() should be(Seq(sourceEntity3.path))
+    backup.remainingEntities() should be(Seq(sourceEntity3.ref))
 
     backup.backupCompleted().remainingEntities() should be(Seq.empty)
   }
@@ -112,15 +112,15 @@ class BackupStateSpec extends UnitSpec {
     val backup = BackupState
       .start(operation = Operation.generateId(), definition = DatasetDefinition.generateId())
       .entityProcessed(
-        entity = Fixtures.Metadata.FileOneMetadata.path.asPath,
+        entity = Fixtures.Metadata.FileOneMetadata.path.asRef,
         metadata = Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
       )
       .entityProcessed(
-        entity = Fixtures.Metadata.FileTwoMetadata.path.asPath,
+        entity = Fixtures.Metadata.FileTwoMetadata.path.asRef,
         metadata = Left(Fixtures.Metadata.FileTwoMetadata) // content changed
       )
       .entityProcessed(
-        entity = Fixtures.Metadata.FileThreeMetadata.path.asPath,
+        entity = Fixtures.Metadata.FileThreeMetadata.path.asRef,
         metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
       )
 
@@ -335,18 +335,18 @@ class BackupStateSpec extends UnitSpec {
     )
   }
 
-  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath
-  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath
-  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath
+  private val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef
+  private val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef
+  private val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef
 
   private val sourceEntity1 = SourceEntity(
-    path = entity1,
+    ref = entity1,
     existingMetadata = None,
     currentMetadata = Fixtures.Metadata.FileOneMetadata
   )
 
   private val sourceEntity3 = SourceEntity(
-    path = entity3,
+    ref = entity3,
     existingMetadata = None,
     currentMetadata = Fixtures.Metadata.FileThreeMetadata
   )

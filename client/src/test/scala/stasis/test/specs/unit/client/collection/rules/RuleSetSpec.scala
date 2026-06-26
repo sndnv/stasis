@@ -130,8 +130,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
   private val expectedDefaultRules = Seq(
     Rule(
       operation = Rule.Operation.Include,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**",
+      options = Map.empty,
       comment = Some("include all files for the current user"),
       original = Rule.Original(
         line = "+ /home__/stasis           **                  # include all files for the current user",
@@ -140,8 +141,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis/.m2",
+      source = "/home__/stasis/.m2",
       pattern = "repository/**",
+      options = Map.empty,
       comment = Some("exclude maven artifacts"),
       original = Rule.Original(
         line = "- /home__/stasis/.m2       repository/**       # exclude maven artifacts",
@@ -150,8 +152,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis/.ivy2",
+      source = "/home__/stasis/.ivy2",
       pattern = "{cache|local}/**",
+      options = Map.empty,
       comment = Some("exclude ivy artifacts"),
       original = Rule.Original(
         line = "- /home__/stasis/.ivy2     {cache|local}/**    # exclude ivy artifacts",
@@ -160,8 +163,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**/*.{class|obj}",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(
         line = "- /home__/stasis           **/*.{class|obj}",
@@ -170,8 +174,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**/lost+found/*",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(
         line = "- /home__/stasis           **/lost+found/*",
@@ -180,8 +185,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**/*cache*/*",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(
         line = "- /home__/stasis           **/*cache*/*",
@@ -190,8 +196,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**/*log*/*",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(
         line = "- /home__/stasis           **/*log*/*",
@@ -200,8 +207,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**/*.{tmp|temp|part|bak|~}",
+      options = Map.empty,
       comment = None,
       original = Rule.Original(
         line = "- /home__/stasis           **/*.{tmp|temp|part|bak|~}",
@@ -215,8 +223,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
   private val expectedDefinitionRules = Seq(
     Rule(
       operation = Rule.Operation.Include,
-      directory = "/home__/stasis",
+      source = "/home__/stasis",
       pattern = "**",
+      options = Map.empty,
       comment = Some("include all files for the current user"),
       original = Rule.Original(
         line = "+ /home__/stasis           **                       # include all files for the current user",
@@ -225,8 +234,9 @@ class RuleSetSpec extends UnitSpec with ResourceHelpers {
     ),
     Rule(
       operation = Rule.Operation.Exclude,
-      directory = "/home__/stasis/test",
+      source = "/home__/stasis/test",
       pattern = "**",
+      options = Map.empty,
       comment = Some("exclude test directory"),
       original = Rule.Original(
         line = "- /home__/stasis/test      **                       # exclude test directory",

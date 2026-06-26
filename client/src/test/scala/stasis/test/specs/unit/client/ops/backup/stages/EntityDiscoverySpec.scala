@@ -4,19 +4,26 @@ import java.nio.file.FileSystems
 import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.SystemMaterializer
 import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.collection.BackupCollector
 import stasis.client.collection.rules.Rule
+import stasis.client.model.EntityRef
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
+import stasis.client.model.SourceEntity
 import stasis.client.ops.ParallelismConfig
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityDiscovery
 import stasis.client.tracking.state.BackupState.ProcessedSourceEntity
@@ -80,7 +87,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           ),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -93,7 +101,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
       .runWith(Sink.head)
       .await
 
-    collector should be(a[BackupCollector.Default])
+    collector should be(a[BackupCollector.Filesystem])
 
     val entities = collector.collect().runWith(Sink.seq).await
 
@@ -142,7 +150,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           ),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -155,7 +164,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
       .runWith(Sink.head)
       .await
 
-    collector should be(a[BackupCollector.Default])
+    collector should be(a[BackupCollector.Filesystem])
 
     val entities = collector.collect().runWith(Sink.seq).await
 
@@ -187,12 +196,12 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
         state = Fixtures.State.BackupOneState.copy(
           entities = Fixtures.State.BackupOneState.entities.copy(
             discovered = Set(
-              sourceFile1,
-              sourceFile2,
-              Fixtures.Metadata.FileThreeMetadata.path.asPath
+              EntityRef.Filesystem(sourceFile1),
+              EntityRef.Filesystem(sourceFile2),
+              Fixtures.Metadata.FileThreeMetadata.path.asRef
             ),
             processed = Map(
-              Fixtures.Metadata.FileThreeMetadata.path.asPath -> ProcessedSourceEntity(
+              Fixtures.Metadata.FileThreeMetadata.path.asRef -> ProcessedSourceEntity(
                 expectedParts = 1,
                 processedParts = 1,
                 metadata = Left(Fixtures.Metadata.FileThreeMetadata)
@@ -217,7 +226,8 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
           ),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
@@ -230,7 +240,7 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
       .runWith(Sink.head)
       .await
 
-    collector should be(a[BackupCollector.Default])
+    collector should be(a[BackupCollector.Filesystem])
 
     val entities = collector.collect().runWith(Sink.seq).await
 
@@ -249,6 +259,71 @@ class EntityDiscoverySpec extends AsyncUnitSpec with ResourceHelpers {
     mockTracker.statistics(MockBackupTracker.Statistic.MetadataPushed) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(0)
     mockTracker.statistics(MockBackupTracker.Statistic.Completed) should be(0)
+  }
+
+  it should "report sources with schemes for which no backup kind is registered" in {
+    val checksum = Checksum.SHA256
+
+    val sourceDirectory1Metadata = "/ops".asTestResource.extractDirectoryMetadata()
+
+    val mockTracker = new MockBackupTracker
+
+    val libraryKind = new BackupEntityKind.Library {
+      override def scheme: String = "photos"
+
+      override def collector(
+        collector: EntityDiscovery.Collector,
+        latestMetadata: Option[DatasetMetadata],
+        providers: Providers,
+        parallelism: ParallelismConfig
+      )(implicit operation: Operation.Id, mat: Materializer): Future[BackupCollector] =
+        Future.successful(new BackupCollector {
+          override def collect(): Source[SourceEntity, NotUsed] = Source.empty
+        })
+
+      override def read(entity: SourceEntity, ref: EntityRef.Library, chunkSize: Int): Source[ByteString, NotUsed] =
+        Source.empty
+    }
+
+    val stage = new EntityDiscovery {
+      override protected def collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithRules(
+        rules = Seq(
+          Rule(line = s"+ ${sourceDirectory1Metadata.path} source-file-*", lineNumber = 0).get,
+          Rule(line = "+ photos:/test *", lineNumber = 1).get,
+          Rule(line = "+ contacts:/test *", lineNumber = 2).get
+        )
+      )
+      override protected def latestMetadata: Option[DatasetMetadata] = None
+      override protected def providers: Providers =
+        Providers(
+          checksum = checksum,
+          staging = new MockFileStaging(),
+          compression = MockCompression(),
+          encryptor = new MockEncryption(),
+          decryptor = new MockEncryption(),
+          clients = Clients(
+            api = MockServerApiEndpointClient(),
+            core = MockServerCoreEndpointClient()
+          ),
+          track = mockTracker,
+          telemetry = MockClientTelemetryContext(),
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem, libraryKind)
+        )
+      override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
+      override protected implicit def mat: Materializer = SystemMaterializer(system).materializer
+      override protected implicit def ec: ExecutionContext = system.dispatcher
+    }
+
+    implicit val operationId: Operation.Id = Operation.generateId()
+
+    val collectors = stage.entityDiscovery
+      .runWith(Sink.seq)
+      .await
+
+    collectors.length should be(2) // filesystem + library kinds
+
+    mockTracker.statistics(MockBackupTracker.Statistic.FailureEncountered) should be(1) // unknown scheme: contacts
   }
 
   private implicit val system: ActorSystem = ActorSystem(name = "EntityDiscoverySpec")

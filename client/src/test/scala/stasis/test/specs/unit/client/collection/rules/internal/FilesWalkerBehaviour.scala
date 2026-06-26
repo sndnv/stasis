@@ -20,8 +20,9 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rule1 = Rule(
         operation = Rule.Operation.Include,
-        directory = "/".normalized(setup),
+        source = "/".normalized(setup),
         pattern = "*",
+        options = Map.empty,
         comment = None,
         original = original
       )
@@ -29,8 +30,9 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rule2 = Rule(
         operation = Rule.Operation.Exclude,
-        directory = "/".normalized(setup),
+        source = "/".normalized(setup),
         pattern = "*",
+        options = Map.empty,
         comment = None,
         original = original
       )
@@ -99,8 +101,9 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rule1 = Rule(
         operation = Rule.Operation.Include,
-        directory = "/".normalized(setup),
+        source = "/".normalized(setup),
         pattern = "*",
+        options = Map.empty,
         comment = None,
         original = original
       )
@@ -108,8 +111,9 @@ trait FilesWalkerBehaviour { _: UnitSpec with ResourceHelpers =>
 
       val rule2 = Rule(
         operation = Rule.Operation.Exclude,
-        directory = "/".normalized(setup),
+        source = "/".normalized(setup),
         pattern = "*",
+        options = Map.empty,
         comment = None,
         original = original
       )

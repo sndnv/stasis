@@ -1,6 +1,5 @@
 package stasis.client.tracking.trackers
 
-import java.nio.file.Path
 import java.time.Instant
 
 import scala.concurrent.duration.FiniteDuration
@@ -13,6 +12,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.RecoveryState
@@ -51,7 +51,7 @@ class DefaultRecoveryTracker(
   }
 
   override def entityExamined(
-    entity: Path,
+    entity: EntityRef,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit = {
@@ -75,7 +75,7 @@ class DefaultRecoveryTracker(
   }
 
   override def entityProcessingStarted(
-    entity: Path,
+    entity: EntityRef,
     expectedParts: Int
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (recovery) - Entity [{}] processing started; expected parts: [{}]", operation, entity, expectedParts)
@@ -84,7 +84,7 @@ class DefaultRecoveryTracker(
   }
 
   override def entityPartProcessed(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (recovery) - Part for entity [{}] processed", operation, entity)
 
@@ -92,7 +92,7 @@ class DefaultRecoveryTracker(
   }
 
   override def entityProcessed(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (recovery) - Entity [{}] processed", operation, entity)
 
@@ -100,7 +100,7 @@ class DefaultRecoveryTracker(
   }
 
   override def metadataApplied(
-    entity: Path
+    entity: EntityRef
   )(implicit operation: Operation.Id): Unit = {
     log.debugN("[{}] (recovery) - Metadata applied to entity [{}]", operation, entity)
 
@@ -108,7 +108,7 @@ class DefaultRecoveryTracker(
   }
 
   override def failureEncountered(
-    entity: Path,
+    entity: EntityRef,
     failure: Throwable
   )(implicit operation: Operation.Id): Unit = {
     log.debugN(
@@ -156,7 +156,7 @@ object DefaultRecoveryTracker {
   object RecoveryEvent {
     final case class EntityExamined(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends RecoveryEvent
 
     final case class EntityCollected(
@@ -166,28 +166,28 @@ object DefaultRecoveryTracker {
 
     final case class EntityProcessingStarted(
       override val operation: Operation.Id,
-      entity: Path,
+      entity: EntityRef,
       expectedParts: Int
     ) extends RecoveryEvent
 
     final case class EntityPartProcessed(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends RecoveryEvent
 
     final case class EntityProcessed(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends RecoveryEvent
 
     final case class EntityMetadataApplied(
       override val operation: Operation.Id,
-      entity: Path
+      entity: EntityRef
     ) extends RecoveryEvent
 
     final case class EntityFailed(
       override val operation: Operation.Id,
-      entity: Path,
+      entity: EntityRef,
       reason: Throwable
     ) extends RecoveryEvent
 

@@ -8,6 +8,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.model.SourceEntity
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.EntityCollection
 import stasis.shared.model.datasets.DatasetDefinition
@@ -20,19 +21,19 @@ import stasis.test.specs.unit.client.mocks._
 class EntityCollectionSpec extends AsyncUnitSpec {
   "A Backup EntityCollection stage" should "collect and filter files" in {
     val sourceFile1 = SourceEntity(
-      path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
     val sourceFile2 = SourceEntity(
-      path = Fixtures.Metadata.FileTwoMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileTwoMetadata.path.asRef,
       existingMetadata = Some(Fixtures.Metadata.FileTwoMetadata),
       currentMetadata = Fixtures.Metadata.FileTwoMetadata
     )
 
     val sourceFile3 = SourceEntity(
-      path = Fixtures.Metadata.FileThreeMetadata.path.asPath,
+      ref = Fixtures.Metadata.FileThreeMetadata.path.asRef,
       existingMetadata = Some(Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)),
       currentMetadata = Fixtures.Metadata.FileThreeMetadata
     )
@@ -54,7 +55,8 @@ class EntityCollectionSpec extends AsyncUnitSpec {
           ),
           track = mockTracker,
           telemetry = mockTelemetry,
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
 
       override protected def targetDataset: DatasetDefinition = Fixtures.Datasets.Default

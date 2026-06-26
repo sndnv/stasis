@@ -12,6 +12,7 @@ import org.apache.pekko.util.ByteString
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.internal.DestagedByteStringSource
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -34,7 +35,8 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
       track = new MockRecoveryTracker,
       telemetry = mockTelemetry,
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     val original = Source.single(ByteString("original"))
@@ -71,7 +73,8 @@ class DestagedByteStringSourceSpec extends AsyncUnitSpec {
       track = new MockRecoveryTracker,
       telemetry = mockTelemetry,
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     val original = Source.failed(new RuntimeException("test failure"))

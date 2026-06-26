@@ -13,6 +13,7 @@ import org.apache.pekko.util.Timeout
 import stasis.client.analysis.Checksum
 import stasis.client.analysis.Metadata
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.service.ApplicationDirectory
 import stasis.core.packaging.Crate
 import io.github.sndnv.layers.testing.FileSystemHelpers
@@ -20,11 +21,14 @@ import io.github.sndnv.layers.testing.FileSystemHelpers
 trait ResourceHelpers extends FileSystemHelpers {
   implicit class ResourceHelpersStringPath(path: String) {
     def asPath: Path = Paths.get(path)
+    def asRef: EntityRef = EntityRef.Filesystem(Paths.get(path))
   }
 
   implicit class PathWithMetadataExtraction(resourcePath: Path) {
     def asString: String =
       resourcePath.toAbsolutePath.toString
+
+    def asRef: EntityRef = EntityRef.Filesystem(resourcePath)
 
     def extractFileMetadata(
       withChecksum: BigInt,
@@ -168,5 +172,6 @@ object ResourceHelpers {
 
   implicit class StringPath(path: String) {
     def asPath: Path = Paths.get(path)
+    def asRef: EntityRef = EntityRef.Filesystem(Paths.get(path))
   }
 }

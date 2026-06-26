@@ -2,6 +2,7 @@ package stasis.test.specs.unit.client.ops
 
 import java.nio.file.Paths
 
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
 import stasis.client.ops.Metrics
@@ -39,29 +40,36 @@ class MetricsSpec extends UnitSpec {
     val meter = MockMeter()
 
     val fileSourceEntity = SourceEntity(
-      path = Paths.get("/tmp/a"),
+      ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
     val directorySourceEntity = SourceEntity(
-      path = Paths.get("/tmp"),
+      ref = EntityRef.Filesystem(Paths.get("/tmp")),
       existingMetadata = None,
       currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
     )
 
     val fileTargetEntity = TargetEntity(
-      path = Paths.get("/tmp/a"),
+      ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.FileOneMetadata,
       currentMetadata = None
     )
 
     val directoryTargetEntity = TargetEntity(
-      path = Paths.get("/tmp"),
+      ref = EntityRef.Filesystem(Paths.get("/tmp")),
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
       currentMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata)
+    )
+
+    val libraryTargetEntity = TargetEntity(
+      ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+      currentMetadata = None
     )
 
     val backupMetrics = new Metrics.BackupOperation.Default(meter = meter, namespace = "test")
@@ -72,9 +80,10 @@ class MetricsSpec extends UnitSpec {
     backupMetrics.recordEntityChunkProcessed(step = "b", bytes = 2)
     backupMetrics.recordEntityChunkProcessed(step = "c", extra = "d", bytes = 2)
     backupMetrics.recordEntityProcessed(metadata = Left(fileSourceEntity.currentMetadata))
+    backupMetrics.recordEntityProcessed(metadata = Right(Fixtures.Metadata.LibraryOneMetadata))
 
-    meter.metric(name = "test_operations_backup_entities_handled") should be(4)
-    meter.metric(name = "test_operations_backup_entity_handled_bytes") should be(4)
+    meter.metric(name = "test_operations_backup_entities_handled") should be(5)
+    meter.metric(name = "test_operations_backup_entity_handled_bytes") should be(5)
     meter.metric(name = "test_operations_backup_entity_chunks_processed") should be(3)
     meter.metric(name = "test_operations_backup_entity_chunk_processed_bytes") should be(3)
 
@@ -85,10 +94,11 @@ class MetricsSpec extends UnitSpec {
     recoveryMetrics.recordEntityChunkProcessed(step = "b", bytes = 2)
     recoveryMetrics.recordEntityChunkProcessed(step = "c", extra = "d", bytes = 2)
     recoveryMetrics.recordEntityProcessed(entity = fileTargetEntity)
+    recoveryMetrics.recordEntityProcessed(entity = libraryTargetEntity)
     recoveryMetrics.recordMetadataApplied(entity = directoryTargetEntity)
 
-    meter.metric(name = "test_operations_recovery_entities_handled") should be(4)
-    meter.metric(name = "test_operations_recovery_entity_handled_bytes") should be(4)
+    meter.metric(name = "test_operations_recovery_entities_handled") should be(5)
+    meter.metric(name = "test_operations_recovery_entity_handled_bytes") should be(5)
     meter.metric(name = "test_operations_recovery_entity_chunks_processed") should be(3)
     meter.metric(name = "test_operations_recovery_entity_chunk_processed_bytes") should be(3)
   }

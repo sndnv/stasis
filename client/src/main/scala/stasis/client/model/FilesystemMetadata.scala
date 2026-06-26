@@ -75,7 +75,8 @@ object FilesystemMetadata {
     }
 
     proto.metadata.FilesystemMetadata(
-      entities = result.toMap
+      entities = result.toMap,
+      separator = filesystem.separator
     )
   }
 

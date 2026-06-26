@@ -6,9 +6,9 @@ import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.Done
 import org.apache.pekko.NotUsed
 
-import stasis.client.analysis.Metadata
 import stasis.client.model.TargetEntity
 import stasis.client.ops.recovery.Providers
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.Metrics
 import stasis.client.ops.ParallelismConfig
 import stasis.shared.ops.Operation
@@ -24,16 +24,13 @@ trait MetadataApplication {
   def metadataApplication(implicit operation: Operation.Id): Flow[TargetEntity, Done, NotUsed] =
     Flow[TargetEntity]
       .mapAsync(parallelism.entities) { targetEntity =>
-        Metadata
-          .applyEntityMetadataTo(
-            metadata = targetEntity.existingMetadata,
-            entity = targetEntity.destinationPath
-          )(ec, providers.metadataDefaults)
+        RecoveryEntityKind
+          .applyMetadata(kinds = providers.kinds, entity = targetEntity, providers = providers)
           .map(_ => targetEntity)
       }
       .wireTap { targetEntity =>
         metrics.recordMetadataApplied(entity = targetEntity)
-        providers.track.metadataApplied(entity = targetEntity.destinationPath)
+        providers.track.metadataApplied(entity = targetEntity.destinationRef)
       }
       .map(_ => Done)
 }

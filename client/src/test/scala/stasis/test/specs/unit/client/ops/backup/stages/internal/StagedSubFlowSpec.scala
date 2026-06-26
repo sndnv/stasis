@@ -12,7 +12,6 @@ import scala.util.control.NonFatal
 
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -22,6 +21,7 @@ import org.scalatest.concurrent.Eventually
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.internal.StagedSubFlow
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -45,7 +45,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       ),
       track = new MockBackupTracker,
       telemetry = mockTelemetry,
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     val expectedPartPath = "/tmp/file/one_0"
@@ -98,7 +99,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       ),
       track = new MockBackupTracker,
       telemetry = mockTelemetry,
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     val stagedParts = new java.util.LinkedList[(String, Path)](
@@ -152,7 +154,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       ),
       track = new MockBackupTracker,
       telemetry = mockTelemetry,
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     val stagedParts = new java.util.LinkedList[(String, Path)](
@@ -189,7 +192,6 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
 
     val original = Source("part1" :: "part2" :: Nil)
       .map(ByteString.apply)
-      .mapMaterializedValue(_ => Future.successful(IOResult.createSuccessful(0)))
       .splitWhen(element => element == ByteString("part2"))
 
     val extended = new StagedSubFlow(subFlow = original)
@@ -206,7 +208,8 @@ class StagedSubFlowSpec extends AsyncUnitSpec with Eventually {
       ),
       track = new MockBackupTracker,
       telemetry = mockTelemetry,
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(BackupEntityKind.Filesystem)
     )
 
     val partsStaged = new AtomicInteger(0)

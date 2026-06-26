@@ -1,24 +1,23 @@
 package stasis.client.tracking
 
-import java.nio.file.Path
-
 import scala.concurrent.Future
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.state.RecoveryState
 import stasis.shared.ops.Operation
 
 trait RecoveryTracker extends RecoveryTracker.View with RecoveryTracker.Manage {
-  def entityExamined(entity: Path, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
+  def entityExamined(entity: EntityRef, metadataChanged: Boolean, contentChanged: Boolean)(implicit operation: Operation.Id): Unit
   def entityCollected(entity: TargetEntity)(implicit operation: Operation.Id): Unit
-  def entityProcessingStarted(entity: Path, expectedParts: Int)(implicit operation: Operation.Id): Unit
-  def entityPartProcessed(entity: Path)(implicit operation: Operation.Id): Unit
-  def entityProcessed(entity: Path)(implicit operation: Operation.Id): Unit
-  def metadataApplied(entity: Path)(implicit operation: Operation.Id): Unit
-  def failureEncountered(entity: Path, failure: Throwable)(implicit operation: Operation.Id): Unit
+  def entityProcessingStarted(entity: EntityRef, expectedParts: Int)(implicit operation: Operation.Id): Unit
+  def entityPartProcessed(entity: EntityRef)(implicit operation: Operation.Id): Unit
+  def entityProcessed(entity: EntityRef)(implicit operation: Operation.Id): Unit
+  def metadataApplied(entity: EntityRef)(implicit operation: Operation.Id): Unit
+  def failureEncountered(entity: EntityRef, failure: Throwable)(implicit operation: Operation.Id): Unit
   def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit
   def completed()(implicit operation: Operation.Id): Unit
 }

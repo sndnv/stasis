@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
@@ -10,6 +9,7 @@ import org.apache.pekko.stream.scaladsl.Source
 
 import stasis.client.collection.rules.Rule
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.tracking.BackupTracker
 import stasis.client.tracking.state.BackupState
@@ -48,7 +48,7 @@ class MockBackupTracker extends BackupTracker {
   override def started(definition: DatasetDefinition.Id)(implicit operation: Operation.Id): Unit =
     stats(Statistic.Started).incrementAndGet()
 
-  override def entityDiscovered(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def entityDiscovered(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityDiscovered).incrementAndGet()
 
   override def specificationProcessed(
@@ -57,25 +57,25 @@ class MockBackupTracker extends BackupTracker {
     stats(Statistic.SpecificationProcessed).incrementAndGet()
 
   override def entityExamined(
-    entity: Path,
+    entity: EntityRef,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityExamined).incrementAndGet()
 
-  override def entitySkipped(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def entitySkipped(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntitySkipped).incrementAndGet()
 
   override def entityCollected(entity: SourceEntity)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityCollected).incrementAndGet()
 
-  override def entityProcessingStarted(entity: Path, expectedParts: Int)(implicit operation: Operation.Id): Unit =
+  override def entityProcessingStarted(entity: EntityRef, expectedParts: Int)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityProcessingStarted).incrementAndGet()
 
-  override def entityPartProcessed(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def entityPartProcessed(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityPartProcessed).incrementAndGet()
 
-  override def entityProcessed(entity: Path, metadata: Either[EntityMetadata, EntityMetadata])(implicit
+  override def entityProcessed(entity: EntityRef, metadata: Either[EntityMetadata, EntityMetadata])(implicit
     operation: Operation.Id
   ): Unit =
     stats(Statistic.EntityProcessed).incrementAndGet()
@@ -89,7 +89,7 @@ class MockBackupTracker extends BackupTracker {
   override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FailureEncountered).incrementAndGet()
 
-  override def failureEncountered(entity: Path, failure: Throwable)(implicit operation: Operation.Id): Unit =
+  override def failureEncountered(entity: EntityRef, failure: Throwable)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FailureEncountered).incrementAndGet()
 
   override def completed()(implicit operation: Operation.Id): Unit =

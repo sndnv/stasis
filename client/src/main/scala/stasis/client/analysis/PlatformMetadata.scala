@@ -1,5 +1,6 @@
 package stasis.client.analysis
 
+import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
@@ -59,7 +60,7 @@ sealed trait PlatformMetadata {
 
   def applyTo(
     entity: Path,
-    metadata: EntityMetadata
+    metadata: EntityMetadata.Filesystem
   )(implicit
     ec: ExecutionContext,
     defaults: PlatformMetadata.Defaults
@@ -116,13 +117,20 @@ sealed trait PlatformMetadata {
 }
 
 object PlatformMetadata {
-  lazy val current: PlatformMetadata = getPlatformMetadataFor(System.getProperty("os.name"))
+  lazy val current: PlatformMetadata = forOperatingSystem(System.getProperty("os.name"))
 
-  def getPlatformMetadataFor(osName: String): PlatformMetadata =
+  def forOperatingSystem(osName: String): PlatformMetadata =
     if (osName.toLowerCase.contains("windows")) {
       Windows
     } else {
       Posix
+    }
+
+  def forFileSystem(filesystem: FileSystem): PlatformMetadata =
+    if (filesystem.supportedFileAttributeViews().contains("posix")) {
+      Posix
+    } else {
+      Windows
     }
 
   object Posix extends PlatformMetadata {

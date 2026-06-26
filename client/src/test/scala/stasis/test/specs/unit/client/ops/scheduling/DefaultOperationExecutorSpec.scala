@@ -410,7 +410,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       clients = clients,
       track = backupTracker,
       telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault
+      filesystem = FileSystems.getDefault,
+      kinds = Seq(backup.BackupEntityKind.Filesystem)
     )
 
     implicit val recoveryProviders: recovery.Providers = recovery.Providers(
@@ -422,7 +423,8 @@ class DefaultOperationExecutorSpec extends AsyncUnitSpec with ResourceHelpers wi
       track = recoveryTracker,
       telemetry = MockClientTelemetryContext(),
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(recovery.RecoveryEntityKind.Filesystem)
     )
 
     new DefaultOperationExecutor(

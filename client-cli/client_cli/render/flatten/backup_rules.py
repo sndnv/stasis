@@ -11,7 +11,7 @@ def get_spec_rules():
     return {
         'fields': {
             'operation': str,
-            'directory': str,
+            'source': str,
             'pattern': str,
             'original_line_number': int,
         },
@@ -74,7 +74,7 @@ def flatten_rules(rules):
         map(
             lambda rule: {
                 'operation': rule['operation'],
-                'directory': rule['directory'],
+                'source': rule['source'],
                 'pattern': rule['pattern'],
                 'original_line_number': rule['original']['line_number'],
             },

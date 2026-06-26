@@ -7,7 +7,6 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
@@ -20,7 +19,6 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
   "A PartitionedByteStringSource" should "support data stream partitioning" in {
     val original = Source("o" :: "r" :: "i" :: "g" :: "i" :: "n" :: "a" :: "l" :: Nil)
       .map(ByteString.apply)
-      .mapMaterializedValue(_ => Future.successful(IOResult.createSuccessful(0)))
 
     val extended = new PartitionedByteStringSource(original)
 
@@ -59,7 +57,6 @@ class PartitionedByteStringSourceSpec extends AsyncUnitSpec {
 
     val original = Source(element :: Nil)
       .map(ByteString.apply)
-      .mapMaterializedValue(_ => Future.successful(IOResult.createSuccessful(0)))
 
     val extended = new PartitionedByteStringSource(original)
 

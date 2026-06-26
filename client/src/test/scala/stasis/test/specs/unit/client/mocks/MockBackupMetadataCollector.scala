@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 import stasis.client.collection.BackupMetadataCollector
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.test.specs.unit.client.mocks.MockBackupMetadataCollector.Statistic
 
@@ -19,7 +20,7 @@ class MockBackupMetadataCollector(metadata: Map[Path, EntityMetadata]) extends B
     stats(Statistic.FileCollected).incrementAndGet()
     metadata.get(file) match {
       case Some(fileMetadata) =>
-        Future.successful(SourceEntity(path = file, existingMetadata = None, currentMetadata = fileMetadata))
+        Future.successful(SourceEntity(ref = EntityRef.Filesystem(file), existingMetadata = None, currentMetadata = fileMetadata))
 
       case None =>
         Future.failed(new IllegalArgumentException(s"No metadata found for file [$file]"))

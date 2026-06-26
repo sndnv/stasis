@@ -9,7 +9,7 @@ void main() {
       const jsonIncludeRule = '''
         {
           "operation": "include",
-          "directory": "/some/path",
+          "source": "/some/path",
           "pattern": "*",
           "original": {"line": "+ /some/path *", "line_number": 0}
         }
@@ -18,7 +18,7 @@ void main() {
       const jsonExcludeRule = '''
         {
           "operation": "exclude",
-          "directory": "/",
+          "source": "/",
           "pattern": "other",
           "comment": "Some comment",
           "original": {"line": "- / other # Some comment", "line_number": 1}
@@ -27,7 +27,7 @@ void main() {
 
       const expectedIncludeRule = Rule(
         operation: 'include',
-        directory: '/some/path',
+        source: '/some/path',
         pattern: '*',
         comment: null,
         original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
@@ -35,7 +35,7 @@ void main() {
 
       const expectedExcludeRule = Rule(
         operation: 'exclude',
-        directory: '/',
+        source: '/',
         pattern: 'other',
         comment: 'Some comment',
         original: OriginalRule(line: '- / other # Some comment', lineNumber: 1),

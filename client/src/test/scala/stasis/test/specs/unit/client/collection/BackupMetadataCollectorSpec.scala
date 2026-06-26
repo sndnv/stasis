@@ -19,32 +19,32 @@ class BackupMetadataCollectorSpec extends AsyncUnitSpec with ResourceHelpers {
     val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2.asString)
     val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3.asString)
 
-    val collector = new BackupMetadataCollector.Default(checksum = Checksum.MD5, compression = MockCompression())
+    val collector = new BackupMetadataCollector.Filesystem(checksum = Checksum.MD5, compression = MockCompression())
 
     for {
       sourceFile1 <- collector.collect(entity = file1, existingMetadata = None)
       sourceFile2 <- collector.collect(entity = file2, existingMetadata = Some(file2Metadata))
       sourceFile3 <- collector.collect(entity = file3, existingMetadata = Some(file3Metadata))
     } yield {
-      sourceFile1.path should be(file1)
+      sourceFile1.ref should be(file1.asRef)
       sourceFile1.existingMetadata should be(None)
       sourceFile1.currentMetadata match {
         case metadata: EntityMetadata.File => metadata.size should be(1)
-        case _: EntityMetadata.Directory   => fail("Expected file but received directory metadata")
+        case other                         => fail(s"Expected file but received [$other]")
       }
 
-      sourceFile2.path should be(file2)
+      sourceFile2.ref should be(file2.asRef)
       sourceFile2.existingMetadata should be(Some(file2Metadata))
       sourceFile2.currentMetadata match {
         case metadata: EntityMetadata.File => metadata.size should be(2)
-        case _: EntityMetadata.Directory   => fail("Expected file but received directory metadata")
+        case other                         => fail(s"Expected file but received [$other]")
       }
 
-      sourceFile3.path should be(file3)
+      sourceFile3.ref should be(file3.asRef)
       sourceFile3.existingMetadata should be(Some(file3Metadata))
       sourceFile3.currentMetadata match {
         case metadata: EntityMetadata.File => metadata.size should be(3)
-        case _: EntityMetadata.Directory   => fail("Expected file but received directory metadata")
+        case other                         => fail(s"Expected file but received [$other]")
       }
     }
   }

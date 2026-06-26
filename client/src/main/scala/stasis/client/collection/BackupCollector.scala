@@ -19,7 +19,7 @@ trait BackupCollector {
 }
 
 object BackupCollector {
-  class Default(
+  class Filesystem(
     entities: List[Path],
     latestMetadata: Option[DatasetMetadata],
     metadataCollector: BackupMetadataCollector,

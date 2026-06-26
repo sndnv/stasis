@@ -13,6 +13,7 @@ import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
+import stasis.client.ops.backup.BackupEntityKind
 import stasis.client.ops.backup.Providers
 import stasis.client.ops.backup.stages.MetadataPush
 import stasis.shared.api.requests.CreateDatasetEntry
@@ -46,7 +47,8 @@ class MetadataPushSpec extends AsyncUnitSpec { spec =>
           ),
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
-          filesystem = FileSystems.getDefault
+          filesystem = FileSystems.getDefault,
+          kinds = Seq(BackupEntityKind.Filesystem)
         )
 
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer

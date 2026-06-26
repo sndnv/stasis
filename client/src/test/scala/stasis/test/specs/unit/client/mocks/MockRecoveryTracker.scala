@@ -1,6 +1,5 @@
 package stasis.test.specs.unit.client.mocks
 
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
@@ -8,6 +7,7 @@ import scala.concurrent.Future
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.client.tracking.RecoveryTracker
 import stasis.client.tracking.state.RecoveryState
@@ -37,7 +37,7 @@ class MockRecoveryTracker extends RecoveryTracker {
   override def remove(operation: Operation.Id): Unit = ()
 
   override def entityExamined(
-    entity: Path,
+    entity: EntityRef,
     metadataChanged: Boolean,
     contentChanged: Boolean
   )(implicit operation: Operation.Id): Unit =
@@ -46,22 +46,22 @@ class MockRecoveryTracker extends RecoveryTracker {
   override def entityCollected(entity: TargetEntity)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityCollected).incrementAndGet()
 
-  override def entityProcessingStarted(entity: Path, expectedParts: Int)(implicit operation: Operation.Id): Unit =
+  override def entityProcessingStarted(entity: EntityRef, expectedParts: Int)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityProcessingStarted).incrementAndGet()
 
-  override def entityPartProcessed(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def entityPartProcessed(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityPartProcessed).incrementAndGet()
 
-  override def entityProcessed(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def entityProcessed(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.EntityProcessed).incrementAndGet()
 
-  override def metadataApplied(entity: Path)(implicit operation: Operation.Id): Unit =
+  override def metadataApplied(entity: EntityRef)(implicit operation: Operation.Id): Unit =
     stats(Statistic.MetadataApplied).incrementAndGet()
 
   override def failureEncountered(failure: Throwable)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FailureEncountered).incrementAndGet()
 
-  override def failureEncountered(entity: Path, failure: Throwable)(implicit operation: Operation.Id): Unit =
+  override def failureEncountered(entity: EntityRef, failure: Throwable)(implicit operation: Operation.Id): Unit =
     stats(Statistic.FailureEncountered).incrementAndGet()
 
   override def completed()(implicit operation: Operation.Id): Unit =

@@ -1,5 +1,5 @@
 package stasis.client.ops.exceptions
 
-import java.nio.file.Path
+import stasis.client.model.EntityRef
 
-final case class EntityProcessingFailure(entity: Path, cause: Throwable) extends Exception(cause)
+final case class EntityProcessingFailure(entity: EntityRef, cause: Throwable) extends Exception(cause)

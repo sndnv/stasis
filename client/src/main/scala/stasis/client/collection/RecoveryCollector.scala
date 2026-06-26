@@ -20,7 +20,7 @@ trait RecoveryCollector {
 }
 
 object RecoveryCollector {
-  class Default(
+  class Filesystem(
     targetMetadata: DatasetMetadata,
     keep: (String, FilesystemMetadata.EntityState) => Boolean,
     destination: TargetEntity.Destination,

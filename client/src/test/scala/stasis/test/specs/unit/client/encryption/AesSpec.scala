@@ -135,9 +135,9 @@ class AesSpec extends AsyncUnitSpec with EncodingHelpers with ResourceHelpers {
       "xT4Ppbu17AnAD4zNomR4txkDe7Xdr0eyHqtXsWokosN" +
       "gSd+QZXe/G374c1MGOMbBLfPICjxfxCUOkgG/1pogMM" +
       "HNTQM8HrwNqweP1h4n9eEjoK4fQpcSwwwspGbeplgBG" +
-      "jNJTZDGN5N83TMunCcgk5P5KQTOUi3Ycpyvp9PJE6C4" +
-      "k11R/0Q274gcEWwSgWXwLwCtNAVenuB3MP/kV9n2u+U" +
-      "BAvLm0El3+HHA=="
+      "jNJTZDGN5N83TMunCcgk5P5JwT+Ui3Ycpyvp9PJE6C4" +
+      "k11R/0Q274gcFWSXkJoP3z9YCNYJsDV/JL4ss2m9jtw" +
+      "ZBjWDI55Ybf4GjDaw=="
 
   private val metadataSecret = DeviceMetadataSecret(
     iv = encryptionIv.decodeFromBase64,

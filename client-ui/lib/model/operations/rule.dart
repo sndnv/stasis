@@ -8,7 +8,7 @@ abstract class Rule with _$Rule {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Rule({
     required String operation,
-    required String directory,
+    required String source,
     required String pattern,
     String? comment,
     required OriginalRule original,

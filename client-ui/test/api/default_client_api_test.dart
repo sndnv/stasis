@@ -794,14 +794,14 @@ void main() {
         'default': [
           Rule(
             operation: 'include',
-            directory: '/some/path',
+            source: '/some/path',
             pattern: '*',
             comment: null,
             original: OriginalRule(line: '+ /some/path *', lineNumber: 0),
           ),
           Rule(
             operation: 'exclude',
-            directory: '/',
+            source: '/',
             pattern: 'other',
             comment: null,
             original: OriginalRule(line: '- / other', lineNumber: 1),
@@ -810,7 +810,7 @@ void main() {
         '255bb999-6fba-49f0-b5bb-7c34da741872': [
           Rule(
             operation: 'include',
-            directory: '/a/b',
+            source: '/a/b',
             pattern: '**',
             comment: 'Some test comment',
             original: OriginalRule(line: '+ /a/b **  # Some test comment', lineNumber: 0),

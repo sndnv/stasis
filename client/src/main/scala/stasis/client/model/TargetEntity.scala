@@ -3,7 +3,7 @@ package stasis.client.model
 import java.nio.file.Path
 
 final case class TargetEntity(
-  path: Path,
+  ref: EntityRef,
   destination: TargetEntity.Destination,
   existingMetadata: EntityMetadata,
   currentMetadata: Option[EntityMetadata]
@@ -11,7 +11,7 @@ final case class TargetEntity(
   currentMetadata.foreach(current =>
     require(
       current.getClass == existingMetadata.getClass,
-      s"Mismatched current metadata for [${current.path.toString}] and existing metadata for [${existingMetadata.path.toString}]"
+      s"Mismatched current metadata for [${current.path}] and existing metadata for [${existingMetadata.path}]"
     )
   )
 
@@ -23,28 +23,39 @@ final case class TargetEntity(
 
   lazy val hasContentChanged: Boolean =
     (existingMetadata, currentMetadata) match {
-      case (existing: EntityMetadata.File, Some(current: EntityMetadata.File)) =>
+      case (existing: EntityMetadata.WithContent, Some(current: EntityMetadata.WithContent)) =>
         existing.size != current.size || existing.checksum != current.checksum
 
-      case (_: EntityMetadata.File, None) =>
+      case (_: EntityMetadata.WithContent, None) =>
         true
 
       case _ =>
         false
     }
 
-  val originalPath: Path = path.getFileSystem.getPath(existingMetadata.path)
+  val originalRef: EntityRef =
+    ref.mapFilesystem(path => path.getFileSystem.getPath(existingMetadata.path))
 
-  val destinationPath: Path =
+  val destinationRef: EntityRef =
     destination match {
       case TargetEntity.Destination.Default =>
-        originalPath
+        originalRef
 
-      case TargetEntity.Destination.Directory(path, true) =>
-        path.resolve(originalPath.getFileSystem.getPath("/").relativize(originalPath))
+      case TargetEntity.Destination.Directory(path, keepDefaultStructure) =>
+        originalRef.flatMap { ref =>
+          val original = ref match {
+            case fs: EntityRef.Filesystem   => fs.path
+            case library: EntityRef.Library => path.getFileSystem.getPath(library.path)
+          }
 
-      case TargetEntity.Destination.Directory(path, false) =>
-        path.resolve(originalPath.getFileName)
+          EntityRef.Filesystem(
+            if (keepDefaultStructure) {
+              path.resolve(original.getFileSystem.getPath("/").relativize(original))
+            } else {
+              path.resolve(original.getFileName)
+            }
+          )
+        }
     }
 }
 

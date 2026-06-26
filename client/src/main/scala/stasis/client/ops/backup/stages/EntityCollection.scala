@@ -22,7 +22,7 @@ trait EntityCollection {
       .wireTap { entity =>
         metrics.recordEntityExamined(entity = entity)
         providers.track.entityExamined(
-          entity = entity.path,
+          entity = entity.ref,
           metadataChanged = entity.hasChanged,
           contentChanged = entity.hasContentChanged
         )
@@ -33,7 +33,7 @@ trait EntityCollection {
           providers.track.entityCollected(entity = entity)
         } else {
           metrics.recordEntitySkipped(entity = entity)
-          providers.track.entitySkipped(entity = entity.path)
+          providers.track.entitySkipped(entity = entity.ref)
         }
       }
       .filter(_.hasChanged)

@@ -11,8 +11,6 @@ import scala.util.control.NonFatal
 import stasis.client.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client.collection.rules.internal.FilesWalker
 import stasis.client.collection.rules.internal.IndexedRule
-import stasis.client.tracking.BackupTracker
-import stasis.shared.ops.Operation
 
 final case class Specification(
   entries: Map[Path, Specification.Entry],
@@ -76,13 +74,6 @@ object Specification {
   )(implicit ec: ExecutionContext): Future[Specification] =
     apply(rules, onMatchIncluded = { _ => () }, filesystem = filesystem)
 
-  def tracked(
-    rules: Seq[Rule],
-    tracker: BackupTracker,
-    filesystem: FileSystem
-  )(implicit ec: ExecutionContext, operation: Operation.Id): Future[Specification] =
-    apply(rules, onMatchIncluded = { path => tracker.entityDiscovered(path) }, filesystem = filesystem)
-
   def apply(
     rules: Seq[Rule],
     onMatchIncluded: Path => Unit,
@@ -90,7 +81,7 @@ object Specification {
   )(implicit ec: ExecutionContext): Future[Specification] = Future {
     val (matchers, spec) = rules.zipWithIndex
       .map(e => IndexedRule(index = e._2, underlying = e._1))
-      .groupBy(_.underlying.directory)
+      .groupBy(_.underlying.source)
       .foldLeft(Seq.empty[RuleMatcher] -> Specification.empty) { case ((collected, spec), (groupedDirectory, rules)) =>
         val (directory, matchers) = rules.asMatchers(groupedDirectory, filesystem)
 

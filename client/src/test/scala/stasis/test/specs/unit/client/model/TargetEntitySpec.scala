@@ -2,6 +2,9 @@ package stasis.test.specs.unit.client.model
 
 import java.nio.file.Paths
 
+import org.apache.pekko.util.ByteString
+
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.UnitSpec
 import stasis.test.specs.unit.client.Fixtures
@@ -27,6 +30,9 @@ class TargetEntitySpec extends UnitSpec {
     targetDirectoryWithoutCurrentMetadata.hasChanged should be(true)
     targetDirectoryWithCurrentMetadata.hasChanged should be(false)
     targetDirectoryWithUpdatedCurrentGroup.hasChanged should be(true)
+    targetLibraryWithoutCurrentMetadata.hasChanged should be(true)
+    targetLibraryWithCurrentMetadata.hasChanged should be(false)
+    targetLibraryWithUpdatedCurrentAttributes.hasChanged should be(true)
   }
 
   it should "determine if its content has changed" in {
@@ -37,36 +43,51 @@ class TargetEntitySpec extends UnitSpec {
     targetDirectoryWithoutCurrentMetadata.hasContentChanged should be(false)
     targetDirectoryWithCurrentMetadata.hasContentChanged should be(false)
     targetDirectoryWithUpdatedCurrentGroup.hasContentChanged should be(false)
+    targetLibraryWithoutCurrentMetadata.hasContentChanged should be(true)
+    targetLibraryWithCurrentMetadata.hasContentChanged should be(false)
+    targetLibraryWithUpdatedCurrentChecksum.hasContentChanged should be(true)
   }
 
   it should "provide its original file path" in {
-    targetFile.originalPath.toString should be(targetFile.existingMetadata.path)
+    targetFile.originalRef.key should be(targetFile.existingMetadata.path)
   }
 
   it should "provide its destination file path" in {
     val testDestinationPath = Paths.get("/tmp/destination")
+    val originalPath = Fixtures.Metadata.FileOneMetadata.path.asPath
 
-    val expectedOriginalPath = targetFile.originalPath
-    val expectedPathWithDefaultStructure = Paths.get(s"$testDestinationPath/${targetFile.path}")
-    val expectedPathWithoutDefaultStructure = Paths.get(s"$testDestinationPath/${targetFile.path.getFileName}")
+    val expectedPathWithDefaultStructure = Paths.get(s"$testDestinationPath/$originalPath")
+    val expectedPathWithoutDefaultStructure = Paths.get(s"$testDestinationPath/${originalPath.getFileName}")
 
-    targetFile.destinationPath should be(expectedOriginalPath)
+    targetFile.destinationRef should be(targetFile.originalRef)
 
     targetFile
       .copy(
         destination = TargetEntity.Destination.Directory(path = testDestinationPath, keepDefaultStructure = true)
       )
-      .destinationPath should be(expectedPathWithDefaultStructure)
+      .destinationRef should be(EntityRef.Filesystem(expectedPathWithDefaultStructure))
 
     targetFile
       .copy(
         destination = TargetEntity.Destination.Directory(path = testDestinationPath, keepDefaultStructure = false)
       )
-      .destinationPath should be(expectedPathWithoutDefaultStructure)
+      .destinationRef should be(EntityRef.Filesystem(expectedPathWithoutDefaultStructure))
+  }
+
+  it should "provide a filesystem destination for a library ref" in {
+    val testDestinationPath = Paths.get("/tmp/destination")
+
+    val libraryFile = targetFile.copy(ref = EntityRef.Library(scheme = "photos", path = "/album/img.heic"))
+
+    libraryFile
+      .copy(
+        destination = TargetEntity.Destination.Directory(path = testDestinationPath, keepDefaultStructure = false)
+      )
+      .destinationRef should be(EntityRef.Filesystem(Paths.get("/tmp/destination/img.heic")))
   }
 
   private val targetFile = TargetEntity(
-    path = Fixtures.Metadata.FileOneMetadata.path.asPath,
+    ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
     destination = TargetEntity.Destination.Default,
     existingMetadata = Fixtures.Metadata.FileOneMetadata,
     currentMetadata = None
@@ -88,7 +109,7 @@ class TargetEntitySpec extends UnitSpec {
     targetFile.copy(currentMetadata = Some(Fixtures.Metadata.FileOneMetadata.copy(checksum = 0)))
 
   private val targetDirectory = TargetEntity(
-    path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
+    ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef,
     destination = TargetEntity.Destination.Default,
     existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
     currentMetadata = None
@@ -102,4 +123,25 @@ class TargetEntitySpec extends UnitSpec {
 
   private val targetDirectoryWithUpdatedCurrentGroup =
     targetDirectory.copy(currentMetadata = Some(Fixtures.Metadata.DirectoryOneMetadata.copy(group = "none")))
+
+  private val targetLibrary = TargetEntity(
+    ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+    destination = TargetEntity.Destination.Default,
+    existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+    currentMetadata = None
+  )
+
+  private val targetLibraryWithoutCurrentMetadata =
+    targetLibrary
+
+  private val targetLibraryWithCurrentMetadata =
+    targetLibrary.copy(currentMetadata = Some(Fixtures.Metadata.LibraryOneMetadata))
+
+  private val targetLibraryWithUpdatedCurrentChecksum =
+    targetLibrary.copy(currentMetadata = Some(Fixtures.Metadata.LibraryOneMetadata.copy(checksum = 0)))
+
+  private val targetLibraryWithUpdatedCurrentAttributes =
+    targetLibrary.copy(currentMetadata =
+      Some(Fixtures.Metadata.LibraryOneMetadata.copy(attributes = ByteString("favorite=false")))
+    )
 }

@@ -15,7 +15,7 @@ def render_rules_as_table(rules):
         header = [
             [
                 'Operation',
-                'Directory',
+                'Source',
                 'Pattern',
                 'Line',
             ]
@@ -32,7 +32,7 @@ def render_rules_as_table(rules):
                 map(
                     lambda rule: [
                         rule['operation'],
-                        rule['directory'],
+                        rule['source'],
                         rule['pattern'],
                         rule['original_line_number'],
                     ],

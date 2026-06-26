@@ -15,7 +15,7 @@ from tests.mocks import mock_data
 class BackupRulesSpec(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.expected_rules_keys = ['operation', 'directory', 'pattern', 'original_line_number']
+        cls.expected_rules_keys = ['operation', 'source', 'pattern', 'original_line_number']
         cls.expected_matched_keys = ['state', 'entity', 'explanation']
         cls.expected_unmatched_keys = ['line', 'rule', 'failure']
 

@@ -16,6 +16,7 @@ import stasis.client.analysis.Checksum
 import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceFileSecret
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.internal.DecryptedCrates
 import stasis.test.specs.unit.AsyncUnitSpec
@@ -37,7 +38,8 @@ class DecryptedCratesSpec extends AsyncUnitSpec with Eventually {
       track = new MockRecoveryTracker,
       telemetry = mockTelemetry,
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     val original = Seq(

@@ -13,7 +13,7 @@ trait BackupMetadataCollector {
 }
 
 object BackupMetadataCollector {
-  class Default(checksum: Checksum, compression: Compression)(implicit mat: Materializer) extends BackupMetadataCollector {
+  class Filesystem(checksum: Checksum, compression: Compression)(implicit mat: Materializer) extends BackupMetadataCollector {
     override def collect(entity: Path, existingMetadata: Option[EntityMetadata]): Future[SourceEntity] =
       Metadata.collectSource(
         checksum = checksum,
@@ -23,8 +23,8 @@ object BackupMetadataCollector {
       )
   }
 
-  object Default {
-    def apply(checksum: Checksum, compression: Compression)(implicit mat: Materializer): Default =
-      new Default(checksum, compression)
+  object Filesystem {
+    def apply(checksum: Checksum, compression: Compression)(implicit mat: Materializer): Filesystem =
+      new Filesystem(checksum, compression)
   }
 }

@@ -1,9 +1,6 @@
 package stasis.test.specs.unit.client.ops.backup.stages.internal
 
-import scala.concurrent.Future
-
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -16,7 +13,6 @@ class CompressedByteStringSourceSpec extends AsyncUnitSpec {
   "A CompressedByteStringSource" should "support data stream compression" in {
     val original = Source
       .single(ByteString("original"))
-      .mapMaterializedValue(_ => Future.successful(IOResult.createSuccessful(0)))
 
     val extended = new CompressedByteStringSource(original)
 

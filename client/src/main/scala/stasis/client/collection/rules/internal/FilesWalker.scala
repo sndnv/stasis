@@ -23,6 +23,13 @@ object FilesWalker {
 
     val sortedMatchers = matchers.sortBy(_._1.index)
 
+    def recordFailure(entity: Path, exc: IOException): Unit =
+      Option(entity).foreach { path =>
+        Option(exc).foreach { failure =>
+          failures.put(path, failure)
+        }
+      }
+
     val _ = Files.walkFileTree(
       start,
       new FileVisitor[Path] {
@@ -74,22 +81,12 @@ object FilesWalker {
         }
 
         override def visitFileFailed(file: Path, exc: IOException): FileVisitResult = {
-          Option(file).foreach { path =>
-            Option(exc).foreach { failure =>
-              failures.put(path, failure)
-            }
-          }
-
+          recordFailure(file, exc)
           FileVisitResult.CONTINUE
         }
 
         override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
-          Option(dir).foreach { path =>
-            Option(exc).foreach { failure =>
-              failures.put(path, failure)
-            }
-          }
-
+          recordFailure(dir, exc)
           FileVisitResult.CONTINUE
         }
       }

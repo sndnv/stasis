@@ -30,8 +30,8 @@ trait Compression {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   private def compressionFor(entity: EntityMetadata): Encoder with Decoder =
     entity match {
-      case file: EntityMetadata.File =>
-        Compression.fromString(file.compression)
+      case content: EntityMetadata.WithContent =>
+        Compression.fromString(content.compression)
 
       case directory: EntityMetadata.Directory =>
         throw new IllegalArgumentException(

@@ -20,13 +20,13 @@ import org.scalatest.concurrent.Eventually
 
 import stasis.client.analysis.Checksum
 import stasis.client.api.clients.Clients
-import stasis.client.collection.RecoveryCollector
 import stasis.client.encryption.secrets.DeviceMetadataSecret
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
 import stasis.client.model.FilesystemMetadata
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.Recovery
 import stasis.client.ops.recovery.Recovery.PathQuery
@@ -471,7 +471,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       track = new MockRecoveryTracker,
       telemetry = MockClientTelemetryContext(),
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     for {
@@ -526,7 +527,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       track = new MockRecoveryTracker,
       telemetry = MockClientTelemetryContext(),
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     Recovery
@@ -545,36 +547,6 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       .recover { case NonFatal(e: IllegalStateException) =>
         e.getMessage should be(s"Expected dataset entry for definition [${dataset.id}] but none was found")
       }
-  }
-
-  it should "be convertible to a recovery collector" in withRetry {
-    implicit val providers: Providers = Providers(
-      checksum = checksum,
-      staging = new DefaultFileStaging(
-        storeDirectory = None,
-        prefix = "staged-",
-        suffix = ".tmp"
-      ),
-      compression = MockCompression(),
-      decryptor = new MockEncryption,
-      clients = Clients(
-        api = MockServerApiEndpointClient(),
-        core = MockServerCoreEndpointClient()
-      ),
-      track = new MockRecoveryTracker,
-      telemetry = MockClientTelemetryContext(),
-      filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
-    )
-
-    val descriptor = Recovery.Descriptor(
-      targetMetadata = DatasetMetadata.empty(filesystemSeparator = "/"),
-      query = None,
-      destination = None,
-      deviceSecret = secret
-    )
-
-    descriptor.toRecoveryCollector() shouldBe a[RecoveryCollector.Default]
   }
 
   "Recovery path queries" should "support checking for matches in withRetry paths" in withRetry {
@@ -728,7 +700,8 @@ class RecoverySpec extends AsyncUnitSpec with ResourceHelpers with Eventually wi
       track = tracker,
       telemetry = MockClientTelemetryContext(),
       filesystem = FileSystems.getDefault,
-      metadataDefaults = PlatformMetadata.Defaults.default()
+      metadataDefaults = PlatformMetadata.Defaults.default(),
+      kinds = Seq(RecoveryEntityKind.Filesystem)
     )
 
     new Recovery(

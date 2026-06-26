@@ -17,10 +17,9 @@ import org.apache.pekko.stream._
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 
-import stasis.client.collection.RecoveryCollector
-import stasis.client.collection.RecoveryMetadataCollector
 import stasis.client.encryption.secrets.DeviceSecret
 import stasis.client.model.DatasetMetadata
+import stasis.client.model.FilesystemMetadata
 import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.EntityProcessingFailure
@@ -67,8 +66,6 @@ class Recovery(
 
   override val `type`: Operation.Type = Operation.Type.Recovery
 
-  private val collector: RecoveryCollector = parent.descriptor.toRecoveryCollector()
-
   private implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("recovery-kill-switch")
 
   private val stream: Source[Done, NotUsed] =
@@ -87,9 +84,13 @@ class Recovery(
     killSwitch.abort(OperationStopped(s"Operation [${id.toString}] stopped by user"))
 
   private object stages extends EntityCollection with EntityProcessing with MetadataApplication {
+    override protected lazy val targetMetadata: DatasetMetadata = parent.descriptor.targetMetadata
+    override protected lazy val keep: (String, FilesystemMetadata.EntityState) => Boolean =
+      (entity, _) => parent.descriptor.query.forall(_.matches(entity, parent.providers.filesystem))
+    override protected lazy val destination: TargetEntity.Destination =
+      parent.descriptor.destination.toTargetEntityDestination(parent.providers.filesystem)
     override protected lazy val deviceSecret: DeviceSecret = parent.descriptor.deviceSecret
     override protected lazy val providers: Providers = parent.providers
-    override protected lazy val collector: RecoveryCollector = parent.collector
     override protected lazy val parallelism: ParallelismConfig = parent.parallelism
     override implicit protected lazy val mat: Materializer = parent.mat
     override implicit protected lazy val ec: ExecutionContext = parent.system.executionContext
@@ -107,21 +108,7 @@ object Recovery {
     query: Option[PathQuery],
     destination: Option[Destination],
     deviceSecret: DeviceSecret
-  ) {
-    def toRecoveryCollector()(implicit
-      ec: ExecutionContext,
-      mat: Materializer,
-      parallelism: ParallelismConfig,
-      providers: Providers
-    ): RecoveryCollector =
-      new RecoveryCollector.Default(
-        targetMetadata = targetMetadata,
-        keep = (entity, _) => query.forall(_.matches(entity, providers.filesystem)),
-        destination = destination.toTargetEntityDestination(providers.filesystem),
-        metadataCollector = RecoveryMetadataCollector.Default(checksum = providers.checksum),
-        clients = providers.clients
-      )
-  }
+  )
 
   object Descriptor {
     sealed trait Collector

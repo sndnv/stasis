@@ -59,12 +59,12 @@ trait MetadataPush {
           definition = targetDataset.id,
           device = providers.clients.api.self,
           data = metadata.contentChanged.values
-            .collect { case metadata: EntityMetadata.File => metadata }
+            .collect { case metadata: EntityMetadata.WithContent => metadata }
             .flatMap(_.crates.values)
             .toSet,
           metadata = metadataManifest.crate,
           changes = metadata.contentChanged.size.toLong + metadata.metadataChanged.size.toLong,
-          size = metadata.contentChanged.collect { case (_, file: EntityMetadata.File) => file.size }.sum
+          size = metadata.contentChanged.collect { case (_, content: EntityMetadata.WithContent) => content.size }.sum
         )
 
         for {

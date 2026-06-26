@@ -11,6 +11,7 @@ import org.apache.pekko.stream.Materializer
 
 import stasis.client.compression.Compression
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
 import stasis.core.packaging.Crate
@@ -34,7 +35,7 @@ object Metadata {
       )
     } yield {
       SourceEntity(
-        path = entity,
+        ref = EntityRef.Filesystem(entity),
         existingMetadata = existingMetadata,
         currentMetadata = entityMetadata
       )
@@ -50,13 +51,13 @@ object Metadata {
     implicit val ec: ExecutionContext = mat.executionContext
 
     val targetEntity = TargetEntity(
-      path = entity,
+      ref = EntityRef.Filesystem(entity),
       destination = destination,
       existingMetadata = existingMetadata,
       currentMetadata = None
     )
 
-    val destinationPath = targetEntity.destinationPath
+    val destinationPath = targetEntity.destinationRef.asFilesystem.path
 
     if (Files.exists(destinationPath)) {
       for {
@@ -124,8 +125,8 @@ object Metadata {
     currentChecksum: BigInt
   ): Future[Map[String, Crate.Id]] =
     existingMetadata match {
-      case Some(file: EntityMetadata.File) if file.checksum == currentChecksum =>
-        Future.successful(file.crates)
+      case Some(content: EntityMetadata.WithContent) if content.checksum == currentChecksum =>
+        Future.successful(content.crates)
 
       case Some(directory: EntityMetadata.Directory) =>
         Future.failed(
@@ -140,8 +141,8 @@ object Metadata {
 
   def collectCratesForTargetFile(existingMetadata: EntityMetadata): Future[Map[String, Crate.Id]] =
     existingMetadata match {
-      case file: EntityMetadata.File =>
-        Future.successful(file.crates)
+      case content: EntityMetadata.WithContent =>
+        Future.successful(content.crates)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
@@ -153,8 +154,8 @@ object Metadata {
 
   def collectCompressionForTargetFile(existingMetadata: EntityMetadata): Future[String] =
     existingMetadata match {
-      case file: EntityMetadata.File =>
-        Future.successful(file.compression)
+      case content: EntityMetadata.WithContent =>
+        Future.successful(content.compression)
 
       case directory: EntityMetadata.Directory =>
         Future.failed(
@@ -165,11 +166,11 @@ object Metadata {
     }
 
   def extractBaseEntityMetadata(entity: Path)(implicit ec: ExecutionContext): Future[BaseEntityMetadata] =
-    PlatformMetadata.current.extractFrom(entity)
+    PlatformMetadata.forFileSystem(entity.getFileSystem).extractFrom(entity)
 
   def applyEntityMetadataTo(metadata: EntityMetadata, entity: Path)(implicit
     ec: ExecutionContext,
     defaults: PlatformMetadata.Defaults
   ): Future[Done] =
-    PlatformMetadata.current.applyTo(entity, metadata)
+    PlatformMetadata.forFileSystem(entity.getFileSystem).applyTo(entity, metadata.asFilesystem)
 }

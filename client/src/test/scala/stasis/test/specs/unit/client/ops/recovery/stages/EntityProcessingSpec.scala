@@ -19,9 +19,11 @@ import stasis.client.analysis.Checksum
 import stasis.client.analysis.PlatformMetadata
 import stasis.client.api.clients.Clients
 import stasis.client.encryption.secrets.DeviceSecret
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.client.ops.ParallelismConfig
 import stasis.client.ops.exceptions.OperationStopped
+import stasis.client.ops.recovery.RecoveryEntityKind
 import stasis.client.ops.recovery.Providers
 import stasis.client.ops.recovery.stages.EntityProcessing
 import stasis.core.packaging.Crate
@@ -74,44 +76,55 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
     val targetDirectoryMetadata = "/ops/nested".asTestResource.extractDirectoryMetadata().withRootAt("/ops")
 
+    val libraryMetadata = Fixtures.Metadata.LibraryOneMetadata.copy(
+      crates = Map("photos:/album/img.heic_0" -> Crate.generateId())
+    )
+
     val ignoredDirectoryMetadata = Fixtures.Metadata.DirectoryOneMetadata
 
     val targetDirectoryDestination = "/ops/processing".asTestResource
     targetDirectoryDestination.clear().await
 
     val targetFile2 = TargetEntity(
-      path = targetFile2Metadata.path.asPath,
+      ref = targetFile2Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile2Metadata,
       currentMetadata = Some(targetFile2Metadata.copy(isHidden = true))
     )
 
     val targetFile3 = TargetEntity(
-      path = targetFile3Metadata.path.asPath,
+      ref = targetFile3Metadata.path.asRef,
       destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
       existingMetadata = targetFile3Metadata,
       currentMetadata = Some(targetFile3Metadata.copy(checksum = BigInt(9999)))
     )
 
     val targetFile4 = TargetEntity(
-      path = targetFile4Metadata.path.asPath,
+      ref = targetFile4Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile4Metadata,
       currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
     )
 
     val targetDirectory = TargetEntity(
-      path = targetDirectoryMetadata.path.asPath,
+      ref = targetDirectoryMetadata.path.asRef,
       destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = true),
       existingMetadata = targetDirectoryMetadata,
       currentMetadata = Some(targetDirectoryMetadata)
     )
 
     val ignoredDirectory = TargetEntity(
-      path = ignoredDirectoryMetadata.path.asPath,
+      ref = ignoredDirectoryMetadata.path.asRef,
       destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
       existingMetadata = ignoredDirectoryMetadata,
       currentMetadata = Some(ignoredDirectoryMetadata)
+    )
+
+    val targetLibrary = TargetEntity(
+      ref = EntityRef.default(libraryMetadata.path),
+      destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
+      existingMetadata = libraryMetadata,
+      currentMetadata = Some(libraryMetadata.copy(checksum = BigInt(9999)))
     )
 
     val mockStaging = new MockFileStaging()
@@ -124,6 +137,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
         targetFile2Metadata.crates.values.map((_, ByteString("source-file-2")))
           ++ targetFile3Metadata.crates.values.map((_, ByteString("source-file-3")))
           ++ targetFile4Metadata.crates.values.map((_, ByteString("source-file-4")))
+          ++ libraryMetadata.crates.values.map((_, ByteString("library-image")))
       ).toMap
     )
     val mockTracker = new MockRecoveryTracker
@@ -141,7 +155,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry,
           filesystem = fs,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -152,7 +167,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
     implicit val killSwitch: SharedKillSwitch = KillSwitches.shared("test")
 
-    Source(List(targetFile2, targetFile3, targetFile4, targetDirectory, ignoredDirectory))
+    Source(List(targetFile2, targetFile3, targetFile4, targetDirectory, ignoredDirectory, targetLibrary))
       .via(stage.entityProcessing)
       .runFold(Seq.empty[TargetEntity])(_ :+ _)
       .map { stageOutput =>
@@ -161,15 +176,16 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
             targetFile2,
             targetFile3,
             targetFile4,
-            targetDirectory
+            targetDirectory,
+            targetLibrary
           )
         )
 
         val metadataChanged = 2 // file2 + directory
-        val contentChanged = 2 // file3 + file4
+        val contentChanged = 3 // file3 + file4 + library
         val totalChanged = metadataChanged + contentChanged
 
-        val contentCrates = 5 // 1 crate for file3 + 4 crates for file4
+        val contentCrates = 6 // 1 crate for file3 + 4 crates for file4 + 1 crate for library
 
         eventually[Assertion] {
           mockStaging.statistics(MockFileStaging.Statistic.TemporaryCreated) should be(contentChanged)
@@ -212,7 +228,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     )
 
     val targetFile1 = TargetEntity(
-      path = targetFile1Metadata.path.asPath,
+      ref = targetFile1Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile1Metadata,
       currentMetadata = Some(targetFile1Metadata.copy(checksum = BigInt(9999)))
@@ -238,7 +254,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = mockTelemetry,
           filesystem = fs,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -294,20 +311,46 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
 
   it should "fail if unexpected target entity metadata is provided" in {
     val entity = TargetEntity(
-      path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath,
+      ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
       currentMetadata = None
     )
 
     EntityProcessing
-      .expectFileMetadata(entity = entity)
+      .expectContentMetadata(entity = entity)
       .map { result =>
         fail(s"Unexpected result received: [$result]")
       }
       .recover { case NonFatal(e: IllegalArgumentException) =>
-        e.getMessage should be(s"Expected metadata for file but directory metadata for [${entity.path}] provided")
+        e.getMessage should be(
+          s"Expected metadata for file but directory metadata for [${entity.existingMetadata.path}] provided"
+        )
       }
+  }
+
+  it should "expect content metadata for files and library entities" in {
+    val fileEntity = TargetEntity(
+      ref = Fixtures.Metadata.FileOneMetadata.path.asRef,
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = Fixtures.Metadata.FileOneMetadata,
+      currentMetadata = None
+    )
+
+    val libraryEntity = TargetEntity(
+      ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+      destination = TargetEntity.Destination.Default,
+      existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+      currentMetadata = None
+    )
+
+    for {
+      file <- EntityProcessing.expectContentMetadata(entity = fileEntity)
+      library <- EntityProcessing.expectContentMetadata(entity = libraryEntity)
+    } yield {
+      file should be(Fixtures.Metadata.FileOneMetadata)
+      library should be(Fixtures.Metadata.LibraryOneMetadata)
+    }
   }
 
   it should "fail if an unexpected number of crates are provided" in {
@@ -327,7 +370,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       )
 
     val targetFile4 = TargetEntity(
-      path = targetFile4Metadata.path.asPath,
+      ref = targetFile4Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile4Metadata,
       currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
@@ -345,7 +388,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext(),
           filesystem = fs,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -377,7 +421,7 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
       .copy(crates = Map.empty)
 
     val targetFile4 = TargetEntity(
-      path = targetFile4Metadata.path.asPath,
+      ref = targetFile4Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile4Metadata,
       currentMetadata = Some(targetFile4Metadata.copy(checksum = BigInt(9999)))
@@ -395,7 +439,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = new MockRecoveryTracker,
           telemetry = MockClientTelemetryContext(),
           filesystem = fs,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 1, entityParts = 1)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer
@@ -432,14 +477,14 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
     targetDirectoryDestination.clear().await
 
     val targetFile2 = TargetEntity(
-      path = targetFile2Metadata.path.asPath,
+      ref = targetFile2Metadata.path.asRef,
       destination = TargetEntity.Destination.Default,
       existingMetadata = targetFile2Metadata,
       currentMetadata = Some(targetFile2Metadata.copy(isHidden = true))
     )
 
     val targetFile3 = TargetEntity(
-      path = targetFile3Metadata.path.asPath,
+      ref = targetFile3Metadata.path.asRef,
       destination = TargetEntity.Destination.Directory(path = targetDirectoryDestination, keepDefaultStructure = false),
       existingMetadata = targetFile3Metadata,
       currentMetadata = Some(targetFile3Metadata.copy(checksum = BigInt(9999)))
@@ -470,7 +515,8 @@ class EntityProcessingSpec extends AsyncUnitSpec with ResourceHelpers with Event
           track = mockTracker,
           telemetry = MockClientTelemetryContext(),
           filesystem = fs,
-          metadataDefaults = PlatformMetadata.Defaults.default()
+          metadataDefaults = PlatformMetadata.Defaults.default(),
+          kinds = Seq(RecoveryEntityKind.Filesystem)
         )
       override protected def parallelism: ParallelismConfig = ParallelismConfig(entities = 4, entityParts = 4)
       override implicit protected def mat: Materializer = SystemMaterializer(system).materializer

@@ -45,7 +45,7 @@ lazy val versions = new {
   val systemTray   = "4.4"
   val bouncycastle = "1.84"
   val layers       = "1.5.2"
-  val fsi          = "1.1.2"
+  val fsi          = "1.2.2"
 }
 
 lazy val jdkDockerImage = "eclipse-temurin:25-noble"

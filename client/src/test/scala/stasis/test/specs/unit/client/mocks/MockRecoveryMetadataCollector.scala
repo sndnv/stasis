@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 import stasis.client.collection.RecoveryMetadataCollector
 import stasis.client.model.EntityMetadata
+import stasis.client.model.EntityRef
 import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.client.mocks.MockRecoveryMetadataCollector.Statistic
 
@@ -25,7 +26,7 @@ class MockRecoveryMetadataCollector(metadata: Map[Path, EntityMetadata]) extends
       case Some(fileMetadata) =>
         Future.successful(
           TargetEntity(
-            path = file,
+            ref = EntityRef.Filesystem(file),
             destination = destination,
             existingMetadata = existingMetadata,
             currentMetadata = Some(fileMetadata)

@@ -6,6 +6,7 @@ import stasis.client.compression.Compression
 import stasis.client.compression.Deflate
 import stasis.client.compression.Gzip
 import stasis.client.compression.Identity
+import stasis.client.model.EntityRef
 import stasis.client.model.SourceEntity
 import stasis.client.model.TargetEntity
 import stasis.test.specs.unit.UnitSpec
@@ -46,7 +47,7 @@ class CompressionSpec extends UnitSpec {
 
     compression.encoderFor(
       entity = SourceEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         existingMetadata = None,
         currentMetadata = Fixtures.Metadata.FileOneMetadata
       )
@@ -54,7 +55,7 @@ class CompressionSpec extends UnitSpec {
 
     compression.encoderFor(
       entity = SourceEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         existingMetadata = None,
         currentMetadata = Fixtures.Metadata.FileTwoMetadata
       )
@@ -62,11 +63,19 @@ class CompressionSpec extends UnitSpec {
 
     compression.encoderFor(
       entity = SourceEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         existingMetadata = None,
         currentMetadata = Fixtures.Metadata.FileThreeMetadata
       )
     ) should be(Deflate)
+
+    compression.encoderFor(
+      entity = SourceEntity(
+        ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+        existingMetadata = None,
+        currentMetadata = Fixtures.Metadata.LibraryOneMetadata
+      )
+    ) should be(Identity)
   }
 
   it should "fail to provide encoders for directories" in {
@@ -74,7 +83,7 @@ class CompressionSpec extends UnitSpec {
 
     an[IllegalArgumentException] should be thrownBy compression.encoderFor(
       entity = SourceEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         existingMetadata = None,
         currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
       )
@@ -86,7 +95,7 @@ class CompressionSpec extends UnitSpec {
 
     compression.decoderFor(
       entity = TargetEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         destination = TargetEntity.Destination.Default,
         existingMetadata = Fixtures.Metadata.FileOneMetadata,
         currentMetadata = None
@@ -95,7 +104,7 @@ class CompressionSpec extends UnitSpec {
 
     compression.decoderFor(
       entity = TargetEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         destination = TargetEntity.Destination.Default,
         existingMetadata = Fixtures.Metadata.FileTwoMetadata,
         currentMetadata = None
@@ -104,12 +113,21 @@ class CompressionSpec extends UnitSpec {
 
     compression.decoderFor(
       entity = TargetEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         destination = TargetEntity.Destination.Default,
         existingMetadata = Fixtures.Metadata.FileThreeMetadata,
         currentMetadata = None
       )
     ) should be(Deflate)
+
+    compression.decoderFor(
+      entity = TargetEntity(
+        ref = EntityRef.default(Fixtures.Metadata.LibraryOneMetadata.path),
+        destination = TargetEntity.Destination.Default,
+        existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+        currentMetadata = None
+      )
+    ) should be(Identity)
   }
 
   it should "fail to provide decoders for directories" in {
@@ -117,7 +135,7 @@ class CompressionSpec extends UnitSpec {
 
     an[IllegalArgumentException] should be thrownBy compression.decoderFor(
       entity = TargetEntity(
-        path = Paths.get("/tmp/a"),
+        ref = EntityRef.Filesystem(Paths.get("/tmp/a")),
         destination = TargetEntity.Destination.Default,
         existingMetadata = Fixtures.Metadata.DirectoryTwoMetadata,
         currentMetadata = None
