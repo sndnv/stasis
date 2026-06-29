@@ -5,7 +5,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 data class Rule(
     val id: Long,
     val operation: Operation,
-    val directory: String,
+    val source: String,
     val pattern: String,
     val definition: DatasetDefinitionId?
 ) {
@@ -20,7 +20,7 @@ data class Rule(
             else -> "($definition)"
         }
 
-        return "$operationAsString $directory $pattern $definitionAsString".trim()
+        return "$operationAsString $source $pattern $definitionAsString".trim()
     }
 
     sealed class Operation {

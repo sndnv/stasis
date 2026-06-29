@@ -6,9 +6,14 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.rules.RuleGrouping.groupRulesByScheme
 import stasis.client_android.activities.helpers.Common.StyledString
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.views.context.EntryAction
@@ -25,21 +30,81 @@ class RulesListItemAdapter(
     private val existingDefinitions: List<DatasetDefinition>,
     private val updateRule: (Rule) -> Unit,
     private val removeRule: (Long) -> Unit
-) : RecyclerView.Adapter<RulesListItemAdapter.ItemViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var rules = emptyList<Rule>()
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = ListItemRuleBinding.inflate(inflater, parent, false)
-        return ItemViewHolder(parent.context, provider, binding, existingDefinitions, updateRule, removeRule)
+    private sealed class Entry {
+        data class Section(val scheme: String?) : Entry()
+        data class RuleItem(val rule: Rule) : Entry()
     }
 
-    override fun getItemCount(): Int = rules.size
+    private var entries = emptyList<Entry>()
 
-    override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val rule = rules[position]
-        holder.bind(rule)
+    override fun getItemViewType(position: Int): Int =
+        when (entries[position]) {
+            is Entry.Section -> ViewTypeSection
+            is Entry.RuleItem -> ViewTypeRule
+        }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            ViewTypeSection -> SectionViewHolder(
+                inflater.inflate(R.layout.list_item_rule_section, parent, false)
+            )
+
+            else -> ItemViewHolder(
+                parent.context,
+                provider,
+                ListItemRuleBinding.inflate(inflater, parent, false),
+                existingDefinitions,
+                updateRule,
+                removeRule
+            )
+        }
+    }
+
+    override fun getItemCount(): Int = entries.size
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val entry = entries[position]) {
+            is Entry.Section -> (holder as SectionViewHolder).bind(entry.scheme)
+            is Entry.RuleItem -> (holder as ItemViewHolder).bind(entry.rule)
+        }
+    }
+
+    class SectionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val icon: ImageView = view.findViewById(R.id.rule_section_icon)
+        private val title: TextView = view.findViewById(R.id.rule_section_title)
+        private val experimental: TextView = view.findViewById(R.id.rule_section_experimental)
+
+        fun bind(scheme: String?) {
+            val context = itemView.context
+            when (scheme) {
+                null -> {
+                    icon.setImageResource(R.drawable.ic_tree_file)
+                    title.text = context.getString(R.string.rules_section_files)
+                    experimental.isVisible = false
+                }
+
+                "calendar" -> {
+                    icon.setImageResource(R.drawable.ic_sources_calendar)
+                    title.text = context.getString(R.string.rules_section_calendar)
+                    experimental.isVisible = true
+                }
+
+                "contacts" -> {
+                    icon.setImageResource(R.drawable.ic_sources_contacts)
+                    title.text = context.getString(R.string.rules_section_contacts)
+                    experimental.isVisible = true
+                }
+
+                else -> {
+                    icon.setImageResource(R.drawable.ic_rules)
+                    title.text = context.getString(R.string.rules_section_other, scheme)
+                    experimental.isVisible = true
+                }
+            }
+        }
     }
 
     class ItemViewHolder(
@@ -62,7 +127,7 @@ class RulesListItemAdapter(
                 .renderAsSpannable(
                     StyledString(
                         placeholder = "%1\$s",
-                        content = rule.directory,
+                        content = rule.source,
                         style = StyleSpan(Typeface.BOLD)
                     )
                 )
@@ -89,7 +154,7 @@ class RulesListItemAdapter(
 
             binding.ruleContainer.setOnLongClickListener {
                 EntryActionsContextDialogFragment(
-                    name = rule.directory,
+                    name = rule.source,
                     description = rule.pattern,
                     actions = listOf(
                         EntryAction(
@@ -116,7 +181,7 @@ class RulesListItemAdapter(
                                         context.getString(
                                             R.string.rule_remove_confirm_content,
                                             rule.pattern,
-                                            rule.directory
+                                            rule.source
                                         )
                                     )
                                     .withConfirmationHandler {
@@ -139,8 +204,15 @@ class RulesListItemAdapter(
     }
 
     internal fun setRules(rules: List<Rule>) {
-        this.rules = rules
+        this.entries = groupRulesByScheme(rules).flatMap { (scheme, schemeRules) ->
+            listOf(Entry.Section(scheme)) + schemeRules.map { Entry.RuleItem(it) }
+        }
 
         notifyDataSetChanged()
+    }
+
+    companion object {
+        private const val ViewTypeSection: Int = 0
+        private const val ViewTypeRule: Int = 1
     }
 }

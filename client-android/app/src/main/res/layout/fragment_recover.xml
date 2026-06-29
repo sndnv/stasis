@@ -162,28 +162,33 @@
                         android:visibility="gone">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingTop="8dp"
-                            android:text="@string/recovery_pick_path_query_title"
+                            android:text="@string/recovery_sources_title"
                             android:textAppearance="?attr/textAppearanceCaption" />
 
                         <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/path_query"
+                            android:id="@+id/recovery_sources"
                             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:importantForAutofill="no"
-                            android:inputType="text"
-                            app:endIconMode="clear_text"
+                            app:endIconContentDescription="@string/recovery_sources_title"
+                            app:endIconDrawable="@drawable/ic_tree_arrow_down"
+                            app:endIconMode="custom"
                             app:hintEnabled="false"
                             app:startIconCheckable="true"
                             app:startIconDrawable="@drawable/ic_info">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/path_query_text_input"
+                                android:id="@+id/recovery_sources_text_input"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content" />
+                                android:layout_height="wrap_content"
+                                android:cursorVisible="false"
+                                android:focusable="false"
+                                android:inputType="none"
+                                tools:ignore="LabelFor" />
 
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>

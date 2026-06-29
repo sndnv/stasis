@@ -53,13 +53,13 @@ message RecoveryEntities {
 }
 
 message SourceEntity {
-  string path = 1;
+  string ref = 1;
   optional EntityMetadata existingMetadata = 2;
   EntityMetadata currentMetadata = 3;
 }
 
 message TargetEntity {
-  string path = 1;
+  string ref = 1;
   TargetEntityDestination destination = 2;
   EntityMetadata  existingMetadata = 3;
   optional EntityMetadata currentMetadata = 4;

@@ -1,303 +1,143 @@
 package stasis.client_android.activities.fragments.backup
 
 import android.content.Context
-import android.graphics.Typeface
-import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.annotation.StringRes
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import stasis.client_android.R
-import stasis.client_android.activities.helpers.Common.StyledString
-import stasis.client_android.activities.helpers.Common.asChangedString
 import stasis.client_android.activities.helpers.Common.asSizeString
-import stasis.client_android.activities.helpers.Common.asString
-import stasis.client_android.activities.helpers.Common.checksum
-import stasis.client_android.activities.helpers.Common.compression
-import stasis.client_android.activities.helpers.Common.crates
-import stasis.client_android.activities.helpers.Common.renderAsSpannable
-import stasis.client_android.activities.helpers.Common.size
-import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsDate
-import stasis.client_android.activities.helpers.DateTimeExtensions.formatAsFullDateTime
-import stasis.client_android.databinding.LayoutDatasetMetadataEntryDetailsRowBinding
 import stasis.client_android.databinding.ListItemDatasetMetadataEntryBinding
+import stasis.client_android.lib.collection.rules.SourceUri
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
-import stasis.client_android.lib.utils.StringPaths.splitParentAndName
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 
 class DatasetMetadataEntryListItemAdapter(
     private val metadata: DatasetMetadata,
-    private val onFiltersUpdated: (Map<String, Filter>, Int, Int) -> Unit
-) : RecyclerView.Adapter<DatasetMetadataEntryListItemAdapter.ItemViewHolder>() {
+    private val onFiltersUpdated: (visible: Int, total: Int, counts: Map<String?, Int>) -> Unit,
+    private val onEntitySelected: (String) -> Unit,
+    private val onEntityLongPressed: (String) -> Unit
+) : ListAdapter<String, DatasetMetadataEntryListItemAdapter.ItemViewHolder>(DiffCallback) {
     private val originalEntities = metadata.filesystem.underlying.keys.sorted().toList()
     private var shownEntities = originalEntities
     private var latestFilters: Map<String, Filter> = emptyMap()
+    private var kindFilter: KindFilter = KindFilter.All
     private val filesystem: FileSystem = FileSystems.getDefault()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = ListItemDatasetMetadataEntryBinding.inflate(inflater, parent, false)
+    val presentSchemes: List<String?> =
+        EntryGrouping.groupEntitiesByScheme(originalEntities).map { (scheme, _) -> scheme }
 
-        return ItemViewHolder(parent.context, binding)
-    }
-
-    override fun getItemCount(): Int = shownEntities.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder =
+        ItemViewHolder(
+            parent.context,
+            ListItemDatasetMetadataEntryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        )
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val entity = shownEntities[position]
-
-        val state = when (val state = metadata.filesystem.get(entity)) {
-            null -> throw IllegalStateException("Expected filesystem entity state for [$entity] but none was found")
-            else -> state
-        }
-
-        val contentChanged = metadata.contentChanged[entity]
-        val metadataChanged = metadata.metadataChanged[entity]
-
-        holder.bind(
-            entity = entity,
-            state = state,
-            metadataChanged = metadataChanged,
-            contentChanged = contentChanged,
-            filesystem = filesystem
-        )
+        holder.bind(getItem(position))
     }
 
     fun filter(by: Map<String, Filter>) {
-        fun keep(
-            entity: String,
-            state: FilesystemMetadata.EntityState?,
-            metadata: EntityMetadata?
-        ): Boolean = by.values.all {
-            when (it) {
-                is Filter.ShowUpdatesOnly -> {
-                    state == FilesystemMetadata.EntityState.New || state == FilesystemMetadata.EntityState.Updated
-                }
-
-                is Filter.ShowUpdatedFilesOnly -> {
-                    metadata is EntityMetadata.File
-                }
-
-                is Filter.KeepPath -> {
-                    entity.let { path -> it.withRegex.matches(path) }
-                }
-
-                is Filter.DropPath -> {
-                    !entity.let { path -> it.withRegex.matches(path) }
-                }
-
-                is Filter.KeepPathName -> {
-                    entity.contains(it.name)
-                }
-            }
-        }
-
-        val filtered = originalEntities.filter { entity ->
-            keep(
-                entity = entity,
-                state = metadata.filesystem.get(entity),
-                metadata = metadata.contentChanged[entity] ?: metadata.metadataChanged[entity]
-            )
-        }
-
-        shownEntities = filtered
         latestFilters = by
-        onFiltersUpdated(by, originalEntities.size, filtered.size)
-        notifyDataSetChanged()
+        shownEntities = originalEntities.filter { keep(it, by) }
+        rebuild()
+    }
+
+    fun selectKind(filter: KindFilter) {
+        kindFilter = filter
+        rebuild()
     }
 
     val activeFilters: Map<String, Filter>
         get() = latestFilters
 
     val isEmpty: Boolean
-        get() = itemCount == 0
+        get() = visibleEntities().isEmpty()
 
-    class ItemViewHolder(
-        private val context: Context,
-        private val binding: ListItemDatasetMetadataEntryBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(
-            entity: String,
-            state: FilesystemMetadata.EntityState,
-            metadataChanged: EntityMetadata?,
-            contentChanged: EntityMetadata?,
-            filesystem: FileSystem
-        ) {
-            binding.datasetMetadataEntryStateIcon.setImageResource(
-                when (state) {
-                    is FilesystemMetadata.EntityState.New -> R.drawable.ic_entity_state_new
-                    is FilesystemMetadata.EntityState.Updated -> R.drawable.ic_entity_state_updated
-                    is FilesystemMetadata.EntityState.Existing -> R.drawable.ic_entity_state_existing
-                }
-            )
+    private fun keep(entity: String, by: Map<String, Filter>): Boolean {
+        val state = metadata.filesystem.get(entity)
+        val entityMetadata = metadata.contentChanged[entity] ?: metadata.metadataChanged[entity]
 
-            val (entityParent, entityName) = entity.splitParentAndName(filesystem)
+        return by.values.all {
+            when (it) {
+                is Filter.ShowUpdatesOnly ->
+                    state == FilesystemMetadata.EntityState.New || state == FilesystemMetadata.EntityState.Updated
 
-            binding.datasetMetadataEntryParent.text =
-                context.getString(
-                    R.string.dataset_metadata_field_content_summary_file_parent,
-                    entityParent
-                )
-
-            binding.datasetMetadataEntryName.text =
-                context.getString(R.string.dataset_metadata_field_content_summary_file_name)
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = entityName,
-                            style = StyleSpan(Typeface.BOLD)
-                        )
-                    )
-
-            binding.datasetMetadataEntrySummaryUpdated.text =
-                context.getString(R.string.dataset_metadata_field_content_summary_updated)
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = (contentChanged ?: metadataChanged)?.updated?.formatAsDate(
-                                context
-                            ).asString(context),
-                            style = StyleSpan(Typeface.NORMAL)
-                        )
-                    )
-
-
-            binding.datasetMetadataEntrySummarySize.text =
-                context.getString(R.string.dataset_metadata_field_content_summary_size)
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = (contentChanged ?: metadataChanged)?.size()
-                                ?.asSizeString(context).asString(context),
-                            style = StyleSpan(Typeface.NORMAL)
-                        )
-                    )
-
-            binding.datasetMetadataEntrySummaryChanged.text =
-                context.getString(R.string.dataset_metadata_field_content_summary_changed)
-                    .renderAsSpannable(
-                        StyledString(
-                            placeholder = "%1\$s",
-                            content = (contentChanged?.let { "content" }
-                                ?: metadataChanged?.let { "metadata" })
-                                ?.asChangedString(context).asString(context),
-                            style = StyleSpan(Typeface.NORMAL)
-                        )
-                    )
-
-            binding.datasetMetadataEntryDetailsPath.set(
-                label = R.string.dataset_metadata_field_title_path,
-                content = R.string.dataset_metadata_field_content_path,
-                value = (contentChanged ?: metadataChanged)?.path.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsLink.set(
-                label = R.string.dataset_metadata_field_title_link,
-                content = R.string.dataset_metadata_field_content_link,
-                value = (contentChanged ?: metadataChanged)?.link.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsIsHidden.set(
-                label = R.string.dataset_metadata_field_title_hidden,
-                content = R.string.dataset_metadata_field_content_hidden,
-                value = (contentChanged ?: metadataChanged)?.isHidden.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsCreated.set(
-                label = R.string.dataset_metadata_field_title_created,
-                content = R.string.dataset_metadata_field_content_created,
-                value = (contentChanged ?: metadataChanged)?.created?.formatAsFullDateTime(context)
-                    .asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsUpdated.set(
-                label = R.string.dataset_metadata_field_title_updated,
-                content = R.string.dataset_metadata_field_content_updated,
-                value = (contentChanged ?: metadataChanged)?.updated?.formatAsFullDateTime(context)
-                    .asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsOwner.set(
-                label = R.string.dataset_metadata_field_title_owner,
-                content = R.string.dataset_metadata_field_content_owner,
-                value = (contentChanged ?: metadataChanged)?.owner.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsGroup.set(
-                label = R.string.dataset_metadata_field_title_group,
-                content = R.string.dataset_metadata_field_content_group,
-                value = (contentChanged ?: metadataChanged)?.group.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsPermissions.set(
-                label = R.string.dataset_metadata_field_title_permissions,
-                content = R.string.dataset_metadata_field_content_permissions,
-                value = (contentChanged ?: metadataChanged)?.permissions.asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsSize.set(
-                label = R.string.dataset_metadata_field_title_size,
-                content = R.string.dataset_metadata_field_content_size,
-                value = (contentChanged ?: metadataChanged)?.size()?.asSizeString(context)
-                    .asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsChecksum.set(
-                label = R.string.dataset_metadata_field_title_checksum,
-                content = R.string.dataset_metadata_field_content_checksum,
-                value = (contentChanged ?: metadataChanged)?.checksum().asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsCrates.set(
-                label = R.string.dataset_metadata_field_title_crates,
-                content = R.string.dataset_metadata_field_content_crates,
-                value = (contentChanged ?: metadataChanged)?.crates().asString(context)
-            )
-
-            binding.datasetMetadataEntryDetailsCrates.set(
-                label = R.string.dataset_metadata_field_title_compression,
-                content = R.string.dataset_metadata_field_content_crates,
-                value = contentChanged?.compression().asString(context)
-            )
-
-            binding.datasetMetadataEntryDetails.isVisible = false
-
-            fun toggleDetails() {
-                binding.datasetMetadataEntryDetails.isVisible =
-                    !binding.datasetMetadataEntryDetails.isVisible
+                is Filter.ShowUpdatedContentOnly -> entityMetadata is EntityMetadata.WithContent
+                is Filter.KeepPath -> it.withRegex.matches(entity)
+                is Filter.DropPath -> !it.withRegex.matches(entity)
+                is Filter.KeepPathName -> entity.contains(it.name)
             }
-
-            binding.root.setOnClickListener {
-                toggleDetails()
-            }
-        }
-
-        private fun LayoutDatasetMetadataEntryDetailsRowBinding.set(
-            @StringRes label: Int,
-            @StringRes content: Int,
-            value: String
-        ) {
-            this.rowLabel.text = context.getString(label)
-
-            this.rowContent.text = context.getString(content)
-                .renderAsSpannable(
-                    StyledString(
-                        placeholder = "%1\$s",
-                        content = value,
-                        style = StyleSpan(Typeface.BOLD)
-                    )
-                )
         }
     }
 
+    private fun visibleEntities(): List<String> {
+        val ordered = EntryGrouping.groupEntitiesByScheme(shownEntities).flatMap { (_, entities) -> entities }
+        return when (val filter = kindFilter) {
+            is KindFilter.All -> ordered
+            is KindFilter.OfScheme -> ordered.filter { SourceUri.scheme(it) == filter.scheme }
+        }
+    }
+
+    private fun schemeCounts(): Map<String?, Int> =
+        shownEntities.groupingBy { SourceUri.scheme(it) }.eachCount()
+
+    private fun rebuild() {
+        val visible = visibleEntities()
+        onFiltersUpdated(visible.size, originalEntities.size, schemeCounts())
+        submitList(visible)
+    }
+
+    inner class ItemViewHolder(
+        private val context: Context,
+        private val binding: ListItemDatasetMetadataEntryBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(entity: String) {
+            val state = when (val state = metadata.filesystem.get(entity)) {
+                null -> throw IllegalStateException("Expected filesystem entity state for [$entity] but none was found")
+                else -> state
+            }
+            val entityMetadata = metadata.contentChanged[entity] ?: metadata.metadataChanged[entity]
+            val scheme = SourceUri.scheme(entity)
+
+            binding.datasetMetadataEntryKindIcon.setImageResource(EntryDisplay.kindIcon(scheme, entityMetadata))
+            binding.datasetMetadataEntryName.text = EntryDisplay.displayName(entity, entityMetadata, filesystem)
+            binding.datasetMetadataEntrySecondary.text =
+                EntryDisplay.secondary(context, entity, scheme, entityMetadata, filesystem)
+
+            binding.datasetMetadataEntryChanged.text = context.getString(EntryDisplay.stateLabel(state))
+            binding.datasetMetadataEntryChanged.setTextColor(context.getColor(EntryDisplay.stateColor(state)))
+
+            val size = (entityMetadata as? EntityMetadata.WithContent)?.size
+            binding.datasetMetadataEntrySize.text = size?.asSizeString(context).orEmpty()
+            binding.datasetMetadataEntrySize.isVisible = size != null
+
+            binding.root.setOnClickListener { onEntitySelected(entity) }
+            binding.root.setOnLongClickListener {
+                onEntityLongPressed(entity)
+                true
+            }
+        }
+    }
+
+    sealed class KindFilter {
+        object All : KindFilter()
+        data class OfScheme(val scheme: String?) : KindFilter()
+    }
+
     companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<String>() {
+            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
+            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
+        }
+
         sealed class Filter {
             object ShowUpdatesOnly : Filter()
-            object ShowUpdatedFilesOnly : Filter()
+            object ShowUpdatedContentOnly : Filter()
             data class KeepPath(val withRegex: Regex) : Filter()
             data class DropPath(val withRegex: Regex) : Filter()
             data class KeepPathName(val name: String) : Filter()

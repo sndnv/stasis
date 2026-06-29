@@ -5,18 +5,20 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.toList
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
-import stasis.client_android.lib.collection.RecoveryCollector
+import stasis.client_android.lib.model.DatasetMetadata
+import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
 import stasis.client_android.lib.ops.recovery.stages.EntityCollection
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
 import stasis.test.client_android.lib.mocks.MockRecoveryCollector
+import stasis.test.client_android.lib.mocks.MockRecoveryEntityKind
 import stasis.test.client_android.lib.mocks.MockRecoveryTracker
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
@@ -26,21 +28,21 @@ class EntityCollectionSpec : WordSpec({
     "A Recovery EntityCollection stage" should {
         "collect and filter files" {
             val targetFile1 = TargetEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.FileOneMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileOneMetadata,
                 currentMetadata = null
             )
 
             val targetFile2 = TargetEntity(
-                path = Fixtures.Metadata.FileTwoMetadata.path.asPath(),
+                ref = Fixtures.Metadata.FileTwoMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileTwoMetadata,
                 currentMetadata = Fixtures.Metadata.FileTwoMetadata
             )
 
             val targetFile3 = TargetEntity(
-                path = Fixtures.Metadata.FileThreeMetadata.path.asPath(),
+                ref = Fixtures.Metadata.FileThreeMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.FileThreeMetadata,
                 currentMetadata = Fixtures.Metadata.FileThreeMetadata.copy(isHidden = true)
@@ -49,8 +51,9 @@ class EntityCollectionSpec : WordSpec({
             val mockTracker = MockRecoveryTracker()
 
             val stage = object : EntityCollection {
-                override val collector: RecoveryCollector =
-                    MockRecoveryCollector(files = listOf(targetFile1, targetFile2, targetFile3))
+                override val targetMetadata: DatasetMetadata = DatasetMetadata.empty()
+                override val keep: (String, FilesystemMetadata.EntityState) -> Boolean = { _, _ -> true }
+                override val destination: TargetEntity.Destination = TargetEntity.Destination.Default
 
                 override val providers: Providers = Providers(
                     checksum = Checksum.Companion.MD5,
@@ -62,7 +65,12 @@ class EntityCollectionSpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(
+                        MockRecoveryEntityKind(
+                            MockRecoveryCollector(files = listOf(targetFile1, targetFile2, targetFile3))
+                        )
+                    )
                 )
             }
 

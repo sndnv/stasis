@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.runBlocking
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
@@ -20,7 +21,6 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.tracking.state.serdes.BackupStateSerdes
 import stasis.client_android.lib.utils.Either
 import java.io.File
-import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
@@ -69,7 +69,7 @@ class DefaultBackupTracker(
         )
     )
 
-    override fun entityDiscovered(operation: OperationId, entity: Path) = send(
+    override fun entityDiscovered(operation: OperationId, entity: EntityRef) = send(
         event = BackupEvent.EntityDiscovered(
             operation = operation,
             entity = entity
@@ -93,14 +93,14 @@ class DefaultBackupTracker(
         }
     }
 
-    override fun entityExamined(operation: OperationId, entity: Path) = send(
+    override fun entityExamined(operation: OperationId, entity: EntityRef) = send(
         event = BackupEvent.EntityExamined(
             operation = operation,
             entity = entity
         )
     )
 
-    override fun entitySkipped(operation: OperationId, entity: Path) = send(
+    override fun entitySkipped(operation: OperationId, entity: EntityRef) = send(
         event = BackupEvent.EntitySkipped(
             operation = operation,
             entity = entity
@@ -114,7 +114,7 @@ class DefaultBackupTracker(
         )
     )
 
-    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) = send(
+    override fun entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) = send(
         event = BackupEvent.EntityProcessingStarted(
             operation = operation,
             entity = entity,
@@ -122,7 +122,7 @@ class DefaultBackupTracker(
         )
     )
 
-    override fun entityPartProcessed(operation: OperationId, entity: Path) = send(
+    override fun entityPartProcessed(operation: OperationId, entity: EntityRef) = send(
         event = BackupEvent.EntityPartProcessed(
             operation = operation,
             entity = entity
@@ -131,7 +131,7 @@ class DefaultBackupTracker(
 
     override fun entityProcessed(
         operation: OperationId,
-        entity: Path,
+        entity: EntityRef,
         metadata: Either<EntityMetadata, EntityMetadata>
     ) = send(
         event = BackupEvent.EntityProcessed(
@@ -154,7 +154,7 @@ class DefaultBackupTracker(
         )
     )
 
-    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) = send(
+    override fun failureEncountered(operation: OperationId, entity: EntityRef, failure: Throwable) = send(
         event = BackupEvent.EntityFailed(
             operation = operation,
             entity = entity,
@@ -326,7 +326,7 @@ class DefaultBackupTracker(
 
         data class EntityDiscovered(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : BackupEvent()
 
         data class SpecificationProcessed(
@@ -336,12 +336,12 @@ class DefaultBackupTracker(
 
         data class EntityExamined(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : BackupEvent()
 
         data class EntitySkipped(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : BackupEvent()
 
         data class EntityCollected(
@@ -351,24 +351,24 @@ class DefaultBackupTracker(
 
         data class EntityProcessingStarted(
             override val operation: OperationId,
-            val entity: Path,
+            val entity: EntityRef,
             val expectedParts: Int
         ) : BackupEvent()
 
         data class EntityPartProcessed(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : BackupEvent()
 
         data class EntityProcessed(
             override val operation: OperationId,
-            val entity: Path,
+            val entity: EntityRef,
             val metadata: Either<EntityMetadata, EntityMetadata>
         ) : BackupEvent()
 
         data class EntityFailed(
             override val operation: OperationId,
-            val entity: Path,
+            val entity: EntityRef,
             val reason: Throwable
         ) : BackupEvent()
 

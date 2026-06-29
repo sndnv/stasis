@@ -11,6 +11,7 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.MetadataCollection
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
@@ -19,7 +20,7 @@ import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.mocks.MockBackupTracker
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
@@ -58,7 +59,8 @@ class MetadataCollectionSpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -129,7 +131,8 @@ class MetadataCollectionSpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -200,7 +203,8 @@ class MetadataCollectionSpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -213,7 +217,7 @@ class MetadataCollectionSpec : WordSpec({
                 .copy(
                     entities = Fixtures.State.BackupOneState.entities.copy(
                         processed = mapOf(
-                            Fixtures.Metadata.FileThreeMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
+                            Fixtures.Metadata.FileThreeMetadata.path.asRef() to BackupState.ProcessedSourceEntity(
                                 expectedParts = 1,
                                 processedParts = 1,
                                 metadata = Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed

@@ -37,6 +37,13 @@
         android:visible="false"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/sources"
+        android:contentDescription="@string/sources_button_hint"
+        android:icon="@drawable/ic_sources"
+        android:title="@string/sources_button_title"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/context_help"
         android:contentDescription="@string/context_help_button_hint"
         android:icon="@drawable/ic_info"

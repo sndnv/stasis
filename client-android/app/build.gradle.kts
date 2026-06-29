@@ -8,39 +8,41 @@ plugins {
 dependencies {
     implementation(project(":lib"))
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
-    implementation("com.google.code.gson:gson:2.13.2")
-    implementation("com.google.android.material:material:1.13.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
+    implementation("com.google.code.gson:gson:2.14.0")
+    implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.9.7")
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.7")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.9.8")
+    implementation("androidx.navigation:navigation-ui-ktx:2.9.8")
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-common-java8:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-common-java8:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.11.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
     implementation("androidx.security:security-crypto:1.1.0")
     implementation("org.bitbucket.b_c:jose4j:0.9.6")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.10")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.21")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.15.0")
     implementation("io.github.amrdeveloper:treeview:1.2.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
-    implementation("io.github.sndnv:fsi:1.1.2")
+    implementation("io.github.sndnv:fsi:1.2.2")
+    implementation("org.mnode.ical4j:ical4j:4.3.0")
+    implementation("org.mnode.ical4j:ical4j-vcard:2.1.0")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60")
+    ksp("com.google.dagger:hilt-compiler:2.60")
     ksp("androidx.room:room-compiler:2.8.4")
 
-    testImplementation("io.mockk:mockk:1.14.9")
+    testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.7.0")
@@ -51,7 +53,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.room:room-testing:2.8.4")
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("io.mockk:mockk-android:1.14.9")
+    androidTestImplementation("io.mockk:mockk-android:1.14.11")
 
     debugImplementation("androidx.fragment:fragment-testing:1.8.9") {
         exclude(group = "androidx.test", module = "monitor")
@@ -60,11 +62,11 @@ dependencies {
 
 kotlin {
     android {
-        compileSdk = 36
+        compileSdk = 37
 
         defaultConfig {
             minSdk = 28
-            targetSdk = 36
+            targetSdk = 37
 
             applicationId = "stasis.client.android"
             versionCode = 18
@@ -92,6 +94,7 @@ kotlin {
         buildTypes {
             getByName("release") {
                 isMinifyEnabled = true
+                isShrinkResources = true
 
                 proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -115,7 +118,13 @@ kotlin {
 
         packaging {
             resources {
-                excludes += setOf("META-INF/atomicfu.kotlin_module", "META-INF/LICENSE.md")
+                excludes += setOf(
+                    "META-INF/atomicfu.kotlin_module",
+                    "META-INF/LICENSE.md",
+                    "META-INF/LICENSE.txt",
+                    "META-INF/NOTICE.txt",
+                    "META-INF/DEPENDENCIES"
+                )
                 merges += "META-INF/LICENSE.md"
                 merges += "META-INF/LICENSE-notice.md"
             }

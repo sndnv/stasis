@@ -2,20 +2,29 @@ package stasis.test.client_android.lib.ops.backup.stages
 
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.toList
+import okio.Buffer
+import okio.Source
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
+import stasis.client_android.lib.collection.BackupCollector
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.DatasetMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.FilesystemMetadata
+import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -61,14 +70,14 @@ class EntityDiscoverySpec : WordSpec({
                         Rule(
                             id = 0,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory1Metadata.path,
+                            source = sourceDirectory1Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         ),
                         Rule(
                             id = 1,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory2Metadata.path,
+                            source = sourceDirectory2Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         )
@@ -105,7 +114,8 @@ class EntityDiscoverySpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -161,7 +171,8 @@ class EntityDiscoverySpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -200,12 +211,12 @@ class EntityDiscoverySpec : WordSpec({
                     state = Fixtures.State.BackupOneState.copy(
                         entities = Fixtures.State.BackupOneState.entities.copy(
                             discovered = setOf(
-                                sourceFile1,
-                                sourceFile2,
-                                Fixtures.Metadata.FileThreeMetadata.path.asPath()
+                                sourceFile1.asRef(),
+                                sourceFile2.asRef(),
+                                Fixtures.Metadata.FileThreeMetadata.path.asRef()
                             ),
                             processed = mapOf(
-                                Fixtures.Metadata.FileThreeMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
+                                Fixtures.Metadata.FileThreeMetadata.path.asRef() to BackupState.ProcessedSourceEntity(
                                     expectedParts = 1,
                                     processedParts = 1,
                                     metadata = Either.Left(Fixtures.Metadata.FileThreeMetadata)
@@ -229,7 +240,8 @@ class EntityDiscoverySpec : WordSpec({
                         core = MockServerCoreEndpointClient()
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 
@@ -254,6 +266,80 @@ class EntityDiscoverySpec : WordSpec({
             mockTracker.statistics[MockBackupTracker.Statistic.MetadataPushed] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (0)
             mockTracker.statistics[MockBackupTracker.Statistic.Completed] shouldBe (0)
+        }
+
+        "report sources with schemes for which no backup kind is registered" {
+            val sourceDirectory1Metadata = "/ops".asTestResource().extractDirectoryMetadata()
+
+            val mockTracker = MockBackupTracker()
+
+            val libraryKind = object : BackupEntityKind.Library {
+                override val scheme: String = "photos"
+
+                override suspend fun collector(
+                    operation: OperationId,
+                    collector: EntityDiscovery.Collector,
+                    latestMetadata: DatasetMetadata?,
+                    providers: Providers
+                ): BackupCollector = object : BackupCollector {
+                    override fun collect(): Flow<SourceEntity> = emptyFlow()
+                }
+
+                override fun read(entity: SourceEntity, ref: EntityRef.Library): Source = Buffer()
+            }
+
+            val stage = object : EntityDiscovery {
+                override val collector: EntityDiscovery.Collector = EntityDiscovery.Collector.WithRules(
+                    rules = listOf(
+                        Rule(
+                            id = 0,
+                            operation = Rule.Operation.Include,
+                            source = sourceDirectory1Metadata.path,
+                            pattern = "source-file-*",
+                            definition = null
+                        ),
+                        Rule(
+                            id = 1,
+                            operation = Rule.Operation.Include,
+                            source = "photos:/test",
+                            pattern = "*",
+                            definition = null
+                        ),
+                        Rule(
+                            id = 2,
+                            operation = Rule.Operation.Include,
+                            source = "contacts:/test",
+                            pattern = "*",
+                            definition = null
+                        )
+                    )
+                )
+
+                override val latestMetadata: DatasetMetadata = DatasetMetadata.empty()
+
+                override val providers: Providers = Providers(
+                    checksum = Checksum.Companion.SHA256,
+                    staging = MockFileStaging(),
+                    compression = MockCompression(),
+                    encryptor = MockEncryption(),
+                    decryptor = MockEncryption(),
+                    clients = Clients(
+                        api = MockServerApiEndpointClient(),
+                        core = MockServerCoreEndpointClient()
+                    ),
+                    track = mockTracker,
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem, libraryKind)
+                )
+            }
+
+            val collectors = stage.entityDiscovery(
+                operation = Operation.generateId()
+            ).toList()
+
+            collectors.size shouldBe (2) // filesystem + library kinds
+
+            mockTracker.statistics[MockBackupTracker.Statistic.FailureEncountered] shouldBe (1) // unknown scheme: contacts
         }
     }
 })

@@ -11,22 +11,22 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import java.util.UUID
 
 class BackupStateSpec : WordSpec({
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath()
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath()
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath()
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef()
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef()
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef()
 
     val sourceEntity1 = SourceEntity(
-        path = entity1,
+        ref = entity1,
         existingMetadata = null,
         currentMetadata = Fixtures.Metadata.FileOneMetadata
     )
 
     val sourceEntity3 = SourceEntity(
-        path = entity3,
+        ref = entity3,
         existingMetadata = null,
         currentMetadata = Fixtures.Metadata.FileThreeMetadata
     )
@@ -111,11 +111,11 @@ class BackupStateSpec : WordSpec({
         "support providing entities that have not been processed" {
             val backup = BackupState
                 .start(operation = Operation.generateId(), definition = UUID.randomUUID())
-                .entityDiscovered(entity = sourceEntity1.path)
-                .entityDiscovered(entity = sourceEntity3.path)
+                .entityDiscovered(entity = sourceEntity1.ref)
+                .entityDiscovered(entity = sourceEntity3.ref)
                 .entityProcessed(entity = entity1, metadata = Either.Left(Fixtures.Metadata.FileOneMetadata))
 
-            backup.remainingEntities() shouldBe (listOf(sourceEntity3.path))
+            backup.remainingEntities() shouldBe (listOf(sourceEntity3.ref))
 
             backup.backupCompleted().remainingEntities() shouldBe (emptyList())
         }
@@ -124,15 +124,15 @@ class BackupStateSpec : WordSpec({
             val backup = BackupState
                 .start(operation = Operation.generateId(), definition = UUID.randomUUID())
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileOneMetadata.path.asPath(),
+                    entity = Fixtures.Metadata.FileOneMetadata.path.asRef(),
                     metadata = Either.Right(Fixtures.Metadata.FileOneMetadata) // metadata changed
                 )
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileTwoMetadata.path.asPath(),
+                    entity = Fixtures.Metadata.FileTwoMetadata.path.asRef(),
                     metadata = Either.Left(Fixtures.Metadata.FileTwoMetadata) // content changed
                 )
                 .entityProcessed(
-                    entity = Fixtures.Metadata.FileThreeMetadata.path.asPath(),
+                    entity = Fixtures.Metadata.FileThreeMetadata.path.asRef(),
                     metadata = Either.Right(Fixtures.Metadata.FileThreeMetadata) // metadata changed
                 )
 

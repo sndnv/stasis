@@ -4,9 +4,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import stasis.client_android.lib.compression.Compression
 import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.model.core.CrateId
+import java.io.IOException
 import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -35,7 +37,7 @@ object Metadata {
         )
 
         return SourceEntity(
-            path = entity,
+            ref = EntityRef.Filesystem(entity),
             existingMetadata = existingMetadata,
             currentMetadata = entityMetadata
         )
@@ -48,13 +50,13 @@ object Metadata {
         existingMetadata: EntityMetadata
     ): TargetEntity {
         val targetEntity = TargetEntity(
-            path = entity,
+            ref = EntityRef.Filesystem(entity),
             destination = destination,
             existingMetadata = existingMetadata,
             currentMetadata = null
         )
 
-        val destinationPath = targetEntity.destinationPath
+        val destinationPath = targetEntity.destinationRef.asFilesystem().path
 
         return if (Files.exists(destinationPath)) {
             val baseMetadata = extractBaseEntityMetadata(destinationPath)
@@ -112,7 +114,7 @@ object Metadata {
         existingMetadata: EntityMetadata?,
         currentChecksum: BigInteger
     ): Map<String, CrateId> = when (existingMetadata) {
-        is EntityMetadata.File -> if (existingMetadata.checksum == currentChecksum) {
+        is EntityMetadata.WithContent -> if (existingMetadata.checksum == currentChecksum) {
             existingMetadata.crates
         } else {
             emptyMap()
@@ -126,8 +128,8 @@ object Metadata {
     fun collectCratesForTargetFile(
         existingMetadata: EntityMetadata
     ): Map<String, CrateId> = when (existingMetadata) {
-        is EntityMetadata.File -> existingMetadata.crates
-        is EntityMetadata.Directory -> throw IllegalArgumentException(
+        is EntityMetadata.WithContent -> existingMetadata.crates
+        else -> throw IllegalArgumentException(
             "Expected metadata for file but directory metadata for [${existingMetadata.path}] provided"
         )
     }
@@ -135,9 +137,9 @@ object Metadata {
     fun collectCompressionForTargetFile(
         existingMetadata: EntityMetadata
     ): String = when (existingMetadata) {
-        is EntityMetadata.File -> existingMetadata.compression
+        is EntityMetadata.WithContent -> existingMetadata.compression
 
-        is EntityMetadata.Directory -> throw IllegalArgumentException(
+        else -> throw IllegalArgumentException(
             "Expected metadata for file but directory metadata for [${existingMetadata.path}] provided"
         )
     }
@@ -177,21 +179,28 @@ object Metadata {
         val attributes =
             Files.getFileAttributeView(entity, PosixFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
 
-        attributes.setPermissions(PosixFilePermissions.fromString(metadata.permissions))
+        val filesystem = metadata.asFilesystem()
 
         val lookupService = entity.fileSystem.userPrincipalLookupService
 
-        val owner = lookupService.lookupPrincipalByName(metadata.owner)
-        val group = lookupService.lookupPrincipalByGroupName(metadata.group)
+        applyBestEffort { attributes.setPermissions(PosixFilePermissions.fromString(filesystem.permissions)) }
+        applyBestEffort { attributes.owner = lookupService.lookupPrincipalByName(filesystem.owner) }
+        applyBestEffort { attributes.setGroup(lookupService.lookupPrincipalByGroupName(filesystem.group)) }
+        applyBestEffort {
+            attributes.setTimes(
+                /* lastModifiedTime */ FileTime.from(metadata.updated),
+                /* lastAccessTime */ FileTime.from(Instant.now()),
+                /* createTime */ FileTime.from(metadata.created)
+            )
+        }
+    }
 
-        attributes.owner = owner
-        attributes.setGroup(group)
-
-        attributes.setTimes(
-            /* lastModifiedTime */ FileTime.from(metadata.updated),
-            /* lastAccessTime */ FileTime.from(Instant.now()),
-            /* createTime */ FileTime.from(metadata.created)
-        )
+    private inline fun applyBestEffort(apply: () -> Unit) {
+        try {
+            apply()
+        } catch (_: IOException) {
+        } catch (_: UnsupportedOperationException) {
+        }
     }
 
     data class BaseEntityMetadata(

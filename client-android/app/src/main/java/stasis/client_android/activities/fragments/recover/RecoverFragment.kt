@@ -9,6 +9,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
@@ -16,7 +19,9 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -39,8 +44,11 @@ import stasis.client_android.databinding.FragmentRecoverBinding
 import stasis.client_android.databinding.InputTimestampBinding
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
+import stasis.client_android.sources.calendar.CalendarSource
+import stasis.client_android.sources.contacts.ContactsSource
 import stasis.client_android.settings.Settings
 import stasis.client_android.settings.Settings.getDateTimeFormat
 import stasis.client_android.utils.LiveDataExtensions.liveData
@@ -104,8 +112,12 @@ class RecoverFragment : Fragment() {
             existingUntilInstant = savedInstanceState?.getString(SelectedUntilInstantKey)?.let { Instant.parse(it) }
         )
 
-        initPathQueryPicker(
-            onPathQueryUpdated = {
+        savedInstanceState?.getStringArray(SelectedSourcesKey)?.let { keys ->
+            selectedRecoverySources = keys.map(::recoverySourceKindFromKey).toSet()
+        }
+
+        initSourcesPicker(
+            onSourcesUpdated = {
                 validateConfig()
             }
         )
@@ -166,6 +178,7 @@ class RecoverFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(SelectedUntilInstantKey, getSelectedUntilInstant(binding.recoverUntilTimestamp).toString())
+        outState.putStringArray(SelectedSourcesKey, selectedRecoverySources.map { it.asKey() }.toTypedArray())
         super.onSaveInstanceState(outState)
     }
 
@@ -173,7 +186,7 @@ class RecoverFragment : Fragment() {
         recoveryConfig = RecoveryConfig(
             definition = getSelectedDefinition(),
             recoverySource = getSelectedRecoverySource(),
-            pathQuery = getSelectPathQuery(),
+            sources = getSelectedSources(),
             destination = null,
             discardPaths = false
         )
@@ -186,6 +199,7 @@ class RecoverFragment : Fragment() {
                 is RecoveryConfig.ValidationResult.Valid -> R.string.recovery_picker_run_recover
                 is RecoveryConfig.ValidationResult.MissingDefinition -> R.string.recovery_picker_run_recover_missing_definition
                 is RecoveryConfig.ValidationResult.MissingEntry -> R.string.recovery_picker_run_recover_missing_entry
+                is RecoveryConfig.ValidationResult.MissingSources -> R.string.recovery_picker_run_recover_missing_sources
             }
         )
     }
@@ -196,6 +210,10 @@ class RecoverFragment : Fragment() {
                 .withTitle(getString(R.string.recovery_pick_definition_title))
                 .withMessage(getString(R.string.recovery_pick_definition_help_info))
                 .show(childFragmentManager)
+        }
+
+        binding.definitionTextInput.setOnClickListener {
+            binding.definitionTextInput.showDropDown()
         }
 
         datasets.nonEmptyDefinitions().observeOnce(viewLifecycleOwner) { definitions ->
@@ -322,18 +340,77 @@ class RecoverFragment : Fragment() {
         }
     }
 
-    private fun initPathQueryPicker(onPathQueryUpdated: () -> Unit) {
-        binding.pathQuery.setStartIconOnClickListener {
+    private var selectedRecoverySources: Set<RecoverySourceKind> =
+        setOf(RecoverySourceKind.Filesystem)
+
+    private fun initSourcesPicker(onSourcesUpdated: () -> Unit) {
+        val options = listOf(
+            Triple(RecoverySourceKind.Filesystem, getString(R.string.rule_field_source_kind_files), R.drawable.ic_sources_filesystem),
+            Triple(RecoverySourceKind.Library(CalendarSource.Scheme), getString(R.string.rule_field_source_kind_calendar), R.drawable.ic_sources_calendar),
+            Triple(RecoverySourceKind.Library(ContactsSource.Scheme), getString(R.string.rule_field_source_kind_contacts), R.drawable.ic_sources_contacts)
+        )
+
+        fun renderSummary() {
+            binding.recoverySourcesTextInput.setText(
+                options.filter { it.first in selectedRecoverySources }.joinToString(", ") { it.second }
+            )
+        }
+
+        fun showPicker() {
+            val checked = options.map { it.first in selectedRecoverySources }.toBooleanArray()
+
+            val container = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val inflater = LayoutInflater.from(requireContext())
+
+            options.forEachIndexed { index, option ->
+                val row = inflater.inflate(R.layout.list_item_source_kind_checkable, container, false)
+                row.findViewById<ImageView>(R.id.source_kind_icon).setImageResource(option.third)
+                row.findViewById<TextView>(R.id.source_kind_label).text = option.second
+
+                val checkbox = row.findViewById<MaterialCheckBox>(R.id.source_kind_checkbox)
+                checkbox.isChecked = checked[index]
+                row.setOnClickListener {
+                    checked[index] = !checked[index]
+                    checkbox.isChecked = checked[index]
+                }
+
+                container.addView(row)
+            }
+
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.recovery_sources_title)
+                .setView(container)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    selectedRecoverySources =
+                        options.filterIndexed { index, _ -> checked[index] }.map { it.first }.toSet()
+                    renderSummary()
+                    onSourcesUpdated()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+
+        binding.recoverySources.setStartIconOnClickListener {
             InformationDialogFragment()
-                .withTitle(getString(R.string.recovery_pick_path_query_title))
-                .withMessage(getString(R.string.recovery_pick_path_query_help_info))
+                .withTitle(getString(R.string.recovery_sources_title))
+                .withMessage(getString(R.string.recovery_sources_help_info))
                 .show(childFragmentManager)
         }
 
-        binding.pathQueryTextInput.doOnTextChanged { _, _, _, _ ->
-            onPathQueryUpdated()
-        }
+        binding.recoverySourcesTextInput.setOnClickListener { showPicker() }
+        binding.recoverySources.setEndIconOnClickListener { showPicker() }
+        renderSummary()
     }
+
+    private fun getSelectedSources(): Set<RecoverySourceKind> = selectedRecoverySources
+
+    private fun RecoverySourceKind.asKey(): String = when (this) {
+        is RecoverySourceKind.Filesystem -> FilesystemSourceKey
+        is RecoverySourceKind.Library -> scheme
+    }
+
+    private fun recoverySourceKindFromKey(key: String): RecoverySourceKind =
+        if (key == FilesystemSourceKey) RecoverySourceKind.Filesystem else RecoverySourceKind.Library(key)
 
     private fun getSelectedDefinition(): DatasetDefinitionId? =
         latestDefinitions[binding.definition.editText?.text?.toString()]
@@ -344,9 +421,6 @@ class RecoverFragment : Fragment() {
             R.id.recovery_source_type_until -> RecoveryConfig.RecoverySource.Until(getSelectedUntilInstant(binding.recoverUntilTimestamp))
             else -> RecoveryConfig.RecoverySource.Latest
         }
-
-    private fun getSelectPathQuery(): String? =
-        binding.pathQuery.editText?.text?.toString()
 
     private fun reloadEntries(
         forDefinition: DatasetDefinitionId?,
@@ -405,5 +479,10 @@ class RecoverFragment : Fragment() {
     companion object {
         private const val SelectedUntilInstantKey: String =
             "stasis.client_android.activities.fragments.recover.RecoverFragment.state.until"
+
+        private const val SelectedSourcesKey: String =
+            "stasis.client_android.activities.fragments.recover.RecoverFragment.state.sources"
+
+        private const val FilesystemSourceKey: String = ""
     }
 }

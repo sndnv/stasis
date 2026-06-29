@@ -20,15 +20,14 @@ import stasis.client_android.activities.helpers.Common.toOperationStageDescripti
 import stasis.client_android.activities.helpers.Common.toOperationStageString
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.withArgumentsId
-import java.nio.file.Path
 
 class OperationStageListItemAdapter(
     context: Context,
     private val provider: DynamicArguments.Provider,
     private val resource: Int,
     private val fragmentManager: FragmentManager,
-    private val stages: List<Pair<String, List<Triple<Path, Int, Int>>>>
-) : ArrayAdapter<Pair<String, List<Triple<Path, Int, Int>>>>(context, resource, stages) {
+    private val stages: List<Pair<String, List<Triple<String, Int, Int>>>>
+) : ArrayAdapter<Pair<String, List<Triple<String, Int, Int>>>>(context, resource, stages) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val (name, steps) = stages[position]
 

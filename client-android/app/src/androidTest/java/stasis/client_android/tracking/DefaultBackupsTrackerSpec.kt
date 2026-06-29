@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import stasis.client_android.Fixtures
 import stasis.client_android.await
 import stasis.client_android.eventually
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
@@ -38,15 +39,15 @@ class DefaultBackupsTrackerSpec {
         val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
-        val file1 = Paths.get("/tmp/test-1").toAbsolutePath()
-        val file2 = Paths.get("/tmp/test-2").toAbsolutePath()
+        val file1 = EntityRef.Filesystem(Paths.get("/tmp/test-1").toAbsolutePath())
+        val file2 = EntityRef.Filesystem(Paths.get("/tmp/test-2").toAbsolutePath())
 
         val initialState = tracker.state.value
 
         assertThat(initialState, equalTo(emptyMap()))
 
         val sourceEntity = SourceEntity(
-            path = file1,
+            ref = file1,
             existingMetadata = null,
             currentMetadata = Fixtures.Metadata.FileOneMetadata
         )
@@ -110,14 +111,14 @@ class DefaultBackupsTrackerSpec {
         val rule1 = stasis.client_android.lib.collection.rules.Rule(
             id = 0,
             operation = stasis.client_android.lib.collection.rules.Rule.Operation.Include,
-            directory = "/tmp/1",
+            source = "/tmp/1",
             pattern = "*",
             definition = null
         )
 
-        val rule2 = rule1.copy(directory = "/tmp/2")
+        val rule2 = rule1.copy(source = "/tmp/2")
 
-        val rule3 = rule1.copy(directory = "/tmp/3")
+        val rule3 = rule1.copy(source = "/tmp/3")
 
         tracker.started(operation, definition = UUID.randomUUID())
         tracker.specificationProcessed(
@@ -159,7 +160,7 @@ class DefaultBackupsTrackerSpec {
         val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
+        val file = EntityRef.Filesystem(Paths.get("test").toAbsolutePath())
 
         val initialState = tracker.state.value
 
@@ -203,7 +204,7 @@ class DefaultBackupsTrackerSpec {
         val tracker = DefaultBackupTracker(context, trackerHandler.looper)
 
         val operation: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
+        val file = EntityRef.Filesystem(Paths.get("test").toAbsolutePath())
 
         val initialState = tracker.state.value
 
@@ -234,7 +235,7 @@ class DefaultBackupsTrackerSpec {
 
         val operation1: OperationId = UUID.randomUUID()
         val operation2: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
+        val file = EntityRef.Filesystem(Paths.get("test").toAbsolutePath())
 
         val initialState = tracker.state.value
 
@@ -275,7 +276,7 @@ class DefaultBackupsTrackerSpec {
 
         val operation1: OperationId = UUID.randomUUID()
         val operation2: OperationId = UUID.randomUUID()
-        val file = Paths.get("test").toAbsolutePath()
+        val file = EntityRef.Filesystem(Paths.get("test").toAbsolutePath())
 
         val initialState = tracker.state.value
 

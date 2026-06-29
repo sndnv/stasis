@@ -26,14 +26,14 @@ interface EntityCollection {
             .onEach { entity ->
                 providers.track.entityExamined(
                     operation = operation,
-                    entity = entity.path
+                    entity = entity.ref
                 )
             }
             .map { entity ->
                 if (entity.hasChanged) {
                     providers.track.entityCollected(operation = operation, entity = entity)
                 } else {
-                    providers.track.entitySkipped(operation = operation, entity = entity.path)
+                    providers.track.entitySkipped(operation = operation, entity = entity.ref)
                 }
 
                 entity

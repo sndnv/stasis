@@ -15,6 +15,8 @@ import java.util.zip.CRC32
 interface Checksum {
     suspend fun calculate(file: Path): BigInteger
 
+    fun calculate(bytes: ByteArray): BigInteger
+
     companion object {
         fun apply(checksum: String): Checksum =
             when (checksum.lowercase(Locale.getDefault())) {
@@ -27,18 +29,22 @@ interface Checksum {
 
         object CRC32 : Checksum {
             override suspend fun calculate(file: Path): BigInteger = crc32(file)
+            override fun calculate(bytes: ByteArray): BigInteger = crc32(bytes)
         }
 
         object MD5 : Checksum {
             override suspend fun calculate(file: Path): BigInteger = md5(file)
+            override fun calculate(bytes: ByteArray): BigInteger = digest(bytes, algorithm = "MD5")
         }
 
         object SHA1 : Checksum {
             override suspend fun calculate(file: Path): BigInteger = sha1(file)
+            override fun calculate(bytes: ByteArray): BigInteger = digest(bytes, algorithm = "SHA-1")
         }
 
         object SHA256 : Checksum {
             override suspend fun calculate(file: Path): BigInteger = sha256(file)
+            override fun calculate(bytes: ByteArray): BigInteger = digest(bytes, algorithm = "SHA-256")
         }
 
         suspend fun crc32(file: Path): BigInteger {
@@ -80,5 +86,14 @@ interface Checksum {
 
             return BigInteger(1, checksum.digest())
         }
+
+        fun crc32(bytes: ByteArray): BigInteger {
+            val checksum = CRC32()
+            checksum.update(bytes)
+            return BigInteger.valueOf(checksum.value)
+        }
+
+        fun digest(bytes: ByteArray, algorithm: String): BigInteger =
+            BigInteger(1, MessageDigest.getInstance(algorithm).digest(bytes))
     }
 }

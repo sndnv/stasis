@@ -8,19 +8,19 @@ object RulesConfig {
     val DefaultRules: List<RuleEntity> = listOf(
         RuleEntity(
             operation = Rule.Operation.Include,
-            directory = DefaultStorageDirectory,
+            source = DefaultStorageDirectory,
             pattern = "**",
             definition = null
         ), // includes all accessible user storage
         RuleEntity(
             operation = Rule.Operation.Exclude,
-            directory = DefaultStorageDirectory,
+            source = DefaultStorageDirectory,
             pattern = "{Android,Android/**}",
             definition = null
         ), // exclude private app data
         RuleEntity(
             operation = Rule.Operation.Exclude,
-            directory = DefaultStorageDirectory,
+            source = DefaultStorageDirectory,
             pattern = "**/.thumbnails",
             definition = null
         ) // exclude thumbnails

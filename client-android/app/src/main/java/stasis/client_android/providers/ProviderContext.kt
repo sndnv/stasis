@@ -12,6 +12,7 @@ import stasis.client_android.lib.security.CredentialsProvider
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.utils.Cache
 import stasis.client_android.lib.utils.Reference
+import stasis.client_android.sources.LibraryEntityKind
 import stasis.client_android.tracking.TrackerViews
 
 data class ProviderContext(
@@ -19,6 +20,7 @@ data class ProviderContext(
     val api: ServerApiEndpointClient,
     val search: Search,
     val executor: OperationExecutor,
+    val libraryKinds: List<LibraryEntityKind<*>>,
     val trackers: TrackerViews,
     val credentials: CredentialsProvider,
     val monitor: ServerMonitor,

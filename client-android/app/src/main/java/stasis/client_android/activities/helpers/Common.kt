@@ -227,16 +227,31 @@ object Common {
     }
 
     fun EntityMetadata.size(): Long? =
-        (this as? EntityMetadata.File)?.size
+        (this as? EntityMetadata.WithContent)?.size
 
     fun EntityMetadata.checksum(): BigInteger? =
-        (this as? EntityMetadata.File)?.checksum
+        (this as? EntityMetadata.WithContent)?.checksum
 
     fun EntityMetadata.crates(): Int? =
-        (this as? EntityMetadata.File)?.crates?.size
+        (this as? EntityMetadata.WithContent)?.crates?.size
 
     fun EntityMetadata.compression(): String? =
-        (this as? EntityMetadata.File)?.compression
+        (this as? EntityMetadata.WithContent)?.compression
+
+    fun EntityMetadata.link(): String? =
+        (this as? EntityMetadata.Filesystem)?.link
+
+    fun EntityMetadata.isHidden(): Boolean? =
+        (this as? EntityMetadata.Filesystem)?.isHidden
+
+    fun EntityMetadata.owner(): String? =
+        (this as? EntityMetadata.Filesystem)?.owner
+
+    fun EntityMetadata.group(): String? =
+        (this as? EntityMetadata.Filesystem)?.group
+
+    fun EntityMetadata.permissions(): String? =
+        (this as? EntityMetadata.Filesystem)?.permissions
 
     fun String.asChangedString(context: Context): String =
         when (this) {

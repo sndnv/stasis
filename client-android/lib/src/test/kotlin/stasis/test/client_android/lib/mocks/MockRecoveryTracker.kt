@@ -1,10 +1,10 @@
 package stasis.test.client_android.lib.mocks
 
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.RecoveryTracker
 import stasis.client_android.lib.tracking.state.RecoveryState
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
 class MockRecoveryTracker : RecoveryTracker {
@@ -29,7 +29,7 @@ class MockRecoveryTracker : RecoveryTracker {
 
     override fun entityExamined(
         operation: OperationId,
-        entity: Path,
+        entity: EntityRef,
         metadataChanged: Boolean,
         contentChanged: Boolean
     ) {
@@ -40,23 +40,23 @@ class MockRecoveryTracker : RecoveryTracker {
         stats[Statistic.EntityCollected]?.getAndIncrement()
     }
 
-    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) {
+    override fun entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) {
         stats[Statistic.EntityProcessingStarted]?.getAndIncrement()
     }
 
-    override fun entityPartProcessed(operation: OperationId, entity: Path) {
+    override fun entityPartProcessed(operation: OperationId, entity: EntityRef) {
         stats[Statistic.EntityPartProcessed]?.getAndIncrement()
     }
 
-    override fun entityProcessed(operation: OperationId, entity: Path) {
+    override fun entityProcessed(operation: OperationId, entity: EntityRef) {
         stats[Statistic.EntityProcessed]?.getAndIncrement()
     }
 
-    override fun metadataApplied(operation: OperationId, entity: Path) {
+    override fun metadataApplied(operation: OperationId, entity: EntityRef) {
         stats[Statistic.MetadataApplied]?.getAndIncrement()
     }
 
-    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) {
+    override fun failureEncountered(operation: OperationId, entity: EntityRef, failure: Throwable) {
         stats[Statistic.FailureEncountered]?.getAndIncrement()
     }
 

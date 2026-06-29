@@ -8,6 +8,7 @@ import okio.source
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.analysis.Metadata
 import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.core.CrateId
 import java.math.BigInteger
 import java.nio.file.FileSystem
@@ -20,6 +21,12 @@ import java.util.UUID
 object ResourceHelpers {
     fun String.asPath(): Path =
         Paths.get(this)
+
+    fun String.asRef(): EntityRef =
+        EntityRef.default(this)
+
+    fun Path.asRef(): EntityRef =
+        EntityRef.Filesystem(this)
 
     fun String.asTestResource(): Path {
         return Paths.get(ResourceHelpers.javaClass.getResource(this)!!.path)

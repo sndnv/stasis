@@ -10,6 +10,7 @@ import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.encryption.secrets.DeviceFileSecret
 import stasis.client_android.lib.ops.recovery.Providers
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
 import stasis.client_android.lib.ops.recovery.stages.internal.DecryptedCrates.decrypt
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.mocks.MockCompression
@@ -33,7 +34,8 @@ class DecryptedCratesSpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             val firstInvoked = AtomicBoolean(false)

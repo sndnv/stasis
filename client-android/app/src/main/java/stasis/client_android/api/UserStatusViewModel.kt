@@ -46,7 +46,6 @@ class UserStatusViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         userCache.unregisterOnEntryRefreshedListener(userRefreshListener)
     }
 }

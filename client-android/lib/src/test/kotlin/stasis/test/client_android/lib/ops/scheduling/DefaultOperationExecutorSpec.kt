@@ -25,6 +25,7 @@ import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.backup.Backup
 import stasis.client_android.lib.ops.exceptions.OperationRestrictedFailure
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.lib.ops.scheduling.DefaultOperationExecutor
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.tracking.state.BackupState
@@ -126,7 +127,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                     decryptor = encryption,
                     clients = clients,
                     track = backupTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(stasis.client_android.lib.ops.backup.BackupEntityKind.Filesystem)
                 ),
                 recoveryProviders = stasis.client_android.lib.ops.recovery.Providers(
                     checksum = checksum,
@@ -135,7 +137,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                     clients = clients,
                     track = recoveryTracker,
                     compression = compression,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(stasis.client_android.lib.ops.recovery.RecoveryEntityKind.Filesystem)
                 ),
                 restrictions = { restrictions },
                 operationDispatcher = Dispatchers.IO,
@@ -147,21 +150,21 @@ class DefaultOperationExecutorSpec : WordSpec({
             Rule(
                 id = 1L,
                 operation = Rule.Operation.Include,
-                directory = "/home__/stasis",
+                source = "/home__/stasis",
                 pattern = "**",
                 definition = null
             ),
             Rule(
                 id = 2L,
                 operation = Rule.Operation.Exclude,
-                directory = "/home__/stasis",
+                source = "/home__/stasis",
                 pattern = "**/*cache*/*",
                 definition = null
             ),
             Rule(
                 id = 3L,
                 operation = Rule.Operation.Exclude,
-                directory = "/home__/stasis",
+                source = "/home__/stasis",
                 pattern = "**/*log*/*",
                 definition = null
             ),
@@ -330,7 +333,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                 .startRecoveryWithDefinition(
                     definition = UUID.randomUUID(),
                     until = null,
-                    query = null,
+                    entities = null,
+                    sources = setOf(RecoverySourceKind.Filesystem),
                     destination = null
                 ) {
                     operationCompleted.set(true)
@@ -370,7 +374,8 @@ class DefaultOperationExecutorSpec : WordSpec({
                 .startRecoveryWithDefinition(
                     definition = UUID.randomUUID(),
                     until = null,
-                    query = null,
+                    entities = null,
+                    sources = setOf(RecoverySourceKind.Filesystem),
                     destination = null
                 ) {
                     operationResult.set(it)
@@ -390,7 +395,8 @@ class DefaultOperationExecutorSpec : WordSpec({
             executor
                 .startRecoveryWithEntry(
                     entry = UUID.randomUUID(),
-                    query = null,
+                    entities = null,
+                    sources = setOf(RecoverySourceKind.Filesystem),
                     destination = null
                 ) {
                     operationCompleted.set(true)
@@ -427,7 +433,8 @@ class DefaultOperationExecutorSpec : WordSpec({
             executor
                 .startRecoveryWithEntry(
                     entry = UUID.randomUUID(),
-                    query = null,
+                    entities = null,
+                    sources = setOf(RecoverySourceKind.Filesystem),
                     destination = null
                 ) {
                     operationResult.set(it)
@@ -545,7 +552,8 @@ class DefaultOperationExecutorSpec : WordSpec({
 
             val recovery = executor.startRecoveryWithEntry(
                 entry = UUID.randomUUID(),
-                query = null,
+                entities = null,
+                sources = setOf(RecoverySourceKind.Filesystem),
                 destination = null,
                 f = {}
             )

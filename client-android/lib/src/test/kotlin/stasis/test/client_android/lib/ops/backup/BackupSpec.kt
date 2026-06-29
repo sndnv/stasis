@@ -24,6 +24,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.backup.Backup
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityDiscovery
 import stasis.client_android.lib.staging.DefaultFileStaging
@@ -31,6 +32,7 @@ import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
 import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
@@ -102,7 +104,8 @@ class BackupSpec : WordSpec({
                 decryptor = Aes,
                 clients = clients,
                 track = tracker,
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(BackupEntityKind.Filesystem)
             )
 
             return Backup(
@@ -143,14 +146,14 @@ class BackupSpec : WordSpec({
                         Rule(
                             id = 1,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory1Metadata.path,
+                            source = sourceDirectory1Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         ),
                         Rule(
                             id = 2,
                             operation = Rule.Operation.Include,
-                            directory = sourceDirectory2Metadata.path,
+                            source = sourceDirectory2Metadata.path,
                             pattern = "source-file-*",
                             definition = null
                         )
@@ -353,9 +356,9 @@ class BackupSpec : WordSpec({
                     state = Fixtures.State.BackupTwoState.copy(
                         entities = Fixtures.State.BackupTwoState.entities.copy(
                             discovered = setOf(
-                                sourceFile1Metadata.path.asPath(),
-                                sourceFile2Metadata.path.asPath(),
-                                sourceFile3Metadata.path.asPath()
+                                sourceFile1Metadata.path.asRef(),
+                                sourceFile2Metadata.path.asRef(),
+                                sourceFile3Metadata.path.asRef()
                             )
                         )
                     )
@@ -568,6 +571,7 @@ class BackupSpec : WordSpec({
                 tracker = tracker,
                 withChecksum = object : Checksum {
                     override suspend fun calculate(file: Path): BigInteger = throw RuntimeException("Test failure")
+                    override fun calculate(bytes: ByteArray): BigInteger = throw RuntimeException("Test failure")
                 }
             )
 
@@ -752,7 +756,8 @@ class BackupSpec : WordSpec({
                     )
                 ),
                 track = MockBackupTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(BackupEntityKind.Filesystem)
             )
 
             val collectorDescriptor =

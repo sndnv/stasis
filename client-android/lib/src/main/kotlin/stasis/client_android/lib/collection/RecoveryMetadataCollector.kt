@@ -13,7 +13,7 @@ interface RecoveryMetadataCollector {
         existingMetadata: EntityMetadata
     ): TargetEntity
 
-    class Default(private val checksum: Checksum) : RecoveryMetadataCollector {
+    class Filesystem(private val checksum: Checksum) : RecoveryMetadataCollector {
         override suspend fun collect(
             entity: Path,
             destination: TargetEntity.Destination,

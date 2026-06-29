@@ -31,7 +31,6 @@ import stasis.client_android.persistence.config.ConfigRepository
 import stasis.client_android.providers.ProviderContext
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.LiveDataExtensions.minimize
-import java.nio.file.Path
 import java.time.Duration
 import java.util.Locale
 import javax.inject.Inject
@@ -211,30 +210,30 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
             } else {
                 binding.operationStages.isVisible = true
 
-                val stages: Map<String, List<Triple<Path, Int, Int>>> = when (state) {
+                val stages: Map<String, List<Triple<String, Int, Int>>> = when (state) {
                     is BackupState -> mapOf(
-                        "discovered" to state.entities.discovered.map { Triple(it, 1, 1) }.toList(),
-                        "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
-                        "skipped" to state.entities.skipped.map { Triple(it, 1, 1) }.toList(),
-                        "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
+                        "discovered" to state.entities.discovered.map { Triple(it.key, 1, 1) }.toList(),
+                        "examined" to state.entities.examined.map { Triple(it.key, 1, 1) }.toList(),
+                        "skipped" to state.entities.skipped.map { Triple(it.key, 1, 1) }.toList(),
+                        "collected" to state.entities.collected.keys.map { Triple(it.key, 1, 1) }.toList(),
                         "pending" to state.entities.pending.map { (entity, pending) ->
-                            Triple(entity, pending.processedParts, pending.expectedParts)
+                            Triple(entity.key, pending.processedParts, pending.expectedParts)
                         }.toList(),
                         "processed" to state.entities.processed.map { (entity, processed) ->
-                            Triple(entity, processed.processedParts, processed.expectedParts)
+                            Triple(entity.key, processed.processedParts, processed.expectedParts)
                         }.toList()
                     )
 
                     is RecoveryState -> mapOf(
-                        "examined" to state.entities.examined.map { Triple(it, 1, 1) }.toList(),
-                        "collected" to state.entities.collected.keys.map { Triple(it, 1, 1) }.toList(),
+                        "examined" to state.entities.examined.map { Triple(it.key, 1, 1) }.toList(),
+                        "collected" to state.entities.collected.keys.map { Triple(it.key, 1, 1) }.toList(),
                         "pending" to state.entities.pending.map { (entity, pending) ->
-                            Triple(entity, pending.processedParts, pending.expectedParts)
+                            Triple(entity.key, pending.processedParts, pending.expectedParts)
                         }.toList(),
                         "processed" to state.entities.processed.map { (entity, processed) ->
-                            Triple(entity, processed.processedParts, processed.expectedParts)
+                            Triple(entity.key, processed.processedParts, processed.expectedParts)
                         }.toList(),
-                        "metadata-applied" to state.entities.metadataApplied.map { Triple(it, 1, 1) }.toList()
+                        "metadata-applied" to state.entities.metadataApplied.map { Triple(it.key, 1, 1) }.toList()
                     )
 
                     else -> emptyMap()
@@ -251,11 +250,11 @@ class OperationDetailsFragment : Fragment(), DynamicArguments.Provider {
 
             val failures: List<String> = when (state) {
                 is BackupState -> {
-                    state.entities.unmatched + state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
+                    state.entities.unmatched + state.failures + state.entities.failed.map { (k, v) -> "[${k.key}] - $v" }
                 }
 
                 is RecoveryState -> {
-                    state.failures + state.entities.failed.map { (k, v) -> "[$k] - $v" }
+                    state.failures + state.entities.failed.map { (k, v) -> "[${k.key}] - $v" }
                 }
 
                 else -> emptyList()

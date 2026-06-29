@@ -3,6 +3,7 @@ package stasis.client_android.utils
 import android.Manifest
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
@@ -88,6 +89,19 @@ object Permissions {
             permissions
         }
     }
+
+    fun Context.hasPermission(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    enum class LibraryPermission(val read: String, val write: String) {
+        Calendar(read = Manifest.permission.READ_CALENDAR, write = Manifest.permission.WRITE_CALENDAR),
+        Contacts(read = Manifest.permission.READ_CONTACTS, write = Manifest.permission.WRITE_CONTACTS)
+    }
+
+    fun Context.getLibraryPermissionsStatus(): List<Pair<String, Boolean>> =
+        LibraryPermission.entries
+            .flatMap { listOf(it.read, it.write) }
+            .map { permission -> permission to hasPermission(permission) }
 
     private fun Activity.needsPermissions(): Boolean {
         val granted = requiredPermissions.fold(true) { granted, permission ->

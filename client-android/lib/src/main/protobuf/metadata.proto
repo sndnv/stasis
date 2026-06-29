@@ -14,6 +14,7 @@ message EntityMetadata {
   oneof entity {
     FileMetadata file = 1;
     DirectoryMetadata directory = 2;
+    LibraryMetadata library = 3;
   }
 }
 
@@ -30,6 +31,7 @@ message FileMetadata {
   bytes checksum = 10;
   map<string, Uuid> crates = 11;
   string compression = 12;
+  // 13 - reserved
 }
 
 message DirectoryMetadata {
@@ -41,6 +43,23 @@ message DirectoryMetadata {
   string owner = 6;
   string group = 7;
   string permissions = 8;
+  // 13 - reserved
+}
+
+message LibraryMetadata {
+  string key = 1;
+  int64 size = 2;
+  // 3 - reserved
+  // 4 - reserved
+  int64 created = 5;
+  int64 updated = 6;
+  // 7 - reserved
+  // 8 - reserved
+  // 9 - reserved
+  bytes checksum = 10;
+  map<string, Uuid> crates = 11;
+  string compression = 12;
+  bytes attributes = 13;
 }
 
 message FilesystemMetadata {

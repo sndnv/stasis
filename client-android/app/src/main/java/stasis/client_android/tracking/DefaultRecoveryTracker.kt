@@ -9,6 +9,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.runBlocking
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.persistence.state.StateStore
@@ -16,7 +17,6 @@ import stasis.client_android.lib.tracking.RecoveryTracker
 import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.lib.tracking.state.serdes.RecoveryStateSerdes
 import java.io.File
-import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
@@ -65,7 +65,7 @@ class DefaultRecoveryTracker(
 
     override fun entityExamined(
         operation: OperationId,
-        entity: Path,
+        entity: EntityRef,
         metadataChanged: Boolean,
         contentChanged: Boolean
     ) = send(
@@ -82,7 +82,7 @@ class DefaultRecoveryTracker(
         )
     )
 
-    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) = send(
+    override fun entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) = send(
         event = RecoveryEvent.EntityProcessingStarted(
             operation = operation,
             entity = entity,
@@ -90,14 +90,14 @@ class DefaultRecoveryTracker(
         )
     )
 
-    override fun entityPartProcessed(operation: OperationId, entity: Path) = send(
+    override fun entityPartProcessed(operation: OperationId, entity: EntityRef) = send(
         event = RecoveryEvent.EntityPartProcessed(
             operation = operation,
             entity = entity
         )
     )
 
-    override fun entityProcessed(operation: OperationId, entity: Path) = send(
+    override fun entityProcessed(operation: OperationId, entity: EntityRef) = send(
         event = RecoveryEvent.EntityProcessed(
             operation = operation,
             entity = entity
@@ -105,14 +105,14 @@ class DefaultRecoveryTracker(
     )
 
 
-    override fun metadataApplied(operation: OperationId, entity: Path) = send(
+    override fun metadataApplied(operation: OperationId, entity: EntityRef) = send(
         event = RecoveryEvent.EntityMetadataApplied(
             operation = operation,
             entity = entity
         )
     )
 
-    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) = send(
+    override fun failureEncountered(operation: OperationId, entity: EntityRef, failure: Throwable) = send(
         event = RecoveryEvent.EntityFailed(
             operation = operation,
             entity = entity,
@@ -151,10 +151,12 @@ class DefaultRecoveryTracker(
             serdes = RecoveryStateSerdes
         )
 
-        private fun scanMediaFiles(paths: Set<Path>) =
+        private fun scanMediaFiles(entities: Set<EntityRef>) =
             MediaScannerConnection.scanFile(
                 context,
-                paths.map { it.toAbsolutePath().toString() }.toTypedArray(),
+                entities.filterIsInstance<EntityRef.Filesystem>()
+                    .map { it.path.toAbsolutePath().toString() }
+                    .toTypedArray(),
                 null,
                 null
             )
@@ -213,7 +215,7 @@ class DefaultRecoveryTracker(
                         )
 
                         is RecoveryEvent.FailureEncountered -> {
-                            scanMediaFiles(paths = existing.entities.metadataApplied)
+                            scanMediaFiles(entities = existing.entities.metadataApplied)
                             existing.failureEncountered(failure = event.reason)
                         }
 
@@ -316,7 +318,7 @@ class DefaultRecoveryTracker(
 
         data class EntityExamined(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : RecoveryEvent()
 
         data class EntityCollected(
@@ -326,28 +328,28 @@ class DefaultRecoveryTracker(
 
         data class EntityProcessingStarted(
             override val operation: OperationId,
-            val entity: Path,
+            val entity: EntityRef,
             val expectedParts: Int
         ) : RecoveryEvent()
 
         data class EntityPartProcessed(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : RecoveryEvent()
 
         data class EntityProcessed(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : RecoveryEvent()
 
         data class EntityMetadataApplied(
             override val operation: OperationId,
-            val entity: Path
+            val entity: EntityRef
         ) : RecoveryEvent()
 
         data class EntityFailed(
             override val operation: OperationId,
-            val entity: Path,
+            val entity: EntityRef,
             val reason: Throwable
         ) : RecoveryEvent()
 

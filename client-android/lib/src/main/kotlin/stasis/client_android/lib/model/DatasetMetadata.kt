@@ -28,12 +28,9 @@ data class DatasetMetadata(
     val filesystem: FilesystemMetadata
 ) {
     val contentChangedBytes: Long by lazy {
-        contentChanged.values.sumOf {
-            when (it) {
-                is EntityMetadata.File -> it.size
-                else -> 0L
-            }
-        }
+        contentChanged.values
+            .filterIsInstance<EntityMetadata.WithContent>()
+            .sumOf { it.size }
     }
 
     suspend fun collect(

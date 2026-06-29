@@ -16,7 +16,7 @@ class RecoveryMetadataCollectorSpec : WordSpec({
             val file2 = "/collection/file-2".asTestResource()
             val file3 = "/collection/file-3".asTestResource()
 
-            val collector = RecoveryMetadataCollector.Default(
+            val collector = RecoveryMetadataCollector.Filesystem(
                 checksum = Checksum.Companion.MD5
             )
 
@@ -35,20 +35,20 @@ class RecoveryMetadataCollectorSpec : WordSpec({
                 existingMetadata = file3Metadata
             )
 
-            targetFile2.path shouldBe (file2)
+            targetFile2.ref.asFilesystem().path shouldBe (file2)
             targetFile2.existingMetadata shouldBe (file2Metadata)
             when (val metadata = targetFile2.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (2)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
                 null -> fail("Expected metadata but not received")
+                else -> fail("Expected file but received directory metadata")
             }
 
-            targetFile3.path shouldBe (file3)
+            targetFile3.ref.asFilesystem().path shouldBe (file3)
             targetFile3.existingMetadata shouldBe (file3Metadata)
             when (val metadata = targetFile3.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (3)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
                 null -> fail("Expected metadata but not received")
+                else -> fail("Expected file but received directory metadata")
             }
         }
     }

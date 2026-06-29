@@ -1,6 +1,7 @@
 package stasis.test.client_android.lib
 
 import com.squareup.wire.Instant
+import okio.ByteString.Companion.encodeUtf8
 import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.Secret
@@ -14,6 +15,7 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.lib.utils.Either
 import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import java.math.BigInteger
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -104,6 +106,19 @@ object Fixtures {
             group = "root",
             permissions = "rwxrwxrwx"
         )
+
+        val LibraryOneMetadata = EntityMetadata.Library(
+            path = "photos:/album/img.heic",
+            size = 3,
+            created = Instant.MIN.truncatedTo(ChronoUnit.SECONDS),
+            updated = Instant.MAX.truncatedTo(ChronoUnit.SECONDS),
+            checksum = BigInteger("7"),
+            crates = mapOf(
+                "photos:/album/img.heic_0" to UUID.fromString("cc13cb9a-5be2-45f6-9c77-2ccc659cfd6a")
+            ),
+            compression = "none",
+            attributes = "favorite=true".encodeUtf8()
+        )
     }
 
     object Datasets {
@@ -177,36 +192,36 @@ object Fixtures {
             definition = UUID.randomUUID(),
             started = Instant.now().truncatedTo(ChronoUnit.MILLIS),
             entities = BackupState.Entities(
-                discovered = setOf(Metadata.FileOneMetadata.path.asPath()),
+                discovered = setOf(Metadata.FileOneMetadata.path.asRef()),
                 unmatched = listOf("a", "b", "c"),
-                examined = setOf(Metadata.FileTwoMetadata.path.asPath()),
-                skipped = setOf(Metadata.FileTwoMetadata.path.asPath()),
+                examined = setOf(Metadata.FileTwoMetadata.path.asRef()),
+                skipped = setOf(Metadata.FileTwoMetadata.path.asRef()),
                 collected = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to SourceEntity(
-                        path = Metadata.FileOneMetadata.path.asPath(),
+                    Metadata.FileOneMetadata.path.asRef() to SourceEntity(
+                        ref = Metadata.FileOneMetadata.path.asRef(),
                         existingMetadata = Metadata.FileOneMetadata,
                         currentMetadata = Metadata.FileOneMetadata
                     )
                 ),
                 pending = mapOf(
-                    Metadata.FileTwoMetadata.path.asPath() to BackupState.PendingSourceEntity(
+                    Metadata.FileTwoMetadata.path.asRef() to BackupState.PendingSourceEntity(
                         expectedParts = 1,
                         processedParts = 2
                     )
                 ),
                 processed = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
+                    Metadata.FileOneMetadata.path.asRef() to BackupState.ProcessedSourceEntity(
                         expectedParts = 1,
                         processedParts = 1,
                         metadata = Either.Left(Metadata.FileOneMetadata)
                     ),
-                    Metadata.FileTwoMetadata.path.asPath() to BackupState.ProcessedSourceEntity(
+                    Metadata.FileTwoMetadata.path.asRef() to BackupState.ProcessedSourceEntity(
                         expectedParts = 0,
                         processedParts = 0,
                         metadata = Either.Right(Metadata.FileTwoMetadata)
                     )
                 ),
-                failed = mapOf(Metadata.FileThreeMetadata.path.asPath() to "x")
+                failed = mapOf(Metadata.FileThreeMetadata.path.asRef() to "x")
             ),
             metadataCollected = Instant.now().truncatedTo(ChronoUnit.MILLIS),
             metadataPushed = Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -230,32 +245,32 @@ object Fixtures {
             started = Instant.now().truncatedTo(ChronoUnit.MILLIS),
             entities = RecoveryState.Entities(
                 examined = setOf(
-                    Metadata.FileOneMetadata.path.asPath(),
-                    Metadata.FileTwoMetadata.path.asPath(),
-                    Metadata.FileThreeMetadata.path.asPath()
+                    Metadata.FileOneMetadata.path.asRef(),
+                    Metadata.FileTwoMetadata.path.asRef(),
+                    Metadata.FileThreeMetadata.path.asRef()
                 ),
                 collected = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to TargetEntity(
-                        path = Metadata.FileOneMetadata.path.asPath(),
+                    Metadata.FileOneMetadata.path.asRef() to TargetEntity(
+                        ref = Metadata.FileOneMetadata.path.asRef(),
                         destination = TargetEntity.Destination.Default,
                         existingMetadata = Metadata.FileOneMetadata,
                         currentMetadata = Metadata.FileOneMetadata
                     )
                 ),
                 pending = mapOf(
-                    Metadata.FileThreeMetadata.path.asPath() to RecoveryState.PendingTargetEntity(
+                    Metadata.FileThreeMetadata.path.asRef() to RecoveryState.PendingTargetEntity(
                         expectedParts = 3,
                         processedParts = 1
                     )
                 ),
                 processed = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to RecoveryState.ProcessedTargetEntity(
+                    Metadata.FileOneMetadata.path.asRef() to RecoveryState.ProcessedTargetEntity(
                         expectedParts = 1,
                         processedParts = 1
                     )
                 ),
-                metadataApplied = setOf(Metadata.FileOneMetadata.path.asPath()),
-                failed = mapOf(Metadata.FileThreeMetadata.path.asPath() to "x")
+                metadataApplied = setOf(Metadata.FileOneMetadata.path.asRef()),
+                failed = mapOf(Metadata.FileThreeMetadata.path.asRef() to "x")
             ),
             failures = listOf("y", "z"),
             completed = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -266,35 +281,36 @@ object Fixtures {
             started = Instant.now().truncatedTo(ChronoUnit.MILLIS),
             entities = RecoveryState.Entities(
                 examined = setOf(
-                    Metadata.FileOneMetadata.path.asPath(),
-                    Metadata.FileTwoMetadata.path.asPath(),
-                    Metadata.FileThreeMetadata.path.asPath()
+                    Metadata.FileOneMetadata.path.asRef(),
+                    Metadata.FileTwoMetadata.path.asRef(),
+                    Metadata.FileThreeMetadata.path.asRef()
                 ),
                 collected = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to TargetEntity(
-                        path = Metadata.FileOneMetadata.path.asPath(),
+                    Metadata.FileOneMetadata.path.asRef() to TargetEntity(
+                        ref = Metadata.FileOneMetadata.path.asRef(),
                         destination = TargetEntity.Destination.Directory(
                             path = Metadata.FileOneMetadata.path.asPath(),
-                            keepDefaultStructure = true
+                            keepDefaultStructure = true,
+                            preserveExisting = false
                         ),
                         existingMetadata = Metadata.FileOneMetadata,
                         currentMetadata = Metadata.FileOneMetadata
                     )
                 ),
                 pending = mapOf(
-                    Metadata.FileThreeMetadata.path.asPath() to RecoveryState.PendingTargetEntity(
+                    Metadata.FileThreeMetadata.path.asRef() to RecoveryState.PendingTargetEntity(
                         expectedParts = 3,
                         processedParts = 1
                     )
                 ),
                 processed = mapOf(
-                    Metadata.FileOneMetadata.path.asPath() to RecoveryState.ProcessedTargetEntity(
+                    Metadata.FileOneMetadata.path.asRef() to RecoveryState.ProcessedTargetEntity(
                         expectedParts = 1,
                         processedParts = 1
                     )
                 ),
-                metadataApplied = setOf(Metadata.FileOneMetadata.path.asPath()),
-                failed = mapOf(Metadata.FileThreeMetadata.path.asPath() to "x")
+                metadataApplied = setOf(Metadata.FileOneMetadata.path.asRef()),
+                failed = mapOf(Metadata.FileThreeMetadata.path.asRef() to "x")
             ),
             failures = listOf("y", "z"),
             completed = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -381,6 +397,26 @@ object Fixtures {
             val DirectoryTwoMetadataProto: stasis.client_android.lib.model.proto.EntityMetadata =
                 stasis.client_android.lib.model.proto.EntityMetadata(directory = ActualDirectoryTwoMetadata)
 
+            val ActualLibraryOneMetadata: stasis.client_android.lib.model.proto.LibraryMetadata =
+                stasis.client_android.lib.model.proto.LibraryMetadata(
+                    key = Fixtures.Metadata.LibraryOneMetadata.path,
+                    size = Fixtures.Metadata.LibraryOneMetadata.size,
+                    created = Fixtures.Metadata.LibraryOneMetadata.created.epochSecond,
+                    updated = Fixtures.Metadata.LibraryOneMetadata.updated.epochSecond,
+                    checksum = Fixtures.Metadata.LibraryOneMetadata.checksum.toByteArray().toByteString(),
+                    crates = Fixtures.Metadata.LibraryOneMetadata.crates.map { (path, uuid) ->
+                        path to stasis.client_android.lib.model.proto.Uuid(
+                            mostSignificantBits = uuid.mostSignificantBits,
+                            leastSignificantBits = uuid.leastSignificantBits
+                        )
+                    }.toMap(),
+                    compression = Fixtures.Metadata.LibraryOneMetadata.compression,
+                    attributes = Fixtures.Metadata.LibraryOneMetadata.attributes
+                )
+
+            val LibraryOneMetadataProto: stasis.client_android.lib.model.proto.EntityMetadata =
+                stasis.client_android.lib.model.proto.EntityMetadata(library = ActualLibraryOneMetadata)
+
             val EmptyMetadataProto: stasis.client_android.lib.model.proto.EntityMetadata =
                 stasis.client_android.lib.model.proto.EntityMetadata()
         }
@@ -398,7 +434,7 @@ object Fixtures {
                         collected = mapOf(
                             Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.SourceEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path,
+                                    ref = Fixtures.Metadata.FileOneMetadata.path,
                                     existingMetadata = Metadata.FileOneMetadataProto,
                                     currentMetadata = Metadata.FileOneMetadataProto
                                 )
@@ -452,7 +488,7 @@ object Fixtures {
                         collected = mapOf(
                             Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.TargetEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path,
+                                    ref = Fixtures.Metadata.FileOneMetadata.path,
                                     destination = stasis.client_android.lib.model.proto.TargetEntityDestination(
                                         default = stasis.client_android.lib.model.proto.TargetEntityDestinationDefault()
                                     ),
@@ -487,7 +523,7 @@ object Fixtures {
                         collected = mapOf(
                             Fixtures.Metadata.FileOneMetadata.path to stasis.client_android.lib.model
                                 .proto.TargetEntity(
-                                    path = Fixtures.Metadata.FileOneMetadata.path,
+                                    ref = Fixtures.Metadata.FileOneMetadata.path,
                                     destination = stasis.client_android.lib.model.proto.TargetEntityDestination(
                                         directory = stasis.client_android.lib.model
                                             .proto.TargetEntityDestinationDirectory(

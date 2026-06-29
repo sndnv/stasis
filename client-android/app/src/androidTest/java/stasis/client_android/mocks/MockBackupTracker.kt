@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import stasis.client_android.lib.collection.rules.Rule
 import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
@@ -13,7 +14,6 @@ import stasis.client_android.lib.tracking.state.BackupState
 import stasis.client_android.lib.utils.Either
 import stasis.client_android.tracking.BackupTrackerManage
 import stasis.client_android.tracking.BackupTrackerView
-import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -53,7 +53,7 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
 
     override fun entityDiscovered(
         operation: OperationId,
-        entity: Path
+        entity: EntityRef
     ) {
         stats[Statistic.EntityDiscovered]?.getAndIncrement()
     }
@@ -65,11 +65,11 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
         stats[Statistic.SpecificationProcessed]?.getAndIncrement()
     }
 
-    override fun entityExamined(operation: OperationId, entity: Path) {
+    override fun entityExamined(operation: OperationId, entity: EntityRef) {
         stats[Statistic.EntityExamined]?.getAndIncrement()
     }
 
-    override fun entitySkipped(operation: OperationId, entity: Path) {
+    override fun entitySkipped(operation: OperationId, entity: EntityRef) {
         stats[Statistic.EntitySkipped]?.getAndIncrement()
     }
 
@@ -77,17 +77,17 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
         stats[Statistic.EntityCollected]?.getAndIncrement()
     }
 
-    override fun entityProcessingStarted(operation: OperationId, entity: Path, expectedParts: Int) {
+    override fun entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) {
         stats[Statistic.EntityProcessingStarted]?.getAndIncrement()
     }
 
-    override fun entityPartProcessed(operation: OperationId, entity: Path) {
+    override fun entityPartProcessed(operation: OperationId, entity: EntityRef) {
         stats[Statistic.EntityPartProcessed]?.getAndIncrement()
     }
 
     override fun entityProcessed(
         operation: OperationId,
-        entity: Path,
+        entity: EntityRef,
         metadata: Either<EntityMetadata, EntityMetadata>
     ) {
         stats[Statistic.EntityProcessed]?.getAndIncrement()
@@ -101,7 +101,7 @@ class MockBackupTracker : BackupTracker, BackupTrackerView, BackupTrackerManage 
         stats[Statistic.MetadataPushed]?.getAndIncrement()
     }
 
-    override fun failureEncountered(operation: OperationId, entity: Path, failure: Throwable) {
+    override fun failureEncountered(operation: OperationId, entity: EntityRef, failure: Throwable) {
         stats[Statistic.FailureEncountered]?.getAndIncrement()
     }
 

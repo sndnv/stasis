@@ -12,8 +12,10 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
 import stasis.client_android.lib.ops.recovery.stages.MetadataApplication
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockEncryption
 import stasis.test.client_android.lib.mocks.MockFileStaging
@@ -61,12 +63,13 @@ class MetadataApplicationSpec : WordSpec({
                     decryptor = MockEncryption(),
                     clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient()),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 
             val target = TargetEntity(
-                path = targetFile,
+                ref = targetFile.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = metadata,
                 currentMetadata = null

@@ -76,6 +76,11 @@
         android:label="RulesFragment" />
 
     <fragment
+        android:id="@+id/sourcesFragment"
+        android:name="stasis.client_android.activities.fragments.sources.SourcesFragment"
+        android:label="SourcesFragment" />
+
+    <fragment
         android:id="@+id/schedulesFragment"
         android:name="stasis.client_android.activities.fragments.schedules.SchedulesFragment"
         android:label="SchedulesFragment" />
@@ -161,6 +166,15 @@
         app:popUpTo="@id/homeFragment" />
 
     <action
+        android:id="@+id/action_global_sourcesFragment"
+        app:destination="@id/sourcesFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out"
+        app:popUpTo="@id/rulesFragment" />
+
+    <action
         android:id="@+id/action_global_schedulesFragment"
         app:destination="@id/schedulesFragment"
         app:enterAnim="@android:anim/fade_in"
@@ -168,6 +182,14 @@
         app:popEnterAnim="@android:anim/fade_in"
         app:popExitAnim="@android:anim/fade_out"
         app:popUpTo="@id/homeFragment" />
+
+    <action
+        android:id="@+id/action_global_datasetEntryDetailsFragment"
+        app:destination="@id/datasetEntryDetailsFragment"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out" />
 
     <action
         android:id="@+id/action_global_settingsFragment"

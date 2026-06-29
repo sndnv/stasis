@@ -169,7 +169,7 @@ class MetadataSpec : WordSpec({
                     actualFileMetadata.compression shouldBe ("test")
                 }
 
-                is EntityMetadata.Directory -> {
+                else -> {
                     fail("Expected file but received directory metadata")
                 }
             }
@@ -199,7 +199,7 @@ class MetadataSpec : WordSpec({
                     actualDirectoryMetadata.permissions.isNotEmpty() shouldBe (true)
                 }
 
-                is EntityMetadata.File -> {
+                else -> {
                     fail("Expected directory but received file metadata")
                 }
             }
@@ -314,7 +314,7 @@ class MetadataSpec : WordSpec({
                     metadata.crates shouldBe (existingFileMetadata.crates)
                 }
 
-                is EntityMetadata.Directory -> {
+                else -> {
                     fail("Expected file but received directory metadata")
                 }
             }
@@ -363,7 +363,7 @@ class MetadataSpec : WordSpec({
                     metadata.crates shouldNotBe (existingFileMetadata.crates)
                 }
 
-                is EntityMetadata.Directory -> {
+                else -> {
                     fail("Expected file but received directory metadata")
                 }
             }
@@ -412,12 +412,12 @@ class MetadataSpec : WordSpec({
                     currentMetadata.crates shouldBe (existingFileMetadata.crates)
                 }
 
-                is EntityMetadata.Directory -> {
-                    fail("Expected file but received directory metadata")
-                }
-
                 null -> {
                     fail("Expected current target file metadata but none was found")
+                }
+
+                else -> {
+                    fail("Expected file but received directory metadata")
                 }
             }
         }

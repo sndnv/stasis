@@ -3,19 +3,21 @@ package stasis.client_android.activities.helpers
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.recovery.Recovery
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import java.time.Instant
 
 data class RecoveryConfig(
     val definition: DatasetDefinitionId?,
     val recoverySource: RecoverySource,
-    val pathQuery: String?,
+    val sources: Set<RecoverySourceKind>,
     val destination: String?,
     val discardPaths: Boolean
 ) {
     fun validate(): ValidationResult =
-        when (definition) {
-            null -> ValidationResult.MissingDefinition
+        when {
+            definition == null -> ValidationResult.MissingDefinition
+            sources.isEmpty() -> ValidationResult.MissingSources
             else -> when (val source = recoverySource) {
                 is RecoverySource.Latest -> ValidationResult.Valid
                 is RecoverySource.Entry -> if (source.entry != null) {
@@ -34,7 +36,8 @@ data class RecoveryConfig(
                 withExecutor.startRecoveryWithDefinition(
                     definition = recoveryDefinition,
                     until = null,
-                    query = recoveryPathQuery,
+                    entities = null,
+                    sources = recoverySources,
                     destination = recoveryDestination,
                     f = f
                 )
@@ -43,7 +46,8 @@ data class RecoveryConfig(
             is RecoverySource.Entry -> {
                 withExecutor.startRecoveryWithEntry(
                     entry = recoveryEntry,
-                    query = recoveryPathQuery,
+                    entities = null,
+                    sources = recoverySources,
                     destination = recoveryDestination,
                     f = f
                 )
@@ -53,7 +57,8 @@ data class RecoveryConfig(
                 withExecutor.startRecoveryWithDefinition(
                     definition = recoveryDefinition,
                     until = source.instant,
-                    query = recoveryPathQuery,
+                    entities = null,
+                    sources = recoverySources,
                     destination = recoveryDestination,
                     f = f
                 )
@@ -83,12 +88,13 @@ data class RecoveryConfig(
         get() = destination?.let {
             Recovery.Destination(
                 path = it,
-                keepStructure = !discardPaths
+                keepStructure = !discardPaths,
+                preserveExisting = false
             )
         }
 
-    val recoveryPathQuery: Recovery.PathQuery?
-        get() = pathQuery?.let { Recovery.PathQuery(query = it) }
+    val recoverySources: Set<RecoverySourceKind>
+        get() = sources
 
     sealed class RecoverySource {
         object Latest : RecoverySource()
@@ -100,5 +106,6 @@ data class RecoveryConfig(
         object Valid : ValidationResult()
         object MissingDefinition : ValidationResult()
         object MissingEntry : ValidationResult()
+        object MissingSources : ValidationResult()
     }
 }

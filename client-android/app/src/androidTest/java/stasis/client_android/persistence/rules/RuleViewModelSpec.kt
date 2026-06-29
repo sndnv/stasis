@@ -140,7 +140,7 @@ class RuleViewModelSpec {
     private val entity = RuleEntity(
         id = 1,
         operation = stasis.client_android.lib.collection.rules.Rule.Operation.Include,
-        directory = "/a/b/c",
+        source = "/a/b/c",
         pattern = ".*",
         definition = null
     )

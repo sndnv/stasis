@@ -679,6 +679,7 @@ class CredentialsRepositorySpec {
                             commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig,
                             analytics = MockAnalyticsCollector(),
+                            libraryKinds = emptyList(),
                             caches = emptyMap()
                         )
                     },

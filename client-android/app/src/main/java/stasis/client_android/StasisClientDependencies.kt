@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.os.HandlerThread
 import android.os.Process
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -91,8 +92,15 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Singleton
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers as BackupProviders
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
 import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
+import stasis.client_android.sources.LibraryEntityKind
+import stasis.client_android.sources.calendar.CalendarSource
+import stasis.client_android.sources.contacts.ContactsSource
+import stasis.client_android.utils.Permissions.LibraryPermission
+import stasis.client_android.utils.Permissions.hasPermission
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -195,7 +203,8 @@ object StasisClientDependencies {
                             )
 
                             fun createServerCoreEndpointClient(address: String): ServerCoreEndpointClient = when {
-                                mocksEnabled(server = apiConfig.url) -> MockServerCoreEndpointClient()
+                                mocksEnabled(server = apiConfig.url) ->
+                                    MockServerCoreEndpointClient(deviceSecret = { credentials.deviceSecret.get() })
                                 else -> DefaultServerCoreEndpointClient(
                                     serverCoreUrl = address,
                                     credentials = {
@@ -325,6 +334,34 @@ object StasisClientDependencies {
                                 persistence = analyticsPersistence
                             )
 
+                            val libraryGson = Gson()
+                            val libraryKinds = listOf(
+                                LibraryEntityKind(
+                                    source = CalendarSource(
+                                        resolver = application.contentResolver,
+                                        hasReadPermission = {
+                                            application.hasPermission(LibraryPermission.Calendar.read)
+                                        },
+                                        hasWritePermission = {
+                                            application.hasPermission(LibraryPermission.Calendar.write)
+                                        }
+                                    ),
+                                    gson = libraryGson
+                                ),
+                                LibraryEntityKind(
+                                    source = ContactsSource(
+                                        resolver = application.contentResolver,
+                                        hasReadPermission = {
+                                            application.hasPermission(LibraryPermission.Contacts.read)
+                                        },
+                                        hasWritePermission = {
+                                            application.hasPermission(LibraryPermission.Contacts.write)
+                                        }
+                                    ),
+                                    gson = libraryGson
+                                )
+                            )
+
                             val executor = DefaultOperationExecutor(
                                 config = DefaultOperationExecutor.Config(
                                     backup = DefaultOperationExecutor.Config.Backup(
@@ -340,7 +377,8 @@ object StasisClientDependencies {
                                     decryptor = encryption,
                                     clients = clients,
                                     track = trackers.backup,
-                                    analytics = analyticsCollector
+                                    analytics = analyticsCollector,
+                                    kinds = listOf(BackupEntityKind.Filesystem) + libraryKinds
                                 ),
                                 recoveryProviders = RecoveryProviders(
                                     checksum = checksum,
@@ -349,7 +387,8 @@ object StasisClientDependencies {
                                     decryptor = encryption,
                                     clients = clients,
                                     track = trackers.recovery,
-                                    analytics = analyticsCollector
+                                    analytics = analyticsCollector,
+                                    kinds = listOf(RecoveryEntityKind.Filesystem) + libraryKinds
                                 ),
                                 restrictions = {
                                     application.getOperationRestrictions(
@@ -401,6 +440,7 @@ object StasisClientDependencies {
                                 api = apiClient,
                                 search = search,
                                 executor = executor,
+                                libraryKinds = libraryKinds,
                                 trackers = trackerViews,
                                 credentials = credentials,
                                 monitor = monitor,
@@ -520,7 +560,7 @@ object StasisClientDependencies {
         BuildConfig.DEBUG && server == MockConfig.ServerApi
 
     object Defaults {
-        const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 128MB
+        const val MaxBackupPartSize: Long = 32L * 1024L * 1024L // 32MB
 
         val UserRefreshInterval: Duration = Duration.ofMinutes(5)
         val DeviceRefreshInterval: Duration = Duration.ofMinutes(5)

@@ -10,6 +10,7 @@ import stasis.client_android.lib.compression.Identity
 import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.TargetEntity
 import stasis.test.client_android.lib.Fixtures
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import java.nio.file.Paths
 
 class CompressionSpec : WordSpec({
@@ -52,7 +53,7 @@ class CompressionSpec : WordSpec({
 
             compression.encoderFor(
                 entity = SourceEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     existingMetadata = null,
                     currentMetadata = Fixtures.Metadata.FileOneMetadata
                 )
@@ -60,7 +61,7 @@ class CompressionSpec : WordSpec({
 
             compression.encoderFor(
                 entity = SourceEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     existingMetadata = null,
                     currentMetadata = Fixtures.Metadata.FileTwoMetadata
                 )
@@ -68,11 +69,19 @@ class CompressionSpec : WordSpec({
 
             compression.encoderFor(
                 entity = SourceEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     existingMetadata = null,
                     currentMetadata = Fixtures.Metadata.FileThreeMetadata
                 )
             ) shouldBe (Deflate)
+
+            compression.encoderFor(
+                entity = SourceEntity(
+                    ref = "/tmp/a".asRef(),
+                    existingMetadata = null,
+                    currentMetadata = Fixtures.Metadata.LibraryOneMetadata
+                )
+            ) shouldBe (Identity)
         }
 
         "fail to provide encoders for directories" {
@@ -81,7 +90,7 @@ class CompressionSpec : WordSpec({
             shouldThrow<IllegalArgumentException> {
                 compression.encoderFor(
                     entity = SourceEntity(
-                        path = Paths.get("/tmp/a"),
+                        ref = "/tmp/a".asRef(),
                         existingMetadata = null,
                         currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
                     )
@@ -94,7 +103,7 @@ class CompressionSpec : WordSpec({
 
             compression.decoderFor(
                 entity = TargetEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     destination = TargetEntity.Destination.Default,
                     existingMetadata = Fixtures.Metadata.FileOneMetadata,
                     currentMetadata = null
@@ -103,7 +112,7 @@ class CompressionSpec : WordSpec({
 
             compression.decoderFor(
                 entity = TargetEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     destination = TargetEntity.Destination.Default,
                     existingMetadata = Fixtures.Metadata.FileTwoMetadata,
                     currentMetadata = null
@@ -112,12 +121,21 @@ class CompressionSpec : WordSpec({
 
             compression.decoderFor(
                 entity = TargetEntity(
-                    path = Paths.get("/tmp/a"),
+                    ref = "/tmp/a".asRef(),
                     destination = TargetEntity.Destination.Default,
                     existingMetadata = Fixtures.Metadata.FileThreeMetadata,
                     currentMetadata = null
                 )
             ) shouldBe (Deflate)
+
+            compression.decoderFor(
+                entity = TargetEntity(
+                    ref = "/tmp/a".asRef(),
+                    destination = TargetEntity.Destination.Default,
+                    existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+                    currentMetadata = null
+                )
+            ) shouldBe (Identity)
         }
 
         "fail to provide decoders for directories" {
@@ -126,7 +144,7 @@ class CompressionSpec : WordSpec({
             shouldThrow<IllegalArgumentException> {
                 compression.decoderFor(
                     entity = TargetEntity(
-                        path = Paths.get("/tmp/a"),
+                        ref = "/tmp/a".asRef(),
                         destination = TargetEntity.Destination.Default,
                         existingMetadata = Fixtures.Metadata.DirectoryTwoMetadata,
                         currentMetadata = null

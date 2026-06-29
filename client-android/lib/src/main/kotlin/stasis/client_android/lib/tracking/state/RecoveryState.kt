@@ -2,11 +2,11 @@ package stasis.client_android.lib.tracking.state
 
 import stasis.client_android.lib.model.EntityMetadata.Companion.toModel
 import stasis.client_android.lib.model.EntityMetadata.Companion.toProto
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.utils.Try
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 
@@ -20,13 +20,13 @@ data class RecoveryState(
     override val type: Operation.Type
         get() = Operation.Type.Recovery
 
-    fun entityExamined(entity: Path): RecoveryState =
+    fun entityExamined(entity: EntityRef): RecoveryState =
         copy(entities = entities.copy(examined = entities.examined.plus(element = entity)))
 
     fun entityCollected(entity: TargetEntity): RecoveryState =
-        copy(entities = entities.copy(collected = entities.collected + (entity.path to entity)))
+        copy(entities = entities.copy(collected = entities.collected + (entity.ref to entity)))
 
-    fun entityProcessingStarted(entity: Path, expectedParts: Int): RecoveryState =
+    fun entityProcessingStarted(entity: EntityRef, expectedParts: Int): RecoveryState =
         copy(
             entities = entities.copy(
                 pending =
@@ -37,10 +37,10 @@ data class RecoveryState(
             )
         )
 
-    fun entityPartProcessed(entity: Path): RecoveryState =
+    fun entityPartProcessed(entity: EntityRef): RecoveryState =
         copy(entities = entities.copy(pending = entities.pending + (entity to entities.pending[entity]!!.inc())))
 
-    fun entityProcessed(entity: Path): RecoveryState {
+    fun entityProcessed(entity: EntityRef): RecoveryState {
         val processed = when (val pending = entities.pending[entity]) {
             null -> ProcessedTargetEntity(
                 expectedParts = 0,
@@ -61,10 +61,10 @@ data class RecoveryState(
         )
     }
 
-    fun entityMetadataApplied(entity: Path): RecoveryState =
+    fun entityMetadataApplied(entity: EntityRef): RecoveryState =
         copy(entities = entities.copy(metadataApplied = entities.metadataApplied.plus(element = entity)))
 
-    fun entityFailed(entity: Path, reason: Throwable): RecoveryState =
+    fun entityFailed(entity: EntityRef, reason: Throwable): RecoveryState =
         copy(
             entities = entities.copy(failed = entities.failed + (entity to "${reason.javaClass.simpleName} - ${reason.message}"))
         )
@@ -84,12 +84,12 @@ data class RecoveryState(
     )
 
     data class Entities(
-        val examined: Set<Path>,
-        val collected: Map<Path, TargetEntity>,
-        val pending: Map<Path, PendingTargetEntity>,
-        val processed: Map<Path, ProcessedTargetEntity>,
-        val metadataApplied: Set<Path>,
-        val failed: Map<Path, String>
+        val examined: Set<EntityRef>,
+        val collected: Map<EntityRef, TargetEntity>,
+        val pending: Map<EntityRef, PendingTargetEntity>,
+        val processed: Map<EntityRef, ProcessedTargetEntity>,
+        val metadataApplied: Set<EntityRef>,
+        val failed: Map<EntityRef, String>
     ) {
         companion object {
             fun empty(): Entities = Entities(
@@ -132,18 +132,18 @@ data class RecoveryState(
                 started = state.started.toEpochMilli(),
                 entities =
                 stasis.client_android.lib.model.proto.RecoveryEntities(
-                    examined = state.entities.examined.map { it.toAbsolutePath().toString() }.toList(),
+                    examined = state.entities.examined.map { it.key }.toList(),
                     collected = state.entities.collected.map { (k, v) ->
-                        k.toAbsolutePath().toString() to toProtoTargetEntity(v)
+                        k.key to toProtoTargetEntity(v)
                     }.toMap(),
                     pending = state.entities.pending.map { (k, v) ->
-                        k.toAbsolutePath().toString() to toProtoPendingTargetEntity(v)
+                        k.key to toProtoPendingTargetEntity(v)
                     }.toMap(),
                     processed = state.entities.processed.map { (k, v) ->
-                        k.toAbsolutePath().toString() to toProtoProcessedTargetEntity(v)
+                        k.key to toProtoProcessedTargetEntity(v)
                     }.toMap(),
-                    metadataApplied = state.entities.metadataApplied.map { it.toAbsolutePath().toString() }.toList(),
-                    failed = state.entities.failed.map { (k, v) -> k.toAbsolutePath().toString() to v }.toMap()
+                    metadataApplied = state.entities.metadataApplied.map { it.key }.toList(),
+                    failed = state.entities.failed.map { (k, v) -> k.key to v }.toMap()
                 ),
                 failures = state.failures,
                 completed = state.completed?.toEpochMilli()
@@ -159,18 +159,18 @@ data class RecoveryState(
                         operation = operation,
                         started = Instant.ofEpochMilli(state.started),
                         entities = Entities(
-                            examined = entities.examined.map { Paths.get(it) }.toSet(),
+                            examined = entities.examined.map { EntityRef.default(it) }.toSet(),
                             collected = entities.collected.map { (k, v) ->
-                                Paths.get(k) to fromProtoTargetEntity(v)
+                                EntityRef.default(k) to fromProtoTargetEntity(v)
                             }.toMap(),
                             pending = entities.pending.map { (k, v) ->
-                                Paths.get(k) to fromProtoPendingTargetEntity(v)
+                                EntityRef.default(k) to fromProtoPendingTargetEntity(v)
                             }.toMap(),
                             processed = entities.processed.map { (k, v) ->
-                                Paths.get(k) to fromProtoProcessedTargetEntity(v)
+                                EntityRef.default(k) to fromProtoProcessedTargetEntity(v)
                             }.toMap(),
-                            metadataApplied = entities.metadataApplied.map { Paths.get(it) }.toSet(),
-                            failed = entities.failed.map { (k, v) -> Paths.get(k) to v }.toMap()
+                            metadataApplied = entities.metadataApplied.map { EntityRef.default(it) }.toSet(),
+                            failed = entities.failed.map { (k, v) -> EntityRef.default(k) to v }.toMap()
                         ),
                         failures = state.failures,
                         completed = state.completed?.let { Instant.ofEpochMilli(it) }
@@ -180,12 +180,13 @@ data class RecoveryState(
 
         private fun fromProtoTargetEntity(entity: stasis.client_android.lib.model.proto.TargetEntity): TargetEntity =
             TargetEntity(
-                path = Paths.get(entity.path),
+                ref = EntityRef.default(entity.ref),
                 destination = when (val directory = entity.destination?.directory) {
                     null -> TargetEntity.Destination.Default
                     else -> TargetEntity.Destination.Directory(
                         path = Paths.get(directory.path),
-                        keepDefaultStructure = directory.keepDefaultStructure
+                        keepDefaultStructure = directory.keepDefaultStructure,
+                        preserveExisting = false
                     )
                 },
                 existingMetadata = when (val metadata = entity.existingMetadata?.toModel()?.toOption()) {
@@ -202,7 +203,7 @@ data class RecoveryState(
 
         private fun toProtoTargetEntity(entity: TargetEntity): stasis.client_android.lib.model.proto.TargetEntity =
             stasis.client_android.lib.model.proto.TargetEntity(
-                path = entity.path.toAbsolutePath().toString(),
+                ref = entity.ref.key,
                 destination = when (val destination = entity.destination) {
                     is TargetEntity.Destination.Directory ->
                         stasis.client_android.lib.model.proto.TargetEntityDestination(

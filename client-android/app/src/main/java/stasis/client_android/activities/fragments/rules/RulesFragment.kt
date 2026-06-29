@@ -16,8 +16,11 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import stasis.client_android.R
+import stasis.client_android.activities.fragments.sources.SourceRules
 import stasis.client_android.api.DatasetsViewModel
 import stasis.client_android.databinding.FragmentRulesBinding
+import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.collection.rules.SourceUri
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.utils.Either.Left
 import stasis.client_android.lib.utils.Either.Right
@@ -82,7 +85,10 @@ class RulesFragment : Fragment(), DynamicArguments.Provider {
                         rules = currentRules,
                         createRule = { rule ->
                             providerContext.analytics.recordEvent(name = "create_rule")
-                            lifecycleScope.launch { rules.put(rule).await() }
+                            lifecycleScope.launch {
+                                rules.put(rule).await()
+                                inheritDefaultLibrarySources(rule, rulesList)
+                            }
                         },
                         updateRule = { rule ->
                             providerContext.analytics.recordEvent(name = "update_rule")
@@ -138,6 +144,26 @@ class RulesFragment : Fragment(), DynamicArguments.Provider {
         }
 
         return binding.root
+    }
+
+    private suspend fun inheritDefaultLibrarySources(rule: Rule, existingRules: List<Rule>) {
+        val definition = rule.definition ?: return
+        if (existingRules.any { it.definition == definition }) return
+
+        val addedScheme = SourceUri.scheme(rule.source)
+        SourceRules.defaultLibrarySchemes(existingRules)
+            .filter { it != addedScheme }
+            .forEach { scheme ->
+                rules.put(
+                    Rule(
+                        id = 0,
+                        operation = Rule.Operation.Include,
+                        source = "$scheme:/",
+                        pattern = "*",
+                        definition = definition
+                    )
+                ).await()
+            }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

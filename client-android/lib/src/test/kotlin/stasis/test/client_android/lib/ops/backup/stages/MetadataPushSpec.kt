@@ -14,6 +14,7 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.server.api.requests.CreateDatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.MetadataPush
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
@@ -49,7 +50,8 @@ class MetadataPushSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
             }
 

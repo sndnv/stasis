@@ -469,6 +469,7 @@ class DatasetsViewModelSpec {
                             commandProcessor = MockCommandProcessor(),
                             secretsConfig = Fixtures.Secrets.DefaultConfig,
                             analytics = MockAnalyticsCollector(),
+                            libraryKinds = emptyList(),
                             caches = emptyMap()
                         )
                     },

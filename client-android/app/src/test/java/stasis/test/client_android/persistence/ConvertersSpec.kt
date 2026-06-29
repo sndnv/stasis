@@ -103,7 +103,7 @@ class ConvertersSpec {
         val rule = Rule(
             id = 0L,
             operation = Rule.Operation.Include,
-            directory = "/a/b/c",
+            source = "/a/b/c",
             pattern = "**",
             definition = UUID.randomUUID()
         )
@@ -111,7 +111,7 @@ class ConvertersSpec {
         val entity = RuleEntity(
             id = rule.id,
             operation = rule.operation,
-            directory = rule.directory,
+            source = rule.source,
             pattern = rule.pattern,
             definition = rule.definition
         )

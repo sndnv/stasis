@@ -15,10 +15,11 @@ import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.model.TargetEntity
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.recovery.Providers
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
 import stasis.client_android.lib.ops.recovery.stages.EntityProcessing
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.clear
 import stasis.test.client_android.lib.ResourceHelpers.extractDirectoryMetadata
@@ -84,44 +85,47 @@ class EntityProcessingSpec : WordSpec({
             targetDirectoryDestination.clear()
 
             val targetFile2 = TargetEntity(
-                path = targetFile2Metadata.path.asPath(),
+                ref = targetFile2Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile2Metadata,
                 currentMetadata = targetFile2Metadata.copy(isHidden = true)
             )
 
             val targetFile3 = TargetEntity(
-                path = targetFile3Metadata.path.asPath(),
+                ref = targetFile3Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
-                    keepDefaultStructure = false
+                    keepDefaultStructure = false,
+                    preserveExisting = false
                 ),
                 existingMetadata = targetFile3Metadata,
                 currentMetadata = targetFile3Metadata.copy(checksum = BigInteger("9999"))
             )
 
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path.asPath(),
+                ref = targetFile4Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
             )
 
             val targetDirectory = TargetEntity(
-                path = targetDirectoryMetadata.path.asPath(),
+                ref = targetDirectoryMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
-                    keepDefaultStructure = true
+                    keepDefaultStructure = true,
+                    preserveExisting = false
                 ),
                 existingMetadata = targetDirectoryMetadata,
                 currentMetadata = targetDirectoryMetadata
             )
 
             val ignoredDirectory = TargetEntity(
-                path = ignoredDirectoryMetadata.path.asPath(),
+                ref = ignoredDirectoryMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Directory(
                     path = targetDirectoryDestination,
-                    keepDefaultStructure = false
+                    keepDefaultStructure = false,
+                    preserveExisting = false
                 ),
                 existingMetadata = ignoredDirectoryMetadata,
                 currentMetadata = ignoredDirectoryMetadata
@@ -153,7 +157,8 @@ class EntityProcessingSpec : WordSpec({
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 
@@ -210,7 +215,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val targetFile1 = TargetEntity(
-                path = targetFile1Metadata.path.asPath(),
+                ref = targetFile1Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile1Metadata,
                 currentMetadata = targetFile1Metadata.copy(checksum = BigInteger("9999"))
@@ -237,7 +242,8 @@ class EntityProcessingSpec : WordSpec({
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 
@@ -279,7 +285,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val targetFile1 = TargetEntity(
-                path = targetFile1Metadata.path.asPath(),
+                ref = targetFile1Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile1Metadata,
                 currentMetadata = targetFile1Metadata.copy(checksum = BigInteger("9999"))
@@ -306,7 +312,8 @@ class EntityProcessingSpec : WordSpec({
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 
@@ -347,17 +354,38 @@ class EntityProcessingSpec : WordSpec({
 
         "fail if unexpected target entity metadata is provided" {
             val entity = TargetEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = Fixtures.Metadata.DirectoryOneMetadata,
                 currentMetadata = null
             )
 
             val e = shouldThrow<IllegalArgumentException> {
-                EntityProcessing.expectFileMetadata(entity = entity)
+                EntityProcessing.expectContentMetadata(entity = entity)
             }
 
-            e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.path}] provided")
+            e.message shouldBe (
+                    "Expected metadata for file but directory metadata for [${entity.existingMetadata.path}] provided"
+                    )
+        }
+
+        "expect content metadata for files and library entities" {
+            val fileEntity = TargetEntity(
+                ref = Fixtures.Metadata.FileOneMetadata.path.asRef(),
+                destination = TargetEntity.Destination.Default,
+                existingMetadata = Fixtures.Metadata.FileOneMetadata,
+                currentMetadata = null
+            )
+
+            val libraryEntity = TargetEntity(
+                ref = Fixtures.Metadata.LibraryOneMetadata.path.asRef(),
+                destination = TargetEntity.Destination.Default,
+                existingMetadata = Fixtures.Metadata.LibraryOneMetadata,
+                currentMetadata = null
+            )
+
+            EntityProcessing.expectContentMetadata(entity = fileEntity) shouldBe (Fixtures.Metadata.FileOneMetadata)
+            EntityProcessing.expectContentMetadata(entity = libraryEntity) shouldBe (Fixtures.Metadata.LibraryOneMetadata)
         }
 
         "fail if an unexpected number of crates are provided" {
@@ -376,7 +404,7 @@ class EntityProcessingSpec : WordSpec({
                     )
                 )
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path.asPath(),
+                ref = targetFile4Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
@@ -399,7 +427,8 @@ class EntityProcessingSpec : WordSpec({
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 
@@ -443,7 +472,7 @@ class EntityProcessingSpec : WordSpec({
                 )
                 .copy(crates = emptyMap())
             val targetFile4 = TargetEntity(
-                path = targetFile4Metadata.path.asPath(),
+                ref = targetFile4Metadata.path.asRef(),
                 destination = TargetEntity.Destination.Default,
                 existingMetadata = targetFile4Metadata,
                 currentMetadata = targetFile4Metadata.copy(checksum = BigInteger("9999"))
@@ -466,7 +495,8 @@ class EntityProcessingSpec : WordSpec({
                     decryptor = mockEncryption,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(RecoveryEntityKind.Filesystem)
                 )
             }
 

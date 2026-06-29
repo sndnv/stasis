@@ -9,7 +9,7 @@ import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.SourceEntity
 import java.nio.file.Path
 
-class DefaultBackupCollector(
+class FilesystemBackupCollector(
     private val entities: List<Path>,
     private val latestMetadata: DatasetMetadata?,
     private val metadataCollector: BackupMetadataCollector,

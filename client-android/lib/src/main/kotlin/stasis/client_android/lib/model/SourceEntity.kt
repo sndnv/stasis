@@ -1,9 +1,7 @@
 package stasis.client_android.lib.model
 
-import java.nio.file.Path
-
 data class SourceEntity(
-    val path: Path,
+    val ref: EntityRef,
     val existingMetadata: EntityMetadata?,
     val currentMetadata: EntityMetadata
 ) {
@@ -23,15 +21,15 @@ data class SourceEntity(
     }
 
     val hasContentChanged: Boolean by lazy {
-        when (val current = currentMetadata) {
-            is EntityMetadata.File -> {
-                when (val existing = existingMetadata) {
-                    is EntityMetadata.File -> existing.size != current.size || existing.checksum != current.checksum
-                    else -> true
-                }
-            }
+        val current = currentMetadata
+        val existing = existingMetadata
+        when {
+            existing is EntityMetadata.WithContent && current is EntityMetadata.WithContent ->
+                existing.size != current.size || existing.checksum != current.checksum
 
-            is EntityMetadata.Directory -> false
+            existing == null && current is EntityMetadata.WithContent -> true
+
+            else -> false
         }
     }
 }

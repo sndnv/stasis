@@ -5,170 +5,65 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
-        android:orientation="vertical"
-        android:paddingTop="4dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <ImageView
+            android:id="@+id/dataset_metadata_entry_kind_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="@string/dataset_metadata_entry_kind_icon_hint" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <TextView
+                android:id="@+id/dataset_metadata_entry_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+            <TextView
+                android:id="@+id/dataset_metadata_entry_secondary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceCaption" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:gravity="end"
+            android:orientation="vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
 
-            <ImageView
-                android:id="@+id/dataset_metadata_entry_state_icon"
+            <TextView
+                android:id="@+id/dataset_metadata_entry_changed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:contentDescription="@string/dataset_metadata_entry_state_icon_hint" />
+                android:textAllCaps="true"
+                android:textAppearance="?attr/textAppearanceCaption"
+                android:textStyle="bold" />
 
-            <RelativeLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/dataset_metadata_entry_size"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp">
-
-                <LinearLayout
-                    android:id="@+id/dataset_metadata_entry_path_and_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/dataset_metadata_entry_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textAppearance="?attr/textAppearanceSubtitle1" />
-
-                    <TextView
-                        android:id="@+id/dataset_metadata_entry_parent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textAppearance="?attr/textAppearanceCaption" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/dataset_metadata_entry_summary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/dataset_metadata_entry_path_and_name"
-                    android:layout_gravity="center_vertical"
-                    android:maxLines="2"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/dataset_metadata_entry_summary_updated"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_weight="1"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/dataset_metadata_entry_summary_size"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_weight="1"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-
-                    <TextView
-                        android:id="@+id/dataset_metadata_entry_summary_changed"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_weight="1"
-                        android:textAppearance="?attr/textAppearanceBody2" />
-                </LinearLayout>
-            </RelativeLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/dataset_metadata_entry_details"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_changed"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_path"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_link"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_is_hidden"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_created"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_updated"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_owner"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_group"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_permissions"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_size"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_checksum"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_crates"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/dataset_metadata_entry_details_compression"
-                layout="@layout/layout_dataset_metadata_entry_details_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:textAppearance="?attr/textAppearanceCaption" />
         </LinearLayout>
     </LinearLayout>
 </layout>

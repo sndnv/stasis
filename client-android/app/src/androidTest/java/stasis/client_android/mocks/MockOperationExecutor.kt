@@ -6,6 +6,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.recovery.Recovery
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import java.nio.file.Path
 import java.time.Instant
@@ -36,14 +37,16 @@ class MockOperationExecutor : OperationExecutor {
     override suspend fun startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Instant?,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         f: (Throwable?) -> Unit
     ): OperationId = UUID.randomUUID()
 
     override suspend fun startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         f: (Throwable?) -> Unit
     ): OperationId = UUID.randomUUID()

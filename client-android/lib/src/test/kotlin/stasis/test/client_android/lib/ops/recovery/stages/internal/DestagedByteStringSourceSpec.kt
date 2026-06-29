@@ -7,6 +7,7 @@ import okio.Buffer
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.ops.recovery.Providers
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
 import stasis.client_android.lib.ops.recovery.stages.internal.DestagedByteStringSource.destage
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.mocks.MockCompression
@@ -33,7 +34,8 @@ class DestagedByteStringSourceSpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             val original = Buffer().write("original".toByteArray())
@@ -65,7 +67,8 @@ class DestagedByteStringSourceSpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             val original = Buffer().write("original".toByteArray())

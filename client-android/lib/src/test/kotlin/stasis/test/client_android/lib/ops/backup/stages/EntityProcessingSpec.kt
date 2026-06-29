@@ -18,11 +18,12 @@ import stasis.client_android.lib.model.SourceEntity
 import stasis.client_android.lib.model.core.Manifest
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.Operation
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.EntityProcessing
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 import stasis.test.client_android.lib.ResourceHelpers.asTestResource
 import stasis.test.client_android.lib.ResourceHelpers.extractFileMetadata
 import stasis.test.client_android.lib.mocks.MockBackupTracker
@@ -37,45 +38,52 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class EntityProcessingSpec : WordSpec({
     "A Backup EntityProcessing stage" should {
-        "extract and expect file metadata" {
-            val entity = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
+        "extract and expect content metadata" {
+            val fileEntity = SourceEntity(
+                ref = Fixtures.Metadata.FileOneMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata
             )
 
-            EntityProcessing.expectFileMetadata(entity = entity) shouldBe (Fixtures.Metadata.FileOneMetadata)
+            val libraryEntity = SourceEntity(
+                ref = Fixtures.Metadata.LibraryOneMetadata.path.asRef(),
+                existingMetadata = null,
+                currentMetadata = Fixtures.Metadata.LibraryOneMetadata
+            )
+
+            EntityProcessing.expectContentMetadata(entity = fileEntity) shouldBe (Fixtures.Metadata.FileOneMetadata)
+            EntityProcessing.expectContentMetadata(entity = libraryEntity) shouldBe (Fixtures.Metadata.LibraryOneMetadata)
         }
 
         "fail if unexpected target entity metadata is provided" {
             val entity = SourceEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
             )
 
             val e = shouldThrow<IllegalArgumentException> {
-                EntityProcessing.expectFileMetadata(entity = entity)
+                EntityProcessing.expectContentMetadata(entity = entity)
             }
 
-            e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.path}] provided")
+            e.message shouldBe ("Expected metadata for file but directory metadata for [${entity.currentMetadata.path}] provided")
         }
 
         "calculate expected parts for an entity" {
             val fileEntity = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.FileOneMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata.copy(size = 10)
             )
 
             val directoryEntity = SourceEntity(
-                path = Fixtures.Metadata.DirectoryOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.DirectoryOneMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = Fixtures.Metadata.DirectoryOneMetadata
             )
 
             val fileEntityWithoutChanges = SourceEntity(
-                path = Fixtures.Metadata.FileOneMetadata.path.asPath(),
+                ref = Fixtures.Metadata.FileOneMetadata.path.asRef(),
                 existingMetadata = Fixtures.Metadata.FileOneMetadata,
                 currentMetadata = Fixtures.Metadata.FileOneMetadata
             )
@@ -122,19 +130,19 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path.asPath(),
+                ref = sourceFile1Metadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
 
             val sourceFile2 = SourceEntity(
-                path = sourceFile2Metadata.path.asPath(),
+                ref = sourceFile2Metadata.path.asRef(),
                 existingMetadata = sourceFile2Metadata.copy(isHidden = true),
                 currentMetadata = sourceFile2Metadata
             )
 
             val sourceFile3 = SourceEntity(
-                path = sourceFile3Metadata.path.asPath(),
+                ref = sourceFile3Metadata.path.asRef(),
                 existingMetadata = sourceFile3Metadata.copy(checksum = BigInteger("9999")),
                 currentMetadata = sourceFile3Metadata
             )
@@ -161,7 +169,8 @@ class EntityProcessingSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
 
                 override val maxPartSize: Long = 16384
@@ -232,7 +241,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val largeSourceFile = SourceEntity(
-                path = largeSourceFileMetadata.path.asPath(),
+                ref = largeSourceFileMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = largeSourceFileMetadata
             )
@@ -261,7 +270,8 @@ class EntityProcessingSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
 
                 override val maxPartSize: Long = 10
@@ -318,7 +328,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path.asPath(),
+                ref = sourceFile1Metadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
@@ -349,7 +359,8 @@ class EntityProcessingSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
 
                 override val maxPartSize: Long = 16384
@@ -398,7 +409,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val sourceFile1 = SourceEntity(
-                path = sourceFile1Metadata.path.asPath(),
+                ref = sourceFile1Metadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = sourceFile1Metadata
             )
@@ -429,7 +440,8 @@ class EntityProcessingSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
 
                 override val maxPartSize: Long = 16384
@@ -474,7 +486,7 @@ class EntityProcessingSpec : WordSpec({
             )
 
             val largeSourceFile = SourceEntity(
-                path = largeSourceFileMetadata.path.asPath(),
+                ref = largeSourceFileMetadata.path.asRef(),
                 existingMetadata = null,
                 currentMetadata = largeSourceFileMetadata
             )
@@ -515,7 +527,8 @@ class EntityProcessingSpec : WordSpec({
                         core = mockCoreClient
                     ),
                     track = mockTracker,
-                    analytics = AnalyticsCollector.NoOp
+                    analytics = AnalyticsCollector.NoOp,
+                    kinds = listOf(BackupEntityKind.Filesystem)
                 )
 
                 override val maxPartSize: Long = 10

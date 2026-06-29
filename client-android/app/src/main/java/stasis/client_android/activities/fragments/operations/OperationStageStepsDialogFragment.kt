@@ -16,9 +16,10 @@ import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.databinding.DialogOperationStageStepsBinding
 import stasis.client_android.databinding.ListItemOperationStageStepBinding
+import stasis.client_android.lib.utils.StringPaths.splitParentAndName
 import stasis.client_android.utils.DynamicArguments
 import stasis.client_android.utils.DynamicArguments.pullArguments
-import java.nio.file.Path
+import java.nio.file.FileSystems
 
 class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Receiver {
     override val argumentsKey: String = ArgumentsKey
@@ -88,13 +89,15 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
         ) : RecyclerView.ViewHolder(binding.root) {
 
             fun bind(step: StageStep) {
+                val (parent, name) = step.entity.splitParentAndName(FileSystems.getDefault())
+
                 binding.operationStageStepName.text =
                     if (step.total > 1) {
                         context.getString(R.string.operation_stage_step_name_with_progress)
                             .renderAsSpannable(
                                 Common.StyledString(
                                     placeholder = "%1\$s",
-                                    content = step.entity.fileName.toString(),
+                                    content = name,
                                     style = StyleSpan(Typeface.BOLD)
                                 ),
                                 Common.StyledString(
@@ -113,7 +116,7 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
                             .renderAsSpannable(
                                 Common.StyledString(
                                     placeholder = "%1\$s",
-                                    content = step.entity.fileName.toString(),
+                                    content = name,
                                     style = StyleSpan(Typeface.BOLD)
                                 )
                             )
@@ -122,14 +125,14 @@ class OperationStageStepsDialogFragment : DialogFragment(), DynamicArguments.Rec
                 binding.operationStageStepParent.text =
                     context.getString(
                         R.string.operation_stage_step_parent,
-                        step.entity.parent.toString()
+                        parent
                     )
             }
         }
     }
 
     data class StageStep(
-        val entity: Path,
+        val entity: String,
         val processed: Int,
         val total: Int
     )

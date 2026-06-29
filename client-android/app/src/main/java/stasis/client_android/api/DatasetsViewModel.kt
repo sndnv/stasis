@@ -5,7 +5,9 @@ import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import stasis.client_android.activities.helpers.Common.getOrRenderFailure
 import stasis.client_android.lib.api.clients.caching.CachingExtensions.refreshDatasetDefinition
 import stasis.client_android.lib.api.clients.caching.CachingExtensions.refreshDatasetDefinitions
@@ -131,10 +133,11 @@ class DatasetsViewModel @Inject constructor(
     }
 
     fun metadata(forEntry: DatasetEntry, onFailure: (Throwable) -> Unit = {}): LiveData<DatasetMetadata> = liveData {
-        providerContext.api.datasetMetadata(entry = forEntry).recoverWith { e ->
-            onFailure(e)
-            Try.Failure(e)
-        }.getOrRenderFailure(withContext = getApplication())
+        withContext(Dispatchers.IO) { providerContext.api.datasetMetadata(entry = forEntry) }
+            .recoverWith { e ->
+                onFailure(e)
+                Try.Failure(e)
+            }.getOrRenderFailure(withContext = getApplication())
     }
 
     fun search(query: Regex, until: Instant?): LiveData<Search.Result> = liveData {

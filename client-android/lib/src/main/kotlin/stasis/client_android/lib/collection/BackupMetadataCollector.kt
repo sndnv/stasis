@@ -10,7 +10,7 @@ import java.nio.file.Path
 interface BackupMetadataCollector {
     suspend fun collect(entity: Path, existingMetadata: EntityMetadata?): SourceEntity
 
-    class Default(private val checksum: Checksum, private val compression: Compression) : BackupMetadataCollector {
+    class Filesystem(private val checksum: Checksum, private val compression: Compression) : BackupMetadataCollector {
         override suspend fun collect(entity: Path, existingMetadata: EntityMetadata?): SourceEntity =
             Metadata.collectSource(
                 checksum = checksum,

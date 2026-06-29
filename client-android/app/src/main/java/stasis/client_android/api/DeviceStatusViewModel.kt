@@ -47,7 +47,6 @@ class DeviceStatusViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         deviceCache.unregisterOnEntryRefreshedListener(deviceRefreshListener)
     }
 }

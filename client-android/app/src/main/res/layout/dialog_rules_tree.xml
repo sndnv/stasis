@@ -59,6 +59,19 @@
             android:visibility="gone"
             app:drawableTopCompat="@drawable/ic_warning" />
 
+        <TextView
+            android:id="@+id/rules_tree_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:drawablePadding="8dp"
+            android:gravity="center"
+            android:padding="48dp"
+            android:text="@string/rules_tree_no_filesystem_rules"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:visibility="gone"
+            app:drawableTopCompat="@drawable/ic_sources_filesystem" />
+
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"

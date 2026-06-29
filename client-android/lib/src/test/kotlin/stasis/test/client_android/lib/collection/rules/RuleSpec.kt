@@ -11,7 +11,7 @@ class RuleSpec : WordSpec({
             val rule1 = Rule(
                 id = 1,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "?",
                 definition = null
             )
@@ -19,7 +19,7 @@ class RuleSpec : WordSpec({
             val rule2 = Rule(
                 id = 2,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "[a-z]",
                 definition = UUID.randomUUID()
             )
@@ -27,7 +27,7 @@ class RuleSpec : WordSpec({
             val rule3 = Rule(
                 id = 3,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "{0|1}",
                 definition = null
             )
@@ -35,7 +35,7 @@ class RuleSpec : WordSpec({
             val rule4 = Rule(
                 id = 4,
                 operation = Rule.Operation.Exclude,
-                directory = "/work/root",
+                source = "/work/root",
                 pattern = "**/q",
                 definition = null
             )

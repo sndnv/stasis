@@ -16,6 +16,7 @@ import stasis.client_android.lib.model.core.CrateId
 import stasis.client_android.lib.model.core.Manifest
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.ops.OperationId
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.internal.PartitionedSource
 import stasis.client_android.lib.utils.Either
@@ -58,7 +59,7 @@ interface EntityProcessing {
                 is Try.Success -> {
                     providers.track.entityProcessed(
                         operation = operation,
-                        entity = entity.path,
+                        entity = entity.ref,
                         metadata = result.value
                     )
 
@@ -68,7 +69,7 @@ interface EntityProcessing {
                 is Try.Failure -> {
                     providers.track.failureEncountered(
                         operation = operation,
-                        entity = entity.path,
+                        entity = entity.ref,
                         failure = result.exception.nonFatal()
                     )
                     providers.analytics.recordFailure(result.exception)
@@ -83,17 +84,17 @@ interface EntityProcessing {
         }
 
     suspend fun processContentChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {
-        val file = expectFileMetadata(entity)
-        val staged = stage(operation, entity, file.checksum)
+        val content = expectContentMetadata(entity)
+        val staged = stage(operation, entity, content.checksum)
         val crates = push(staged)
 
         discard(staged)
 
-        return file.copy(crates = crates.associate { it.first to it.second })
+        return content.withCrates(crates.associate { it.first to it.second }) as EntityMetadata
     }
 
     suspend fun processMetadataChanged(operation: OperationId, entity: SourceEntity): EntityMetadata {
-        providers.track.entityProcessingStarted(operation = operation, entity = entity.path, expectedParts = 0)
+        providers.track.entityProcessingStarted(operation = operation, entity = entity.ref, expectedParts = 0)
         return entity.currentMetadata
     }
 
@@ -104,21 +105,21 @@ interface EntityProcessing {
     ): List<Pair<String, Path>> = withContext(Dispatchers.IO) {
         providers.track.entityProcessingStarted(
             operation = operation,
-            entity = entity.path,
+            entity = entity.ref,
             expectedParts = expectedParts(entity, maximumPartSize)
         )
 
         fun createPartSecret(partId: Int): DeviceFileSecret =
             deviceSecret.toFileSecret(
-                forFile = "${entity.path.toAbsolutePath()}__part=$partId",
+                forFile = "${entity.ref.key}__part=$partId",
                 checksum = checksum
             )
 
         fun recordPartProcessed(): Unit =
-            providers.track.entityPartProcessed(operation = operation, entity = entity.path)
+            providers.track.entityPartProcessed(operation = operation, entity = entity.ref)
 
         PartitionedSource(
-            source = entity.path.source()
+            source = BackupEntityKind.read(providers.kinds, entity)
                 .buffer()
                 .let { providers.compression.encoderFor(entity).compress(it).buffer() },
             providers = providers,
@@ -162,9 +163,10 @@ interface EntityProcessing {
     }
 
     companion object {
-        fun expectFileMetadata(entity: SourceEntity): EntityMetadata.File =
+        fun expectContentMetadata(entity: SourceEntity): EntityMetadata.WithContent =
             when (val metadata = entity.currentMetadata) {
                 is EntityMetadata.File -> metadata
+                is EntityMetadata.Library -> metadata
                 is EntityMetadata.Directory -> throw IllegalArgumentException(
                     "Expected metadata for file but directory metadata for [${metadata.path}] provided"
                 )
@@ -174,7 +176,7 @@ interface EntityProcessing {
             require(withMaximumPartSize > 0) { "Invalid [maximumPartSize] provided: [$withMaximumPartSize]" }
 
             return when (val metadata = entity.currentMetadata) {
-                is EntityMetadata.File -> if (entity.hasContentChanged) {
+                is EntityMetadata.WithContent -> if (entity.hasContentChanged) {
                     val fullParts = (metadata.size / withMaximumPartSize).toInt()
                     if (metadata.size % withMaximumPartSize == 0L) fullParts else fullParts + 1
                 } else 0

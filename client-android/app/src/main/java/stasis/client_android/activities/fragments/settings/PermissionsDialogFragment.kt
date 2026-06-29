@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
@@ -22,12 +23,15 @@ import stasis.client_android.activities.helpers.Common
 import stasis.client_android.activities.helpers.Common.renderAsSpannable
 import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.DialogPermissionsBinding
+import stasis.client_android.utils.Permissions.getLibraryPermissionsStatus
 import stasis.client_android.utils.Permissions.getRequiredPermissionsStatus
 import stasis.client_android.utils.Permissions.needsExtraPermissions
 import stasis.client_android.utils.Permissions.requestMissingPermissions
 
 class PermissionsDialogFragment : DialogFragment() {
     private lateinit var binding: DialogPermissionsBinding
+
+    private var optionalExpanded: Boolean = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = DialogPermissionsBinding.inflate(inflater)
@@ -37,15 +41,9 @@ class PermissionsDialogFragment : DialogFragment() {
     override fun onResume() {
         val activity = requireActivity()
 
-        val permissionsStatus = activity.getRequiredPermissionsStatus()
         val permissionsMissing = activity.needsExtraPermissions()
 
-        binding.permissionsList.adapter =
-            PermissionsListItemAdapter(
-                context = requireContext(),
-                resource = R.layout.list_item_permission,
-                permissions = permissionsStatus.sortedBy { it.first },
-            )
+        renderPermissions()
 
         if (permissionsMissing) {
             binding.permissionsRequestButton.text =
@@ -82,6 +80,35 @@ class PermissionsDialogFragment : DialogFragment() {
         super.onResume()
     }
 
+    private fun renderPermissions() {
+        val required = requireActivity().getRequiredPermissionsStatus().sortedBy { it.first }
+        val optional = requireContext().getLibraryPermissionsStatus().sortedBy { it.first }
+
+        val rows = buildList {
+            add(PermissionRow.Section(R.string.permissions_section_essential, collapsible = false, expanded = true))
+            addAll(required.map { PermissionRow.Entry(name = it.first, granted = it.second) })
+            add(
+                PermissionRow.Section(
+                    R.string.permissions_section_optional,
+                    collapsible = true,
+                    expanded = optionalExpanded
+                )
+            )
+            if (optionalExpanded) {
+                addAll(optional.map { PermissionRow.Entry(name = it.first, granted = it.second) })
+            }
+        }
+
+        binding.permissionsList.adapter = PermissionsListItemAdapter(
+            context = requireContext(),
+            permissions = rows,
+            onToggleOptional = {
+                optionalExpanded = !optionalExpanded
+                renderPermissions()
+            }
+        )
+    }
+
     override fun onStart() {
         super.onStart()
         dialog?.window?.setLayout(
@@ -111,15 +138,66 @@ class PermissionsDialogFragment : DialogFragment() {
         }
     }
 
+    sealed interface PermissionRow {
+        data class Section(@param:StringRes val title: Int, val collapsible: Boolean, val expanded: Boolean) :
+            PermissionRow
+
+        data class Entry(val name: String, val granted: Boolean) : PermissionRow
+    }
+
     class PermissionsListItemAdapter(
         context: Context,
-        private val resource: Int,
-        private val permissions: List<Pair<String, Boolean>>,
-    ) : ArrayAdapter<Pair<String, Boolean>>(context, resource, permissions) {
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val (name, granted) = permissions[position]
+        private val permissions: List<PermissionRow>,
+        private val onToggleOptional: () -> Unit,
+    ) : ArrayAdapter<PermissionRow>(context, R.layout.list_item_permission, permissions) {
+        override fun getViewTypeCount(): Int = 2
 
-            val layout = (convertView ?: LayoutInflater.from(parent.context).inflate(resource, parent, false))
+        override fun getItemViewType(position: Int): Int =
+            if (permissions[position] is PermissionRow.Section) SectionType else EntryType
+
+        override fun areAllItemsEnabled(): Boolean = false
+
+        override fun isEnabled(position: Int): Boolean =
+            when (val row = permissions[position]) {
+                is PermissionRow.Entry -> true
+                is PermissionRow.Section -> row.collapsible
+            }
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+            when (val row = permissions[position]) {
+                is PermissionRow.Section -> sectionView(row, convertView, parent)
+                is PermissionRow.Entry -> entryView(row, convertView, parent)
+            }
+
+        private fun sectionView(row: PermissionRow.Section, convertView: View?, parent: ViewGroup): View {
+            val layout = convertView ?: LayoutInflater.from(parent.context)
+                .inflate(R.layout.list_item_permission_section, parent, false)
+
+            val title: TextView = layout.findViewById(R.id.permission_section_title)
+            val chevron: ImageView = layout.findViewById(R.id.permission_section_chevron)
+
+            title.text = context.getString(row.title)
+
+            if (row.collapsible) {
+                chevron.visibility = View.VISIBLE
+                chevron.setImageResource(
+                    if (row.expanded) R.drawable.ic_tree_arrow_down else R.drawable.ic_tree_arrow_right
+                )
+                layout.setOnClickListener { onToggleOptional() }
+            } else {
+                chevron.visibility = View.GONE
+                layout.setOnClickListener(null)
+                layout.isClickable = false
+            }
+
+            return layout
+        }
+
+        private fun entryView(row: PermissionRow.Entry, convertView: View?, parent: ViewGroup): View {
+            val (name, granted) = row
+
+            val layout = convertView ?: LayoutInflater.from(parent.context)
+                .inflate(R.layout.list_item_permission, parent, false)
 
             val permissionInfo: TextView = layout.findViewById(R.id.permission_info)
             val permissionDetails: TextView = layout.findViewById(R.id.permission_details)
@@ -133,6 +211,10 @@ class PermissionsDialogFragment : DialogFragment() {
                 Manifest.permission.READ_EXTERNAL_STORAGE -> R.string.permissions_read_external_storage_name
                 Manifest.permission.WRITE_EXTERNAL_STORAGE -> R.string.permissions_write_external_storage_name
                 Manifest.permission.MANAGE_EXTERNAL_STORAGE -> R.string.permissions_manage_external_storage_name
+                Manifest.permission.READ_CALENDAR -> R.string.permissions_read_calendar_name
+                Manifest.permission.WRITE_CALENDAR -> R.string.permissions_write_calendar_name
+                Manifest.permission.READ_CONTACTS -> R.string.permissions_read_contacts_name
+                Manifest.permission.WRITE_CONTACTS -> R.string.permissions_write_contacts_name
                 else -> null
             }
 
@@ -144,6 +226,10 @@ class PermissionsDialogFragment : DialogFragment() {
                 Manifest.permission.READ_EXTERNAL_STORAGE -> R.string.permissions_read_external_storage_hint
                 Manifest.permission.WRITE_EXTERNAL_STORAGE -> R.string.permissions_write_external_storage_hint
                 Manifest.permission.MANAGE_EXTERNAL_STORAGE -> R.string.permissions_manage_external_storage_hint
+                Manifest.permission.READ_CALENDAR -> R.string.permissions_read_calendar_hint
+                Manifest.permission.WRITE_CALENDAR -> R.string.permissions_write_calendar_hint
+                Manifest.permission.READ_CONTACTS -> R.string.permissions_read_contacts_hint
+                Manifest.permission.WRITE_CONTACTS -> R.string.permissions_write_contacts_hint
                 else -> R.string.permissions_unrecognized_hint
             }
 
@@ -178,6 +264,11 @@ class PermissionsDialogFragment : DialogFragment() {
 
 
             return layout
+        }
+
+        companion object {
+            private const val SectionType: Int = 0
+            private const val EntryType: Int = 1
         }
     }
 }

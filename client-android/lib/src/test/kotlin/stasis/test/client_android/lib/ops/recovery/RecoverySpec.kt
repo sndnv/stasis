@@ -1,11 +1,9 @@
 package stasis.test.client_android.lib.ops.recovery
 
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import okio.ByteString
@@ -13,7 +11,6 @@ import okio.ByteString.Companion.toByteString
 import okio.Source
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
-import stasis.client_android.lib.collection.DefaultRecoveryCollector
 import stasis.client_android.lib.encryption.secrets.DeviceMetadataSecret
 import stasis.client_android.lib.encryption.secrets.DeviceSecret
 import stasis.client_android.lib.encryption.secrets.Secret
@@ -24,6 +21,8 @@ import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.lib.model.server.datasets.DatasetEntry
 import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.recovery.Providers
+import stasis.client_android.lib.ops.recovery.RecoveryEntityKind
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.lib.ops.recovery.Recovery
 import stasis.client_android.lib.ops.recovery.Recovery.Destination.Companion.toTargetEntityDestination
 import stasis.client_android.lib.staging.DefaultFileStaging
@@ -47,7 +46,6 @@ import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 import java.math.BigInteger
 import java.nio.file.FileSystems
-import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -86,30 +84,12 @@ class RecoverySpec : WordSpec({
         target = secretsConfig
     )
 
-    val matchingPath = Paths.get("/tmp/a/b/c/test-file.json")
-
-    val matchingFileNameRegexes = listOf(
-        """test-file""",
-        """test-file\.json""",
-        """.*"""
-    )
-
-    val matchingPathRegexes = listOf(
-        """/tmp/.*""",
-        """/.*/a/.*/c"""
-    )
-
-    val nonMatchingPathRegexes = listOf(
-        """tmp""",
-        """/tmp$""",
-        """^/a/b/c.*"""
-    )
-
     "A Recovery operation" should {
         fun createRecovery(
             metadata: DatasetMetadata,
             clients: Clients,
             tracker: MockRecoveryTracker,
+            entities: Set<String>?,
             destination: Recovery.Destination? = null
         ): Recovery {
             val providers = Providers(
@@ -123,13 +103,15 @@ class RecoverySpec : WordSpec({
                 decryptor = MockEncryption(),
                 clients = clients,
                 track = tracker,
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             return Recovery(
                 descriptor = Recovery.Descriptor(
                     targetMetadata = metadata,
-                    query = null,
+                    entities = entities,
+                    sources = setOf(RecoverySourceKind.Filesystem),
                     destination = destination,
                     deviceSecret = secret,
                     filesystem = FileSystems.getDefault()
@@ -188,7 +170,8 @@ class RecoverySpec : WordSpec({
             val recovery = createRecovery(
                 metadata = originalMetadata,
                 clients = Clients(api = mockApiClient, core = mockCoreClient),
-                tracker = mockTracker
+                tracker = mockTracker,
+                entities = null
             )
 
             recovery.start(withScope = operationScope) {
@@ -210,6 +193,66 @@ class RecoverySpec : WordSpec({
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityPartProcessed] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (2)
             mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (2)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
+        }
+
+        "restrict recovery to the selected entities" {
+            val operationCompleted = AtomicBoolean(false)
+
+            val sourceFile1Metadata =
+                "/ops/source-file-1".asTestResource().extractFileMetadata(checksum)
+                    .copy(checksum = BigInteger("0"))
+            val sourceFile2Metadata =
+                "/ops/source-file-2".asTestResource().extractFileMetadata(checksum)
+                    .copy(checksum = BigInteger("0"))
+
+            val metadata = DatasetMetadata(
+                contentChanged = mapOf(
+                    sourceFile1Metadata.path to sourceFile1Metadata,
+                    sourceFile2Metadata.path to sourceFile2Metadata
+                ),
+                metadataChanged = emptyMap(),
+                filesystem = FilesystemMetadata(
+                    changes = listOf(
+                        sourceFile1Metadata.path,
+                        sourceFile2Metadata.path
+                    )
+                )
+            )
+
+            val mockApiClient = MockServerApiEndpointClient()
+
+            val mockCoreClient = MockServerCoreEndpointClient(
+                self = UUID.randomUUID(),
+                crates = (sourceFile1Metadata.crates + sourceFile2Metadata.crates)
+                    .values.associateWith { "dummy-encrypted-data".toByteArray().toByteString() }
+            )
+            val mockTracker = MockRecoveryTracker()
+
+            val recovery = createRecovery(
+                metadata = metadata,
+                clients = Clients(api = mockApiClient, core = mockCoreClient),
+                tracker = mockTracker,
+                entities = setOf(sourceFile1Metadata.path)
+            )
+
+            recovery.start(withScope = operationScope) {
+                operationCompleted.set(true)
+            }
+
+            eventually {
+                operationCompleted.get() shouldBe (true)
+            }
+
+            // only source-file-1 is selected; source-file-2 is filtered out before examination
+            mockCoreClient.statistics[MockServerCoreEndpointClient.Statistic.CratePulled] shouldBe (1)
+
+            mockTracker.statistics[MockRecoveryTracker.Statistic.Started] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityExamined] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityCollected] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.EntityProcessed] shouldBe (1)
+            mockTracker.statistics[MockRecoveryTracker.Statistic.MetadataApplied] shouldBe (1)
             mockTracker.statistics[MockRecoveryTracker.Statistic.FailureEncountered] shouldBe (0)
             mockTracker.statistics[MockRecoveryTracker.Statistic.Completed] shouldBe (1)
         }
@@ -283,13 +326,15 @@ class RecoverySpec : WordSpec({
 
             val destination = Recovery.Destination(
                 path = targetDirectory.toAbsolutePath().toString(),
-                keepStructure = true
+                keepStructure = true,
+                preserveExisting = false
             )
 
             val recovery = createRecovery(
                 metadata = metadata,
                 clients = Clients(api = mockApiClient, core = mockCoreClient),
                 tracker = mockTracker,
+                entities = null,
                 destination = destination
             )
 
@@ -363,7 +408,8 @@ class RecoverySpec : WordSpec({
             val recovery = createRecovery(
                 metadata = originalMetadata,
                 clients = Clients(api = mockApiClient, core = mockCoreClient),
-                tracker = mockTracker
+                tracker = mockTracker,
+                entities = null
             )
 
             recovery.start(withScope = operationScope) {
@@ -419,7 +465,8 @@ class RecoverySpec : WordSpec({
             val recovery = createRecovery(
                 metadata = originalMetadata,
                 clients = Clients(api = mockApiClient, core = mockCoreClient),
-                tracker = mockTracker
+                tracker = mockTracker,
+                entities = null
             )
 
             recovery.start(withScope = operationScope) { e ->
@@ -474,7 +521,8 @@ class RecoverySpec : WordSpec({
                 val recovery = createRecovery(
                     metadata = originalMetadata,
                     clients = Clients(api = mockApiClient, core = mockCoreClient),
-                    tracker = mockTracker
+                    tracker = mockTracker,
+                    entities = null
                 )
 
                 recovery.start(withScope = operationScope) {
@@ -535,11 +583,13 @@ class RecoverySpec : WordSpec({
                     )
                 ),
                 track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             val descriptorWithDefinition = Recovery.Descriptor(
-                query = null,
+                entities = null,
+                sources = setOf(RecoverySourceKind.Filesystem),
                 destination = null,
                 collector = Recovery.Descriptor.Collector.WithDefinition(
                     definition = dataset.id,
@@ -551,7 +601,8 @@ class RecoverySpec : WordSpec({
             ).get()
 
             val descriptorWithEntry = Recovery.Descriptor(
-                query = null,
+                entities = null,
+                sources = setOf(RecoverySourceKind.Filesystem),
                 destination = null,
                 collector = Recovery.Descriptor.Collector.WithEntry(
                     entry = actualEntry.id
@@ -590,13 +641,15 @@ class RecoverySpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(RecoveryEntityKind.Filesystem)
             )
 
             val e = shouldThrow<IllegalStateException> {
                 Recovery
                     .Descriptor(
-                        query = null,
+                        entities = null,
+                        sources = setOf(RecoverySourceKind.Filesystem),
                         destination = null,
                         collector = Recovery.Descriptor.Collector.WithDefinition(
                             definition = dataset.id,
@@ -610,71 +663,6 @@ class RecoverySpec : WordSpec({
 
             e.message shouldBe ("Expected dataset entry for definition [${dataset.id}] but none was found")
         }
-
-        "be convertible to a recovery collector" {
-            val providers = Providers(
-                checksum = checksum,
-                staging = DefaultFileStaging(
-                    storeDirectory = null,
-                    prefix = "staged-",
-                    suffix = ".tmp"
-                ),
-                compression = MockCompression(),
-                decryptor = MockEncryption(),
-                clients = Clients(
-                    api = MockServerApiEndpointClient(),
-                    core = MockServerCoreEndpointClient()
-                ),
-                track = MockRecoveryTracker(),
-                analytics = AnalyticsCollector.NoOp
-            )
-
-            val descriptor = Recovery.Descriptor(
-                targetMetadata = DatasetMetadata.empty(),
-                query = null,
-                destination = null,
-                deviceSecret = secret,
-                filesystem = FileSystems.getDefault()
-            )
-
-            descriptor.toRecoveryCollector(providers).shouldBeInstanceOf<DefaultRecoveryCollector>()
-        }
-    }
-
-    "Recovery path queries" should {
-        val fs = FileSystems.getDefault()
-
-        "support checking for matches in paths" {
-            matchingPathRegexes.forEach { regex ->
-                val query = Recovery.PathQuery.ForAbsolutePath(query = Regex(regex))
-
-                withClue("Matching path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath.toString(), fs) shouldBe (true)
-                }
-            }
-        }
-
-        "support checking for matches in file names" {
-            matchingFileNameRegexes.forEach { regex ->
-                val query = Recovery.PathQuery.ForFileName(query = Regex(regex))
-                withClue("Matching file name in path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath.toString(), fs) shouldBe (true)
-                }
-            }
-
-            nonMatchingPathRegexes.forEach { regex ->
-                val query = Recovery.PathQuery.ForFileName(query = Regex(regex))
-                withClue("Matching file name in path [$matchingPath] with [$regex]:") {
-                    query.matches(matchingPath.toString(), fs) shouldBe (false)
-                }
-            }
-        }
-
-        "create path queries from regex strings" {
-            Recovery.PathQuery("/tmp/some-file.txt")
-                .shouldBeInstanceOf<Recovery.PathQuery.ForAbsolutePath>()
-            Recovery.PathQuery("some-file.txt").shouldBeInstanceOf<Recovery.PathQuery.ForFileName>()
-        }
     }
 
     "A Recovery destination" should {
@@ -685,13 +673,15 @@ class RecoverySpec : WordSpec({
 
             val recoveryDestination = Recovery.Destination(
                 path = "/tmp/test/path",
-                keepStructure = false
+                keepStructure = false,
+                preserveExisting = false
             )
 
             recoveryDestination.toTargetEntityDestination(filesystem) shouldBe (
                     TargetEntity.Destination.Directory(
                         path = filesystem.getPath(recoveryDestination.path),
-                        keepDefaultStructure = recoveryDestination.keepStructure
+                        keepDefaultStructure = recoveryDestination.keepStructure,
+                        preserveExisting = recoveryDestination.preserveExisting
                     )
                     )
 

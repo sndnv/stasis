@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.flow.fold
 import stasis.client_android.lib.api.clients.Clients
-import stasis.client_android.lib.collection.DefaultRecoveryCollector
+import stasis.client_android.lib.collection.FilesystemRecoveryCollector
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
@@ -22,8 +22,8 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.UUID
 
-class DefaultRecoveryCollectorSpec : WordSpec({
-    "A DefaultRecoveryCollector" should {
+class FilesystemRecoveryCollectorSpec : WordSpec({
+    "A FilesystemRecoveryCollector" should {
         "collect recovery files based on dataset metadata" {
             val file2 = "/collection/file-2".asTestResource().toString()
             val file3 = "/collection/file-3".asTestResource().toString()
@@ -62,7 +62,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 compression = "none"
             )
 
-            val collector = DefaultRecoveryCollector(
+            val collector = FilesystemRecoveryCollector(
                 targetMetadata = DatasetMetadata(
                     contentChanged = mapOf(
                         file2Metadata.path to file2Metadata
@@ -91,17 +91,17 @@ class DefaultRecoveryCollectorSpec : WordSpec({
             val targetFiles = collector
                 .collect(filesystem = FileSystems.getDefault())
                 .fold(emptyList<TargetEntity>()) { acc, value -> acc + value }
-                .sortedBy { it.path.toAbsolutePath().toString() }
+                .sortedBy { it.ref.asFilesystem().path.toAbsolutePath().toString() }
 
             targetFiles.size shouldBe (2)
 
             val targetFile2 = targetFiles[0]
-            targetFile2.path.toString() shouldBe (file2Metadata.path)
+            targetFile2.ref.asFilesystem().path.toString() shouldBe (file2Metadata.path)
             targetFile2.existingMetadata shouldBe (file2Metadata)
             targetFile2.currentMetadata shouldNotBe (null)
 
             val targetFile3 = targetFiles[1]
-            targetFile3.path.toString() shouldBe (file3Metadata.path)
+            targetFile3.ref.asFilesystem().path.toString() shouldBe (file3Metadata.path)
             targetFile3.existingMetadata shouldBe (file3Metadata)
             targetFile3.currentMetadata shouldNotBe (null)
         }
@@ -124,7 +124,7 @@ class DefaultRecoveryCollectorSpec : WordSpec({
                 )
             )
 
-            val actualMetadata = DefaultRecoveryCollector.collectEntityMetadata(
+            val actualMetadata = FilesystemRecoveryCollector.collectEntityMetadata(
                 targetMetadata = targetMetadata,
                 keep = { _, state -> state == FilesystemMetadata.EntityState.New },
                 clients = Clients(api = MockServerApiEndpointClient(), core = MockServerCoreEndpointClient())

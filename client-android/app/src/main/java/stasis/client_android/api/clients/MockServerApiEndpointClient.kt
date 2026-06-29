@@ -1,7 +1,9 @@
 package stasis.client_android.api.clients
 
+import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import okio.ByteString
+import okio.ByteString.Companion.toByteString
 import stasis.client_android.lib.api.clients.ServerApiEndpointClient
 import stasis.client_android.lib.api.clients.exceptions.ResourceMissingFailure
 import stasis.client_android.lib.model.DatasetMetadata
@@ -312,6 +314,42 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
     private val metadataFileTwoPath = "/tmp/file/.two"
     private val metadataFileFourPath = "/tmp/other/four"
 
+    private val libraryGson = Gson()
+
+    private val sampleEntries: Map<String, EntityMetadata> =
+        MockDatasetContent.samples.associate { it.key to sampleEntity(it) }
+
+    private val sampleFilesystem: Map<String, FilesystemMetadata.EntityState> =
+        MockDatasetContent.samples.associate { it.key to FilesystemMetadata.EntityState.New }
+
+    private fun sampleEntity(sample: MockDatasetContent.Sample): EntityMetadata = when (sample.kind) {
+        MockDatasetContent.Kind.File -> EntityMetadata.File(
+            path = sample.key,
+            size = sample.size,
+            link = null,
+            isHidden = false,
+            created = sample.created,
+            updated = sample.updated,
+            owner = "root",
+            group = "root",
+            permissions = "rwxrwxrwx",
+            checksum = sample.checksum,
+            crates = mapOf(sample.cratePath to sample.crate),
+            compression = sample.compression
+        )
+
+        else -> EntityMetadata.Library(
+            path = sample.key,
+            created = sample.created,
+            updated = sample.updated,
+            size = sample.size,
+            checksum = sample.checksum,
+            crates = mapOf(sample.cratePath to sample.crate),
+            compression = sample.compression,
+            attributes = libraryGson.toJson(sample.attributes).encodeToByteArray().toByteString()
+        )
+    }
+
     private val maxEntities: Int = 25000
 
     private val defaultMetadata = DatasetMetadata(
@@ -332,7 +370,7 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
                 ),
                 compression = "none"
             )
-        ) + (0 until maxEntities).map { i ->
+        ) + sampleEntries + (0 until maxEntities).map { i ->
             val path = "/tmp/file/generated_cc_$i"
             path to EntityMetadata.File(
                 path = path,
@@ -367,14 +405,14 @@ class MockServerApiEndpointClient(private val maxSimulatedDelay: Long = 2000) : 
                     "/tmp/file/.two_0" to UUID.fromString("e672a956-1a95-4304-8af0-9418f0e43cba")
                 ),
                 compression = "gzip"
-            ),
+            )
         ),
         filesystem = FilesystemMetadata(
             entities = mapOf(
                 metadataFileOnePath to FilesystemMetadata.EntityState.New,
                 metadataFileTwoPath to FilesystemMetadata.EntityState.Updated,
                 metadataFileFourPath to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
-            ) + (0 until maxEntities).map { i ->
+            ) + sampleFilesystem + (0 until maxEntities).map { i ->
                 "/tmp/file/generated_lu_$i" to FilesystemMetadata.EntityState.Existing(entry = extraEntry.id)
             }
         )

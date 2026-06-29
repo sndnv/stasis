@@ -27,7 +27,7 @@ class SpecificationSpec : WordSpec({
             val rule1 = Rule(
                 id = 1,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "?",
                 definition = null
             )
@@ -35,7 +35,7 @@ class SpecificationSpec : WordSpec({
             val rule2 = Rule(
                 id = 2,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "[a-z]",
                 definition = null
             )
@@ -43,7 +43,7 @@ class SpecificationSpec : WordSpec({
             val rule3 = Rule(
                 id = 3,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "{0|1}",
                 definition = null
             )
@@ -51,7 +51,7 @@ class SpecificationSpec : WordSpec({
             val rule4 = Rule(
                 id = 4,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "root-dir-?/*",
                 definition = null
             )
@@ -59,7 +59,7 @@ class SpecificationSpec : WordSpec({
             val rule5 = Rule(
                 id = 5,
                 operation = Rule.Operation.Include,
-                directory = "/work/root",
+                source = "/work/root",
                 pattern = "**/child-*[a-c]/a",
                 definition = null
             )
@@ -67,7 +67,7 @@ class SpecificationSpec : WordSpec({
             val rule6 = Rule(
                 id = 6,
                 operation = Rule.Operation.Exclude,
-                directory = "/work/root",
+                source = "/work/root",
                 pattern = "parent-0/**",
                 definition = null
             )
@@ -75,7 +75,7 @@ class SpecificationSpec : WordSpec({
             val rule7 = Rule(
                 id = 7,
                 operation = Rule.Operation.Exclude,
-                directory = "/work/root",
+                source = "/work/root",
                 pattern = "**/q",
                 definition = null
             )
@@ -114,7 +114,7 @@ class SpecificationSpec : WordSpec({
                 val (rule, expectation) = it
                 val matchesIncluded = AtomicInteger(0)
 
-                withClue("Specification for rule [${rule.id}]: [${rule.operation} ${rule.directory} ${rule.pattern}]") {
+                withClue("Specification for rule [${rule.id}]: [${rule.operation} ${rule.source} ${rule.pattern}]") {
                     val spec = Specification(listOf(rule), { matchesIncluded.incrementAndGet() }, filesystem)
                     spec.excluded.size shouldBe (expectation.excluded)
                     spec.included.size shouldBe (expectation.included)
@@ -161,7 +161,7 @@ class SpecificationSpec : WordSpec({
             val rule1 = Rule(
                 id = 1,
                 operation = Rule.Operation.Include,
-                directory = "/test/",
+                source = "/test/",
                 pattern = "**",
                 definition = null
             )
@@ -169,7 +169,7 @@ class SpecificationSpec : WordSpec({
             val rule2 = Rule(
                 id = 2,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "missing-test-file",
                 definition = null
             )
@@ -197,7 +197,7 @@ class SpecificationSpec : WordSpec({
             val rule1 = Rule(
                 id = 1,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "?",
                 definition = null
             )
@@ -205,7 +205,7 @@ class SpecificationSpec : WordSpec({
             val rule2 = Rule(
                 id = 2,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "a",
                 definition = null
             )
@@ -213,7 +213,7 @@ class SpecificationSpec : WordSpec({
             val rule3 = Rule(
                 id = 3,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "b",
                 definition = null
             )
@@ -221,7 +221,7 @@ class SpecificationSpec : WordSpec({
             val rule4 = Rule(
                 id = 4,
                 operation = Rule.Operation.Exclude,
-                directory = "/work",
+                source = "/work",
                 pattern = "c",
                 definition = null
             )
@@ -229,7 +229,7 @@ class SpecificationSpec : WordSpec({
             val rule5 = Rule(
                 id = 5,
                 operation = Rule.Operation.Include,
-                directory = "/work",
+                source = "/work",
                 pattern = "[c-f]",
                 definition = null
             )
@@ -319,7 +319,7 @@ class SpecificationSpec : WordSpec({
             val rule1 = Rule(
                 id = 1,
                 operation = Rule.Operation.Include,
-                directory = "/work/missing-dir",
+                source = "/work/missing-dir",
                 pattern = "*",
                 definition = null
             )

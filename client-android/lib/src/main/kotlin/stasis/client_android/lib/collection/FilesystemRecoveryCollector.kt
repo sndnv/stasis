@@ -11,7 +11,7 @@ import stasis.client_android.lib.model.FilesystemMetadata
 import stasis.client_android.lib.model.TargetEntity
 import java.nio.file.FileSystem
 
-class DefaultRecoveryCollector(
+class FilesystemRecoveryCollector(
     private val targetMetadata: DatasetMetadata,
     private val keep: (String, FilesystemMetadata.EntityState) -> Boolean,
     private val destination: TargetEntity.Destination,

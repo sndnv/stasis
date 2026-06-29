@@ -2,6 +2,7 @@ package stasis.test.client_android.lib.mocks
 
 import stasis.client_android.lib.collection.RecoveryMetadataCollector
 import stasis.client_android.lib.model.EntityMetadata
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.model.TargetEntity
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,7 +22,7 @@ class MockRecoveryMetadataCollector(val metadata: Map<Path, EntityMetadata>) : R
         return when (val fileMetadata = metadata[entity]) {
             null -> throw IllegalArgumentException("No metadata found for file [$entity]")
             else -> TargetEntity(
-                path = entity,
+                ref = EntityRef.Filesystem(entity),
                 destination = destination,
                 existingMetadata = existingMetadata,
                 currentMetadata = fileMetadata

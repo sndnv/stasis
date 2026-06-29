@@ -19,6 +19,11 @@ class MockChecksum(val checksums: Map<Path, BigInteger>) : Checksum {
         }
     }
 
+    override fun calculate(bytes: ByteArray): BigInteger {
+        stats[Statistic.ChecksumCalculated]?.getAndIncrement()
+        return BigInteger.valueOf(bytes.size.toLong())
+    }
+
     val statistics: Map<Statistic, Int>
         get() = stats.mapValues { it.value.get() }
 

@@ -29,8 +29,8 @@ interface Compression {
 
     private fun compressionFor(entity: EntityMetadata): Compressor =
         when (entity) {
-            is EntityMetadata.File -> fromString(entity.compression)
-            is EntityMetadata.Directory -> throw IllegalArgumentException(
+            is EntityMetadata.WithContent -> fromString(entity.compression)
+            else -> throw IllegalArgumentException(
                 "Expected metadata for file but directory metadata for [${entity.path}] provided"
             )
         }

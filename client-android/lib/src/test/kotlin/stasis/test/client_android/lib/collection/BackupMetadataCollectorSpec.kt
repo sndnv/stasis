@@ -20,7 +20,7 @@ class BackupMetadataCollectorSpec : WordSpec({
             val file2Metadata = Fixtures.Metadata.FileTwoMetadata.copy(path = file2.toString())
             val file3Metadata = Fixtures.Metadata.FileThreeMetadata.copy(path = file3.toString())
 
-            val collector = BackupMetadataCollector.Default(
+            val collector = BackupMetadataCollector.Filesystem(
                 checksum = Checksum.Companion.MD5,
                 compression = MockCompression()
             )
@@ -29,25 +29,25 @@ class BackupMetadataCollectorSpec : WordSpec({
             val sourceFile2 = collector.collect(entity = file2, existingMetadata = file2Metadata)
             val sourceFile3 = collector.collect(entity = file3, existingMetadata = file3Metadata)
 
-            sourceFile1.path shouldBe (file1)
+            sourceFile1.ref.asFilesystem().path shouldBe (file1)
             sourceFile1.existingMetadata shouldBe (null)
             when (val metadata = sourceFile1.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (1)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
+                else -> fail("Expected file but received directory metadata")
             }
 
-            sourceFile2.path shouldBe (file2)
+            sourceFile2.ref.asFilesystem().path shouldBe (file2)
             sourceFile2.existingMetadata shouldBe (file2Metadata)
             when (val metadata = sourceFile2.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (2)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
+                else -> fail("Expected file but received directory metadata")
             }
 
-            sourceFile3.path shouldBe (file3)
+            sourceFile3.ref.asFilesystem().path shouldBe (file3)
             sourceFile3.existingMetadata shouldBe (file3Metadata)
             when (val metadata = sourceFile3.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (3)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
+                else -> fail("Expected file but received directory metadata")
             }
         }
     }

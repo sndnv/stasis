@@ -25,6 +25,7 @@ import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.activities.views.tree.FileTreeNode
 import stasis.client_android.databinding.DialogRulesTreeBinding
 import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.collection.rules.SourceUri
 import stasis.client_android.lib.collection.rules.Specification
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
@@ -74,7 +75,7 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
             withContext(Dispatchers.IO) {
 
                 Specification(
-                    rules = arguments.rules,
+                    rules = arguments.rules.filesystemOnly(),
                     onMatchIncluded = {},
                     filesystem = fs
                 )
@@ -83,8 +84,8 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
 
         fun walkFileTree(arguments: Arguments): LiveData<Try<List<String>>> = liveData {
             withContext(Dispatchers.IO) {
-                val root = arguments.rules
-                    .map { it.directory }
+                val root = arguments.rules.filesystemOnly()
+                    .map { it.source }
                     .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
 
                 Try { TreeFileVisitor().walk(fs, root) }
@@ -103,6 +104,14 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                     is Right -> getString(R.string.rules_tree_title, d.value.info)
                 }
 
+                if (arguments.rules.filesystemOnly().isEmpty()) {
+                    binding.rulesTreeLoadInProgress.isVisible = false
+                    binding.rulesTreeError.isVisible = false
+                    binding.rulesTreeEmpty.isVisible = true
+                    binding.rulesTree.isVisible = false
+                    return@observe
+                }
+
                 val included = spec.included.map { it.toAbsolutePath().toString() }.toSet()
                 val excluded = spec.excluded.map { it.toAbsolutePath().toString() }.toSet()
 
@@ -112,8 +121,8 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                 val adapter = TreeViewAdapter(factory)
                 binding.rulesTree.adapter = adapter
 
-                val root = arguments.rules
-                    .map { it.directory }
+                val root = arguments.rules.filesystemOnly()
+                    .map { it.source }
                     .reduceOrNull { a, b -> commonAncestor(a, b, fs) } ?: RulesConfig.DefaultStorageDirectory
 
                 try {
@@ -161,6 +170,7 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
 
         binding.rulesTreeLoadInProgress.isVisible = true
         binding.rulesTreeError.isVisible = false
+        binding.rulesTreeEmpty.isVisible = false
         binding.rulesTree.isVisible = false
 
         return binding.root
@@ -218,6 +228,9 @@ class RuleTreeDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                 }
             }
         }
+
+        private fun List<Rule>.filesystemOnly(): List<Rule> =
+            filter { SourceUri.scheme(it.source) == null }
 
         private fun commonAncestor(a: String, b: String, fs: FileSystem): String {
             val pathA =

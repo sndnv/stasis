@@ -21,6 +21,7 @@ import stasis.client_android.lib.ops.backup.Backup as BackupOp
 import stasis.client_android.lib.ops.backup.Providers as BackupProviders
 import stasis.client_android.lib.ops.recovery.Providers as RecoveryProviders
 import stasis.client_android.lib.ops.recovery.Recovery as RecoveryOp
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 
 class DefaultOperationExecutor(
     private val config: Config,
@@ -168,13 +169,15 @@ class DefaultOperationExecutor(
     override suspend fun startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Instant?,
-        query: RecoveryOp.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: RecoveryOp.Destination?,
         f: (Throwable?) -> Unit
     ): OperationId = asUniqueOperation(ofType = Operation.Type.Recovery, callback = f) {
         val descriptor = RecoveryOp.Descriptor(
             collector = RecoveryOp.Descriptor.Collector.WithDefinition(definition, until),
-            query = query,
+            entities = entities,
+            sources = sources,
             destination = destination,
             deviceSecret = deviceSecret(),
             providers = recoveryProviders,
@@ -207,13 +210,15 @@ class DefaultOperationExecutor(
 
     override suspend fun startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: RecoveryOp.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: RecoveryOp.Destination?,
         f: (Throwable?) -> Unit
     ): OperationId = asUniqueOperation(ofType = Operation.Type.Recovery, callback = f) {
         val descriptor = RecoveryOp.Descriptor(
             collector = RecoveryOp.Descriptor.Collector.WithEntry(entry),
-            query = query,
+            entities = entities,
+            sources = sources,
             destination = destination,
             deviceSecret = deviceSecret(),
             providers = recoveryProviders,

@@ -2,6 +2,7 @@ package stasis.client_android.lib.collection.rules
 
 import stasis.client_android.lib.collection.rules.exceptions.RuleMatchingFailure
 import stasis.client_android.lib.collection.rules.internal.FilesWalker
+import stasis.client_android.lib.model.EntityRef
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.tracking.BackupTracker
 import stasis.client_android.lib.utils.NonFatal.nonFatal
@@ -74,7 +75,7 @@ data class Specification(
         ): Specification =
             invoke(
                 rules = rules,
-                onMatchIncluded = { path -> tracker.entityDiscovered(operation, path) },
+                onMatchIncluded = { path -> tracker.entityDiscovered(operation, EntityRef.Filesystem(path)) },
                 filesystem = FileSystems.getDefault()
             )
 
@@ -90,7 +91,7 @@ data class Specification(
             filesystem: FileSystem
         ): Specification {
             val (matchers, spec) = rules
-                .groupBy { it.directory }
+                .groupBy { it.source }
                 .toList()
                 .fold(emptyList<RuleMatcher>() to empty()) { (collected, spec), (groupedDirectory, rules) ->
                     val (directory, matchers) = rules.asMatchers(groupedDirectory, filesystem)

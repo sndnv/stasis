@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.toList
 import stasis.client_android.lib.analysis.Checksum
 import stasis.client_android.lib.api.clients.Clients
 import stasis.client_android.lib.collection.BackupMetadataCollector
-import stasis.client_android.lib.collection.DefaultBackupCollector
+import stasis.client_android.lib.collection.FilesystemBackupCollector
 import stasis.client_android.lib.model.DatasetMetadata
 import stasis.client_android.lib.model.EntityMetadata
 import stasis.client_android.lib.model.FilesystemMetadata
@@ -19,18 +19,18 @@ import stasis.test.client_android.lib.mocks.MockCompression
 import stasis.test.client_android.lib.mocks.MockServerApiEndpointClient
 import stasis.test.client_android.lib.mocks.MockServerCoreEndpointClient
 
-class DefaultBackupCollectorSpec : WordSpec({
-    "A DefaultBackupCollector" should {
+class FilesystemBackupCollectorSpec : WordSpec({
+    "A FilesystemBackupCollector" should {
         "collect backup files based on a files list" {
             val mockApiClient = MockServerApiEndpointClient()
 
             val file1 = "/collection/file-1".asTestResource()
             val file2 = "/collection/file-2".asTestResource()
 
-            val collector = DefaultBackupCollector(
+            val collector = FilesystemBackupCollector(
                 entities = listOf(file1, file2),
                 latestMetadata = DatasetMetadata.empty(),
-                metadataCollector = BackupMetadataCollector.Default(
+                metadataCollector = BackupMetadataCollector.Filesystem(
                     checksum = Checksum.Companion.MD5,
                     compression = MockCompression()
                 ),
@@ -40,24 +40,24 @@ class DefaultBackupCollectorSpec : WordSpec({
             val sourceFiles = collector
                 .collect()
                 .fold(emptyList<SourceEntity>()) { acc, value -> acc + value }
-                .sortedBy { it.path.toAbsolutePath().toString() }
+                .sortedBy { it.ref.asFilesystem().path.toAbsolutePath().toString() }
 
             sourceFiles.size shouldBe (2)
             val sourceFile1 = sourceFiles[0]
             val sourceFile2 = sourceFiles[1]
 
-            sourceFile1.path shouldBe (file1)
+            sourceFile1.ref.asFilesystem().path shouldBe (file1)
             sourceFile1.existingMetadata shouldBe (null)
             when (val metadata = sourceFile1.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (1)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
+                else -> fail("Expected file but received directory metadata")
             }
 
-            sourceFile2.path shouldBe (file2)
+            sourceFile2.ref.asFilesystem().path shouldBe (file2)
             sourceFile2.existingMetadata shouldBe (null)
             when (val metadata = sourceFile2.currentMetadata) {
                 is EntityMetadata.File -> metadata.size shouldBe (2)
-                is EntityMetadata.Directory -> fail("Expected file but received directory metadata")
+                else -> fail("Expected file but received directory metadata")
             }
         }
 
@@ -69,7 +69,7 @@ class DefaultBackupCollectorSpec : WordSpec({
 
             val file2 = "/collection/file-2".asTestResource()
 
-            val collectedFiles = DefaultBackupCollector.collectEntityMetadata(
+            val collectedFiles = FilesystemBackupCollector.collectEntityMetadata(
                 entities = listOf(file1, file2),
                 latestMetadata = DatasetMetadata(
                     contentChanged = mapOf(file1.toString() to file1Metadata),
@@ -100,7 +100,7 @@ class DefaultBackupCollectorSpec : WordSpec({
             val file1 = "/collection/file-1".asTestResource()
             val file2 = "/collection/file-2".asTestResource()
 
-            val collectedFiles = DefaultBackupCollector
+            val collectedFiles = FilesystemBackupCollector
                 .collectEntityMetadata(
                     entities = listOf(file1, file2),
                     latestMetadata = null,

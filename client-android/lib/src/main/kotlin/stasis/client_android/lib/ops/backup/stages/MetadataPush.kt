@@ -53,16 +53,13 @@ interface MetadataPush {
                 definition = targetDataset.id,
                 device = providers.clients.api.self,
                 data = metadata.contentChanged.values
-                    .filterIsInstance<EntityMetadata.File>()
+                    .filterIsInstance<EntityMetadata.WithContent>()
                     .flatMap { it.crates.values }
                     .toSet(),
                 changes = metadata.contentChanged.size.toLong() + metadata.metadataChanged.size.toLong(),
-                size = metadata.contentChanged.values.sumOf {
-                    when (it) {
-                        is EntityMetadata.File -> it.size
-                        else -> 0L
-                    }
-                },
+                size = metadata.contentChanged.values
+                    .filterIsInstance<EntityMetadata.WithContent>()
+                    .sumOf { it.size },
                 metadata = metadataManifest.crate
             )
 

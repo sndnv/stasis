@@ -27,7 +27,7 @@ class FilesWalkerSpec : WordSpec({
             val rule1 = Rule(
                 id = 0,
                 operation = Rule.Operation.Include,
-                directory = "/",
+                source = "/",
                 pattern = "*",
                 definition = null
             )
@@ -37,7 +37,7 @@ class FilesWalkerSpec : WordSpec({
             val rule2 = Rule(
                 id = 1,
                 operation = Rule.Operation.Exclude,
-                directory = "/",
+                source = "/",
                 pattern = "*",
                 definition = null
             )
@@ -102,7 +102,7 @@ class FilesWalkerSpec : WordSpec({
             val rule1 = Rule(
                 id = 0,
                 operation = Rule.Operation.Include,
-                directory = "/",
+                source = "/",
                 pattern = "*",
                 definition = null
             )
@@ -112,7 +112,7 @@ class FilesWalkerSpec : WordSpec({
             val rule2 = Rule(
                 id = 1,
                 operation = Rule.Operation.Exclude,
-                directory = "/",
+                source = "/",
                 pattern = "*",
                 definition = null
             )

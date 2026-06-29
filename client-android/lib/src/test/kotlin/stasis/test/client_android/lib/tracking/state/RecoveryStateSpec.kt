@@ -10,22 +10,22 @@ import stasis.client_android.lib.tracking.state.RecoveryState
 import stasis.client_android.lib.tracking.state.RecoveryState.PendingTargetEntity
 import stasis.client_android.lib.utils.Try
 import stasis.test.client_android.lib.Fixtures
-import stasis.test.client_android.lib.ResourceHelpers.asPath
+import stasis.test.client_android.lib.ResourceHelpers.asRef
 
 class RecoveryStateSpec : WordSpec({
-    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asPath()
-    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asPath()
-    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asPath()
+    val entity1 = Fixtures.Metadata.FileOneMetadata.path.asRef()
+    val entity2 = Fixtures.Metadata.FileTwoMetadata.path.asRef()
+    val entity3 = Fixtures.Metadata.FileThreeMetadata.path.asRef()
 
     val targetEntity1 = TargetEntity(
-        path = entity1,
+        ref = entity1,
         existingMetadata = Fixtures.Metadata.FileOneMetadata,
         currentMetadata = null,
         destination = TargetEntity.Destination.Default
     )
 
     val targetEntity3 = TargetEntity(
-        path = entity3,
+        ref = entity3,
         existingMetadata = Fixtures.Metadata.FileThreeMetadata,
         currentMetadata = null,
         destination = TargetEntity.Destination.Default

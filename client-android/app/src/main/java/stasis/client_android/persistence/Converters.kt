@@ -86,7 +86,7 @@ class Converters {
             RuleEntity(
                 id = rule.id,
                 operation = rule.operation,
-                directory = rule.directory,
+                source = rule.source,
                 pattern = rule.pattern,
                 definition = rule.definition
             )
@@ -95,7 +95,7 @@ class Converters {
             Rule(
                 id = entity.id,
                 operation = entity.operation,
-                directory = entity.directory,
+                source = entity.source,
                 pattern = entity.pattern,
                 definition = entity.definition
             )

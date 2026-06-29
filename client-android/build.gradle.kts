@@ -8,10 +8,10 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:9.1.1")
+        classpath("com.android.tools.build:gradle:9.2.1")
         classpath("com.squareup.wire:wire-gradle-plugin:6.2.0")
-        classpath("com.google.dagger:hilt-android-gradle-plugin:2.59.2")
-        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.9.7")
+        classpath("com.google.dagger:hilt-android-gradle-plugin:2.60")
+        classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8")
     }
 }
 

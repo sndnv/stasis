@@ -8,6 +8,7 @@ import okio.Source
 import okio.Timeout
 import okio.buffer
 import stasis.client_android.lib.api.clients.Clients
+import stasis.client_android.lib.ops.backup.BackupEntityKind
 import stasis.client_android.lib.ops.backup.Providers
 import stasis.client_android.lib.ops.backup.stages.internal.PartitionedSource
 import stasis.client_android.lib.telemetry.analytics.AnalyticsCollector
@@ -46,7 +47,8 @@ class PartitionedSourceSpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockBackupTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(BackupEntityKind.Filesystem)
             )
 
             val partsStaged = AtomicInteger(0)
@@ -114,7 +116,8 @@ class PartitionedSourceSpec : WordSpec({
                     core = MockServerCoreEndpointClient()
                 ),
                 track = MockBackupTracker(),
-                analytics = AnalyticsCollector.NoOp
+                analytics = AnalyticsCollector.NoOp,
+                kinds = listOf(BackupEntityKind.Filesystem)
             )
 
             val partsStaged = AtomicInteger(0)

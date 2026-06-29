@@ -154,7 +154,7 @@ class RuleTreeEntryContextDialogFragment(
                 val rule = Rule(
                     id = 0,
                     operation = if (suggestion.include) Rule.Operation.Include else Rule.Operation.Exclude,
-                    directory = suggestion.directory.trimEnd('/'),
+                    source = suggestion.directory.trimEnd('/'),
                     pattern = suggestion.pattern,
                     definition = definition
                 )

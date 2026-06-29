@@ -1,17 +1,24 @@
 package stasis.client_android.activities.fragments.rules
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import stasis.client_android.R
 import stasis.client_android.activities.helpers.Common.toMinimizedString
+import stasis.client_android.activities.views.dialogs.InformationDialogFragment
 import stasis.client_android.databinding.DialogRuleFormBinding
 import stasis.client_android.lib.collection.rules.Rule
+import stasis.client_android.lib.collection.rules.SourceUri
 import stasis.client_android.lib.model.server.datasets.DatasetDefinition
 import stasis.client_android.lib.model.server.datasets.DatasetDefinitionId
 import stasis.client_android.utils.DynamicArguments
@@ -20,6 +27,13 @@ import stasis.client_android.utils.DynamicArguments.pullArguments
 class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
     override val argumentsKey: String = ArgumentsKey
     override val receiver: Fragment = this
+
+    override fun onStart() {
+        super.onStart()
+        val width = ViewGroup.LayoutParams.MATCH_PARENT
+        val height = ViewGroup.LayoutParams.MATCH_PARENT
+        dialog?.window?.setLayout(width, height)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,7 +64,6 @@ class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                 listOf(noDefinition) + definitions.keys.toList()
             )
 
-
             binding.ruleDetailsDefinitionTextInput.setText(selectedDefinition, false)
             binding.ruleDetailsDefinitionTextInput.setAdapter(adapter)
 
@@ -59,9 +72,64 @@ class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                 else R.id.rule_details_operation_include
             )
 
-            binding.ruleDetailsDirectory.editText?.setText(arguments.currentRule?.directory)
+            val currentScheme = arguments.currentRule?.source?.let { SourceUri.scheme(it) }
+
+            binding.ruleDetailsDirectory.editText?.setText(
+                if (currentScheme == null) arguments.currentRule?.source else null
+            )
 
             binding.ruleDetailsPattern.editText?.setText(arguments.currentRule?.pattern)
+
+            val sourceKinds = listOf(
+                SourceKind(null, getString(R.string.rule_field_source_kind_files), R.drawable.ic_sources_filesystem),
+                SourceKind(
+                    "calendar",
+                    getString(R.string.rule_field_source_kind_calendar),
+                    R.drawable.ic_sources_calendar
+                ),
+                SourceKind(
+                    "contacts",
+                    getString(R.string.rule_field_source_kind_contacts),
+                    R.drawable.ic_sources_contacts
+                )
+            )
+
+            var selectedScheme: String? = null
+
+            fun applySourceKind(scheme: String?) {
+                selectedScheme = scheme
+                binding.ruleDetailsSourceKind.setStartIconDrawable(
+                    sourceKinds.first { it.scheme == scheme }.icon
+                )
+                val isFiles = scheme == null
+                binding.ruleDetailsDirectoryContainer.isVisible = isFiles
+                if (!isFiles && binding.ruleDetailsPattern.editText?.text.isNullOrBlank()) {
+                    binding.ruleDetailsPattern.editText?.setText("*")
+                }
+            }
+
+            binding.ruleDetailsSourceKindTextInput.setAdapter(SourceKindAdapter(requireContext(), sourceKinds))
+            binding.ruleDetailsSourceKindTextInput.setOnItemClickListener { _, _, position, _ ->
+                applySourceKind(sourceKinds[position].scheme)
+            }
+
+            val initialKind = sourceKinds.firstOrNull { it.scheme == currentScheme } ?: sourceKinds.first()
+            binding.ruleDetailsSourceKindTextInput.setText(initialKind.label, false)
+            applySourceKind(initialKind.scheme)
+
+            binding.ruleFormTitle.text = getString(
+                if (arguments.currentRule == null) R.string.rule_form_title_new
+                else R.string.rule_form_title_edit
+            )
+
+            binding.ruleFormHelpButton.setOnClickListener {
+                InformationDialogFragment()
+                    .withTitle(getString(R.string.context_help_dialog_title))
+                    .withMessage(getString(R.string.context_help_rule_form))
+                    .show(childFragmentManager)
+            }
+
+            binding.ruleDetailsSourceKindTextInput.isEnabled = (arguments.currentRule == null)
 
             binding.ruleActionButton.text = getString(
                 if (arguments.currentRule == null) R.string.rule_add_button_title
@@ -83,15 +151,19 @@ class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                     else -> throw IllegalStateException("Unexpected operation type selected: [$id]")
                 }
 
+                val sourceScheme = selectedScheme
+
                 binding.ruleDetailsDirectory.isErrorEnabled = false
                 binding.ruleDetailsDirectory.error = null
 
                 val directory = binding.ruleDetailsDirectory.editText?.text.toString()
-                val directoryIsInvalid = directory.isBlank()
+                val directoryIsInvalid = sourceScheme == null && directory.isBlank()
                 if (directoryIsInvalid) {
                     binding.ruleDetailsDirectory.isErrorEnabled = true
                     binding.ruleDetailsDirectory.error = context.getString(R.string.rule_field_error_directory)
                 }
+
+                val source = if (sourceScheme == null) directory else "$sourceScheme:/"
 
                 binding.ruleDetailsPattern.isErrorEnabled = false
                 binding.ruleDetailsPattern.error = null
@@ -107,7 +179,7 @@ class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
                     val rule = Rule(
                         id = arguments.currentRule?.id ?: 0,
                         operation = operation,
-                        directory = directory,
+                        source = source,
                         pattern = pattern,
                         definition = definition
                     )
@@ -138,6 +210,32 @@ class RuleFormDialogFragment : DialogFragment(), DynamicArguments.Receiver {
             val currentRule: Rule?,
             val onRuleActionRequested: (Rule) -> Unit
         ) : DynamicArguments.ArgumentSet
+
+        private data class SourceKind(val scheme: String?, val label: String, @param:DrawableRes val icon: Int) {
+            override fun toString(): String = label
+        }
+
+        private class SourceKindAdapter(
+            context: Context,
+            private val kinds: List<SourceKind>
+        ) : ArrayAdapter<SourceKind>(context, R.layout.list_item_source_kind, kinds) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+                bind(position, convertView, parent)
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
+                bind(position, convertView, parent)
+
+            private fun bind(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.list_item_source_kind, parent, false)
+
+                val kind = kinds[position]
+                view.findViewById<ImageView>(R.id.source_kind_icon).setImageResource(kind.icon)
+                view.findViewById<TextView>(R.id.source_kind_label).text = kind.label
+
+                return view
+            }
+        }
 
         private const val ArgumentsKey: String =
             "stasis.client_android.activities.fragments.rules.RuleFormDialogFragment.arguments.key"

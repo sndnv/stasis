@@ -14,6 +14,7 @@ import stasis.client_android.lib.model.server.datasets.DatasetEntryId
 import stasis.client_android.lib.ops.Operation
 import stasis.client_android.lib.ops.OperationId
 import stasis.client_android.lib.ops.recovery.Recovery
+import stasis.client_android.lib.ops.recovery.RecoverySourceKind
 import stasis.client_android.lib.ops.scheduling.OperationExecutor
 import java.nio.file.Path
 import java.time.Instant
@@ -33,6 +34,11 @@ class RecoveryConfigSpec {
         assertThat(
             config.copy(definition = UUID.randomUUID()).validate(),
             equalTo(RecoveryConfig.ValidationResult.Valid)
+        )
+
+        assertThat(
+            config.copy(definition = UUID.randomUUID(), sources = emptySet()).validate(),
+            equalTo(RecoveryConfig.ValidationResult.MissingSources)
         )
 
         assertThat(
@@ -113,25 +119,27 @@ class RecoveryConfigSpec {
 
         assertThat(
             config.copy(destination = "test").recoveryDestination,
-            equalTo(Recovery.Destination(path = "test", keepStructure = true))
+            equalTo(Recovery.Destination(path = "test", keepStructure = true, preserveExisting = false))
         )
 
         assertThat(
             config.copy(destination = "test", discardPaths = true).recoveryDestination,
-            equalTo(Recovery.Destination(path = "test", keepStructure = false))
+            equalTo(Recovery.Destination(path = "test", keepStructure = false, preserveExisting = false))
         )
     }
 
     @Test
-    fun provideRecoveryPathQuery() {
+    fun provideRecoverySources() {
         assertThat(
-            config.recoveryPathQuery,
-            equalTo(null)
+            config.recoverySources,
+            equalTo(setOf<RecoverySourceKind>(RecoverySourceKind.Filesystem))
         )
 
         assertThat(
-            config.copy(pathQuery = "test").recoveryPathQuery.toString(),
-            equalTo(Recovery.PathQuery(query = "test").toString())
+            config.copy(
+                sources = setOf(RecoverySourceKind.Filesystem, RecoverySourceKind.Library("calendar"))
+            ).recoverySources,
+            equalTo(setOf(RecoverySourceKind.Filesystem, RecoverySourceKind.Library("calendar")))
         )
     }
 
@@ -143,7 +151,8 @@ class RecoveryConfigSpec {
             override suspend fun startRecoveryWithDefinition(
                 definition: DatasetDefinitionId,
                 until: Instant?,
-                query: Recovery.PathQuery?,
+                entities: Set<String>?,
+                sources: Set<RecoverySourceKind>,
                 destination: Recovery.Destination?,
                 f: (Throwable?) -> Unit
             ): OperationId {
@@ -167,7 +176,8 @@ class RecoveryConfigSpec {
         val executor = object : TestExecutor() {
             override suspend fun startRecoveryWithEntry(
                 entry: DatasetEntryId,
-                query: Recovery.PathQuery?,
+                entities: Set<String>?,
+                sources: Set<RecoverySourceKind>,
                 destination: Recovery.Destination?,
                 f: (Throwable?) -> Unit
             ): OperationId {
@@ -194,7 +204,8 @@ class RecoveryConfigSpec {
             override suspend fun startRecoveryWithDefinition(
                 definition: DatasetDefinitionId,
                 until: Instant?,
-                query: Recovery.PathQuery?,
+                entities: Set<String>?,
+                sources: Set<RecoverySourceKind>,
                 destination: Recovery.Destination?,
                 f: (Throwable?) -> Unit
             ): OperationId {
@@ -217,7 +228,7 @@ class RecoveryConfigSpec {
     private val config = RecoveryConfig(
         definition = null,
         recoverySource = RecoveryConfig.RecoverySource.Latest,
-        pathQuery = null,
+        sources = setOf(RecoverySourceKind.Filesystem),
         destination = null,
         discardPaths = false
     )
@@ -226,14 +237,16 @@ class RecoveryConfigSpec {
         override suspend fun startRecoveryWithDefinition(
             definition: DatasetDefinitionId,
             until: Instant?,
-            query: Recovery.PathQuery?,
+            entities: Set<String>?,
+            sources: Set<RecoverySourceKind>,
             destination: Recovery.Destination?,
             f: (Throwable?) -> Unit
         ): OperationId = UUID.randomUUID()
 
         override suspend fun startRecoveryWithEntry(
             entry: DatasetEntryId,
-            query: Recovery.PathQuery?,
+            entities: Set<String>?,
+            sources: Set<RecoverySourceKind>,
             destination: Recovery.Destination?,
             f: (Throwable?) -> Unit
         ): OperationId = UUID.randomUUID()

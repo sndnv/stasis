@@ -250,6 +250,12 @@ class MainActivity : AppCompatActivity() {
                     R.string.context_help_rules
                 )
 
+                R.id.sourcesFragment -> Triple(
+                    R.id.item_rules,
+                    R.string.navigation_subtitle_sources,
+                    null
+                )
+
                 R.id.schedulesFragment -> Triple(
                     R.id.item_schedules,
                     R.string.navigation_subtitle_schedules,
@@ -275,6 +281,7 @@ class MainActivity : AppCompatActivity() {
 
             binding.topAppBar.subtitle = getString(subtitleId)
             binding.topAppBar.menu.findItem(R.id.context_help).isVisible = contextHelpId != null
+            binding.topAppBar.menu.findItem(R.id.sources).isVisible = destination.id == R.id.rulesFragment
 
             contextHelpRef.set(contextHelpId)
 
@@ -321,6 +328,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.topAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.sources -> {
+                    controller.navigate(MainNavGraphDirections.actionGlobalSourcesFragment())
+                    true
+                }
+
                 R.id.context_help -> {
                     when (val help = contextHelpRef.get()) {
                         null -> false

@@ -15,5 +15,6 @@ data class Providers(
     val decryptor: EncryptionDecoder,
     val clients: Clients,
     val track: RecoveryTracker,
-    val analytics: AnalyticsCollector
+    val analytics: AnalyticsCollector,
+    val kinds: List<RecoveryEntityKind>
 )
