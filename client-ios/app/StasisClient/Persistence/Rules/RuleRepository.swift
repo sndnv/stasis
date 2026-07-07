@@ -22,7 +22,7 @@ public actor RuleRepository {
             ).first
             if let existing {
                 existing.operationRaw = entity.operationRaw
-                existing.directory = entity.directory
+                existing.source = entity.source
                 existing.pattern = entity.pattern
                 existing.definition = entity.definition
             } else {

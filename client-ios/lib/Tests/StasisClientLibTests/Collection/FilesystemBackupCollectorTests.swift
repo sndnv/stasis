@@ -3,8 +3,8 @@ import Foundation
 import StasisClientLibTestSupport
 import Testing
 
-@Suite("DefaultBackupCollector")
-struct DefaultBackupCollectorTests {
+@Suite("FilesystemBackupCollector")
+struct FilesystemBackupCollectorTests {
     @Test("collects backup files based on a files list")
     func collectsBackupFiles() async throws {
         let file1 = CollectionResources.url("file-1")
@@ -15,10 +15,10 @@ struct DefaultBackupCollectorTests {
             core: MockServerCoreEndpointClient()
         )
 
-        let collector = DefaultBackupCollector(
-            entities: [file1, file2],
+        let collector = FilesystemBackupCollector(
+            entities: [.filesystem(file1), .filesystem(file2)],
             latestMetadata: .empty(),
-            metadataCollector: DefaultBackupMetadataCollector(
+            metadataCollector: FilesystemBackupMetadataCollector(
                 checksum: Checksums.md5,
                 compression: MockCompression()
             ),
@@ -29,10 +29,10 @@ struct DefaultBackupCollectorTests {
         for try await source in collector.collect() {
             sourceFiles.append(source)
         }
-        sourceFiles.sort { $0.path.path < $1.path.path }
+        sourceFiles.sort { $0.ref.key < $1.ref.key }
 
         #expect(sourceFiles.count == 2)
-        #expect(sourceFiles[0].path == file1)
+        #expect(sourceFiles[0].ref == .filesystem(file1))
         #expect(sourceFiles[0].existingMetadata == nil)
         if case .file(let metadata) = sourceFiles[0].currentMetadata {
             #expect(metadata.size == 1)
@@ -40,7 +40,7 @@ struct DefaultBackupCollectorTests {
             Issue.record("expected file metadata, got directory")
         }
 
-        #expect(sourceFiles[1].path == file2)
+        #expect(sourceFiles[1].ref == .filesystem(file2))
         #expect(sourceFiles[1].existingMetadata == nil)
         if case .file(let metadata) = sourceFiles[1].currentMetadata {
             #expect(metadata.size == 2)
@@ -66,9 +66,9 @@ struct DefaultBackupCollectorTests {
             filesystem: FilesystemMetadata(entities: [file1.path: .new])
         )
 
-        var collected: [(URL, EntityMetadata?)] = []
-        for try await entry in DefaultBackupCollector.collectEntityMetadata(
-            entities: [file1, file2],
+        var collected: [(EntityRef, EntityMetadata?)] = []
+        for try await entry in FilesystemBackupCollector.collectEntityMetadata(
+            entities: [.filesystem(file1), .filesystem(file2)],
             latestMetadata: latest,
             clients: clients
         ) {
@@ -76,9 +76,9 @@ struct DefaultBackupCollectorTests {
         }
 
         #expect(collected.count == 2)
-        #expect(collected[0].0 == file1)
+        #expect(collected[0].0 == .filesystem(file1))
         #expect(collected[0].1 == file1Metadata)
-        #expect(collected[1].0 == file2)
+        #expect(collected[1].0 == .filesystem(file2))
         #expect(collected[1].1 == nil)
     }
 
@@ -92,9 +92,9 @@ struct DefaultBackupCollectorTests {
             core: MockServerCoreEndpointClient()
         )
 
-        var collected: [(URL, EntityMetadata?)] = []
-        for try await entry in DefaultBackupCollector.collectEntityMetadata(
-            entities: [file1, file2],
+        var collected: [(EntityRef, EntityMetadata?)] = []
+        for try await entry in FilesystemBackupCollector.collectEntityMetadata(
+            entities: [.filesystem(file1), .filesystem(file2)],
             latestMetadata: nil,
             clients: clients
         ) {
@@ -102,9 +102,9 @@ struct DefaultBackupCollectorTests {
         }
 
         #expect(collected.count == 2)
-        #expect(collected[0].0 == file1)
+        #expect(collected[0].0 == .filesystem(file1))
         #expect(collected[0].1 == nil)
-        #expect(collected[1].0 == file2)
+        #expect(collected[1].0 == .filesystem(file2))
         #expect(collected[1].1 == nil)
     }
 }

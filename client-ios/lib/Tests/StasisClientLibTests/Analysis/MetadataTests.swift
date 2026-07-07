@@ -181,11 +181,12 @@ struct MetadataTests {
         try await Metadata.applyEntityMetadataTo(metadata: metadata, entity: targetFile)
 
         let after = try await Metadata.extractBaseEntityMetadata(entity: targetFile)
-        #expect(baseline.permissions != metadata.permissions)
+        let filesystem = try metadata.asFilesystem()
+        #expect(baseline.permissions != filesystem.permissions)
         #expect(baseline.updated != metadata.updated)
-        #expect(after.owner == metadata.owner)
-        #expect(after.group == metadata.group)
-        #expect(after.permissions == metadata.permissions)
+        #expect(after.owner == filesystem.owner)
+        #expect(after.group == filesystem.group)
+        #expect(after.permissions == filesystem.permissions)
         #expect(after.updated == metadata.updated)
     }
 
@@ -212,11 +213,12 @@ struct MetadataTests {
         try await Metadata.applyEntityMetadataTo(metadata: metadata, entity: targetDirectory)
 
         let after = try await Metadata.extractBaseEntityMetadata(entity: targetDirectory)
-        #expect(baseline.permissions != metadata.permissions)
+        let filesystem = try metadata.asFilesystem()
+        #expect(baseline.permissions != filesystem.permissions)
         #expect(baseline.updated != metadata.updated)
-        #expect(after.owner == metadata.owner)
-        #expect(after.group == metadata.group)
-        #expect(after.permissions == metadata.permissions)
+        #expect(after.owner == filesystem.owner)
+        #expect(after.group == filesystem.group)
+        #expect(after.permissions == filesystem.permissions)
         #expect(after.updated == metadata.updated)
     }
 

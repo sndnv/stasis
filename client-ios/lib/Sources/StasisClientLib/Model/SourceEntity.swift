@@ -1,18 +1,18 @@
 import Foundation
 
 public struct SourceEntity: Sendable, Equatable, Hashable {
-    public let path: URL
+    public let ref: EntityRef
     public let existingMetadata: EntityMetadata?
     public let currentMetadata: EntityMetadata
 
-    public init(path: URL, existingMetadata: EntityMetadata?, currentMetadata: EntityMetadata) throws {
+    public init(ref: EntityRef, existingMetadata: EntityMetadata?, currentMetadata: EntityMetadata) throws {
         if let existing = existingMetadata, !existing.sameKind(as: currentMetadata) {
             throw EntityMetadataMismatch(
                 currentPath: currentMetadata.path,
                 existingPath: existing.path
             )
         }
-        self.path = path
+        self.ref = ref
         self.existingMetadata = existingMetadata
         self.currentMetadata = currentMetadata
     }
@@ -23,15 +23,12 @@ public struct SourceEntity: Sendable, Equatable, Hashable {
     }
 
     public var hasContentChanged: Bool {
-        switch currentMetadata {
-        case .file(let current):
-            if case .file(let existing) = existingMetadata {
-                existing.size != current.size || existing.checksum != current.checksum
-            } else {
-                true
-            }
-        case .directory:
-            false
+        if let existingContent = existingMetadata?.content, let currentContent = currentMetadata.content {
+            return existingContent.size != currentContent.size || existingContent.checksum != currentContent.checksum
         }
+        if existingMetadata == nil, currentMetadata.content != nil {
+            return true
+        }
+        return false
     }
 }

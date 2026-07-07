@@ -76,6 +76,19 @@ enum Fixtures {
             group: "root",
             permissions: "rwxrwxrwx"
         ))
+
+        static let libraryOne = EntityMetadata.library(.init(
+            path: "photos:/test/test-a",
+            created: Date(timeIntervalSince1970: 0),
+            updated: Date(timeIntervalSince1970: 4_102_444_800),
+            size: 4,
+            checksum: Data([0x04]),
+            crates: [
+                "photos:/test/test-a_0": UUID(uuidString: "7e533be5-6a4b-47fb-ad9e-9db437678c60")!
+            ],
+            compression: "none",
+            attributes: Data([0x01, 0x02])
+        ))
     }
 
     enum Proto {
@@ -149,6 +162,23 @@ enum Fixtures {
                 directory.permissions = "rwxrwxrwx"
                 var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
                 entity.entity = .directory(directory)
+                return entity
+            }()
+
+            static let libraryOneMetadataProto: Stasis_ClientIos_Lib_Model_Proto_EntityMetadata = {
+                var library = Stasis_ClientIos_Lib_Model_Proto_LibraryMetadata()
+                library.key = "photos:/test/test-a"
+                library.size = 4
+                library.created = 0
+                library.updated = 4_102_444_800
+                library.checksum = Data([0x04])
+                library.crates = [
+                    "photos:/test/test-a_0": UUID(uuidString: "7e533be5-6a4b-47fb-ad9e-9db437678c60")!.proto
+                ]
+                library.compression = "none"
+                library.attributes = Data([0x01, 0x02])
+                var entity = Stasis_ClientIos_Lib_Model_Proto_EntityMetadata()
+                entity.entity = .library(library)
                 return entity
             }()
 

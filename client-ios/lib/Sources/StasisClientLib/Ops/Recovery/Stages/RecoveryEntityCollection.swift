@@ -2,11 +2,20 @@ import Foundation
 
 extension Recovery {
     public struct EntityCollection: Sendable {
-        public let collector: any RecoveryCollector
+        public let targetMetadata: DatasetMetadata
+        public let keep: @Sendable (String, FilesystemMetadata.EntityState) -> Bool
+        public let destination: TargetEntity.Destination
         public let providers: RecoveryProviders
 
-        public init(collector: any RecoveryCollector, providers: RecoveryProviders) {
-            self.collector = collector
+        public init(
+            targetMetadata: DatasetMetadata,
+            keep: @escaping @Sendable (String, FilesystemMetadata.EntityState) -> Bool,
+            destination: TargetEntity.Destination,
+            providers: RecoveryProviders
+        ) {
+            self.targetMetadata = targetMetadata
+            self.keep = keep
+            self.destination = destination
             self.providers = providers
         }
 
@@ -14,16 +23,24 @@ extension Recovery {
             AsyncThrowingStream { continuation in
                 let task = Task {
                     do {
-                        for try await entity in collector.collect() {
-                            await providers.track.entityExamined(
-                                operation: operation,
-                                entity: entity.path,
-                                metadataChanged: entity.hasChanged,
-                                contentChanged: entity.hasContentChanged
+                        for kind in providers.kinds {
+                            let collector = kind.collector(
+                                targetMetadata: targetMetadata,
+                                keep: keep,
+                                destination: destination,
+                                providers: providers
                             )
-                            if entity.hasChanged {
-                                await providers.track.entityCollected(operation: operation, entity: entity)
-                                continuation.yield(entity)
+                            for try await entity in collector.collect() {
+                                await providers.track.entityExamined(
+                                    operation: operation,
+                                    entity: entity.ref,
+                                    metadataChanged: entity.hasChanged,
+                                    contentChanged: entity.hasContentChanged
+                                )
+                                if entity.hasChanged {
+                                    await providers.track.entityCollected(operation: operation, entity: entity)
+                                    continuation.yield(entity)
+                                }
                             }
                         }
                         continuation.finish()

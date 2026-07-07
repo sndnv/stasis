@@ -4,7 +4,7 @@ public protocol BackupMetadataCollector: Sendable {
     func collect(entity: URL, existingMetadata: EntityMetadata?) async throws -> SourceEntity
 }
 
-public struct DefaultBackupMetadataCollector: BackupMetadataCollector {
+public struct FilesystemBackupMetadataCollector: BackupMetadataCollector {
     private let checksum: any Checksum
     private let compression: any Compression
 

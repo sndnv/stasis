@@ -32,7 +32,7 @@ struct MetadataApplicationTests {
         let stage = Recovery.MetadataApplication(providers: makeProviders(tracker: tracker))
 
         let targetEntity = try TargetEntity(
-            path: target,
+            ref: .filesystem(target),
             destination: .default,
             existingMetadata: metadata,
             currentMetadata: nil
@@ -69,7 +69,8 @@ struct MetadataApplicationTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [RecoveryEntityKinds.filesystem]
         )
     }
 }

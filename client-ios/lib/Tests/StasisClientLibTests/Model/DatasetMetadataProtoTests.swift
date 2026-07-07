@@ -21,11 +21,36 @@ struct DatasetMetadataProtoTests {
         ])
     )
 
+    private let predefinedMetadata = DatasetMetadata(
+        contentChanged: [Fixtures.Metadata.fileOne.path: Fixtures.Metadata.fileOne],
+        metadataChanged: [Fixtures.Metadata.directoryOne.path: Fixtures.Metadata.directoryOne],
+        filesystem: FilesystemMetadata(entities: [Fixtures.Metadata.fileOne.path: .new])
+    )
+
+    private static let predefinedMetadataSerialized =
+        "H4sIAAAAAAAAE+Mq4eLVL8kt0E/LzEnVz89LFUrmSkQTEmA0aFg" +
+        "3cwm/FUtRfn6JE5j04iwqr4CgIEbGKA0ufhQt8QZCohw7Wntbd/" +
+        "zdd95I4NT3lf8PbJ/3biNjEkseyBJPLiGw+pTMotTkkvyiSrDVx" +
+        "kKG2MQ1wLYbge2FugFhu5QolzC6F5i4GACvxukA2AAAAA=="
+
     @Test("round-trips via toByteString / init(byteString:)")
     func roundTripsViaByteString() throws {
         let encoded = try datasetMetadata.toByteString()
         let decoded = try DatasetMetadata(byteString: encoded)
         #expect(decoded == datasetMetadata)
+    }
+
+    @Test("be serializable to byte string")
+    func serializableToByteString() throws {
+        let encoded = try predefinedMetadata.toByteString()
+        #expect(encoded.base64EncodedString() == Self.predefinedMetadataSerialized)
+    }
+
+    @Test("be deserializable from a valid byte string")
+    func deserializableFromByteString() throws {
+        let bytes = Data(base64Encoded: Self.predefinedMetadataSerialized) ?? Data()
+        let decoded = try DatasetMetadata(byteString: bytes)
+        #expect(decoded == predefinedMetadata)
     }
 
     @Test("emits a gzip-framed payload from toByteString")

@@ -35,6 +35,17 @@ extension EntityMetadata {
             directoryProto.group = directory.group
             directoryProto.permissions = directory.permissions
             wrapper.entity = .directory(directoryProto)
+        case .library(let library):
+            var libraryProto = Stasis_ClientIos_Lib_Model_Proto_LibraryMetadata()
+            libraryProto.key = library.path
+            libraryProto.size = library.size
+            libraryProto.created = Int64(library.created.timeIntervalSince1970)
+            libraryProto.updated = Int64(library.updated.timeIntervalSince1970)
+            libraryProto.checksum = library.checksum
+            libraryProto.crates = library.crates.mapValues { $0.proto }
+            libraryProto.compression = library.compression
+            libraryProto.attributes = library.attributes
+            wrapper.entity = .library(libraryProto)
         }
         return wrapper
     }
@@ -66,6 +77,17 @@ extension EntityMetadata {
                 owner: directoryProto.owner,
                 group: directoryProto.group,
                 permissions: directoryProto.permissions
+            ))
+        case .library(let libraryProto):
+            self = .library(.init(
+                path: libraryProto.key,
+                created: Date(timeIntervalSince1970: TimeInterval(libraryProto.created)),
+                updated: Date(timeIntervalSince1970: TimeInterval(libraryProto.updated)),
+                size: libraryProto.size,
+                checksum: libraryProto.checksum,
+                crates: libraryProto.crates.mapValues { $0.uuid },
+                compression: libraryProto.compression,
+                attributes: libraryProto.attributes
             ))
         case .none:
             throw EntityMetadataError.missingEntity

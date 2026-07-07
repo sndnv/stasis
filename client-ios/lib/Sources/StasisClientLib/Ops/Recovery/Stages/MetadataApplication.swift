@@ -16,13 +16,14 @@ extension Recovery {
                 let task = Task {
                     do {
                         for try await entity in entities {
-                            try await Metadata.applyEntityMetadataTo(
-                                metadata: entity.existingMetadata,
-                                entity: entity.destinationPath
+                            try await RecoveryEntityKinds.applyMetadata(
+                                kinds: providers.kinds,
+                                entity: entity,
+                                providers: providers
                             )
                             await providers.track.metadataApplied(
                                 operation: operation,
-                                entity: entity.destinationPath
+                                entity: entity.destinationRef
                             )
                             continuation.yield(entity)
                         }

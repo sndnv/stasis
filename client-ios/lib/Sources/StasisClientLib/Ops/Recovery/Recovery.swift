@@ -39,7 +39,9 @@ public final class Recovery: Operation {
             await providers.track.started(operation: id)
 
             let collection = EntityCollection(
-                collector: descriptor.toRecoveryCollector(providers: providers),
+                targetMetadata: descriptor.targetMetadata,
+                keep: descriptor.keep(),
+                destination: descriptor.destination.toTargetEntityDestination(),
                 providers: providers
             )
             let processing = EntityProcessing(
@@ -80,15 +82,9 @@ public final class Recovery: Operation {
             self.deviceSecret = deviceSecret
         }
 
-        public func toRecoveryCollector(providers: RecoveryProviders) -> any RecoveryCollector {
+        public func keep() -> @Sendable (String, FilesystemMetadata.EntityState) -> Bool {
             let queryRef = query
-            return DefaultRecoveryCollector(
-                targetMetadata: targetMetadata,
-                keep: { entity, _ in queryRef?.matches(path: entity) ?? true },
-                destination: destination.toTargetEntityDestination(),
-                metadataCollector: DefaultRecoveryMetadataCollector(checksum: providers.checksum),
-                clients: providers.clients
-            )
+            return { entity, _ in queryRef?.matches(path: entity) ?? true }
         }
 
         public enum Collector: Sendable {

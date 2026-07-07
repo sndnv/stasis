@@ -45,29 +45,29 @@ extension BackupState {
 extension BackupState.Entities {
     public var proto: Stasis_ClientIos_Lib_Model_Proto_BackupEntities {
         var proto = Stasis_ClientIos_Lib_Model_Proto_BackupEntities()
-        proto.discovered = discovered.map(\.path)
+        proto.discovered = discovered.map(\.key)
         proto.unmatched = unmatched
-        proto.examined = examined.map(\.path)
-        proto.skipped = skipped.map(\.path)
-        proto.collected = collected.mapValues { $0.proto }.keyedByPath()
-        proto.pending = pending.mapValues { $0.proto }.keyedByPath()
-        proto.processed = processed.mapValues { $0.proto }.keyedByPath()
-        proto.failed = failed.keyedByPath()
+        proto.examined = examined.map(\.key)
+        proto.skipped = skipped.map(\.key)
+        proto.collected = collected.mapValues { $0.proto }.keyedByKey()
+        proto.pending = pending.mapValues { $0.proto }.keyedByKey()
+        proto.processed = processed.mapValues { $0.proto }.keyedByKey()
+        proto.failed = failed.keyedByKey()
         return proto
     }
 
     public init(proto: Stasis_ClientIos_Lib_Model_Proto_BackupEntities) throws {
         self.init(
-            discovered: Set(proto.discovered.map { URL(fileURLWithPath: $0) }),
+            discovered: Set(proto.discovered.map { EntityRef.default(key: $0) }),
             unmatched: proto.unmatched,
-            examined: Set(proto.examined.map { URL(fileURLWithPath: $0) }),
-            skipped: Set(proto.skipped.map { URL(fileURLWithPath: $0) }),
-            collected: try proto.collected.mapValues { try SourceEntity(proto: $0) }.keyedByFileURL(),
-            pending: proto.pending.mapValues { BackupState.PendingSourceEntity(proto: $0) }.keyedByFileURL(),
+            examined: Set(proto.examined.map { EntityRef.default(key: $0) }),
+            skipped: Set(proto.skipped.map { EntityRef.default(key: $0) }),
+            collected: try proto.collected.mapValues { try SourceEntity(proto: $0) }.keyedByRef(),
+            pending: proto.pending.mapValues { BackupState.PendingSourceEntity(proto: $0) }.keyedByRef(),
             processed: try proto.processed
                 .mapValues { try BackupState.ProcessedSourceEntity(proto: $0) }
-                .keyedByFileURL(),
-            failed: proto.failed.keyedByFileURL()
+                .keyedByRef(),
+            failed: proto.failed.keyedByRef()
         )
     }
 }
@@ -75,7 +75,7 @@ extension BackupState.Entities {
 extension SourceEntity {
     public var proto: Stasis_ClientIos_Lib_Model_Proto_SourceEntity {
         var proto = Stasis_ClientIos_Lib_Model_Proto_SourceEntity()
-        proto.path = path.path
+        proto.ref = ref.key
         if let existingMetadata { proto.existingMetadata = existingMetadata.proto }
         proto.currentMetadata = currentMetadata.proto
         return proto
@@ -84,7 +84,7 @@ extension SourceEntity {
     public init(proto: Stasis_ClientIos_Lib_Model_Proto_SourceEntity) throws {
         guard proto.hasCurrentMetadata else { throw BackupStateError.missingCurrentSourceMetadata }
         try self.init(
-            path: URL(fileURLWithPath: proto.path),
+            ref: EntityRef.default(key: proto.ref),
             existingMetadata: proto.hasExistingMetadata ? try EntityMetadata(proto: proto.existingMetadata) : nil,
             currentMetadata: try EntityMetadata(proto: proto.currentMetadata)
         )

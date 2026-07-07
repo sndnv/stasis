@@ -174,8 +174,14 @@ struct AuthenticatedSession: Sendable {
             defaultCompression: Gzip.shared,
             disabledExtensions: Self.compressionDisabledExtensions
         )
+        let photos = PhotosEntityKind(library: PhotoKitPhotoLibrary())
+        let contacts = LibraryRecordKind(source: ContactsSource(store: DeviceContactStore()))
+        let calendar = LibraryRecordKind(source: CalendarSource(store: DeviceEventStore()))
         return DefaultOperationExecutor(
-            config: .init(backup: .init(limits: .init(maxPartSize: Self.maxBackupPartSize))),
+            config: .init(backup: .init(limits: .init(
+                maxPartSize: Self.maxBackupPartSize,
+                maxChunkSize: Self.maxBackupChunkSize
+            ))),
             deviceSecret: resolveSecret,
             backupProviders: BackupProviders(
                 checksum: Checksums.sha256,
@@ -185,7 +191,8 @@ struct AuthenticatedSession: Sendable {
                 decryptor: Aes.shared,
                 clients: clients,
                 track: trackers.backup,
-                analytics: analytics
+                analytics: analytics,
+                kinds: [BackupEntityKinds.filesystem, photos, contacts, calendar]
             ),
             recoveryProviders: RecoveryProviders(
                 checksum: Checksums.sha256,
@@ -194,13 +201,16 @@ struct AuthenticatedSession: Sendable {
                 decryptor: Aes.shared,
                 clients: clients,
                 track: trackers.recovery,
-                analytics: analytics
+                analytics: analytics,
+                kinds: [RecoveryEntityKinds.filesystem, photos, contacts, calendar]
             ),
             restrictions: { _ in [] }
         )
     }
 
     private static let maxBackupPartSize: Int64 = 32 * 1024 * 1024
+
+    private static let maxBackupChunkSize: Int = 8 * 1024
 
     private static let compressionDisabledExtensions: Set<String> = [
         "mp3", "mp4", "wav", "ogg", "flac", "webm",

@@ -23,7 +23,8 @@ struct BackupTests {
             decryptor: MockDecrypting(),
             clients: StaticClients(api: api, core: core),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
 
         let backup = Backup(
@@ -33,7 +34,7 @@ struct BackupTests {
                 latestMetadata: nil,
                 deviceSecret: Fixtures.Secrets.default,
                 collector: .withEntities([sourceFile1, sourceFile2]),
-                limits: Backup.Descriptor.Limits(maxPartSize: 16_384)
+                limits: Backup.Descriptor.Limits(maxPartSize: 16_384, maxChunkSize: 8_192)
             ),
             providers: providers
         )
@@ -67,7 +68,7 @@ struct BackupTests {
                 latestMetadata: nil,
                 deviceSecret: Fixtures.Secrets.default,
                 collector: .withEntities([]),
-                limits: Backup.Descriptor.Limits(maxPartSize: 16_384)
+                limits: Backup.Descriptor.Limits(maxPartSize: 16_384, maxChunkSize: 8_192)
             ),
             providers: providers
         )
@@ -98,7 +99,7 @@ struct BackupTests {
                 latestMetadata: nil,
                 deviceSecret: Fixtures.Secrets.default,
                 collector: .withState(state),
-                limits: Backup.Descriptor.Limits(maxPartSize: 16_384)
+                limits: Backup.Descriptor.Limits(maxPartSize: 16_384, maxChunkSize: 8_192)
             ),
             providers: makeProviders()
         )
@@ -116,14 +117,15 @@ struct BackupTests {
             decryptor: MockDecrypting(),
             clients: StaticClients(api: api, core: MockServerCoreEndpointClient()),
             track: MockBackupTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
 
         let descriptor = try await Backup.Descriptor.build(
             definition: UUID(),
             collector: .withEntities([]),
             deviceSecret: Fixtures.Secrets.default,
-            limits: Backup.Descriptor.Limits(maxPartSize: 16_384),
+            limits: Backup.Descriptor.Limits(maxPartSize: 16_384, maxChunkSize: 8_192),
             providers: providers
         )
 
@@ -179,7 +181,7 @@ struct BackupTests {
                 latestMetadata: nil,
                 deviceSecret: Fixtures.Secrets.default,
                 collector: .withEntities([OpsResources.url("source-file-1")]),
-                limits: Backup.Descriptor.Limits(maxPartSize: 16_384)
+                limits: Backup.Descriptor.Limits(maxPartSize: 16_384, maxChunkSize: 8_192)
             ),
             providers: makeProviders()
         )
@@ -203,7 +205,8 @@ struct BackupTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: MockBackupTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
     }
 }

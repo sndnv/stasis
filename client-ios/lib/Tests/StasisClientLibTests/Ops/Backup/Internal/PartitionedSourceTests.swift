@@ -22,7 +22,8 @@ struct PartitionedSourceTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: MockBackupTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
     }
 

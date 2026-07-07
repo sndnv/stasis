@@ -1,13 +1,13 @@
 import Foundation
 
-public struct DefaultBackupCollector: BackupCollector {
-    private let entities: [URL]
+public struct FilesystemBackupCollector: BackupCollector {
+    private let entities: [EntityRef]
     private let latestMetadata: DatasetMetadata?
     private let metadataCollector: any BackupMetadataCollector
     private let clients: any Clients
 
     public init(
-        entities: [URL],
+        entities: [EntityRef],
         latestMetadata: DatasetMetadata?,
         metadataCollector: any BackupMetadataCollector,
         clients: any Clients
@@ -22,13 +22,16 @@ public struct DefaultBackupCollector: BackupCollector {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let stream = DefaultBackupCollector.collectEntityMetadata(
+                    let stream = FilesystemBackupCollector.collectEntityMetadata(
                         entities: entities,
                         latestMetadata: latestMetadata,
                         clients: clients
                     )
                     for try await (entity, existing) in stream {
-                        let source = try await metadataCollector.collect(entity: entity, existingMetadata: existing)
+                        let source = try await metadataCollector.collect(
+                            entity: try entity.asFilesystem(),
+                            existingMetadata: existing
+                        )
                         continuation.yield(source)
                     }
                     continuation.finish()
@@ -41,16 +44,16 @@ public struct DefaultBackupCollector: BackupCollector {
     }
 
     public static func collectEntityMetadata(
-        entities: [URL],
+        entities: [EntityRef],
         latestMetadata: DatasetMetadata?,
         clients: any Clients
-    ) -> AsyncThrowingStream<(URL, EntityMetadata?), Error> {
+    ) -> AsyncThrowingStream<(EntityRef, EntityMetadata?), Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
                     for entity in entities {
                         if let latestMetadata {
-                            let metadata = try await latestMetadata.collect(entity: entity, clients: clients)
+                            let metadata = try await latestMetadata.collect(entity: entity.key, clients: clients)
                             continuation.yield((entity, metadata))
                         } else {
                             continuation.yield((entity, nil))

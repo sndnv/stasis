@@ -17,7 +17,8 @@ struct DestagedByteStringSourceTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: MockRecoveryTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [RecoveryEntityKinds.filesystem]
         )
     }
 

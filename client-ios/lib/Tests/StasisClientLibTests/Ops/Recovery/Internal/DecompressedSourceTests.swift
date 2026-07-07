@@ -43,4 +43,19 @@ private struct StubDecoder: CompressionDecoder {
     let result: Result<Data, any Error>
     var name: String { "stub" }
     func decompress(_: Data) throws -> Data { try result.get() }
+
+    func decode(_ source: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await _ in source {}
+                    continuation.yield(try result.get())
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
 }

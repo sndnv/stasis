@@ -55,7 +55,8 @@ public final class Backup: Operation {
                 targetDataset: descriptor.targetDataset,
                 deviceSecret: descriptor.deviceSecret,
                 providers: providers,
-                maxPartSize: descriptor.limits.maxPartSize
+                maxPartSize: descriptor.limits.maxPartSize,
+                maxChunkSize: descriptor.limits.maxChunkSize
             )
             let metadataCollection = MetadataCollection(
                 latestEntry: descriptor.latestEntry,
@@ -131,9 +132,11 @@ public final class Backup: Operation {
 
         public struct Limits: Sendable, Equatable, Hashable {
             public let maxPartSize: Int64
+            public let maxChunkSize: Int
 
-            public init(maxPartSize: Int64) {
+            public init(maxPartSize: Int64, maxChunkSize: Int) {
                 self.maxPartSize = maxPartSize
+                self.maxChunkSize = maxChunkSize
             }
         }
 

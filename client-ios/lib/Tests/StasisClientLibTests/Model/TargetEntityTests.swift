@@ -14,7 +14,7 @@ struct TargetEntityTests {
     func failsOnTypeMismatch() throws {
         #expect(throws: EntityMetadataMismatch.self) {
             _ = try TargetEntity(
-                path: filePath,
+                ref: .filesystem(filePath),
                 destination: .default,
                 existingMetadata: dirMeta,
                 currentMetadata: fileMeta
@@ -22,7 +22,7 @@ struct TargetEntityTests {
         }
         #expect(throws: EntityMetadataMismatch.self) {
             _ = try TargetEntity(
-                path: filePath,
+                ref: .filesystem(filePath),
                 destination: .default,
                 existingMetadata: fileMeta,
                 currentMetadata: dirMeta
@@ -32,10 +32,16 @@ struct TargetEntityTests {
 
     @Test("determines if its metadata has changed")
     func metadataHasChanged() throws {
-        let fileWithoutCurrent = try TargetEntity(path: filePath, destination: .default, existingMetadata: fileMeta, currentMetadata: nil)
-        let fileWithCurrent = try TargetEntity(path: filePath, destination: .default, existingMetadata: fileMeta, currentMetadata: fileMeta)
+        let fileWithoutCurrent = try TargetEntity(
+            ref: .filesystem(filePath), destination: .default,
+            existingMetadata: fileMeta, currentMetadata: nil
+        )
+        let fileWithCurrent = try TargetEntity(
+            ref: .filesystem(filePath), destination: .default,
+            existingMetadata: fileMeta, currentMetadata: fileMeta
+        )
         let fileWithUpdatedGroup = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .default,
             existingMetadata: fileMeta,
             currentMetadata: fileMeta.withFile { file in
@@ -47,10 +53,16 @@ struct TargetEntityTests {
                 )
             }
         )
-        let dirWithoutCurrent = try TargetEntity(path: dirPath, destination: .default, existingMetadata: dirMeta, currentMetadata: nil)
-        let dirWithCurrent = try TargetEntity(path: dirPath, destination: .default, existingMetadata: dirMeta, currentMetadata: dirMeta)
+        let dirWithoutCurrent = try TargetEntity(
+            ref: .filesystem(dirPath), destination: .default,
+            existingMetadata: dirMeta, currentMetadata: nil
+        )
+        let dirWithCurrent = try TargetEntity(
+            ref: .filesystem(dirPath), destination: .default,
+            existingMetadata: dirMeta, currentMetadata: dirMeta
+        )
         let dirWithUpdatedGroup = try TargetEntity(
-            path: dirPath,
+            ref: .filesystem(dirPath),
             destination: .default,
             existingMetadata: dirMeta,
             currentMetadata: dirMeta.withDirectory { dir in
@@ -72,10 +84,16 @@ struct TargetEntityTests {
 
     @Test("determines if its content has changed")
     func contentHasChanged() throws {
-        let fileWithoutCurrent = try TargetEntity(path: filePath, destination: .default, existingMetadata: fileMeta, currentMetadata: nil)
-        let fileWithCurrent = try TargetEntity(path: filePath, destination: .default, existingMetadata: fileMeta, currentMetadata: fileMeta)
+        let fileWithoutCurrent = try TargetEntity(
+            ref: .filesystem(filePath), destination: .default,
+            existingMetadata: fileMeta, currentMetadata: nil
+        )
+        let fileWithCurrent = try TargetEntity(
+            ref: .filesystem(filePath), destination: .default,
+            existingMetadata: fileMeta, currentMetadata: fileMeta
+        )
         let fileWithUpdatedSize = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .default,
             existingMetadata: fileMeta,
             currentMetadata: fileMeta.withFile { file in
@@ -88,7 +106,7 @@ struct TargetEntityTests {
             }
         )
         let fileWithUpdatedChecksum = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .default,
             existingMetadata: fileMeta,
             currentMetadata: fileMeta.withFile { file in
@@ -100,10 +118,16 @@ struct TargetEntityTests {
                 )
             }
         )
-        let dirWithoutCurrent = try TargetEntity(path: dirPath, destination: .default, existingMetadata: dirMeta, currentMetadata: nil)
-        let dirWithCurrent = try TargetEntity(path: dirPath, destination: .default, existingMetadata: dirMeta, currentMetadata: dirMeta)
+        let dirWithoutCurrent = try TargetEntity(
+            ref: .filesystem(dirPath), destination: .default,
+            existingMetadata: dirMeta, currentMetadata: nil
+        )
+        let dirWithCurrent = try TargetEntity(
+            ref: .filesystem(dirPath), destination: .default,
+            existingMetadata: dirMeta, currentMetadata: dirMeta
+        )
         let dirWithUpdatedGroup = try TargetEntity(
-            path: dirPath,
+            ref: .filesystem(dirPath),
             destination: .default,
             existingMetadata: dirMeta,
             currentMetadata: dirMeta.withDirectory { dir in
@@ -127,7 +151,7 @@ struct TargetEntityTests {
     @Test("provides its original file path")
     func providesOriginalPath() throws {
         let target = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .default,
             existingMetadata: fileMeta,
             currentMetadata: nil
@@ -140,7 +164,7 @@ struct TargetEntityTests {
         let testDestination = URL(fileURLWithPath: "/tmp/destination")
 
         let withDefault = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .default,
             existingMetadata: fileMeta,
             currentMetadata: nil
@@ -148,7 +172,7 @@ struct TargetEntityTests {
         #expect(withDefault.destinationPath == withDefault.originalPath)
 
         let withDirectoryKeep = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .directory(path: testDestination, keepDefaultStructure: true),
             existingMetadata: fileMeta,
             currentMetadata: nil
@@ -156,11 +180,72 @@ struct TargetEntityTests {
         #expect(withDirectoryKeep.destinationPath.path == "/tmp/destination/tmp/file/one")
 
         let withDirectoryFlat = try TargetEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             destination: .directory(path: testDestination, keepDefaultStructure: false),
             existingMetadata: fileMeta,
             currentMetadata: nil
         )
         #expect(withDirectoryFlat.destinationPath.path == "/tmp/destination/one")
+    }
+
+    @Test("provides its original entity reference")
+    func providesOriginalRef() throws {
+        let target = try TargetEntity(
+            ref: .filesystem(filePath),
+            destination: .default,
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(target.originalRef.key == fileMeta.path)
+    }
+
+    @Test("provides its destination entity reference")
+    func providesDestinationRef() throws {
+        let testDestination = URL(fileURLWithPath: "/tmp/destination")
+
+        let withDefault = try TargetEntity(
+            ref: .filesystem(filePath),
+            destination: .default,
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(withDefault.destinationRef == withDefault.originalRef)
+
+        let withDirectoryKeep = try TargetEntity(
+            ref: .filesystem(filePath),
+            destination: .directory(path: testDestination, keepDefaultStructure: true),
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(withDirectoryKeep.destinationRef.key == "/tmp/destination/tmp/file/one")
+
+        let withDirectoryFlat = try TargetEntity(
+            ref: .filesystem(filePath),
+            destination: .directory(path: testDestination, keepDefaultStructure: false),
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(withDirectoryFlat.destinationRef.key == "/tmp/destination/one")
+    }
+
+    @Test("preserves a library reference for its destination")
+    func providesLibraryDestinationRef() throws {
+        let libraryRef: EntityRef = .library(scheme: "photos", path: "/album/img.heic")
+
+        let withDefault = try TargetEntity(
+            ref: libraryRef,
+            destination: .default,
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(withDefault.destinationRef == libraryRef)
+
+        let withDirectoryFlat = try TargetEntity(
+            ref: libraryRef,
+            destination: .directory(path: URL(fileURLWithPath: "/tmp/destination"), keepDefaultStructure: false),
+            existingMetadata: fileMeta,
+            currentMetadata: nil
+        )
+        #expect(withDirectoryFlat.destinationRef.key == "/tmp/destination/img.heic")
     }
 }

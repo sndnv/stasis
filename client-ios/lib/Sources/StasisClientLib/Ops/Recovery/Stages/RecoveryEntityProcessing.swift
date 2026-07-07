@@ -25,12 +25,12 @@ extension Recovery {
                                 } else {
                                     await processMetadataChanged(operation: operation, entity: prepared)
                                 }
-                                await providers.track.entityProcessed(operation: operation, entity: prepared.destinationPath)
+                                await providers.track.entityProcessed(operation: operation, entity: prepared.destinationRef)
                                 continuation.yield(prepared)
                             } catch let failure as EndpointFailure {
                                 await providers.track.failureEncountered(
                                     operation: operation,
-                                    entity: prepared.path,
+                                    entity: prepared.ref,
                                     failure: failure
                                 )
                                 await providers.analytics.recordFailure(failure)
@@ -38,7 +38,7 @@ extension Recovery {
                             } catch {
                                 await providers.track.failureEncountered(
                                     operation: operation,
-                                    entity: prepared.path,
+                                    entity: prepared.ref,
                                     failure: error
                                 )
                                 await providers.analytics.recordFailure(error)
@@ -59,83 +59,46 @@ extension Recovery {
                case .directory = entity.existingMetadata {
                 return nil
             }
-            try createEntityDirectory(entity)
+            try RecoveryEntityKinds.prepare(kinds: providers.kinds, entity: entity, providers: providers)
             return entity
         }
 
-        private func createEntityDirectory(_ entity: TargetEntity) throws {
-            let directory: URL = switch entity.existingMetadata {
-            case .file: entity.destinationPath.deletingLastPathComponent()
-            case .directory: entity.destinationPath
-            }
-            try FileManager.default.createDirectory(
-                at: directory,
-                withIntermediateDirectories: true,
-                attributes: [.posixPermissions: NSNumber(value: 0o700)]
-            )
-        }
-
         private func processContentChanged(operation: OperationId, entity: TargetEntity) async throws {
-            let file = try Self.expectFileMetadata(entity: entity)
+            let content = try Self.expectContentMetadata(entity: entity)
 
             await providers.track.entityProcessingStarted(
                 operation: operation,
-                entity: entity.path,
-                expectedParts: file.crates.count
+                entity: entity.ref,
+                expectedParts: content.crates.count
             )
 
-            let pulled = try await pull(crates: file.crates, entity: entity.originalPath)
-            let decrypted = DecryptedCrates.decrypt(
-                pulled,
-                withPartSecret: { partPath in
-                    deviceSecret.toFileSecret(forFile: partPath, checksum: file.checksum)
-                },
-                providers: providers
+            let decompressed = try await EntityContent.pull(
+                metadata: content,
+                entityKey: entity.originalPath.path,
+                deviceSecret: deviceSecret,
+                clients: providers.clients,
+                decryptor: providers.decryptor,
+                onPartProcessed: {
+                    await providers.track.entityPartProcessed(operation: operation, entity: entity.ref)
+                }
             )
-            let merged = try MergedCrates.merge(decrypted, onPartProcessed: {
-                await providers.track.entityPartProcessed(operation: operation, entity: entity.path)
-            })
-            let decompressor = try providers.compression.decoderFor(entity: entity)
-            let decompressed = DecompressedSource.decompress(merged, decompressor: decompressor)
-            try await DestagedByteStringSource.destage(
-                decompressed,
-                to: entity.destinationPath,
+            try await RecoveryEntityKinds.write(
+                kinds: providers.kinds,
+                entity: entity,
+                content: decompressed,
                 providers: providers
             )
         }
 
         private func processMetadataChanged(operation: OperationId, entity: TargetEntity) async {
-            await providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
+            await providers.track.entityProcessingStarted(operation: operation, entity: entity.ref, expectedParts: 0)
         }
 
-        private func pull(crates: [String: CrateId], entity: URL) async throws -> [RecoveryCrate] {
-            let core = try await providers.clients.core()
-            let recovered: [RecoveryCrate] = crates.map { partPath, crate in
-                let partId = Self.partIdFromPath(partPath)
-                return RecoveryCrate(partId: partId, partPath: partPath) {
-                    guard let data = try await core.pull(crate: crate) else {
-                        throw RecoveryPullError.crateMissing(crate: crate, entity: entity.path)
-                    }
-                    return AsyncThrowingStream { continuation in
-                        continuation.yield(data)
-                        continuation.finish()
-                    }
-                }
+        public static func expectContentMetadata(entity: TargetEntity) throws -> any EntityContentMetadata {
+            guard let content = entity.existingMetadata.content else {
+                throw EntityProcessingError.expectedFileGotDirectory(path: entity.existingMetadata.path)
             }
-            let lastPartId = recovered.map(\.partId).max() ?? 0
-            guard lastPartId + 1 == crates.count else {
-                throw RecoveryPullError.unexpectedLastPartId(lastPartId: lastPartId, crateCount: crates.count)
-            }
-            return recovered
-        }
-
-        public static func expectFileMetadata(entity: TargetEntity) throws -> EntityMetadata.File {
-            switch entity.existingMetadata {
-            case .file(let file):
-                return file
-            case .directory(let directory):
-                throw EntityProcessingError.expectedFileGotDirectory(path: directory.path)
-            }
+            return content
         }
 
         public static func partIdFromPath(_ partPath: String) -> Int {

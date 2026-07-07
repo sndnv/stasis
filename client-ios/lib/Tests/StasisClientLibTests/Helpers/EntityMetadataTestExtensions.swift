@@ -48,6 +48,17 @@ extension EntityMetadata {
                 group: directory.group,
                 permissions: directory.permissions
             ))
+        case .library(let library):
+            .library(EntityMetadata.Library(
+                path: path,
+                created: library.created,
+                updated: library.updated,
+                size: library.size,
+                checksum: library.checksum,
+                crates: library.crates,
+                compression: library.compression,
+                attributes: library.attributes
+            ))
         }
     }
 }

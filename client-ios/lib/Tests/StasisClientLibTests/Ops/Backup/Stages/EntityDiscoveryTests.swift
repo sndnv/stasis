@@ -15,11 +15,11 @@ struct EntityDiscoveryTests {
         let rules = [
             Rule(
                 id: 0, operation: .include,
-                directory: opsDirectory.path, pattern: "source-file-*", definition: nil
+                source: opsDirectory.path, pattern: "source-file-*", definition: nil
             ),
             Rule(
                 id: 1, operation: .include,
-                directory: nestedDirectory.path, pattern: "source-file-*", definition: nil
+                source: nestedDirectory.path, pattern: "source-file-*", definition: nil
             )
         ]
         let stage = Backup.EntityDiscovery(
@@ -78,14 +78,14 @@ struct EntityDiscoveryTests {
             definition: baseState.definition,
             started: baseState.started,
             entities: BackupState.Entities(
-                discovered: [sourceFile1, sourceFile2, processedPath],
+                discovered: [.filesystem(sourceFile1), .filesystem(sourceFile2), .filesystem(processedPath)],
                 unmatched: [],
                 examined: [],
                 skipped: [],
                 collected: [:],
                 pending: [:],
                 processed: [
-                    processedPath: BackupState.ProcessedSourceEntity(
+                    .filesystem(processedPath): BackupState.ProcessedSourceEntity(
                         expectedParts: 1,
                         processedParts: 1,
                         metadata: .left(Fixtures.Metadata.fileThree)
@@ -117,6 +117,43 @@ struct EntityDiscoveryTests {
         #expect(tracker.statistics[.specificationProcessed] == 0)
     }
 
+    @Test("reports sources with no registered kind")
+    func reportsUnsupportedSources() async throws {
+        let opsDirectory = OpsResources.url("").deletingLastPathComponent().appendingPathComponent("ops")
+        let nestedDirectory = opsDirectory.appendingPathComponent("nested")
+
+        let tracker = MockBackupTracker()
+
+        let rules = [
+            Rule(
+                id: 0, operation: .include,
+                source: opsDirectory.path, pattern: "source-file-*", definition: nil
+            ),
+            Rule(
+                id: 1, operation: .include,
+                source: nestedDirectory.path, pattern: "source-file-*", definition: nil
+            ),
+            Rule(
+                id: 2, operation: .include,
+                source: "photos:/album", pattern: "*", definition: nil
+            )
+        ]
+        let stage = Backup.EntityDiscovery(
+            collector: .withRules(rules),
+            latestMetadata: .empty(),
+            providers: makeProviders(tracker: tracker)
+        )
+
+        let collector = try #require(try await collectFirst(stage.discover(operation: UUID())))
+        var entities: [SourceEntity] = []
+        for try await entity in collector.collect() {
+            entities.append(entity)
+        }
+
+        #expect(entities.count == 7)
+        #expect(tracker.statistics[.failureEncountered] == 1)
+    }
+
     private func collectFirst(
         _ stream: AsyncThrowingStream<any BackupCollector, Error>
     ) async throws -> (any BackupCollector)? {
@@ -136,7 +173,8 @@ struct EntityDiscoveryTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
     }
 }

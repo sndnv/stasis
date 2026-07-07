@@ -14,14 +14,14 @@ struct SourceEntityTests {
     func failsOnTypeMismatch() throws {
         #expect(throws: EntityMetadataMismatch.self) {
             _ = try SourceEntity(
-                path: filePath,
+                ref: .filesystem(filePath),
                 existingMetadata: dirMeta,
                 currentMetadata: fileMeta
             )
         }
         #expect(throws: EntityMetadataMismatch.self) {
             _ = try SourceEntity(
-                path: filePath,
+                ref: .filesystem(filePath),
                 existingMetadata: fileMeta,
                 currentMetadata: dirMeta
             )
@@ -30,10 +30,10 @@ struct SourceEntityTests {
 
     @Test("determines if its metadata has changed")
     func metadataHasChanged() throws {
-        let fileWithoutExisting = try SourceEntity(path: filePath, existingMetadata: nil, currentMetadata: fileMeta)
-        let fileWithExisting = try SourceEntity(path: filePath, existingMetadata: fileMeta, currentMetadata: fileMeta)
+        let fileWithoutExisting = try SourceEntity(ref: .filesystem(filePath), existingMetadata: nil, currentMetadata: fileMeta)
+        let fileWithExisting = try SourceEntity(ref: .filesystem(filePath), existingMetadata: fileMeta, currentMetadata: fileMeta)
         let fileWithUpdatedGroup = try SourceEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             existingMetadata: fileMeta.withFile { file in
                 EntityMetadata.File(
                     path: file.path, link: file.link, isHidden: file.isHidden,
@@ -44,10 +44,10 @@ struct SourceEntityTests {
             },
             currentMetadata: fileMeta
         )
-        let dirWithoutExisting = try SourceEntity(path: dirPath, existingMetadata: nil, currentMetadata: dirMeta)
-        let dirWithExisting = try SourceEntity(path: dirPath, existingMetadata: dirMeta, currentMetadata: dirMeta)
+        let dirWithoutExisting = try SourceEntity(ref: .filesystem(dirPath), existingMetadata: nil, currentMetadata: dirMeta)
+        let dirWithExisting = try SourceEntity(ref: .filesystem(dirPath), existingMetadata: dirMeta, currentMetadata: dirMeta)
         let dirWithUpdatedGroup = try SourceEntity(
-            path: dirPath,
+            ref: .filesystem(dirPath),
             existingMetadata: dirMeta.withDirectory { dir in
                 EntityMetadata.Directory(
                     path: dir.path, link: dir.link, isHidden: dir.isHidden,
@@ -68,10 +68,10 @@ struct SourceEntityTests {
 
     @Test("determines if its content has changed")
     func contentHasChanged() throws {
-        let fileWithoutExisting = try SourceEntity(path: filePath, existingMetadata: nil, currentMetadata: fileMeta)
-        let fileWithExisting = try SourceEntity(path: filePath, existingMetadata: fileMeta, currentMetadata: fileMeta)
+        let fileWithoutExisting = try SourceEntity(ref: .filesystem(filePath), existingMetadata: nil, currentMetadata: fileMeta)
+        let fileWithExisting = try SourceEntity(ref: .filesystem(filePath), existingMetadata: fileMeta, currentMetadata: fileMeta)
         let fileWithUpdatedSize = try SourceEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             existingMetadata: fileMeta.withFile { file in
                 EntityMetadata.File(
                     path: file.path, link: file.link, isHidden: file.isHidden,
@@ -83,7 +83,7 @@ struct SourceEntityTests {
             currentMetadata: fileMeta
         )
         let fileWithUpdatedChecksum = try SourceEntity(
-            path: filePath,
+            ref: .filesystem(filePath),
             existingMetadata: fileMeta.withFile { file in
                 EntityMetadata.File(
                     path: file.path, link: file.link, isHidden: file.isHidden,
@@ -94,10 +94,10 @@ struct SourceEntityTests {
             },
             currentMetadata: fileMeta
         )
-        let dirWithoutExisting = try SourceEntity(path: dirPath, existingMetadata: nil, currentMetadata: dirMeta)
-        let dirWithExisting = try SourceEntity(path: dirPath, existingMetadata: dirMeta, currentMetadata: dirMeta)
+        let dirWithoutExisting = try SourceEntity(ref: .filesystem(dirPath), existingMetadata: nil, currentMetadata: dirMeta)
+        let dirWithExisting = try SourceEntity(ref: .filesystem(dirPath), existingMetadata: dirMeta, currentMetadata: dirMeta)
         let dirWithUpdatedGroup = try SourceEntity(
-            path: dirPath,
+            ref: .filesystem(dirPath),
             existingMetadata: dirMeta.withDirectory { dir in
                 EntityMetadata.Directory(
                     path: dir.path, link: dir.link, isHidden: dir.isHidden,

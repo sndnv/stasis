@@ -10,7 +10,7 @@ struct ConvertersTests {
         let rule = Rule(
             id: 42,
             operation: .exclude,
-            directory: "/Users/test/docs",
+            source: "/Users/test/docs",
             pattern: "**/*.log",
             definition: UUID()
         )

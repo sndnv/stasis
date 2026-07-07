@@ -15,4 +15,12 @@ public struct Gzip: Compressor {
     public func decompress(_ data: Data) throws -> Data {
         try data.gunzipped()
     }
+
+    public func encode(_ source: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+        ZlibStream.transform(source, mode: .compress, windowBits: 31)
+    }
+
+    public func decode(_ source: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+        ZlibStream.transform(source, mode: .decompress, windowBits: 31)
+    }
 }

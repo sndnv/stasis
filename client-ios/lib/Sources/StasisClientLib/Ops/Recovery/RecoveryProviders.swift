@@ -8,6 +8,7 @@ public struct RecoveryProviders: Sendable {
     public let clients: any Clients
     public let track: any RecoveryTracker
     public let analytics: any AnalyticsCollector
+    public let kinds: [any RecoveryEntityKind]
 
     public init(
         checksum: any Checksum,
@@ -16,7 +17,8 @@ public struct RecoveryProviders: Sendable {
         decryptor: any Decrypting,
         clients: any Clients,
         track: any RecoveryTracker,
-        analytics: any AnalyticsCollector
+        analytics: any AnalyticsCollector,
+        kinds: [any RecoveryEntityKind]
     ) {
         self.checksum = checksum
         self.staging = staging
@@ -25,5 +27,6 @@ public struct RecoveryProviders: Sendable {
         self.clients = clients
         self.track = track
         self.analytics = analytics
+        self.kinds = kinds
     }
 }

@@ -13,7 +13,7 @@ struct BackupMetadataCollectorTests {
         let file2Metadata = Fixtures.Metadata.fileTwo.with(path: file2.path)
         let file3Metadata = Fixtures.Metadata.fileThree.with(path: file3.path)
 
-        let collector = DefaultBackupMetadataCollector(
+        let collector = FilesystemBackupMetadataCollector(
             checksum: Checksums.md5,
             compression: MockCompression()
         )
@@ -22,7 +22,7 @@ struct BackupMetadataCollectorTests {
         let sourceFile2 = try await collector.collect(entity: file2, existingMetadata: file2Metadata)
         let sourceFile3 = try await collector.collect(entity: file3, existingMetadata: file3Metadata)
 
-        #expect(sourceFile1.path == file1)
+        #expect(sourceFile1.ref == .filesystem(file1))
         #expect(sourceFile1.existingMetadata == nil)
         if case .file(let metadata) = sourceFile1.currentMetadata {
             #expect(metadata.size == 1)
@@ -30,7 +30,7 @@ struct BackupMetadataCollectorTests {
             Issue.record("expected file metadata, got directory")
         }
 
-        #expect(sourceFile2.path == file2)
+        #expect(sourceFile2.ref == .filesystem(file2))
         #expect(sourceFile2.existingMetadata == file2Metadata)
         if case .file(let metadata) = sourceFile2.currentMetadata {
             #expect(metadata.size == 2)
@@ -38,7 +38,7 @@ struct BackupMetadataCollectorTests {
             Issue.record("expected file metadata, got directory")
         }
 
-        #expect(sourceFile3.path == file3)
+        #expect(sourceFile3.ref == .filesystem(file3))
         #expect(sourceFile3.existingMetadata == file3Metadata)
         if case .file(let metadata) = sourceFile3.currentMetadata {
             #expect(metadata.size == 3)

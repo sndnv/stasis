@@ -89,7 +89,7 @@ struct MetadataCollectionTests {
         let baseState = Fixtures.State.backupTwoState
         var entities = baseState.entities
         entities.processed = [
-            URL(fileURLWithPath: Fixtures.Metadata.fileThree.path): BackupState.ProcessedSourceEntity(
+            .filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileThree.path)): BackupState.ProcessedSourceEntity(
                 expectedParts: 1,
                 processedParts: 1,
                 metadata: .right(Fixtures.Metadata.fileThree)
@@ -159,7 +159,8 @@ struct MetadataCollectionTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
     }
 }

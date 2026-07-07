@@ -34,7 +34,7 @@ public actor DefaultBackupTracker: BackupTrackerView {
         await afterUpdate(isCompleted: false)
     }
 
-    public func entityDiscovered(operation: OperationId, entity: URL) async {
+    public func entityDiscovered(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityDiscovered(entity: entity) }
     }
 
@@ -44,11 +44,11 @@ public actor DefaultBackupTracker: BackupTrackerView {
         await mutate(operation: operation) { $0.specificationProcessed(unmatched: formatted) }
     }
 
-    public func entityExamined(operation: OperationId, entity: URL) async {
+    public func entityExamined(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityExamined(entity: entity) }
     }
 
-    public func entitySkipped(operation: OperationId, entity: URL) async {
+    public func entitySkipped(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entitySkipped(entity: entity) }
     }
 
@@ -56,16 +56,16 @@ public actor DefaultBackupTracker: BackupTrackerView {
         await mutate(operation: operation) { $0.entityCollected(entity: entity) }
     }
 
-    public func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
+    public func entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) async {
         await mutate(operation: operation) { $0.entityProcessingStarted(entity: entity, expectedParts: expectedParts) }
     }
 
-    public func entityPartProcessed(operation: OperationId, entity: URL) async {
+    public func entityPartProcessed(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityPartProcessed(entity: entity) }
     }
 
     public func entityProcessed(
-        operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>
+        operation: OperationId, entity: EntityRef, metadata: Either<EntityMetadata, EntityMetadata>
     ) async {
         await mutate(operation: operation) { $0.entityProcessed(entity: entity, metadata: metadata) }
     }
@@ -82,7 +82,7 @@ public actor DefaultBackupTracker: BackupTrackerView {
         await mutate(operation: operation) { $0.failureEncountered(failure: failure) }
     }
 
-    public func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
+    public func failureEncountered(operation: OperationId, entity: EntityRef, failure: any Error) async {
         await mutate(operation: operation) { $0.entityFailed(entity: entity, reason: failure) }
     }
 

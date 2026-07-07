@@ -1,6 +1,6 @@
 import Foundation
 
-public struct DefaultRecoveryCollector: RecoveryCollector {
+public struct FilesystemRecoveryCollector: RecoveryCollector {
     public typealias KeepDecision = @Sendable (String, FilesystemMetadata.EntityState) -> Bool
 
     private let targetMetadata: DatasetMetadata
@@ -27,7 +27,7 @@ public struct DefaultRecoveryCollector: RecoveryCollector {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let entityMetadata = try await DefaultRecoveryCollector.collectEntityMetadata(
+                    let entityMetadata = try await FilesystemRecoveryCollector.collectEntityMetadata(
                         targetMetadata: targetMetadata,
                         keep: keep,
                         clients: clients

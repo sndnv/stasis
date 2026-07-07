@@ -148,7 +148,7 @@ private extension EntityMetadata {
     var fileSize: Int64 {
         switch self {
         case .file(let f): f.size
-        case .directory: 0
+        case .directory, .library: 0
         }
     }
 }

@@ -11,6 +11,10 @@ extension Fixtures {
         private static let fileTwoPath = URL(fileURLWithPath: fileTwoMetadata.path)
         private static let fileThreePath = URL(fileURLWithPath: fileThreeMetadata.path)
 
+        private static let fileOneRef = EntityRef.filesystem(fileOnePath)
+        private static let fileTwoRef = EntityRef.filesystem(fileTwoPath)
+        private static let fileThreeRef = EntityRef.filesystem(fileThreePath)
+
         private static let timestamp = Date(timeIntervalSince1970: 1_716_000_000)
 
         static let backupOneState = BackupState(
@@ -18,29 +22,29 @@ extension Fixtures {
             definition: UUID(uuidString: "1d6f8b3c-2b88-4d2f-9a4d-7c5d4f9c8b2e")!,
             started: timestamp,
             entities: BackupState.Entities(
-                discovered: [fileOnePath],
+                discovered: [fileOneRef],
                 unmatched: ["a", "b", "c"],
-                examined: [fileTwoPath],
-                skipped: [fileTwoPath],
+                examined: [fileTwoRef],
+                skipped: [fileTwoRef],
                 collected: [
-                    fileOnePath: try! SourceEntity(
-                        path: fileOnePath,
+                    fileOneRef: try! SourceEntity(
+                        ref: fileOneRef,
                         existingMetadata: fileOneMetadata,
                         currentMetadata: fileOneMetadata
                     )
                 ],
                 pending: [
-                    fileTwoPath: BackupState.PendingSourceEntity(expectedParts: 1, processedParts: 2)
+                    fileTwoRef: BackupState.PendingSourceEntity(expectedParts: 1, processedParts: 2)
                 ],
                 processed: [
-                    fileOnePath: BackupState.ProcessedSourceEntity(
+                    fileOneRef: BackupState.ProcessedSourceEntity(
                         expectedParts: 1, processedParts: 1, metadata: .left(fileOneMetadata)
                     ),
-                    fileTwoPath: BackupState.ProcessedSourceEntity(
+                    fileTwoRef: BackupState.ProcessedSourceEntity(
                         expectedParts: 0, processedParts: 0, metadata: .right(fileTwoMetadata)
                     )
                 ],
-                failed: [fileThreePath: "x"]
+                failed: [fileThreeRef: "x"]
             ),
             metadataCollected: timestamp,
             metadataPushed: timestamp,
@@ -63,23 +67,23 @@ extension Fixtures {
             operation: UUID(uuidString: "4a92bf85-5ebb-4faf-6b8f-af80bc8fbe3b")!,
             started: timestamp,
             entities: RecoveryState.Entities(
-                examined: [fileOnePath, fileTwoPath, fileThreePath],
+                examined: [fileOneRef, fileTwoRef, fileThreeRef],
                 collected: [
-                    fileOnePath: try! TargetEntity(
-                        path: fileOnePath,
+                    fileOneRef: try! TargetEntity(
+                        ref: fileOneRef,
                         destination: .default,
                         existingMetadata: fileOneMetadata,
                         currentMetadata: fileOneMetadata
                     )
                 ],
                 pending: [
-                    fileThreePath: RecoveryState.PendingTargetEntity(expectedParts: 3, processedParts: 1)
+                    fileThreeRef: RecoveryState.PendingTargetEntity(expectedParts: 3, processedParts: 1)
                 ],
                 processed: [
-                    fileOnePath: RecoveryState.ProcessedTargetEntity(expectedParts: 1, processedParts: 1)
+                    fileOneRef: RecoveryState.ProcessedTargetEntity(expectedParts: 1, processedParts: 1)
                 ],
-                metadataApplied: [fileOnePath],
-                failed: [fileThreePath: "x"]
+                metadataApplied: [fileOneRef],
+                failed: [fileThreeRef: "x"]
             ),
             failures: ["y", "z"],
             completed: timestamp
@@ -89,23 +93,23 @@ extension Fixtures {
             operation: UUID(uuidString: "5ba3c096-6fcc-4abf-7c90-bf91cd9fcf4c")!,
             started: timestamp,
             entities: RecoveryState.Entities(
-                examined: [fileOnePath, fileTwoPath, fileThreePath],
+                examined: [fileOneRef, fileTwoRef, fileThreeRef],
                 collected: [
-                    fileOnePath: try! TargetEntity(
-                        path: fileOnePath,
+                    fileOneRef: try! TargetEntity(
+                        ref: fileOneRef,
                         destination: .directory(path: fileOnePath, keepDefaultStructure: true),
                         existingMetadata: fileOneMetadata,
                         currentMetadata: fileOneMetadata
                     )
                 ],
                 pending: [
-                    fileThreePath: RecoveryState.PendingTargetEntity(expectedParts: 3, processedParts: 1)
+                    fileThreeRef: RecoveryState.PendingTargetEntity(expectedParts: 3, processedParts: 1)
                 ],
                 processed: [
-                    fileOnePath: RecoveryState.ProcessedTargetEntity(expectedParts: 1, processedParts: 1)
+                    fileOneRef: RecoveryState.ProcessedTargetEntity(expectedParts: 1, processedParts: 1)
                 ],
-                metadataApplied: [fileOnePath],
-                failed: [fileThreePath: "x"]
+                metadataApplied: [fileOneRef],
+                failed: [fileThreeRef: "x"]
             ),
             failures: ["y", "z"],
             completed: timestamp

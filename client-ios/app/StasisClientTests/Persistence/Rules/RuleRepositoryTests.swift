@@ -17,10 +17,10 @@ struct RuleRepositoryTests {
 
         let definition = UUID()
         try await repo.put(Rule(
-            id: 1, operation: .include, directory: "/docs", pattern: "**", definition: definition
+            id: 1, operation: .include, source: "/docs", pattern: "**", definition: definition
         ))
         try await repo.put(Rule(
-            id: 2, operation: .exclude, directory: "/docs", pattern: "tmp/**", definition: nil
+            id: 2, operation: .exclude, source: "/docs", pattern: "tmp/**", definition: nil
         ))
 
         let stored = try await repo.rules()

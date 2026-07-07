@@ -29,12 +29,10 @@ public extension Compression {
     }
 
     private func compressor(for metadata: EntityMetadata) throws -> any Compressor {
-        switch metadata {
-        case .file(let file):
-            return try Compressions.fromString(file.compression)
-        case .directory(let directory):
-            throw CompressionError.expectedFileGotDirectory(path: directory.path)
+        guard let content = metadata.content else {
+            throw CompressionError.expectedFileGotDirectory(path: metadata.path)
         }
+        return try Compressions.fromString(content.compression)
     }
 }
 

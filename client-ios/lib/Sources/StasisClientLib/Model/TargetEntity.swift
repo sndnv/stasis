@@ -1,13 +1,13 @@
 import Foundation
 
 public struct TargetEntity: Sendable, Equatable, Hashable {
-    public let path: URL
+    public let ref: EntityRef
     public let destination: Destination
     public let existingMetadata: EntityMetadata
     public let currentMetadata: EntityMetadata?
 
     public init(
-        path: URL,
+        ref: EntityRef,
         destination: Destination,
         existingMetadata: EntityMetadata,
         currentMetadata: EntityMetadata?
@@ -18,14 +18,36 @@ public struct TargetEntity: Sendable, Equatable, Hashable {
                 existingPath: existingMetadata.path
             )
         }
-        self.path = path
+        self.ref = ref
         self.destination = destination
         self.existingMetadata = existingMetadata
         self.currentMetadata = currentMetadata
     }
 
+    public var originalRef: EntityRef {
+        ref.mapFilesystem { _ in URL(fileURLWithPath: existingMetadata.path) }
+    }
+
     public var originalPath: URL {
         URL(fileURLWithPath: existingMetadata.path)
+    }
+
+    public var destinationRef: EntityRef {
+        switch destination {
+        case .default:
+            return originalRef
+        case .directory(let path, let keepDefaultStructure):
+            return originalRef.flatMap { reference in
+                let original: URL = switch reference {
+                case .filesystem(let url): url
+                case .library(_, let libraryPath): URL(fileURLWithPath: libraryPath)
+                }
+                let target = keepDefaultStructure
+                    ? path.appendingPathComponent(original.path)
+                    : path.appendingPathComponent(original.lastPathComponent)
+                return .filesystem(target)
+            }
+        }
     }
 
     public var destinationPath: URL {
@@ -47,16 +69,13 @@ public struct TargetEntity: Sendable, Equatable, Hashable {
     }
 
     public var hasContentChanged: Bool {
-        switch existingMetadata {
-        case .file(let existing):
-            if case .file(let current) = currentMetadata {
-                existing.size != current.size || existing.checksum != current.checksum
-            } else {
-                true
-            }
-        case .directory:
-            false
+        if let existingContent = existingMetadata.content, let currentContent = currentMetadata?.content {
+            return existingContent.size != currentContent.size || existingContent.checksum != currentContent.checksum
         }
+        if existingMetadata.content != nil, currentMetadata == nil {
+            return true
+        }
+        return false
     }
 
     public enum Destination: Sendable, Equatable, Hashable {

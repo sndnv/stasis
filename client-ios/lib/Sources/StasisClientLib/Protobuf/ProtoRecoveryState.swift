@@ -34,23 +34,23 @@ extension RecoveryState {
 extension RecoveryState.Entities {
     public var proto: Stasis_ClientIos_Lib_Model_Proto_RecoveryEntities {
         var proto = Stasis_ClientIos_Lib_Model_Proto_RecoveryEntities()
-        proto.examined = examined.map(\.path)
-        proto.collected = collected.mapValues { $0.proto }.keyedByPath()
-        proto.pending = pending.mapValues { $0.proto }.keyedByPath()
-        proto.processed = processed.mapValues { $0.proto }.keyedByPath()
-        proto.metadataApplied = metadataApplied.map(\.path)
-        proto.failed = failed.keyedByPath()
+        proto.examined = examined.map(\.key)
+        proto.collected = collected.mapValues { $0.proto }.keyedByKey()
+        proto.pending = pending.mapValues { $0.proto }.keyedByKey()
+        proto.processed = processed.mapValues { $0.proto }.keyedByKey()
+        proto.metadataApplied = metadataApplied.map(\.key)
+        proto.failed = failed.keyedByKey()
         return proto
     }
 
     public init(proto: Stasis_ClientIos_Lib_Model_Proto_RecoveryEntities) throws {
         self.init(
-            examined: Set(proto.examined.map { URL(fileURLWithPath: $0) }),
-            collected: try proto.collected.mapValues { try TargetEntity(proto: $0) }.keyedByFileURL(),
-            pending: proto.pending.mapValues { RecoveryState.PendingTargetEntity(proto: $0) }.keyedByFileURL(),
-            processed: proto.processed.mapValues { RecoveryState.ProcessedTargetEntity(proto: $0) }.keyedByFileURL(),
-            metadataApplied: Set(proto.metadataApplied.map { URL(fileURLWithPath: $0) }),
-            failed: proto.failed.keyedByFileURL()
+            examined: Set(proto.examined.map { EntityRef.default(key: $0) }),
+            collected: try proto.collected.mapValues { try TargetEntity(proto: $0) }.keyedByRef(),
+            pending: proto.pending.mapValues { RecoveryState.PendingTargetEntity(proto: $0) }.keyedByRef(),
+            processed: proto.processed.mapValues { RecoveryState.ProcessedTargetEntity(proto: $0) }.keyedByRef(),
+            metadataApplied: Set(proto.metadataApplied.map { EntityRef.default(key: $0) }),
+            failed: proto.failed.keyedByRef()
         )
     }
 }
@@ -58,7 +58,7 @@ extension RecoveryState.Entities {
 extension TargetEntity {
     public var proto: Stasis_ClientIos_Lib_Model_Proto_TargetEntity {
         var proto = Stasis_ClientIos_Lib_Model_Proto_TargetEntity()
-        proto.path = path.path
+        proto.ref = ref.key
         proto.destination = destination.proto
         proto.existingMetadata = existingMetadata.proto
         if let currentMetadata { proto.currentMetadata = currentMetadata.proto }
@@ -68,7 +68,7 @@ extension TargetEntity {
     public init(proto: Stasis_ClientIos_Lib_Model_Proto_TargetEntity) throws {
         guard proto.hasExistingMetadata else { throw RecoveryStateError.missingExistingTargetMetadata }
         try self.init(
-            path: URL(fileURLWithPath: proto.path),
+            ref: EntityRef.default(key: proto.ref),
             destination: TargetEntity.Destination(proto: proto.destination),
             existingMetadata: try EntityMetadata(proto: proto.existingMetadata),
             currentMetadata: proto.hasCurrentMetadata ? try EntityMetadata(proto: proto.currentMetadata) : nil

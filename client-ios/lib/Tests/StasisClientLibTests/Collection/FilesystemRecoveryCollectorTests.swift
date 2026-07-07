@@ -3,8 +3,8 @@ import Foundation
 import StasisClientLibTestSupport
 import Testing
 
-@Suite("DefaultRecoveryCollector")
-struct DefaultRecoveryCollectorTests {
+@Suite("FilesystemRecoveryCollector")
+struct FilesystemRecoveryCollectorTests {
     @Test("collects recovery files based on dataset metadata")
     func collectsRecoveryFiles() async throws {
         let file2 = CollectionResources.url("file-2")
@@ -45,7 +45,7 @@ struct DefaultRecoveryCollectorTests {
             core: MockServerCoreEndpointClient()
         )
 
-        let collector = DefaultRecoveryCollector(
+        let collector = FilesystemRecoveryCollector(
             targetMetadata: DatasetMetadata(
                 contentChanged: [file2Metadata.path: file2Metadata],
                 metadataChanged: [file3Metadata.path: file3Metadata],
@@ -67,13 +67,13 @@ struct DefaultRecoveryCollectorTests {
         for try await target in collector.collect() {
             targetFiles.append(target)
         }
-        targetFiles.sort { $0.path.path < $1.path.path }
+        targetFiles.sort { $0.ref.key < $1.ref.key }
 
         #expect(targetFiles.count == 2)
-        #expect(targetFiles[0].path == file2)
+        #expect(targetFiles[0].ref == .filesystem(file2))
         #expect(targetFiles[0].existingMetadata == file2Metadata)
         #expect(targetFiles[0].currentMetadata != nil)
-        #expect(targetFiles[1].path == file3)
+        #expect(targetFiles[1].ref == .filesystem(file3))
         #expect(targetFiles[1].existingMetadata == file3Metadata)
         #expect(targetFiles[1].currentMetadata != nil)
     }
@@ -99,7 +99,7 @@ struct DefaultRecoveryCollectorTests {
             core: MockServerCoreEndpointClient()
         )
 
-        let actual = try await DefaultRecoveryCollector.collectEntityMetadata(
+        let actual = try await FilesystemRecoveryCollector.collectEntityMetadata(
             targetMetadata: targetMetadata,
             keep: { _, state in state == .new },
             clients: clients

@@ -6,17 +6,20 @@ extension Backup {
         public let deviceSecret: DeviceSecret
         public let providers: BackupProviders
         public let maxPartSize: Int64
+        public let maxChunkSize: Int
 
         public init(
             targetDataset: DatasetDefinition,
             deviceSecret: DeviceSecret,
             providers: BackupProviders,
-            maxPartSize: Int64
+            maxPartSize: Int64,
+            maxChunkSize: Int
         ) {
             self.targetDataset = targetDataset
             self.deviceSecret = deviceSecret
             self.providers = providers
             self.maxPartSize = maxPartSize
+            self.maxChunkSize = maxChunkSize
         }
 
         public var maximumPartSize: Int64 {
@@ -40,14 +43,14 @@ extension Backup {
                                 }
                                 await providers.track.entityProcessed(
                                     operation: operation,
-                                    entity: entity.path,
+                                    entity: entity.ref,
                                     metadata: result
                                 )
                                 continuation.yield(result)
                             } catch let failure as EndpointFailure {
                                 await providers.track.failureEncountered(
                                     operation: operation,
-                                    entity: entity.path,
+                                    entity: entity.ref,
                                     failure: failure
                                 )
                                 await providers.analytics.recordFailure(failure)
@@ -55,7 +58,7 @@ extension Backup {
                             } catch {
                                 await providers.track.failureEncountered(
                                     operation: operation,
-                                    entity: entity.path,
+                                    entity: entity.ref,
                                     failure: error
                                 )
                                 await providers.analytics.recordFailure(error)
@@ -71,32 +74,19 @@ extension Backup {
         }
 
         func processContentChanged(operation: OperationId, entity: SourceEntity) async throws -> EntityMetadata {
-            let file = try Self.expectFileMetadata(entity: entity)
-            let staged = try await stage(operation: operation, entity: entity, checksum: file.checksum)
+            let content = try Self.expectContentMetadata(entity: entity)
+            let staged = try await stage(operation: operation, entity: entity, checksum: content.checksum)
             let crates = try await push(staged: staged)
             await discard(staged: staged)
             var updatedCrates: [String: UUID] = [:]
             for (partFile, crate) in crates {
                 updatedCrates[partFile] = crate
             }
-            return .file(EntityMetadata.File(
-                path: file.path,
-                link: file.link,
-                isHidden: file.isHidden,
-                created: file.created,
-                updated: file.updated,
-                owner: file.owner,
-                group: file.group,
-                permissions: file.permissions,
-                size: file.size,
-                checksum: file.checksum,
-                crates: updatedCrates,
-                compression: file.compression
-            ))
+            return entity.currentMetadata.withCrates(updatedCrates)
         }
 
         func processMetadataChanged(operation: OperationId, entity: SourceEntity) async throws -> EntityMetadata {
-            await providers.track.entityProcessingStarted(operation: operation, entity: entity.path, expectedParts: 0)
+            await providers.track.entityProcessingStarted(operation: operation, entity: entity.ref, expectedParts: 0)
             return entity.currentMetadata
         }
 
@@ -107,30 +97,25 @@ extension Backup {
         ) async throws -> [(file: String, path: URL)] {
             await providers.track.entityProcessingStarted(
                 operation: operation,
-                entity: entity.path,
+                entity: entity.ref,
                 expectedParts: try Self.expectedParts(entity: entity, withMaximumPartSize: maximumPartSize)
             )
 
             let encoder = try providers.compression.encoderFor(entity: entity)
-            let raw = try Data(contentsOf: entity.path)
-            let compressed = try encoder.compress(raw)
+            let source = try BackupEntityKinds.read(kinds: providers.kinds, entity: entity, chunkSize: maxChunkSize)
+            let compressed = encoder.encode(source)
 
-            let source = AsyncThrowingStream<Data, Error> { continuation in
-                continuation.yield(compressed)
-                continuation.finish()
-            }
-
-            let entityPath = entity.path.path
+            let entityPath = entity.ref.key
             let deviceSecret = self.deviceSecret
 
             return try await PartitionedSource(
-                source: source,
+                source: compressed,
                 providers: providers,
                 withPartSecret: { partId in
                     deviceSecret.toFileSecret(forFile: "\(entityPath)__part=\(partId)", checksum: checksum)
                 },
                 onPartStaged: {
-                    await providers.track.entityPartProcessed(operation: operation, entity: entity.path)
+                    await providers.track.entityPartProcessed(operation: operation, entity: entity.ref)
                 },
                 maximumPartSize: maximumPartSize
             ).partitionAndStage()
@@ -166,27 +151,22 @@ extension Backup {
             }
         }
 
-        public static func expectFileMetadata(entity: SourceEntity) throws -> EntityMetadata.File {
-            switch entity.currentMetadata {
-            case .file(let file):
-                return file
-            case .directory(let directory):
-                throw EntityProcessingError.expectedFileGotDirectory(path: directory.path)
+        public static func expectContentMetadata(entity: SourceEntity) throws -> any EntityContentMetadata {
+            guard let content = entity.currentMetadata.content else {
+                throw EntityProcessingError.expectedFileGotDirectory(path: entity.currentMetadata.path)
             }
+            return content
         }
 
         public static func expectedParts(entity: SourceEntity, withMaximumPartSize: Int64) throws -> Int {
             guard withMaximumPartSize > 0 else {
                 throw EntityProcessingError.invalidMaximumPartSize(withMaximumPartSize)
             }
-            switch entity.currentMetadata {
-            case .file(let file):
-                guard entity.hasContentChanged else { return 0 }
-                let fullParts = Int(file.size / withMaximumPartSize)
-                return file.size % withMaximumPartSize == 0 ? fullParts : fullParts + 1
-            case .directory:
+            guard let content = entity.currentMetadata.content, entity.hasContentChanged else {
                 return 0
             }
+            let fullParts = Int(content.size / withMaximumPartSize)
+            return content.size % withMaximumPartSize == 0 ? fullParts : fullParts + 1
         }
     }
 

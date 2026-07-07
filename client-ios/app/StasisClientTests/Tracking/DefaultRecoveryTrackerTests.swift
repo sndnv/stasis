@@ -14,7 +14,7 @@ struct DefaultRecoveryTrackerTests {
         let file2 = URL(fileURLWithPath: "/tmp/test-2")
 
         let targetEntity = try TargetEntity(
-            path: file1,
+            ref: .filesystem(file1),
             destination: .default,
             existingMetadata: fileMetadata(at: file1.path),
             currentMetadata: nil
@@ -23,15 +23,15 @@ struct DefaultRecoveryTrackerTests {
         #expect(await tracker.snapshot().isEmpty)
 
         await tracker.started(operation: operation)
-        await tracker.entityExamined(operation: operation, entity: file1, metadataChanged: true, contentChanged: false)
-        await tracker.entityExamined(operation: operation, entity: file2, metadataChanged: true, contentChanged: true)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file1), metadataChanged: true, contentChanged: false)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file2), metadataChanged: true, contentChanged: true)
         await tracker.entityCollected(operation: operation, entity: targetEntity)
-        await tracker.entityProcessingStarted(operation: operation, entity: file1, expectedParts: 3)
-        await tracker.entityPartProcessed(operation: operation, entity: file1)
-        await tracker.entityPartProcessed(operation: operation, entity: file1)
-        await tracker.entityProcessed(operation: operation, entity: file2)
-        await tracker.metadataApplied(operation: operation, entity: file1)
-        await tracker.failureEncountered(operation: operation, entity: file1, failure: TestFailure(message: "test failure 1"))
+        await tracker.entityProcessingStarted(operation: operation, entity: .filesystem(file1), expectedParts: 3)
+        await tracker.entityPartProcessed(operation: operation, entity: .filesystem(file1))
+        await tracker.entityPartProcessed(operation: operation, entity: .filesystem(file1))
+        await tracker.entityProcessed(operation: operation, entity: .filesystem(file2))
+        await tracker.metadataApplied(operation: operation, entity: .filesystem(file1))
+        await tracker.failureEncountered(operation: operation, entity: .filesystem(file1), failure: TestFailure(message: "test failure 1"))
         await tracker.failureEncountered(operation: operation, failure: TestFailure(message: "test failure 2"))
         await tracker.completed(operation: operation)
 
@@ -55,7 +55,7 @@ struct DefaultRecoveryTrackerTests {
         await tracker.started(operation: operation)
         let updates = await tracker.updates(operation: operation)
 
-        await tracker.entityExamined(operation: operation, entity: file, metadataChanged: true, contentChanged: false)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file), metadataChanged: true, contentChanged: false)
         await tracker.started(operation: UUID())
         await tracker.completed(operation: operation)
 
@@ -76,7 +76,7 @@ struct DefaultRecoveryTrackerTests {
         let file = URL(fileURLWithPath: "/tmp/test")
 
         await tracker.started(operation: operation)
-        await tracker.entityExamined(operation: operation, entity: file, metadataChanged: true, contentChanged: false)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file), metadataChanged: true, contentChanged: false)
 
         let state = try #require(await tracker.stateOf(operation: operation))
         #expect(state.entities.examined.count == 1)
@@ -111,7 +111,7 @@ struct DefaultRecoveryTrackerTests {
         let file = URL(fileURLWithPath: "/tmp/test")
 
         await tracker.started(operation: operation1)
-        await tracker.entityExamined(operation: operation1, entity: file, metadataChanged: true, contentChanged: false)
+        await tracker.entityExamined(operation: operation1, entity: .filesystem(file), metadataChanged: true, contentChanged: false)
         await tracker.started(operation: operation2)
 
         var snapshot = await tracker.snapshot()
@@ -132,7 +132,7 @@ struct DefaultRecoveryTrackerTests {
 
         let first = DefaultRecoveryTracker(store: store)
         await first.started(operation: operation)
-        await first.entityExamined(operation: operation, entity: file, metadataChanged: true, contentChanged: false)
+        await first.entityExamined(operation: operation, entity: .filesystem(file), metadataChanged: true, contentChanged: false)
         await first.completed(operation: operation)
 
         let restored = DefaultRecoveryTracker(store: store)

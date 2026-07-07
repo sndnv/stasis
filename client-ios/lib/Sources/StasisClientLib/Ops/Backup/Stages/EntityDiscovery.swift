@@ -25,38 +25,36 @@ extension Backup {
         public func discover(operation: OperationId) -> AsyncThrowingStream<any BackupCollector, Error> {
             AsyncThrowingStream { continuation in
                 let task = Task {
-                    let entities: [URL]
-                    switch collector {
-                    case .withRules(let rules):
-                        let spec = Specification.build(rules: rules) { _ in }
-                        for url in spec.included {
-                            await providers.track.entityDiscovered(operation: operation, entity: url)
+                    do {
+                        await reportUnsupportedSources(operation: operation)
+                        for kind in providers.kinds {
+                            let backupCollector = try await kind.collector(
+                                operation: operation,
+                                collector: collector,
+                                latestMetadata: latestMetadata,
+                                providers: providers
+                            )
+                            continuation.yield(backupCollector)
                         }
-                        await providers.track.specificationProcessed(operation: operation, unmatched: spec.unmatched)
-                        entities = spec.included
-                    case .withEntities(let provided):
-                        let existing = provided.filter { FileManager.default.fileExists(atPath: $0.path) }
-                        for entity in existing {
-                            await providers.track.entityDiscovered(operation: operation, entity: entity)
-                        }
-                        entities = existing
-                    case .withState(let state):
-                        entities = state.remainingEntities()
+                        continuation.finish()
+                    } catch {
+                        continuation.finish(throwing: error)
                     }
-
-                    let backupCollector = DefaultBackupCollector(
-                        entities: entities,
-                        latestMetadata: latestMetadata,
-                        metadataCollector: DefaultBackupMetadataCollector(
-                            checksum: providers.checksum,
-                            compression: providers.compression
-                        ),
-                        clients: providers.clients
-                    )
-                    continuation.yield(backupCollector)
-                    continuation.finish()
                 }
                 continuation.onTermination = { _ in task.cancel() }
+            }
+        }
+
+        private func reportUnsupportedSources(operation: OperationId) async {
+            guard case .withRules(let rules) = collector else { return }
+            let handledSchemes: Set<String?> = Set(
+                providers.kinds.map { kind in (kind as? any BackupLibraryKind)?.scheme }
+            )
+            for rule in rules where !handledSchemes.contains(SourceUri.scheme(rule.source)) {
+                await providers.track.failureEncountered(
+                    operation: operation,
+                    failure: RuleParsingFailure("No backup kind was registered for source [\(rule.source)]")
+                )
             }
         }
     }

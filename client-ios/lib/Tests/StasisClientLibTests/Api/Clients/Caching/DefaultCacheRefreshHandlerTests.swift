@@ -12,7 +12,7 @@ struct DefaultCacheRefreshHandlerTests {
         let definitionB = TestGenerators.definition(info: "beta")
         await api.setDatasetDefinitionsOverride([definitionA, definitionB])
         let bundle = makeBundle(api: api)
-        try await bundle.definitionsCache.put(UUID(), TestGenerators.definition(info: "stale"))
+        await bundle.definitionsCache.put(UUID(), TestGenerators.definition(info: "stale"))
 
         try await bundle.handler.refreshNow(target: .allDatasetDefinitions)
 
@@ -62,7 +62,7 @@ struct DefaultCacheRefreshHandlerTests {
         let definition = UUID()
         await api.setLatestEntryOverride(definition, nil)
         let bundle = makeBundle(api: api)
-        try await bundle.entriesForDefCache.put(definition, .empty())
+        await bundle.entriesForDefCache.put(definition, .empty())
 
         try await bundle.handler.refreshNow(target: .latestDatasetEntry(definition: definition))
 

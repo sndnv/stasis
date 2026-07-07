@@ -20,7 +20,7 @@ public enum Metadata {
         )
 
         return try SourceEntity(
-            path: entity,
+            ref: .filesystem(entity),
             existingMetadata: existingMetadata,
             currentMetadata: entityMetadata
         )
@@ -33,7 +33,7 @@ public enum Metadata {
         existingMetadata: EntityMetadata
     ) async throws -> TargetEntity {
         var targetEntity = try TargetEntity(
-            path: entity,
+            ref: .filesystem(entity),
             destination: destination,
             existingMetadata: existingMetadata,
             currentMetadata: nil
@@ -55,7 +55,7 @@ public enum Metadata {
         )
 
         targetEntity = try TargetEntity(
-            path: targetEntity.path,
+            ref: targetEntity.ref,
             destination: targetEntity.destination,
             existingMetadata: existingMetadata,
             currentMetadata: entityMetadata
@@ -104,36 +104,29 @@ public enum Metadata {
         existingMetadata: EntityMetadata?,
         currentChecksum: Data
     ) throws -> [String: UUID] {
-        switch existingMetadata {
-        case .file(let file):
-            return file.checksum == currentChecksum ? file.crates : [:]
-        case .directory(let directory):
-            throw MetadataError.expectedFileGotDirectory(path: directory.path)
-        case .none:
-            return [:]
+        guard let existingMetadata else { return [:] }
+        guard let content = existingMetadata.content else {
+            throw MetadataError.expectedFileGotDirectory(path: existingMetadata.path)
         }
+        return content.checksum == currentChecksum ? content.crates : [:]
     }
 
     public static func collectCratesForTargetFile(
         existingMetadata: EntityMetadata
     ) throws -> [String: UUID] {
-        switch existingMetadata {
-        case .file(let file):
-            return file.crates
-        case .directory(let directory):
-            throw MetadataError.expectedFileGotDirectory(path: directory.path)
+        guard let content = existingMetadata.content else {
+            throw MetadataError.expectedFileGotDirectory(path: existingMetadata.path)
         }
+        return content.crates
     }
 
     public static func collectCompressionForTargetFile(
         existingMetadata: EntityMetadata
     ) throws -> String {
-        switch existingMetadata {
-        case .file(let file):
-            return file.compression
-        case .directory(let directory):
-            throw MetadataError.expectedFileGotDirectory(path: directory.path)
+        guard let content = existingMetadata.content else {
+            throw MetadataError.expectedFileGotDirectory(path: existingMetadata.path)
         }
+        return content.compression
     }
 
     public static func extractBaseEntityMetadata(entity: URL) async throws -> BaseEntityMetadata {
@@ -182,9 +175,10 @@ public enum Metadata {
     }
 
     public static func applyEntityMetadataTo(metadata: EntityMetadata, entity: URL) async throws {
+        let filesystem = try metadata.asFilesystem()
         try await Task.detached(priority: .userInitiated) {
             let path = entity.path
-            let mode = parsePosixPermissions(metadata.permissions)
+            let mode = parsePosixPermissions(filesystem.permissions)
 
             try FileManager.default.setAttributes(
                 [
@@ -196,8 +190,8 @@ public enum Metadata {
 
             try? FileManager.default.setAttributes(
                 [
-                    .ownerAccountName: metadata.owner,
-                    .groupOwnerAccountName: metadata.group
+                    .ownerAccountName: filesystem.owner,
+                    .groupOwnerAccountName: filesystem.group
                 ],
                 ofItemAtPath: path
             )

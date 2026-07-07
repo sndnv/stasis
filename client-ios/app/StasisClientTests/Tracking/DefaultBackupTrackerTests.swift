@@ -16,26 +16,26 @@ struct DefaultBackupTrackerTests {
         #expect(await tracker.snapshot().isEmpty)
 
         let sourceEntity = try SourceEntity(
-            path: file1,
+            ref: .filesystem(file1),
             existingMetadata: nil,
             currentMetadata: fileMetadata(at: file1.path)
         )
 
         await tracker.started(operation: operation, definition: UUID())
-        await tracker.entityDiscovered(operation: operation, entity: file1)
-        await tracker.entityDiscovered(operation: operation, entity: file2)
+        await tracker.entityDiscovered(operation: operation, entity: .filesystem(file1))
+        await tracker.entityDiscovered(operation: operation, entity: .filesystem(file2))
         await tracker.specificationProcessed(operation: operation, unmatched: [])
-        await tracker.entityExamined(operation: operation, entity: file1)
-        await tracker.entityExamined(operation: operation, entity: file2)
-        await tracker.entitySkipped(operation: operation, entity: file2)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file1))
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file2))
+        await tracker.entitySkipped(operation: operation, entity: .filesystem(file2))
         await tracker.entityCollected(operation: operation, entity: sourceEntity)
-        await tracker.entityProcessingStarted(operation: operation, entity: file2, expectedParts: 3)
-        await tracker.entityPartProcessed(operation: operation, entity: file2)
-        await tracker.entityPartProcessed(operation: operation, entity: file2)
-        await tracker.entityProcessed(operation: operation, entity: file1, metadata: .left(fileMetadata(at: file1.path)))
+        await tracker.entityProcessingStarted(operation: operation, entity: .filesystem(file2), expectedParts: 3)
+        await tracker.entityPartProcessed(operation: operation, entity: .filesystem(file2))
+        await tracker.entityPartProcessed(operation: operation, entity: .filesystem(file2))
+        await tracker.entityProcessed(operation: operation, entity: .filesystem(file1), metadata: .left(fileMetadata(at: file1.path)))
         await tracker.metadataCollected(operation: operation)
         await tracker.metadataPushed(operation: operation, entry: UUID())
-        await tracker.failureEncountered(operation: operation, entity: file1, failure: TestFailure(message: "Test failure 1"))
+        await tracker.failureEncountered(operation: operation, entity: .filesystem(file1), failure: TestFailure(message: "Test failure 1"))
         await tracker.failureEncountered(operation: operation, failure: TestFailure(message: "Test failure 2"))
         await tracker.completed(operation: operation)
 
@@ -59,9 +59,9 @@ struct DefaultBackupTrackerTests {
         let tracker = DefaultBackupTracker(store: try TestStateStore.backups())
         let operation = UUID()
 
-        let rule1 = Rule(id: 0, operation: .include, directory: "/tmp/1", pattern: "*", definition: nil)
-        let rule2 = Rule(id: 0, operation: .include, directory: "/tmp/2", pattern: "*", definition: nil)
-        let rule3 = Rule(id: 0, operation: .include, directory: "/tmp/3", pattern: "*", definition: nil)
+        let rule1 = Rule(id: 0, operation: .include, source: "/tmp/1", pattern: "*", definition: nil)
+        let rule2 = Rule(id: 0, operation: .include, source: "/tmp/2", pattern: "*", definition: nil)
+        let rule3 = Rule(id: 0, operation: .include, source: "/tmp/3", pattern: "*", definition: nil)
 
         await tracker.started(operation: operation, definition: UUID())
         await tracker.specificationProcessed(
@@ -90,12 +90,12 @@ struct DefaultBackupTrackerTests {
         await tracker.started(operation: operation, definition: UUID())
         let updates = await tracker.updates(operation: operation)
 
-        await tracker.entityExamined(operation: operation, entity: file)
-        await tracker.entitySkipped(operation: operation, entity: file)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file))
+        await tracker.entitySkipped(operation: operation, entity: .filesystem(file))
 
         let otherOperation = UUID()
         await tracker.started(operation: otherOperation, definition: UUID())
-        await tracker.entityDiscovered(operation: otherOperation, entity: file)
+        await tracker.entityDiscovered(operation: otherOperation, entity: .filesystem(file))
         await tracker.completed(operation: operation)
 
         var observed: BackupState?
@@ -116,7 +116,7 @@ struct DefaultBackupTrackerTests {
         let file = URL(fileURLWithPath: "/tmp/test")
 
         await tracker.started(operation: operation, definition: UUID())
-        await tracker.entityExamined(operation: operation, entity: file)
+        await tracker.entityExamined(operation: operation, entity: .filesystem(file))
 
         let state = try #require(await tracker.stateOf(operation: operation))
         #expect(state.entities.examined.count == 1)
@@ -131,7 +131,7 @@ struct DefaultBackupTrackerTests {
         let file = URL(fileURLWithPath: "/tmp/test")
 
         await tracker.started(operation: operation1, definition: UUID())
-        await tracker.entityExamined(operation: operation1, entity: file)
+        await tracker.entityExamined(operation: operation1, entity: .filesystem(file))
         await tracker.started(operation: operation2, definition: UUID())
 
         var snapshot = await tracker.snapshot()
@@ -153,7 +153,7 @@ struct DefaultBackupTrackerTests {
         let file = URL(fileURLWithPath: "/tmp/test")
 
         await tracker.started(operation: operation1, definition: UUID())
-        await tracker.entityExamined(operation: operation1, entity: file)
+        await tracker.entityExamined(operation: operation1, entity: .filesystem(file))
         await tracker.started(operation: operation2, definition: UUID())
 
         var snapshot = await tracker.snapshot()
@@ -174,7 +174,7 @@ struct DefaultBackupTrackerTests {
 
         let first = DefaultBackupTracker(store: store)
         await first.started(operation: operation, definition: definition)
-        await first.entityExamined(operation: operation, entity: URL(fileURLWithPath: "/tmp/a"))
+        await first.entityExamined(operation: operation, entity: .filesystem(URL(fileURLWithPath: "/tmp/a")))
         await first.completed(operation: operation)
 
         let restored = DefaultBackupTracker(store: store)

@@ -10,20 +10,20 @@ public enum RuleEntityError: Error, Equatable {
 public final class RuleEntity {
     @Attribute(.unique) public var id: Int64
     public var operationRaw: String
-    public var directory: String
+    public var source: String
     public var pattern: String
     public var definition: UUID?
 
     public init(
         id: Int64 = 0,
         operation: RuleOperation,
-        directory: String,
+        source: String,
         pattern: String,
         definition: DatasetDefinitionId?
     ) {
         self.id = id
         self.operationRaw = RuleEntity.encode(operation)
-        self.directory = directory
+        self.source = source
         self.pattern = pattern
         self.definition = definition
     }

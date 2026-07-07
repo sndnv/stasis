@@ -8,7 +8,7 @@ public protocol RecoveryMetadataCollector: Sendable {
     ) async throws -> TargetEntity
 }
 
-public struct DefaultRecoveryMetadataCollector: RecoveryMetadataCollector {
+public struct FilesystemRecoveryMetadataCollector: RecoveryMetadataCollector {
     private let checksum: any Checksum
 
     public init(checksum: any Checksum) {

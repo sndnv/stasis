@@ -35,7 +35,7 @@ public actor DefaultRecoveryTracker: RecoveryTrackerView {
     }
 
     public func entityExamined(
-        operation: OperationId, entity: URL, metadataChanged: Bool, contentChanged: Bool
+        operation: OperationId, entity: EntityRef, metadataChanged: Bool, contentChanged: Bool
     ) async {
         await mutate(operation: operation) { $0.entityExamined(entity: entity) }
     }
@@ -44,19 +44,19 @@ public actor DefaultRecoveryTracker: RecoveryTrackerView {
         await mutate(operation: operation) { $0.entityCollected(entity: entity) }
     }
 
-    public func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
+    public func entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) async {
         await mutate(operation: operation) { $0.entityProcessingStarted(entity: entity, expectedParts: expectedParts) }
     }
 
-    public func entityPartProcessed(operation: OperationId, entity: URL) async {
+    public func entityPartProcessed(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityPartProcessed(entity: entity) }
     }
 
-    public func entityProcessed(operation: OperationId, entity: URL) async {
+    public func entityProcessed(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityProcessed(entity: entity) }
     }
 
-    public func metadataApplied(operation: OperationId, entity: URL) async {
+    public func metadataApplied(operation: OperationId, entity: EntityRef) async {
         await mutate(operation: operation) { $0.entityMetadataApplied(entity: entity) }
     }
 
@@ -64,7 +64,7 @@ public actor DefaultRecoveryTracker: RecoveryTrackerView {
         await mutate(operation: operation) { $0.failureEncountered(failure: failure) }
     }
 
-    public func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
+    public func failureEncountered(operation: OperationId, entity: EntityRef, failure: any Error) async {
         await mutate(operation: operation) { $0.entityFailed(entity: entity, reason: failure) }
     }
 

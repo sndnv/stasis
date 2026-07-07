@@ -21,3 +21,9 @@ func makeDataStream(_ chunks: [Data], thenThrow error: any Error) -> AsyncThrowi
         continuation.finish(throwing: error)
     }
 }
+
+func collectData(_ stream: AsyncThrowingStream<Data, Error>) async throws -> Data {
+    var data = Data()
+    for try await chunk in stream { data.append(chunk) }
+    return data
+}

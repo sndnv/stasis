@@ -7,19 +7,6 @@ import Testing
 struct DecryptedCratesTests {
     @Test("decryption is deferred until the inner source is invoked")
     func lazyDecryption() async throws {
-        let providers = RecoveryProviders(
-            checksum: Checksums.md5,
-            staging: MockFileStaging(),
-            compression: MockCompression(),
-            decryptor: MockDecrypting(),
-            clients: StaticClients(
-                api: MockServerApiEndpointClient(),
-                core: MockServerCoreEndpointClient()
-            ),
-            track: MockRecoveryTracker(),
-            analytics: NoOpAnalyticsCollector()
-        )
-
         let firstInvoked = Flag()
         let secondInvoked = Flag()
         let thirdInvoked = Flag()
@@ -42,7 +29,7 @@ struct DecryptedCratesTests {
             withPartSecret: { partPath in
                 DeviceFileSecret(file: partPath, iv: Data(), key: Data())
             },
-            providers: providers
+            decryptor: MockDecrypting()
         )
 
         #expect(decrypted.count == 3)
@@ -62,7 +49,6 @@ struct DecryptedCratesTests {
 
     @Test("preserves partId and partPath in the returned crates")
     func preservesIdentity() async throws {
-        let providers = makeProviders()
         let crates: [RecoveryCrate] = (0..<3).map { id in
             RecoveryCrate(partId: id, partPath: "/tmp/file/one__part=\(id)") {
                 makeDataStream(Data([MockEncrypting.sentinel]))
@@ -72,7 +58,7 @@ struct DecryptedCratesTests {
         let decrypted = DecryptedCrates.decrypt(
             crates,
             withPartSecret: { path in DeviceFileSecret(file: path, iv: Data(), key: Data()) },
-            providers: providers
+            decryptor: MockDecrypting()
         )
 
         #expect(decrypted.map(\.partId) == [0, 1, 2])
@@ -85,7 +71,6 @@ struct DecryptedCratesTests {
 
     @Test("decrypts every crate's payload to the underlying plaintext")
     func roundTripsAllCrates() async throws {
-        let providers = makeProviders()
         let payloads = ["alpha", "beta", "gamma"]
         let crates: [RecoveryCrate] = payloads.enumerated().map { id, payload in
             RecoveryCrate(partId: id, partPath: "/tmp/file/one__part=\(id)") {
@@ -96,7 +81,7 @@ struct DecryptedCratesTests {
         let decrypted = DecryptedCrates.decrypt(
             crates,
             withPartSecret: { path in DeviceFileSecret(file: path, iv: Data(), key: Data()) },
-            providers: providers
+            decryptor: MockDecrypting()
         )
 
         var results: [String] = []
@@ -111,7 +96,6 @@ struct DecryptedCratesTests {
 
     @Test("propagates errors raised by the inner source closure")
     func propagatesSourceFailures() async {
-        let providers = makeProviders()
         let crates: [RecoveryCrate] = [
             RecoveryCrate(partId: 0, partPath: "/tmp/file/one__part=0") {
                 throw TestFailure(message: "fetch failed")
@@ -121,7 +105,7 @@ struct DecryptedCratesTests {
         let decrypted = DecryptedCrates.decrypt(
             crates,
             withPartSecret: { path in DeviceFileSecret(file: path, iv: Data(), key: Data()) },
-            providers: providers
+            decryptor: MockDecrypting()
         )
 
         await #expect(throws: TestFailure(message: "fetch failed")) {
@@ -131,7 +115,6 @@ struct DecryptedCratesTests {
 
     @Test("propagates errors raised by the decryptor")
     func propagatesDecryptorFailures() async {
-        let providers = makeProviders()
         let crates: [RecoveryCrate] = [
             RecoveryCrate(partId: 0, partPath: "/tmp/file/one__part=0") {
                 makeDataStream(Data("invalid-no-sentinel".utf8))
@@ -141,26 +124,11 @@ struct DecryptedCratesTests {
         let decrypted = DecryptedCrates.decrypt(
             crates,
             withPartSecret: { path in DeviceFileSecret(file: path, iv: Data(), key: Data()) },
-            providers: providers
+            decryptor: MockDecrypting()
         )
 
         await #expect(throws: MockDecryptingError.missingSentinel) {
             _ = try await decrypted[0].source()
         }
-    }
-
-    private func makeProviders() -> RecoveryProviders {
-        RecoveryProviders(
-            checksum: Checksums.md5,
-            staging: MockFileStaging(),
-            compression: MockCompression(),
-            decryptor: MockDecrypting(),
-            clients: StaticClients(
-                api: MockServerApiEndpointClient(),
-                core: MockServerCoreEndpointClient()
-            ),
-            track: MockRecoveryTracker(),
-            analytics: NoOpAnalyticsCollector()
-        )
     }
 }

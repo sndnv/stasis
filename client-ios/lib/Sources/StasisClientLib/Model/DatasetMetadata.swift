@@ -17,8 +17,8 @@ public struct DatasetMetadata: Sendable, Equatable, Hashable {
 
     public var contentChangedBytes: Int64 {
         contentChanged.values.reduce(0) { acc, metadata in
-            if case .file(let file) = metadata {
-                acc + file.size
+            if let content = metadata.content {
+                acc + content.size
             } else {
                 acc
             }

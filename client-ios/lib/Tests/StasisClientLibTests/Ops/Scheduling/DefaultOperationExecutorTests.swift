@@ -6,9 +6,9 @@ import Testing
 @Suite("DefaultOperationExecutor")
 struct DefaultOperationExecutorTests {
     private let testRules: [Rule] = [
-        Rule(id: 1, operation: .include, directory: "/home__/stasis", pattern: "**", definition: nil),
-        Rule(id: 2, operation: .exclude, directory: "/home__/stasis", pattern: "**/*cache*/*", definition: nil),
-        Rule(id: 3, operation: .exclude, directory: "/home__/stasis", pattern: "**/*log*/*", definition: nil)
+        Rule(id: 1, operation: .include, source: "/home__/stasis", pattern: "**", definition: nil),
+        Rule(id: 2, operation: .exclude, source: "/home__/stasis", pattern: "**/*cache*/*", definition: nil),
+        Rule(id: 3, operation: .exclude, source: "/home__/stasis", pattern: "**/*log*/*", definition: nil)
     ]
 
     @Test("starts backups with rules")
@@ -382,7 +382,8 @@ struct DefaultOperationExecutorTests {
             decryptor: MockDecrypting(),
             clients: clients,
             track: backupTracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
 
         let recoveryProviders = RecoveryProviders(
@@ -392,11 +393,12 @@ struct DefaultOperationExecutorTests {
             decryptor: MockDecrypting(),
             clients: clients,
             track: recoveryTracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [RecoveryEntityKinds.filesystem]
         )
 
         return DefaultOperationExecutor(
-            config: .init(backup: .init(limits: .init(maxPartSize: 16_384))),
+            config: .init(backup: .init(limits: .init(maxPartSize: 16_384, maxChunkSize: 8_192))),
             deviceSecret: { Fixtures.Secrets.default },
             backupProviders: backupProviders,
             recoveryProviders: recoveryProviders,
@@ -419,28 +421,28 @@ private final class StatefulBackupTracker: BackupTracker {
     func started(operation: OperationId, definition: DatasetDefinitionId) async {
         await tracker.started(operation: operation, definition: definition)
     }
-    func entityDiscovered(operation: OperationId, entity: URL) async {
+    func entityDiscovered(operation: OperationId, entity: EntityRef) async {
         await tracker.entityDiscovered(operation: operation, entity: entity)
     }
     func specificationProcessed(operation: OperationId, unmatched: [(Rule, any Error)]) async {
         await tracker.specificationProcessed(operation: operation, unmatched: unmatched)
     }
-    func entityExamined(operation: OperationId, entity: URL) async {
+    func entityExamined(operation: OperationId, entity: EntityRef) async {
         await tracker.entityExamined(operation: operation, entity: entity)
     }
-    func entitySkipped(operation: OperationId, entity: URL) async {
+    func entitySkipped(operation: OperationId, entity: EntityRef) async {
         await tracker.entitySkipped(operation: operation, entity: entity)
     }
     func entityCollected(operation: OperationId, entity: SourceEntity) async {
         await tracker.entityCollected(operation: operation, entity: entity)
     }
-    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
+    func entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) async {
         await tracker.entityProcessingStarted(operation: operation, entity: entity, expectedParts: expectedParts)
     }
-    func entityPartProcessed(operation: OperationId, entity: URL) async {
+    func entityPartProcessed(operation: OperationId, entity: EntityRef) async {
         await tracker.entityPartProcessed(operation: operation, entity: entity)
     }
-    func entityProcessed(operation: OperationId, entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) async {
+    func entityProcessed(operation: OperationId, entity: EntityRef, metadata: Either<EntityMetadata, EntityMetadata>) async {
         await tracker.entityProcessed(operation: operation, entity: entity, metadata: metadata)
     }
     func metadataCollected(operation: OperationId) async {
@@ -452,7 +454,7 @@ private final class StatefulBackupTracker: BackupTracker {
     func failureEncountered(operation: OperationId, failure: any Error) async {
         await tracker.failureEncountered(operation: operation, failure: failure)
     }
-    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
+    func failureEncountered(operation: OperationId, entity: EntityRef, failure: any Error) async {
         await tracker.failureEncountered(operation: operation, entity: entity, failure: failure)
     }
     func completed(operation: OperationId) async {

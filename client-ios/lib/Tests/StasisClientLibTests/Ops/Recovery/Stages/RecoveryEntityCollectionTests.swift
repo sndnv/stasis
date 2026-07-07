@@ -12,19 +12,19 @@ struct RecoveryEntityCollectionTests {
         let fileThree = Fixtures.Metadata.fileThree
 
         let target1 = try TargetEntity(
-            path: URL(fileURLWithPath: fileOne.path),
+            ref: .filesystem(URL(fileURLWithPath: fileOne.path)),
             destination: .default,
             existingMetadata: fileOne,
             currentMetadata: nil
         )
         let target2 = try TargetEntity(
-            path: URL(fileURLWithPath: fileTwo.path),
+            ref: .filesystem(URL(fileURLWithPath: fileTwo.path)),
             destination: .default,
             existingMetadata: fileTwo,
             currentMetadata: fileTwo
         )
         let target3 = try TargetEntity(
-            path: URL(fileURLWithPath: fileThree.path),
+            ref: .filesystem(URL(fileURLWithPath: fileThree.path)),
             destination: .default,
             existingMetadata: fileThree,
             currentMetadata: fileThree.withFileFlags(isHidden: true)
@@ -32,8 +32,13 @@ struct RecoveryEntityCollectionTests {
 
         let tracker = MockRecoveryTracker()
         let stage = Recovery.EntityCollection(
-            collector: MockRecoveryCollector(files: [target1, target2, target3]),
-            providers: makeProviders(tracker: tracker)
+            targetMetadata: .empty(),
+            keep: { _, _ in true },
+            destination: .default,
+            providers: makeProviders(
+                tracker: tracker,
+                collector: MockRecoveryCollector(files: [target1, target2, target3])
+            )
         )
 
         var collected: [TargetEntity] = []
@@ -48,7 +53,10 @@ struct RecoveryEntityCollectionTests {
         #expect(tracker.statistics[.failureEncountered] == 0)
     }
 
-    private func makeProviders(tracker: any RecoveryTracker) -> RecoveryProviders {
+    private func makeProviders(
+        tracker: any RecoveryTracker,
+        collector: any RecoveryCollector
+    ) -> RecoveryProviders {
         RecoveryProviders(
             checksum: Checksums.md5,
             staging: MockFileStaging(),
@@ -59,7 +67,8 @@ struct RecoveryEntityCollectionTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [MockRecoveryEntityKind(recoveryCollector: collector)]
         )
     }
 }

@@ -32,7 +32,7 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
 
     public var type: OperationType { .backup }
 
-    public func entityDiscovered(entity: URL) -> BackupState {
+    public func entityDiscovered(entity: EntityRef) -> BackupState {
         var copy = self
         copy.entities.discovered.insert(entity)
         return copy
@@ -44,13 +44,13 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
         return copy
     }
 
-    public func entityExamined(entity: URL) -> BackupState {
+    public func entityExamined(entity: EntityRef) -> BackupState {
         var copy = self
         copy.entities.examined.insert(entity)
         return copy
     }
 
-    public func entitySkipped(entity: URL) -> BackupState {
+    public func entitySkipped(entity: EntityRef) -> BackupState {
         var copy = self
         copy.entities.skipped.insert(entity)
         return copy
@@ -58,23 +58,23 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
 
     public func entityCollected(entity: SourceEntity) -> BackupState {
         var copy = self
-        copy.entities.collected[entity.path] = entity
+        copy.entities.collected[entity.ref] = entity
         return copy
     }
 
-    public func entityProcessingStarted(entity: URL, expectedParts: Int) -> BackupState {
+    public func entityProcessingStarted(entity: EntityRef, expectedParts: Int) -> BackupState {
         var copy = self
         copy.entities.pending[entity] = PendingSourceEntity(expectedParts: expectedParts, processedParts: 0)
         return copy
     }
 
-    public func entityPartProcessed(entity: URL) -> BackupState {
+    public func entityPartProcessed(entity: EntityRef) -> BackupState {
         var copy = self
         copy.entities.pending[entity] = copy.entities.pending[entity]!.inc()
         return copy
     }
 
-    public func entityProcessed(entity: URL, metadata: Either<EntityMetadata, EntityMetadata>) -> BackupState {
+    public func entityProcessed(entity: EntityRef, metadata: Either<EntityMetadata, EntityMetadata>) -> BackupState {
         var copy = self
         let processed: ProcessedSourceEntity = if let pending = copy.entities.pending[entity] {
             ProcessedSourceEntity(
@@ -90,7 +90,7 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
         return copy
     }
 
-    public func entityFailed(entity: URL, reason: Error) -> BackupState {
+    public func entityFailed(entity: EntityRef, reason: Error) -> BackupState {
         var copy = self
         copy.entities.failed[entity] = reason.tracked
         return copy
@@ -120,7 +120,7 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
         return copy
     }
 
-    public func remainingEntities() -> [URL] {
+    public func remainingEntities() -> [EntityRef] {
         guard completed == nil else { return [] }
         return entities.discovered.filter { !entities.processed.keys.contains($0) }
     }
@@ -151,24 +151,24 @@ public struct BackupState: OperationState, Sendable, Equatable, Hashable {
     }
 
     public struct Entities: Sendable, Equatable, Hashable {
-        public var discovered: Set<URL>
+        public var discovered: Set<EntityRef>
         public var unmatched: [String]
-        public var examined: Set<URL>
-        public var skipped: Set<URL>
-        public var collected: [URL: SourceEntity]
-        public var pending: [URL: PendingSourceEntity]
-        public var processed: [URL: ProcessedSourceEntity]
-        public var failed: [URL: String]
+        public var examined: Set<EntityRef>
+        public var skipped: Set<EntityRef>
+        public var collected: [EntityRef: SourceEntity]
+        public var pending: [EntityRef: PendingSourceEntity]
+        public var processed: [EntityRef: ProcessedSourceEntity]
+        public var failed: [EntityRef: String]
 
         public init(
-            discovered: Set<URL>,
+            discovered: Set<EntityRef>,
             unmatched: [String],
-            examined: Set<URL>,
-            skipped: Set<URL>,
-            collected: [URL: SourceEntity],
-            pending: [URL: PendingSourceEntity],
-            processed: [URL: ProcessedSourceEntity],
-            failed: [URL: String]
+            examined: Set<EntityRef>,
+            skipped: Set<EntityRef>,
+            collected: [EntityRef: SourceEntity],
+            pending: [EntityRef: PendingSourceEntity],
+            processed: [EntityRef: ProcessedSourceEntity],
+            failed: [EntityRef: String]
         ) {
             self.discovered = discovered
             self.unmatched = unmatched

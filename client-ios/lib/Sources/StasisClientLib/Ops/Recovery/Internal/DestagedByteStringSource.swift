@@ -8,11 +8,19 @@ public enum DestagedByteStringSource {
     ) async throws {
         let staged = try await providers.staging.temporary()
         do {
-            var collected = Data()
-            for try await chunk in source {
-                collected.append(chunk)
+            if !FileManager.default.fileExists(atPath: staged.path) {
+                FileManager.default.createFile(atPath: staged.path, contents: nil)
             }
-            try collected.write(to: staged)
+            let handle = try FileHandle(forWritingTo: staged)
+            do {
+                for try await chunk in source {
+                    try handle.write(contentsOf: chunk)
+                }
+                try handle.close()
+            } catch {
+                try? handle.close()
+                throw error
+            }
             try await providers.staging.destage(from: staged, to: to)
         } catch {
             try? await providers.staging.discard(file: staged)

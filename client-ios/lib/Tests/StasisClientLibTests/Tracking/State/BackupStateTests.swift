@@ -9,19 +9,19 @@ struct BackupStateTests {
         var errorDescription: String? { message }
     }
 
-    private let entity1 = URL(fileURLWithPath: Fixtures.Metadata.fileOne.path)
-    private let entity2 = URL(fileURLWithPath: Fixtures.Metadata.fileTwo.path)
-    private let entity3 = URL(fileURLWithPath: Fixtures.Metadata.fileThree.path)
+    private let entity1 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileOne.path))
+    private let entity2 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileTwo.path))
+    private let entity3 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileThree.path))
 
     private var sourceEntity1: SourceEntity {
         try! SourceEntity(
-            path: entity1, existingMetadata: nil, currentMetadata: Fixtures.Metadata.fileOne
+            ref: entity1, existingMetadata: nil, currentMetadata: Fixtures.Metadata.fileOne
         )
     }
 
     private var sourceEntity3: SourceEntity {
         try! SourceEntity(
-            path: entity3, existingMetadata: nil, currentMetadata: Fixtures.Metadata.fileThree
+            ref: entity3, existingMetadata: nil, currentMetadata: Fixtures.Metadata.fileThree
         )
     }
 
@@ -94,11 +94,11 @@ struct BackupStateTests {
     func reportsRemainingEntities() {
         let backup = BackupState
             .start(operation: Operations.generateId(), definition: UUID())
-            .entityDiscovered(entity: sourceEntity1.path)
-            .entityDiscovered(entity: sourceEntity3.path)
+            .entityDiscovered(entity: sourceEntity1.ref)
+            .entityDiscovered(entity: sourceEntity3.ref)
             .entityProcessed(entity: entity1, metadata: .left(Fixtures.Metadata.fileOne))
 
-        #expect(backup.remainingEntities() == [sourceEntity3.path])
+        #expect(backup.remainingEntities() == [sourceEntity3.ref])
         #expect(backup.backupCompleted().remainingEntities() == [])
     }
 

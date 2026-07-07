@@ -13,13 +13,13 @@ struct SpecificationTests {
         #expect(objects.rootDirs > 0)
         #expect(objects.nestedDirs > 0)
 
-        let rule1 = Rule(id: 1, operation: .include, directory: root, pattern: "?", definition: nil)
-        let rule2 = Rule(id: 2, operation: .exclude, directory: root, pattern: "[a-z]", definition: nil)
-        let rule3 = Rule(id: 3, operation: .exclude, directory: root, pattern: "{0|1}", definition: nil)
-        let rule4 = Rule(id: 4, operation: .include, directory: root, pattern: "root-dir-?/*", definition: nil)
-        let rule5 = Rule(id: 5, operation: .include, directory: "\(root)/root", pattern: "**/child-*[a-c]/a", definition: nil)
-        let rule6 = Rule(id: 6, operation: .exclude, directory: "\(root)/root", pattern: "parent-0/**", definition: nil)
-        let rule7 = Rule(id: 7, operation: .exclude, directory: "\(root)/root", pattern: "**/q", definition: nil)
+        let rule1 = Rule(id: 1, operation: .include, source: root, pattern: "?", definition: nil)
+        let rule2 = Rule(id: 2, operation: .exclude, source: root, pattern: "[a-z]", definition: nil)
+        let rule3 = Rule(id: 3, operation: .exclude, source: root, pattern: "{0|1}", definition: nil)
+        let rule4 = Rule(id: 4, operation: .include, source: root, pattern: "root-dir-?/*", definition: nil)
+        let rule5 = Rule(id: 5, operation: .include, source: "\(root)/root", pattern: "**/child-*[a-c]/a", definition: nil)
+        let rule6 = Rule(id: 6, operation: .exclude, source: "\(root)/root", pattern: "parent-0/**", definition: nil)
+        let rule7 = Rule(id: 7, operation: .exclude, source: "\(root)/root", pattern: "**/q", definition: nil)
 
         let azRangeSize = 26
         let zeroOneListSize = 2
@@ -90,8 +90,8 @@ struct SpecificationTests {
         let (filesystem, _) = try createMockFileSystem(setup: .empty)
         let root = filesystem.root.path
 
-        let rule1 = Rule(id: 1, operation: .include, directory: "\(root)/test/", pattern: "**", definition: nil)
-        let rule2 = Rule(id: 2, operation: .include, directory: root, pattern: "missing-test-file", definition: nil)
+        let rule1 = Rule(id: 1, operation: .include, source: "\(root)/test/", pattern: "**", definition: nil)
+        let rule2 = Rule(id: 2, operation: .include, source: root, pattern: "missing-test-file", definition: nil)
 
         let spec = Specification.build(rules: [rule1, rule2]) { _ in }
 
@@ -111,11 +111,11 @@ struct SpecificationTests {
         )
         let root = filesystem.root.path
 
-        let rule1 = Rule(id: 1, operation: .include, directory: root, pattern: "?", definition: nil)
-        let rule2 = Rule(id: 2, operation: .exclude, directory: root, pattern: "a", definition: nil)
-        let rule3 = Rule(id: 3, operation: .exclude, directory: root, pattern: "b", definition: nil)
-        let rule4 = Rule(id: 4, operation: .exclude, directory: root, pattern: "c", definition: nil)
-        let rule5 = Rule(id: 5, operation: .include, directory: root, pattern: "[c-f]", definition: nil)
+        let rule1 = Rule(id: 1, operation: .include, source: root, pattern: "?", definition: nil)
+        let rule2 = Rule(id: 2, operation: .exclude, source: root, pattern: "a", definition: nil)
+        let rule3 = Rule(id: 3, operation: .exclude, source: root, pattern: "b", definition: nil)
+        let rule4 = Rule(id: 4, operation: .exclude, source: root, pattern: "c", definition: nil)
+        let rule5 = Rule(id: 5, operation: .include, source: root, pattern: "[c-f]", definition: nil)
 
         let rules = [rule1, rule2, rule3, rule4, rule5]
         let spec = Specification.build(rules: rules) { _ in }
@@ -174,7 +174,7 @@ struct SpecificationTests {
         let (filesystem, _) = try createMockFileSystem(setup: .empty)
         let root = filesystem.root.path
 
-        let rule1 = Rule(id: 1, operation: .include, directory: "\(root)/missing-dir", pattern: "*", definition: nil)
+        let rule1 = Rule(id: 1, operation: .include, source: "\(root)/missing-dir", pattern: "*", definition: nil)
 
         let spec = Specification.build(rules: [rule1]) { _ in }
 

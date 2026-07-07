@@ -9,7 +9,7 @@ struct RuleTests {
         let rule1 = Rule(
             id: 1,
             operation: .include,
-            directory: "/work",
+            source: "/work",
             pattern: "?",
             definition: nil
         )
@@ -17,21 +17,21 @@ struct RuleTests {
         let rule2 = Rule(
             id: 2,
             operation: .exclude,
-            directory: "/work",
+            source: "/work",
             pattern: "[a-z]",
             definition: definition2
         )
         let rule3 = Rule(
             id: 3,
             operation: .include,
-            directory: "/work",
+            source: "/work",
             pattern: "{0|1}",
             definition: nil
         )
         let rule4 = Rule(
             id: 4,
             operation: .exclude,
-            directory: "/work/root",
+            source: "/work/root",
             pattern: "**/q",
             definition: nil
         )

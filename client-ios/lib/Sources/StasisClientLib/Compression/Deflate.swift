@@ -33,6 +33,14 @@ public struct Deflate: Compressor {
         return try Deflate.processStream(stream: &stream, input: data, flush: Z_NO_FLUSH, step: inflate)
     }
 
+    public func encode(_ source: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+        ZlibStream.transform(source, mode: .compress, windowBits: 15)
+    }
+
+    public func decode(_ source: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+        ZlibStream.transform(source, mode: .decompress, windowBits: 15)
+    }
+
     private static let chunkSize = 64 * 1024
 
     static func validateInputSize(_ count: Int) throws {

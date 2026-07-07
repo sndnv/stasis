@@ -5,10 +5,10 @@ import Testing
 
 @Suite("EntityProcessing stage")
 struct EntityProcessingTests {
-    @Test("extract and expect file metadata")
-    func expectsFileMetadata() throws {
+    @Test("extract and expect content metadata")
+    func expectsContentMetadata() throws {
         let entity = try SourceEntity(
-            path: URL(fileURLWithPath: Fixtures.Metadata.fileOne.path),
+            ref: .filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileOne.path)),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.fileOne
         )
@@ -16,19 +16,19 @@ struct EntityProcessingTests {
             Issue.record("expected file metadata fixture")
             return
         }
-        let actual = try Backup.EntityProcessing.expectFileMetadata(entity: entity)
-        #expect(actual == expected)
+        let actual = try Backup.EntityProcessing.expectContentMetadata(entity: entity)
+        #expect(actual as? EntityMetadata.File == expected)
     }
 
     @Test("fail if unexpected target entity metadata is provided")
     func failsForDirectory() throws {
         let entity = try SourceEntity(
-            path: URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path),
+            ref: .filesystem(URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path)),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.directoryOne
         )
         #expect(throws: Backup.EntityProcessingError.expectedFileGotDirectory(path: Fixtures.Metadata.directoryOne.path)) {
-            _ = try Backup.EntityProcessing.expectFileMetadata(entity: entity)
+            _ = try Backup.EntityProcessing.expectContentMetadata(entity: entity)
         }
     }
 
@@ -45,17 +45,17 @@ struct EntityProcessingTests {
             size: 10, checksum: fileMeta.checksum, crates: fileMeta.crates, compression: fileMeta.compression
         )
         let fileEntity = try SourceEntity(
-            path: URL(fileURLWithPath: fileMeta.path),
+            ref: .filesystem(URL(fileURLWithPath: fileMeta.path)),
             existingMetadata: nil,
             currentMetadata: .file(fileMeta)
         )
         let directoryEntity = try SourceEntity(
-            path: URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path),
+            ref: .filesystem(URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path)),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.directoryOne
         )
         let unchangedFileEntity = try SourceEntity(
-            path: URL(fileURLWithPath: fileMeta.path),
+            ref: .filesystem(URL(fileURLWithPath: fileMeta.path)),
             existingMetadata: .file(fileMeta),
             currentMetadata: .file(fileMeta)
         )
@@ -93,7 +93,7 @@ struct EntityProcessingTests {
             size: fileSize, checksum: Data([0xAA]),
             crates: [:], compression: "none"
         ))
-        let entity = try SourceEntity(path: sourceFile, existingMetadata: nil, currentMetadata: currentMetadata)
+        let entity = try SourceEntity(ref: .filesystem(sourceFile), existingMetadata: nil, currentMetadata: currentMetadata)
 
         let stage = Backup.EntityProcessing(
             targetDataset: Fixtures.Datasets.default,
@@ -106,9 +106,11 @@ struct EntityProcessingTests {
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
                 track: tracker,
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                kinds: [BackupEntityKinds.filesystem]
             ),
-            maxPartSize: 16_384
+            maxPartSize: 16_384,
+            maxChunkSize: 8_192
         )
 
         let upstream = AsyncThrowingStream<SourceEntity, Error> { continuation in
@@ -163,14 +165,14 @@ struct EntityProcessingTests {
         let metadata2 = makeFileMetadata(path: sourceFile2.path, baseFile: baseFile, checksum: Data([0xBB]))
         let metadata3 = makeFileMetadata(path: sourceFile3.path, baseFile: baseFile, checksum: Data([0xCC]))
 
-        let entity1 = try SourceEntity(path: sourceFile1, existingMetadata: nil, currentMetadata: metadata1)
+        let entity1 = try SourceEntity(ref: .filesystem(sourceFile1), existingMetadata: nil, currentMetadata: metadata1)
         let entity2 = try SourceEntity(
-            path: sourceFile2,
+            ref: .filesystem(sourceFile2),
             existingMetadata: metadata2.withFileFlags(isHidden: true),
             currentMetadata: metadata2
         )
         let entity3 = try SourceEntity(
-            path: sourceFile3,
+            ref: .filesystem(sourceFile3),
             existingMetadata: metadata3.withFileFlags(checksum: Data([0x99])),
             currentMetadata: metadata3
         )
@@ -182,9 +184,11 @@ struct EntityProcessingTests {
                 checksum: Checksums.md5, staging: staging, compression: MockCompression(),
                 encryptor: encryption, decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [BackupEntityKinds.filesystem]
             ),
-            maxPartSize: 16_384
+            maxPartSize: 16_384,
+            maxChunkSize: 8_192
         )
 
         let upstream = AsyncThrowingStream<SourceEntity, Error> { continuation in
@@ -229,7 +233,7 @@ struct EntityProcessingTests {
             Issue.record("expected file fixture"); return
         }
         let currentMetadata = makeFileMetadata(path: sourceFile.path, baseFile: baseFile, checksum: Data([0xAA]))
-        let entity = try SourceEntity(path: sourceFile, existingMetadata: nil, currentMetadata: currentMetadata)
+        let entity = try SourceEntity(ref: .filesystem(sourceFile), existingMetadata: nil, currentMetadata: currentMetadata)
 
         let stage = Backup.EntityProcessing(
             targetDataset: Fixtures.Datasets.default,
@@ -238,9 +242,11 @@ struct EntityProcessingTests {
                 checksum: Checksums.md5, staging: staging, compression: failingCompression,
                 encryptor: encryption, decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [BackupEntityKinds.filesystem]
             ),
-            maxPartSize: 16_384
+            maxPartSize: 16_384,
+            maxChunkSize: 8_192
         )
 
         let upstream = AsyncThrowingStream<SourceEntity, Error> { continuation in
@@ -291,7 +297,7 @@ struct EntityProcessingTests {
             size: fileSize, checksum: Data([0xAA]),
             crates: [:], compression: "none"
         ))
-        let entity = try SourceEntity(path: sourceFile, existingMetadata: nil, currentMetadata: currentMetadata)
+        let entity = try SourceEntity(ref: .filesystem(sourceFile), existingMetadata: nil, currentMetadata: currentMetadata)
 
         let stage = Backup.EntityProcessing(
             targetDataset: Fixtures.Datasets.default,
@@ -304,9 +310,11 @@ struct EntityProcessingTests {
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
                 track: tracker,
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                kinds: [BackupEntityKinds.filesystem]
             ),
-            maxPartSize: 16_384
+            maxPartSize: 16_384,
+            maxChunkSize: 8_192
         )
 
         let upstream = AsyncThrowingStream<SourceEntity, Error> { continuation in

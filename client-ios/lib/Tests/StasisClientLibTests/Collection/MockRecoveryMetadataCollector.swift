@@ -11,7 +11,7 @@ struct MockRecoveryMetadataCollector: RecoveryMetadataCollector {
     ) async throws -> TargetEntity {
         let current = metadata[entity]
         return try TargetEntity(
-            path: entity,
+            ref: .filesystem(entity),
             destination: destination,
             existingMetadata: existingMetadata,
             currentMetadata: current

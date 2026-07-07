@@ -3,20 +3,20 @@ import Foundation
 public struct Rule: Sendable, Equatable, Hashable {
     public let id: Int64
     public let operation: RuleOperation
-    public let directory: String
+    public let source: String
     public let pattern: String
     public let definition: DatasetDefinitionId?
 
     public init(
         id: Int64,
         operation: RuleOperation,
-        directory: String,
+        source: String,
         pattern: String,
         definition: DatasetDefinitionId?
     ) {
         self.id = id
         self.operation = operation
-        self.directory = directory
+        self.source = source
         self.pattern = pattern
         self.definition = definition
     }
@@ -30,7 +30,7 @@ public struct Rule: Sendable, Equatable, Hashable {
         case .none: ""
         case .some(let id): "(\(id))"
         }
-        return "\(operationAsString) \(directory) \(pattern) \(definitionAsString)"
+        return "\(operationAsString) \(source) \(pattern) \(definitionAsString)"
             .trimmingCharacters(in: .whitespaces)
     }
 }

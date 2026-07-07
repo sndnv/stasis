@@ -71,8 +71,10 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSPhotoLibraryUsageDescription: "stasis backs up the photos and videos you choose to a server you control."
+        NSPhotoLibraryUsageDescription: "stasis backs up the photos and videos you choose so you can restore them later."
         NSPhotoLibraryAddUsageDescription: "stasis restores photos and videos back to your library."
+        NSContactsUsageDescription: "stasis backs up your contacts so you can restore them later."
+        NSCalendarsFullAccessUsageDescription: "stasis backs up your calendar events so you can restore them later."
         UIBackgroundModes:
           - fetch
           - processing
@@ -88,32 +90,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:
       - package: StasisClientLib
-      - target: StasisFileProvider
       - target: StasisShare
-
-  StasisFileProvider:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: StasisFileProvider
-        excludes:
-          - "*.entitlements"
-    info:
-      path: StasisFileProvider/Info.plist
-      properties:
-        CFBundleDisplayName: stasis
-        CFBundleShortVersionString: "0.0.0"
-        CFBundleVersion: "1"
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.fileprovider-nonui
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).FileProviderExtension
-          NSExtensionFileProviderSupportsEnumeration: true
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: stasis.client.ios.fileprovider
-        CODE_SIGN_ENTITLEMENTS: StasisFileProvider/StasisFileProvider.entitlements
-    dependencies:
-      - package: StasisClientLib
 
   StasisClientTests:
     type: bundle.unit-test

@@ -17,7 +17,6 @@ included:
   - lib/Tests
   - app/StasisClient
   - app/StasisClientTests
-  - app/StasisFileProvider
   - app/StasisShare
 
 excluded:

@@ -23,7 +23,8 @@ struct MetadataPushTests {
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: api, core: core),
                 track: tracker,
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                kinds: [BackupEntityKinds.filesystem]
             )
         )
 

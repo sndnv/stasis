@@ -76,7 +76,7 @@ public struct Specification: Sendable {
         rules: [Rule],
         onMatchIncluded: (URL) -> Void
     ) -> Specification {
-        let grouped = Dictionary(grouping: rules, by: \.directory)
+        let grouped = Dictionary(grouping: rules, by: \.source)
         var allMatchers: [RuleMatcher] = []
         var spec = Specification.empty()
 

@@ -122,10 +122,10 @@ private struct OperationDetailContent: View {
 
         stagesSection(
             stages: [
-                .urls("Discovered", Array(backup.entities.discovered)),
-                .urls("Examined", Array(backup.entities.examined)),
-                .urls("Skipped", Array(backup.entities.skipped)),
-                .urls("Collected", Array(backup.entities.collected.keys)),
+                .keys("Discovered", Array(backup.entities.discovered)),
+                .keys("Examined", Array(backup.entities.examined)),
+                .keys("Skipped", Array(backup.entities.skipped)),
+                .keys("Collected", Array(backup.entities.collected.keys)),
                 .progress("Pending", backup.entities.pending) { ($0.processedParts, $0.expectedParts) },
                 .progress("Processed", backup.entities.processed) { ($0.processedParts, $0.expectedParts) }
             ]
@@ -134,8 +134,8 @@ private struct OperationDetailContent: View {
         if !backup.entities.failed.isEmpty || !backup.failures.isEmpty || !backup.entities.unmatched.isEmpty {
             failuresSection(
                 unmatched: backup.entities.unmatched,
-                entityFailures: backup.entities.failed.map { (url, reason) in
-                    "\(url.path): \(reason)"
+                entityFailures: backup.entities.failed.map { (ref, reason) in
+                    "\(ref.key): \(reason)"
                 },
                 overallFailures: backup.failures
             )
@@ -157,19 +157,19 @@ private struct OperationDetailContent: View {
 
         stagesSection(
             stages: [
-                .urls("Examined", Array(recovery.entities.examined)),
-                .urls("Collected", Array(recovery.entities.collected.keys)),
+                .keys("Examined", Array(recovery.entities.examined)),
+                .keys("Collected", Array(recovery.entities.collected.keys)),
                 .progress("Pending", recovery.entities.pending) { ($0.processedParts, $0.expectedParts) },
                 .progress("Processed", recovery.entities.processed) { ($0.processedParts, $0.expectedParts) },
-                .urls("Metadata Applied", Array(recovery.entities.metadataApplied))
+                .keys("Metadata Applied", Array(recovery.entities.metadataApplied))
             ]
         )
 
         if !recovery.entities.failed.isEmpty || !recovery.failures.isEmpty {
             failuresSection(
                 unmatched: [],
-                entityFailures: recovery.entities.failed.map { (url, reason) in
-                    "\(url.path): \(reason)"
+                entityFailures: recovery.entities.failed.map { (ref, reason) in
+                    "\(ref.key): \(reason)"
                 },
                 overallFailures: recovery.failures
             )
@@ -294,18 +294,18 @@ private struct OperationDetailContent: View {
         let title: String
         let entries: [String]
 
-        static func urls(_ title: String, _ urls: [URL]) -> Stage {
-            Stage(title: title, entries: urls.map { $0.path }.sorted())
+        static func keys(_ title: String, _ refs: [EntityRef]) -> Stage {
+            Stage(title: title, entries: refs.map { $0.key }.sorted())
         }
 
         static func progress<V>(
             _ title: String,
-            _ items: [URL: V],
+            _ items: [EntityRef: V],
             parts: (V) -> (processed: Int, expected: Int)
         ) -> Stage {
-            let entries = items.sorted { $0.key.path < $1.key.path }.map { url, value -> String in
+            let entries = items.sorted { $0.key.key < $1.key.key }.map { ref, value -> String in
                 let (processed, expected) = parts(value)
-                return expected > 1 ? "\(url.path) — \(processed) / \(expected)" : url.path
+                return expected > 1 ? "\(ref.key) — \(processed) / \(expected)" : ref.key
             }
             return Stage(title: title, entries: entries)
         }
@@ -332,9 +332,9 @@ private extension BackupState {
             definition: UUID(),
             started: .now.addingTimeInterval(-300),
             entities: BackupState.Entities(
-                discovered: Set([URL(fileURLWithPath: "/a/one.txt"), URL(fileURLWithPath: "/a/two.txt")]),
+                discovered: Set([.filesystem(URL(fileURLWithPath: "/a/one.txt")), .filesystem(URL(fileURLWithPath: "/a/two.txt"))]),
                 unmatched: [],
-                examined: Set([URL(fileURLWithPath: "/a/one.txt")]),
+                examined: Set([.filesystem(URL(fileURLWithPath: "/a/one.txt"))]),
                 skipped: [],
                 collected: [:],
                 pending: [:],

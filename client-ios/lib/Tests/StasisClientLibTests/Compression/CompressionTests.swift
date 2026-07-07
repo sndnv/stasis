@@ -43,17 +43,17 @@ struct CompressionTests {
     func encoderFor() throws {
         let compression = try Compressions.create(defaultCompression: "deflate", disabledExtensions: "a,b,c")
         let fileOne = try SourceEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.fileOne
         )
         let fileTwo = try SourceEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.fileTwo
         )
         let fileThree = try SourceEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.fileThree
         )
@@ -66,7 +66,7 @@ struct CompressionTests {
     func encoderForRejectsDirectory() throws {
         let compression = try Compressions.create(defaultCompression: "deflate", disabledExtensions: "a,b,c")
         let directory = try SourceEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             existingMetadata: nil,
             currentMetadata: Fixtures.Metadata.directoryOne
         )
@@ -79,19 +79,19 @@ struct CompressionTests {
     func decoderFor() throws {
         let compression = try Compressions.create(defaultCompression: "deflate", disabledExtensions: "a,b,c")
         let fileOne = try TargetEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             destination: .default,
             existingMetadata: Fixtures.Metadata.fileOne,
             currentMetadata: nil
         )
         let fileTwo = try TargetEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             destination: .default,
             existingMetadata: Fixtures.Metadata.fileTwo,
             currentMetadata: nil
         )
         let fileThree = try TargetEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             destination: .default,
             existingMetadata: Fixtures.Metadata.fileThree,
             currentMetadata: nil
@@ -105,7 +105,7 @@ struct CompressionTests {
     func decoderForRejectsDirectory() throws {
         let compression = try Compressions.create(defaultCompression: "deflate", disabledExtensions: "a,b,c")
         let directory = try TargetEntity(
-            path: URL(fileURLWithPath: "/tmp/a"),
+            ref: .filesystem(URL(fileURLWithPath: "/tmp/a")),
             destination: .default,
             existingMetadata: Fixtures.Metadata.directoryOne,
             currentMetadata: nil

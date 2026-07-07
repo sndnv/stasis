@@ -19,16 +19,16 @@ struct RecoveryEntityProcessingTests {
         #expect(Recovery.EntityProcessing.partIdFromPath("/tmp/a__part=other") == 0)
     }
 
-    @Test("fails if directory metadata is provided to expectFileMetadata")
-    func expectFileMetadataFailsForDirectory() throws {
+    @Test("fails if directory metadata is provided to expectContentMetadata")
+    func expectContentMetadataFailsForDirectory() throws {
         let entity = try TargetEntity(
-            path: URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path),
+            ref: .filesystem(URL(fileURLWithPath: Fixtures.Metadata.directoryOne.path)),
             destination: .default,
             existingMetadata: Fixtures.Metadata.directoryOne,
             currentMetadata: nil
         )
         #expect(throws: Recovery.EntityProcessingError.expectedFileGotDirectory(path: Fixtures.Metadata.directoryOne.path)) {
-            _ = try Recovery.EntityProcessing.expectFileMetadata(entity: entity)
+            _ = try Recovery.EntityProcessing.expectContentMetadata(entity: entity)
         }
     }
 
@@ -58,7 +58,7 @@ struct RecoveryEntityProcessingTests {
         let current = existing.withFileFlags(checksum: Data([0x99]))
 
         let target = try TargetEntity(
-            path: destinationPath,
+            ref: .filesystem(destinationPath),
             destination: .default,
             existingMetadata: existing,
             currentMetadata: current
@@ -75,7 +75,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: staging, compression: MockCompression(),
                 decryptor: decryption,
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 
@@ -108,7 +109,7 @@ struct RecoveryEntityProcessingTests {
         let partKey = "\(path.path)__part=0"
         let existing = makeFileMetadata(path: path.path, crates: [partKey: crateId])
         let target = try TargetEntity(
-            path: path,
+            ref: .filesystem(path),
             destination: .default,
             existingMetadata: existing,
             currentMetadata: existing.withFileFlags(checksum: Data([0x99]))
@@ -122,7 +123,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: MockFileStaging(), compression: MockCompression(),
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 
@@ -145,7 +147,7 @@ struct RecoveryEntityProcessingTests {
         let partKey = "\(path.path)__part=0"
         let existing = makeFileMetadata(path: path.path, crates: [partKey: crateId])
         let target = try TargetEntity(
-            path: path,
+            ref: .filesystem(path),
             destination: .default,
             existingMetadata: existing,
             currentMetadata: existing.withFileFlags(checksum: Data([0x99]))
@@ -158,7 +160,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: MockFileStaging(), compression: FailingDecompression(),
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: MockServerCoreEndpointClient()),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 
@@ -188,7 +191,7 @@ struct RecoveryEntityProcessingTests {
         ]
         let existing = makeFileMetadata(path: path.path, crates: crates)
         let target = try TargetEntity(
-            path: path,
+            ref: .filesystem(path),
             destination: .default,
             existingMetadata: existing,
             currentMetadata: existing.withFileFlags(checksum: Data([0x99]))
@@ -201,7 +204,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: MockFileStaging(), compression: MockCompression(),
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: MockServerCoreEndpointClient()),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 
@@ -223,7 +227,7 @@ struct RecoveryEntityProcessingTests {
         let path = fs.resolve("file")
         let existing = makeFileMetadata(path: path.path, crates: [:])
         let target = try TargetEntity(
-            path: path,
+            ref: .filesystem(path),
             destination: .default,
             existingMetadata: existing,
             currentMetadata: existing.withFileFlags(checksum: Data([0x99]))
@@ -236,7 +240,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: MockFileStaging(), compression: MockCompression(),
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: MockServerCoreEndpointClient()),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 
@@ -265,7 +270,7 @@ struct RecoveryEntityProcessingTests {
         let filePartKey = "\(filePath)__part=0"
         let fileMetadata = makeFileMetadata(path: filePath, crates: [filePartKey: fileCrate])
         let fileTarget = try TargetEntity(
-            path: URL(fileURLWithPath: filePath),
+            ref: .filesystem(URL(fileURLWithPath: filePath)),
             destination: .directory(path: destination, keepDefaultStructure: false),
             existingMetadata: fileMetadata,
             currentMetadata: fileMetadata.withFileFlags(checksum: Data([0x99]))
@@ -279,7 +284,7 @@ struct RecoveryEntityProcessingTests {
             owner: "root", group: "root", permissions: "rwxrwxrwx"
         ))
         let dirTarget = try TargetEntity(
-            path: URL(fileURLWithPath: dirPath),
+            ref: .filesystem(URL(fileURLWithPath: dirPath)),
             destination: .directory(path: destination, keepDefaultStructure: false),
             existingMetadata: dirMetadata,
             currentMetadata: nil
@@ -294,7 +299,8 @@ struct RecoveryEntityProcessingTests {
                 checksum: Checksums.md5, staging: staging, compression: MockCompression(),
                 decryptor: MockDecrypting(),
                 clients: StaticClients(api: MockServerApiEndpointClient(), core: core),
-                track: tracker, analytics: NoOpAnalyticsCollector()
+                track: tracker, analytics: NoOpAnalyticsCollector(),
+                kinds: [RecoveryEntityKinds.filesystem]
             )
         )
 

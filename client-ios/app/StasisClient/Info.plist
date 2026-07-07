@@ -28,10 +28,14 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>stasis backs up your calendar events so you can restore them later.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>stasis backs up your contacts so you can restore them later.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>stasis restores photos and videos back to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>stasis backs up the photos and videos you choose to a server you control.</string>
+	<string>stasis backs up the photos and videos you choose so you can restore them later.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

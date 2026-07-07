@@ -16,6 +16,7 @@ struct EntryDetailView: View {
         EntryDetailContent(
             entry: entry,
             state: state,
+            session: container.session,
             filters: $filters,
             onRefresh: { await model?.refresh() },
             onClearError: { model?.clearError() }
@@ -77,7 +78,7 @@ struct EntryMetadataFilters: Equatable {
     }
 
     private static func isPathHidden(entry: PathEntry) -> Bool {
-        if entry.metadata.isHidden { return true }
+        if entry.metadata.filesystem?.isHidden == true { return true }
         let lastComponent = (entry.path as NSString).lastPathComponent
         return lastComponent.hasPrefix(".") || lastComponent.hasSuffix(".tmp")
     }
@@ -113,6 +114,7 @@ extension DatasetMetadata {
 private struct EntryDetailContent: View {
     let entry: DatasetEntry
     let state: EntryDetailViewState
+    let session: AuthenticatedSession?
     @Binding var filters: EntryMetadataFilters
     let onRefresh: () async -> Void
     let onClearError: () -> Void
@@ -142,7 +144,7 @@ private struct EntryDetailContent: View {
             Text(state.error ?? "")
         }
         .sheet(item: $sheetEntry) { entry in
-            EntityMetadataSheet(entry: entry)
+            EntityMetadataSheet(entry: entry, session: session)
         }
     }
 
@@ -274,13 +276,34 @@ private struct MetadataRowView: View {
         switch entry.metadata {
         case .file: "File"
         case .directory: "Directory"
+        case .library: "Library"
         }
     }
 }
 
 private struct EntityMetadataSheet: View {
     let entry: PathEntry
+    let session: AuthenticatedSession?
     @Environment(\.dismiss) private var dismiss
+    @State private var model: EntryContentModel?
+    @State private var shareItem: ShareItem?
+    @State private var actionError: String?
+
+    @MainActor
+    init(entry: PathEntry, session: AuthenticatedSession?) {
+        self.entry = entry
+        self.session = session
+        let contentModel: EntryContentModel? = {
+            guard let session, entry.metadata.content != nil else { return nil }
+            return EntryContentModel.live(
+                session: session,
+                entityKey: entry.path,
+                displayName: Self.entityDisplayName(entry),
+                metadata: entry.metadata
+            )
+        }()
+        _model = State(initialValue: contentModel)
+    }
 
     var body: some View {
         NavigationStack {
@@ -288,7 +311,7 @@ private struct EntityMetadataSheet: View {
                 Section("Path") {
                     LabeledContent("Full Path", value: entry.path)
                         .textSelection(.enabled)
-                    if let link = entry.metadata.link {
+                    if let link = entry.metadata.filesystem?.link {
                         LabeledContent("Link", value: link).textSelection(.enabled)
                     }
                     LabeledContent("Kind", value: kindLabel)
@@ -296,15 +319,20 @@ private struct EntityMetadataSheet: View {
                     LabeledContent("Change", value: entry.kind == .content ? "Content" : "Metadata")
                 }
                 Section("Attributes") {
-                    LabeledContent("Hidden", value: entry.metadata.isHidden ? "Yes" : "No")
-                    LabeledContent("Owner", value: entry.metadata.owner)
-                    LabeledContent("Group", value: entry.metadata.group)
-                    LabeledContent("Permissions", value: entry.metadata.permissions)
+                    if let filesystem = entry.metadata.filesystem {
+                        LabeledContent("Hidden", value: filesystem.isHidden ? "Yes" : "No")
+                        LabeledContent("Owner", value: filesystem.owner)
+                        LabeledContent("Group", value: filesystem.group)
+                        LabeledContent("Permissions", value: filesystem.permissions)
+                    }
                     LabeledContent("Created", value: entry.metadata.created.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("Updated", value: entry.metadata.updated.formatted(date: .abbreviated, time: .shortened))
                 }
                 if case .file(let file) = entry.metadata {
                     fileSection(file: file)
+                }
+                if let model {
+                    contentSection(model: model)
                 }
             }
             .navigationTitle((entry.path as NSString).lastPathComponent)
@@ -314,8 +342,78 @@ private struct EntityMetadataSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .sheet(item: $shareItem) { item in
+                ShareSheet(url: item.url)
+            }
+            .alert("Error", isPresented: errorBinding) {
+                Button("OK") { actionError = nil }
+            } message: {
+                Text(actionError ?? "")
+            }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private func contentSection(model: EntryContentModel) -> some View {
+        Section("Content") {
+            NavigationLink("Preview") { EntryContentPreviewView(model: model) }
+            Button("Save…") { save(model) }
+            if model.canExport {
+                Button(exportLabel(model)) { export(model) }
+            }
+        }
+    }
+
+    private func save(_ model: EntryContentModel) {
+        Task { @MainActor in
+            do {
+                let bytes = try await model.rawContent()
+                shareItem = ShareItem(url: try ExportFile.write(
+                    name: model.displayName,
+                    fileExtension: ExportFile.inferExtension(bytes),
+                    bytes: bytes
+                ))
+            } catch {
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func export(_ model: EntryContentModel) {
+        Task { @MainActor in
+            do {
+                let content = try await model.exportedContent()
+                shareItem = ShareItem(url: try ExportFile.write(
+                    name: model.displayName,
+                    fileExtension: content.fileExtension,
+                    bytes: content.bytes
+                ))
+            } catch {
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func exportLabel(_ model: EntryContentModel) -> String {
+        switch SourceUri.scheme(model.entityKey) {
+        case ContactsSource.scheme: "Export as vCard"
+        case CalendarSource.scheme: "Export as ICS"
+        default: "Export"
+        }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } })
+    }
+
+    private static func entityDisplayName(_ entry: PathEntry) -> String {
+        if case .library(let library) = entry.metadata,
+           let attributes = try? JSONDecoder().decode([String: String].self, from: library.attributes),
+           let name = attributes["name"], !name.isEmpty {
+            return name
+        }
+        let component = (entry.path as NSString).lastPathComponent
+        return component.isEmpty ? entry.path : component
     }
 
     private func fileSection(file: EntityMetadata.File) -> some View {
@@ -334,6 +432,7 @@ private struct EntityMetadataSheet: View {
         switch entry.metadata {
         case .file: "File"
         case .directory: "Directory"
+        case .library: "Library"
         }
     }
 
@@ -357,6 +456,7 @@ private struct PreviewHarness: View {
             EntryDetailContent(
                 entry: entry,
                 state: state,
+                session: nil,
                 filters: $filters,
                 onRefresh: {},
                 onClearError: {}

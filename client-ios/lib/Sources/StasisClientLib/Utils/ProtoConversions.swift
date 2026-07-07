@@ -8,14 +8,14 @@ extension Date {
     }
 }
 
-extension Dictionary where Key == URL {
-    func keyedByPath() -> [String: Value] {
-        [String: Value](uniqueKeysWithValues: map { ($0.key.path, $0.value) })
+extension Dictionary where Key == EntityRef {
+    func keyedByKey() -> [String: Value] {
+        [String: Value](uniqueKeysWithValues: map { ($0.key.key, $0.value) })
     }
 }
 
 extension Dictionary where Key == String {
-    func keyedByFileURL() -> [URL: Value] {
-        [URL: Value](uniqueKeysWithValues: map { (URL(fileURLWithPath: $0.key), $0.value) })
+    func keyedByRef() -> [EntityRef: Value] {
+        [EntityRef: Value](uniqueKeysWithValues: map { (EntityRef.default(key: $0.key), $0.value) })
     }
 }

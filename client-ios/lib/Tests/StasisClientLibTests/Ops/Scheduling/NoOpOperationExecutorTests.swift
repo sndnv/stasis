@@ -44,9 +44,9 @@ struct NoOpOperationExecutorTests {
     @Test("expiration / validation / keyRotation throw notImplemented")
     func startMethodsThrow() async {
         let executor = NoOpOperationExecutor()
-        await assertThrowsNotImplemented { try await executor.startExpiration { _ in } }
-        await assertThrowsNotImplemented { try await executor.startValidation { _ in } }
-        await assertThrowsNotImplemented { try await executor.startKeyRotation { _ in } }
+        await assertThrowsNotImplemented { _ = try await executor.startExpiration { _ in } }
+        await assertThrowsNotImplemented { _ = try await executor.startValidation { _ in } }
+        await assertThrowsNotImplemented { _ = try await executor.startKeyRotation { _ in } }
     }
 
     @Test("stop throws operationNotFound")

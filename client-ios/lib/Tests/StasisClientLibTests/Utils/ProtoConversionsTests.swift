@@ -28,44 +28,44 @@ struct DateEpochMillisTests {
     }
 }
 
-@Suite("Dictionary URL ↔ path keyed")
+@Suite("Dictionary EntityRef ↔ key")
 struct DictionaryKeyConversionsTests {
-    @Test("keyedByPath converts URL keys to path strings")
-    func keyedByPathConvertsKeys() {
-        let urls: [URL: Int] = [
-            URL(fileURLWithPath: "/tmp/a"): 1,
-            URL(fileURLWithPath: "/tmp/b"): 2
+    @Test("keyedByKey converts EntityRef keys to key strings")
+    func keyedByKeyConvertsKeys() {
+        let refs: [EntityRef: Int] = [
+            .filesystem(URL(fileURLWithPath: "/tmp/a")): 1,
+            .library(scheme: "photos", path: "/album"): 2
         ]
-        let paths = urls.keyedByPath()
-        #expect(paths == ["/tmp/a": 1, "/tmp/b": 2])
+        let keys = refs.keyedByKey()
+        #expect(keys == ["/tmp/a": 1, "photos:/album": 2])
     }
 
-    @Test("keyedByFileURL converts path strings to file URL keys")
-    func keyedByFileURLConvertsKeys() {
-        let paths: [String: Int] = ["/tmp/a": 1, "/tmp/b": 2]
-        let urls = paths.keyedByFileURL()
-        #expect(urls == [
-            URL(fileURLWithPath: "/tmp/a"): 1,
-            URL(fileURLWithPath: "/tmp/b"): 2
+    @Test("keyedByRef converts key strings to EntityRef keys")
+    func keyedByRefConvertsKeys() {
+        let keys: [String: Int] = ["/tmp/a": 1, "photos:/album": 2]
+        let refs = keys.keyedByRef()
+        #expect(refs == [
+            .filesystem(URL(fileURLWithPath: "/tmp/a")): 1,
+            .library(scheme: "photos", path: "/album"): 2
         ])
     }
 
-    @Test("round-trips URL ↔ path keys via both helpers")
+    @Test("round-trips EntityRef ↔ key via both helpers")
     func roundTripsViaBothHelpers() {
-        let original: [URL: String] = [
-            URL(fileURLWithPath: "/tmp/one"): "a",
-            URL(fileURLWithPath: "/tmp/two"): "b"
+        let original: [EntityRef: String] = [
+            .filesystem(URL(fileURLWithPath: "/tmp/one")): "a",
+            .library(scheme: "photos", path: "/two"): "b"
         ]
-        let viaPath = original.keyedByPath()
-        let restored = viaPath.keyedByFileURL()
+        let viaKey = original.keyedByKey()
+        let restored = viaKey.keyedByRef()
         #expect(restored == original)
     }
 
     @Test("handles empty dictionaries in both directions")
     func handlesEmptyDictionaries() {
-        let emptyUrls: [URL: Int] = [:]
-        let emptyPaths: [String: Int] = [:]
-        #expect(emptyUrls.keyedByPath().isEmpty)
-        #expect(emptyPaths.keyedByFileURL().isEmpty)
+        let emptyRefs: [EntityRef: Int] = [:]
+        let emptyKeys: [String: Int] = [:]
+        #expect(emptyRefs.keyedByKey().isEmpty)
+        #expect(emptyKeys.keyedByRef().isEmpty)
     }
 }

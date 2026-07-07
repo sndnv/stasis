@@ -16,10 +16,10 @@ struct FilesWalkerTests {
         let (filesystem, _) = try createMockFileSystem(setup: .unix)
         let root = filesystem.root.path
 
-        let rule1 = Rule(id: 0, operation: .include, directory: "/", pattern: "*", definition: nil)
+        let rule1 = Rule(id: 0, operation: .include, source: "/", pattern: "*", definition: nil)
         let matcher1 = try makePattern("\(root)/root/parent-*/*-{a,b,c}")
 
-        let rule2 = Rule(id: 1, operation: .exclude, directory: "/", pattern: "*", definition: nil)
+        let rule2 = Rule(id: 1, operation: .exclude, source: "/", pattern: "*", definition: nil)
         let matcher2 = try makePattern("\(root)/root/parent-*/*-{d,e}")
 
         let matchers = [(rule1, matcher1), (rule2, matcher2)]
@@ -72,10 +72,10 @@ struct FilesWalkerTests {
         let (filesystem, _) = try createMockFileSystem(setup: .unix)
         let root = filesystem.root.path
 
-        let rule1 = Rule(id: 0, operation: .include, directory: "/", pattern: "*", definition: nil)
+        let rule1 = Rule(id: 0, operation: .include, source: "/", pattern: "*", definition: nil)
         let matcher1 = try makePattern("\(root)/root/parent-{0,1}/*-{a,b,c}/*")
 
-        let rule2 = Rule(id: 1, operation: .exclude, directory: "/", pattern: "*", definition: nil)
+        let rule2 = Rule(id: 1, operation: .exclude, source: "/", pattern: "*", definition: nil)
         let matcher2 = try makePattern("\(root)/root/parent-{0,1}/*-{c,d,e}")
 
         let matchers = [(rule1, matcher1), (rule2, matcher2)]

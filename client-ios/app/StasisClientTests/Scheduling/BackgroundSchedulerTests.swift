@@ -182,7 +182,7 @@ struct BackgroundSchedulerTests {
         let schedule = pastSchedule(id: UUID(), agoSeconds: 120, intervalSeconds: 60)
         let bundle = try makeBundle(publicSchedules: [schedule])
         try await bundle.ruleRepository.put(Rule(
-            id: 0, operation: .include, directory: "/tmp", pattern: "*", definition: nil
+            id: 0, operation: .include, source: "/tmp", pattern: "*", definition: nil
         ))
         let definitionId = UUID()
         _ = try await bundle.scheduler.add(activeSchedule: ActiveSchedule(

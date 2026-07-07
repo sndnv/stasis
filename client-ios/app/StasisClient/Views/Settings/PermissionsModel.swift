@@ -1,5 +1,8 @@
+import Contacts
+import EventKit
 import Foundation
 import Observation
+import Photos
 import UIKit
 import UserNotifications
 
@@ -33,9 +36,60 @@ final class PermissionsModel {
         isLoading = true
         items = [
             await notificationsItem(),
-            backgroundRefreshItem()
+            backgroundRefreshItem(),
+            photosItem(),
+            contactsItem(),
+            calendarItem()
         ]
         isLoading = false
+    }
+
+    private func calendarItem() -> Item {
+        let status: PermissionStatus = switch EKEventStore.authorizationStatus(for: .event) {
+        case .fullAccess: .granted
+        case .writeOnly: .provisional
+        case .denied, .restricted: .denied
+        case .notDetermined: .unknown
+        @unknown default: .unknown
+        }
+        return Item(
+            id: "calendar",
+            name: "Calendar",
+            description: "Used to back up and restore your calendar events (experimental).",
+            status: status
+        )
+    }
+
+    private func contactsItem() -> Item {
+        let status: PermissionStatus = switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized: .granted
+        case .limited: .provisional
+        case .denied, .restricted: .denied
+        case .notDetermined: .unknown
+        @unknown default: .unknown
+        }
+        return Item(
+            id: "contacts",
+            name: "Contacts",
+            description: "Used to back up and restore your contacts (experimental).",
+            status: status
+        )
+    }
+
+    private func photosItem() -> Item {
+        let status: PermissionStatus = switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+        case .authorized: .granted
+        case .limited: .provisional
+        case .denied, .restricted: .denied
+        case .notDetermined: .unknown
+        @unknown default: .unknown
+        }
+        return Item(
+            id: "photos",
+            name: "Photos",
+            description: "Used to back up and restore the photos and videos you choose.",
+            status: status
+        )
     }
 
     private func notificationsItem() async -> Item {

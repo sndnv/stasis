@@ -9,20 +9,20 @@ struct RecoveryStateTests {
         var errorDescription: String? { message }
     }
 
-    private let entity1 = URL(fileURLWithPath: Fixtures.Metadata.fileOne.path)
-    private let entity2 = URL(fileURLWithPath: Fixtures.Metadata.fileTwo.path)
-    private let entity3 = URL(fileURLWithPath: Fixtures.Metadata.fileThree.path)
+    private let entity1 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileOne.path))
+    private let entity2 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileTwo.path))
+    private let entity3 = EntityRef.filesystem(URL(fileURLWithPath: Fixtures.Metadata.fileThree.path))
 
     private var targetEntity1: TargetEntity {
         try! TargetEntity(
-            path: entity1, destination: .default,
+            ref: entity1, destination: .default,
             existingMetadata: Fixtures.Metadata.fileOne, currentMetadata: nil
         )
     }
 
     private var targetEntity3: TargetEntity {
         try! TargetEntity(
-            path: entity3, destination: .default,
+            ref: entity3, destination: .default,
             existingMetadata: Fixtures.Metadata.fileThree, currentMetadata: nil
         )
     }

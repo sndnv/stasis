@@ -23,7 +23,7 @@ public struct RecoveryState: OperationState, Sendable, Equatable, Hashable {
 
     public var type: OperationType { .recovery }
 
-    public func entityExamined(entity: URL) -> RecoveryState {
+    public func entityExamined(entity: EntityRef) -> RecoveryState {
         var copy = self
         copy.entities.examined.insert(entity)
         return copy
@@ -31,23 +31,23 @@ public struct RecoveryState: OperationState, Sendable, Equatable, Hashable {
 
     public func entityCollected(entity: TargetEntity) -> RecoveryState {
         var copy = self
-        copy.entities.collected[entity.path] = entity
+        copy.entities.collected[entity.ref] = entity
         return copy
     }
 
-    public func entityProcessingStarted(entity: URL, expectedParts: Int) -> RecoveryState {
+    public func entityProcessingStarted(entity: EntityRef, expectedParts: Int) -> RecoveryState {
         var copy = self
         copy.entities.pending[entity] = PendingTargetEntity(expectedParts: expectedParts, processedParts: 0)
         return copy
     }
 
-    public func entityPartProcessed(entity: URL) -> RecoveryState {
+    public func entityPartProcessed(entity: EntityRef) -> RecoveryState {
         var copy = self
         copy.entities.pending[entity] = copy.entities.pending[entity]!.inc()
         return copy
     }
 
-    public func entityProcessed(entity: URL) -> RecoveryState {
+    public func entityProcessed(entity: EntityRef) -> RecoveryState {
         var copy = self
         let processed: ProcessedTargetEntity = if let pending = copy.entities.pending[entity] {
             ProcessedTargetEntity(
@@ -62,13 +62,13 @@ public struct RecoveryState: OperationState, Sendable, Equatable, Hashable {
         return copy
     }
 
-    public func entityMetadataApplied(entity: URL) -> RecoveryState {
+    public func entityMetadataApplied(entity: EntityRef) -> RecoveryState {
         var copy = self
         copy.entities.metadataApplied.insert(entity)
         return copy
     }
 
-    public func entityFailed(entity: URL, reason: Error) -> RecoveryState {
+    public func entityFailed(entity: EntityRef, reason: Error) -> RecoveryState {
         var copy = self
         copy.entities.failed[entity] = reason.tracked
         return copy
@@ -97,20 +97,20 @@ public struct RecoveryState: OperationState, Sendable, Equatable, Hashable {
     }
 
     public struct Entities: Sendable, Equatable, Hashable {
-        public var examined: Set<URL>
-        public var collected: [URL: TargetEntity]
-        public var pending: [URL: PendingTargetEntity]
-        public var processed: [URL: ProcessedTargetEntity]
-        public var metadataApplied: Set<URL>
-        public var failed: [URL: String]
+        public var examined: Set<EntityRef>
+        public var collected: [EntityRef: TargetEntity]
+        public var pending: [EntityRef: PendingTargetEntity]
+        public var processed: [EntityRef: ProcessedTargetEntity]
+        public var metadataApplied: Set<EntityRef>
+        public var failed: [EntityRef: String]
 
         public init(
-            examined: Set<URL>,
-            collected: [URL: TargetEntity],
-            pending: [URL: PendingTargetEntity],
-            processed: [URL: ProcessedTargetEntity],
-            metadataApplied: Set<URL>,
-            failed: [URL: String]
+            examined: Set<EntityRef>,
+            collected: [EntityRef: TargetEntity],
+            pending: [EntityRef: PendingTargetEntity],
+            processed: [EntityRef: ProcessedTargetEntity],
+            metadataApplied: Set<EntityRef>,
+            failed: [EntityRef: String]
         ) {
             self.examined = examined
             self.collected = collected

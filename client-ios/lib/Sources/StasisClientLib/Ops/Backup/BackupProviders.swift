@@ -9,6 +9,7 @@ public struct BackupProviders: Sendable {
     public let clients: any Clients
     public let track: any BackupTracker
     public let analytics: any AnalyticsCollector
+    public let kinds: [any BackupEntityKind]
 
     public init(
         checksum: any Checksum,
@@ -18,7 +19,8 @@ public struct BackupProviders: Sendable {
         decryptor: any Decrypting,
         clients: any Clients,
         track: any BackupTracker,
-        analytics: any AnalyticsCollector
+        analytics: any AnalyticsCollector,
+        kinds: [any BackupEntityKind]
     ) {
         self.checksum = checksum
         self.staging = staging
@@ -28,5 +30,6 @@ public struct BackupProviders: Sendable {
         self.clients = clients
         self.track = track
         self.analytics = analytics
+        self.kinds = kinds
     }
 }

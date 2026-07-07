@@ -12,17 +12,17 @@ struct EntityCollectionTests {
         let fileThree = Fixtures.Metadata.fileThree
 
         let sourceFile1 = try SourceEntity(
-            path: URL(fileURLWithPath: fileOne.path),
+            ref: .filesystem(URL(fileURLWithPath: fileOne.path)),
             existingMetadata: nil,
             currentMetadata: fileOne
         )
         let sourceFile2 = try SourceEntity(
-            path: URL(fileURLWithPath: fileTwo.path),
+            ref: .filesystem(URL(fileURLWithPath: fileTwo.path)),
             existingMetadata: fileTwo,
             currentMetadata: fileTwo
         )
         let sourceFile3 = try SourceEntity(
-            path: URL(fileURLWithPath: fileThree.path),
+            ref: .filesystem(URL(fileURLWithPath: fileThree.path)),
             existingMetadata: fileThree.withFileFlags(isHidden: true),
             currentMetadata: fileThree
         )
@@ -64,7 +64,8 @@ struct EntityCollectionTests {
                 core: MockServerCoreEndpointClient()
             ),
             track: tracker,
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [BackupEntityKinds.filesystem]
         )
     }
 }

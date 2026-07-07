@@ -27,6 +27,9 @@ let package = Package(
                 "commands_aux_options.proto",
                 "stasis.proto"
             ],
+            resources: [
+                .copy("swift-protobuf-config.json")
+            ],
             plugins: [
                 .plugin(name: "SwiftProtobufPlugin", package: "swift-protobuf")
             ]

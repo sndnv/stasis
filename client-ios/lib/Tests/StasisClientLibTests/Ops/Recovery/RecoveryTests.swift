@@ -71,7 +71,8 @@ struct RecoveryTests {
             decryptor: MockDecrypting(),
             clients: StaticClients(api: api, core: MockServerCoreEndpointClient()),
             track: MockRecoveryTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [RecoveryEntityKinds.filesystem]
         )
         await #expect(throws: RecoveryDescriptorError.noEntryForDefinition(definition: definition)) {
             _ = try await Recovery.Descriptor.build(
@@ -84,16 +85,15 @@ struct RecoveryTests {
         }
     }
 
-    @Test("Descriptor.toRecoveryCollector produces a DefaultRecoveryCollector")
-    func descriptorBuildsCollector() {
-        let descriptor = Recovery.Descriptor(
+    @Test("filesystem kind produces a FilesystemRecoveryCollector")
+    func filesystemKindBuildsCollector() {
+        let collector = RecoveryEntityKinds.filesystem.collector(
             targetMetadata: .empty(),
-            query: nil,
-            destination: nil,
-            deviceSecret: Fixtures.Secrets.default
+            keep: { _, _ in true },
+            destination: .default,
+            providers: makeProviders()
         )
-        let collector = descriptor.toRecoveryCollector(providers: makeProviders())
-        #expect(collector is DefaultRecoveryCollector)
+        #expect(collector is FilesystemRecoveryCollector)
     }
 
     @Test("PathQuery matches absolute path regexes")
@@ -169,7 +169,8 @@ struct RecoveryTests {
             decryptor: MockDecrypting(),
             clients: StaticClients(api: api, core: MockServerCoreEndpointClient()),
             track: MockRecoveryTracker(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            kinds: [RecoveryEntityKinds.filesystem]
         )
     }
 }

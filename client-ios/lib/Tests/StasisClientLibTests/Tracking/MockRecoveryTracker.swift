@@ -19,18 +19,18 @@ final class MockRecoveryTracker: RecoveryTracker {
     var statistics: [Statistic: Int] { counter.snapshot }
 
     func started(operation: OperationId) async { counter.increment(.started) }
-    func entityExamined(operation: OperationId, entity: URL, metadataChanged: Bool, contentChanged: Bool) async {
+    func entityExamined(operation: OperationId, entity: EntityRef, metadataChanged: Bool, contentChanged: Bool) async {
         counter.increment(.entityExamined)
     }
     func entityCollected(operation: OperationId, entity: TargetEntity) async { counter.increment(.entityCollected) }
-    func entityProcessingStarted(operation: OperationId, entity: URL, expectedParts: Int) async {
+    func entityProcessingStarted(operation: OperationId, entity: EntityRef, expectedParts: Int) async {
         counter.increment(.entityProcessingStarted)
     }
-    func entityPartProcessed(operation: OperationId, entity: URL) async { counter.increment(.entityPartProcessed) }
-    func entityProcessed(operation: OperationId, entity: URL) async { counter.increment(.entityProcessed) }
-    func metadataApplied(operation: OperationId, entity: URL) async { counter.increment(.metadataApplied) }
+    func entityPartProcessed(operation: OperationId, entity: EntityRef) async { counter.increment(.entityPartProcessed) }
+    func entityProcessed(operation: OperationId, entity: EntityRef) async { counter.increment(.entityProcessed) }
+    func metadataApplied(operation: OperationId, entity: EntityRef) async { counter.increment(.metadataApplied) }
     func failureEncountered(operation: OperationId, failure: any Error) async { counter.increment(.failureEncountered) }
-    func failureEncountered(operation: OperationId, entity: URL, failure: any Error) async {
+    func failureEncountered(operation: OperationId, entity: EntityRef, failure: any Error) async {
         counter.increment(.failureEncountered)
     }
     func completed(operation: OperationId) async { counter.increment(.completed) }

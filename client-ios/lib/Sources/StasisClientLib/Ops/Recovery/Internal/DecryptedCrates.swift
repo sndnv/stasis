@@ -4,12 +4,11 @@ public enum DecryptedCrates {
     public static func decrypt(
         _ crates: [RecoveryCrate],
         withPartSecret: @escaping @Sendable (String) -> DeviceFileSecret,
-        providers: RecoveryProviders
+        decryptor: any Decrypting
     ) -> [RecoveryCrate] {
         crates.map { crate in
             let partPath = crate.partPath
             let inner = crate.source
-            let decryptor = providers.decryptor
             return RecoveryCrate(partId: crate.partId, partPath: partPath) {
                 let cipherStream = try await inner()
                 var ciphertext = Data()

@@ -45,8 +45,8 @@ extension Backup {
 
             var data: Set<CrateId> = []
             for entity in metadata.contentChanged.values {
-                if case .file(let file) = entity {
-                    for crate in file.crates.values { data.insert(crate) }
+                if let content = entity.content {
+                    for crate in content.crates.values { data.insert(crate) }
                 }
             }
 
@@ -57,7 +57,7 @@ extension Backup {
                 metadata: metadataCrate,
                 changes: Int64(metadata.contentChanged.count + metadata.metadataChanged.count),
                 size: metadata.contentChanged.values.reduce(Int64(0)) { acc, entity in
-                    if case .file(let file) = entity { acc + file.size } else { acc }
+                    if let content = entity.content { acc + content.size } else { acc }
                 }
             )
 

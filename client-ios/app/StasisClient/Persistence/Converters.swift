@@ -11,7 +11,7 @@ public extension Rule {
         RuleEntity(
             id: id,
             operation: operation,
-            directory: directory,
+            source: source,
             pattern: pattern,
             definition: definition
         )
@@ -23,7 +23,7 @@ public extension RuleEntity {
         Rule(
             id: id,
             operation: try RuleEntity.decode(operationRaw),
-            directory: directory,
+            source: source,
             pattern: pattern,
             definition: definition
         )
