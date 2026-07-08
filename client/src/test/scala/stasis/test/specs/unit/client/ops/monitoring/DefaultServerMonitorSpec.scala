@@ -49,7 +49,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     succeed
   }
 
-  it should "support pinging servers periodically" in {
+  it should "support pinging servers periodically" in withRetry {
     val mockApiClient = MockServerApiEndpointClient()
     val mockTracker = MockServerTracker()
 
@@ -155,7 +155,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "handle ping failures" in {
+  it should "handle ping failures" in withRetry {
     val mockApiClient = new MockServerApiEndpointClient(self = Device.generateId()) {
       override def ping(): Future[Ping] = Future.failed(new RuntimeException("test failure"))
     }
@@ -175,7 +175,7 @@ class DefaultServerMonitorSpec extends AsyncUnitSpec with Eventually with Before
     }
   }
 
-  it should "support stopping itself" in {
+  it should "support stopping itself" in withRetry {
     val mockTracker = MockServerTracker()
     val monitor = createMonitor(
       initialDelay = defaultInterval / 2,

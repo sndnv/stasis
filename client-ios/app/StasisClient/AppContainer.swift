@@ -21,6 +21,10 @@ final class AppContainer {
     let analyticsPersistence: DefaultAnalyticsPersistence
     let analyticsCollector: DefaultAnalyticsCollector
 
+    let crashLoopGuard: CrashLoopGuard
+    private let crashReporter: CrashReporter
+    private(set) var isCrashLooping: Bool = false
+
     let schedulingNotifications: any SchedulingNotifications
     let backgroundScheduler: BackgroundScheduler
 
@@ -29,6 +33,11 @@ final class AppContainer {
 
     private(set) var session: AuthenticatedSession?
     private var tokenPersistenceTask: Task<Void, Never>?
+    private var serverMonitor: (any ServerMonitor)?
+
+    private static let serverMonitorInitialDelay: TimeInterval = 2
+    private static let crashLoopThreshold: Int = 3
+    private static let crashReportMaxFrames: Int = 10
 
     init(
         appInfo: StasisApplicationInformation = StasisApplicationInformation(),
@@ -78,6 +87,9 @@ final class AppContainer {
             persistence: persistence
         )
 
+        self.crashLoopGuard = CrashLoopGuard(store: self.configRepository.preferencesStore, threshold: Self.crashLoopThreshold)
+        self.crashReporter = Self.makeCrashReporter(analyticsCollector: self.analyticsCollector)
+
         let notifications = schedulingNotifications ?? Self.makeSchedulingNotifications()
         self.schedulingNotifications = notifications
         self.backgroundScheduler = Self.makeBackgroundScheduler(
@@ -86,6 +98,7 @@ final class AppContainer {
             ruleRepository: self.ruleRepository,
             executor: operationExecutor,
             notifications: notifications,
+            schedulingEnabled: { UserDefaults.standard.schedulingEnabled() },
             publicSchedulesLoader: publicSchedulesLoader,
             taskScheduler: backgroundTaskScheduler ?? Self.makeBackgroundTaskScheduler()
         )
@@ -245,9 +258,9 @@ final class AppContainer {
     }
 
     func logout() async {
-        await tearDownExistingSession()
         sessionTokenStore.clear()
         appStateModel.transition(to: .configured)
+        await tearDownExistingSession()
     }
 
     func resetConfiguration() async throws {
@@ -260,13 +273,36 @@ final class AppContainer {
         appStateModel.transition(to: .unconfigured)
     }
 
+    func startCrashReporting() {
+        isCrashLooping = crashLoopGuard.registerLaunch()
+        crashReporter.register()
+    }
+
+    func markStartedHealthy() {
+        crashLoopGuard.reset()
+    }
+
+    func dismissCrashLoop() {
+        crashLoopGuard.reset()
+        isCrashLooping = false
+    }
+
+    var lastCrashSummary: String? {
+        configRepository.preferencesStore.lastCrashSummary()
+    }
+
     private func tearDownExistingSession() async {
         tokenPersistenceTask?.cancel()
         tokenPersistenceTask = nil
+        if let serverMonitor {
+            await serverMonitor.stop()
+        }
+        serverMonitor = nil
         if let session {
             await session.credentialsProvider.logout()
         }
         session = nil
+        await backgroundScheduler.setPublicSchedulesLoader { [] }
     }
 
     private func activateSession(provider: CredentialsProvider) async throws {
@@ -280,14 +316,29 @@ final class AppContainer {
     }
 
     private func finishActivation(provider: CredentialsProvider) async throws {
-        session = try await AuthenticatedSession.make(
+        let newSession = try await AuthenticatedSession.make(
             credentialsProvider: provider,
             configRepository: configRepository,
             trackers: trackers,
-            analytics: analyticsCollector
+            analytics: analyticsCollector,
+            notifications: schedulingNotifications
         )
+        session = newSession
+        let api = newSession.serverApiClient
+        await backgroundScheduler.setPublicSchedulesLoader { try await api.publicSchedules() }
+        startServerMonitor()
         startTokenPersistence(provider: provider)
         appStateModel.transition(to: .authenticated)
+    }
+
+    private func startServerMonitor() {
+        guard let session else { return }
+        serverMonitor = try? DefaultServerMonitor(
+            initialDelay: Self.serverMonitorInitialDelay,
+            interval: settings.pingInterval(),
+            api: session.serverApiClient,
+            tracker: trackers.server
+        )
     }
 
     private func startTokenPersistence(provider: CredentialsProvider) {
@@ -329,9 +380,9 @@ final class AppContainer {
         let oAuthClient: any OAuthClient
         let store: KeychainCredentialsStore
         do {
-            oAuthClient = try DefaultOAuthClient(
+            oAuthClient = try Self.makeRestoreOAuthClient(
                 tokenEndpoint: authConfig.tokenEndpoint,
-                client: authConfig.clientId,
+                clientId: authConfig.clientId,
                 clientSecret: authConfig.clientSecret
             )
             store = try KeychainCredentialsStore(
@@ -360,8 +411,32 @@ final class AppContainer {
         return provider
     }
 
-    enum AppContainerError: Error, Equatable {
+    private static func makeRestoreOAuthClient(
+        tokenEndpoint: String,
+        clientId: String,
+        clientSecret: String
+    ) throws -> any OAuthClient {
+        #if DEBUG
+        if MockConfig.isMockTokenEndpoint(tokenEndpoint) {
+            return MockOAuthClient()
+        }
+        #endif
+        return try DefaultOAuthClient(
+            tokenEndpoint: tokenEndpoint,
+            client: clientId,
+            clientSecret: clientSecret
+        )
+    }
+
+    enum AppContainerError: Error, Equatable, LocalizedError {
         case notConfigured
+
+        var errorDescription: String? {
+            switch self {
+            case .notConfigured:
+                "The device is not configured"
+            }
+        }
     }
 
     private static func makeAppStateModel(
@@ -448,6 +523,14 @@ final class AppContainer {
         )
     }
 
+    private static func makeCrashReporter(analyticsCollector: any AnalyticsCollector) -> CrashReporter {
+        CrashReporter(
+            analyticsCollector: analyticsCollector,
+            preferencesSuiteName: ConfigRepository.suiteName,
+            maxFrames: Self.crashReportMaxFrames
+        )
+    }
+
     private static func makeSchedulingNotifications() -> any SchedulingNotifications {
         DefaultSchedulingNotifications()
     }
@@ -462,6 +545,7 @@ final class AppContainer {
         ruleRepository: RuleRepository,
         executor: any OperationExecutor,
         notifications: any SchedulingNotifications,
+        schedulingEnabled: @escaping @Sendable () -> Bool,
         publicSchedulesLoader: @escaping @Sendable () async throws -> [Schedule],
         taskScheduler: any BackgroundTaskScheduling
     ) -> BackgroundScheduler {
@@ -471,6 +555,7 @@ final class AppContainer {
             ruleRepository: ruleRepository,
             executor: executor,
             notifications: notifications,
+            schedulingEnabled: schedulingEnabled,
             publicSchedulesLoader: publicSchedulesLoader,
             taskScheduler: taskScheduler
         )

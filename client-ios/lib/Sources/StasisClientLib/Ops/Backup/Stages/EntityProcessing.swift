@@ -170,8 +170,17 @@ extension Backup {
         }
     }
 
-    public enum EntityProcessingError: Error, Equatable {
+    public enum EntityProcessingError: Error, Equatable, LocalizedError {
         case expectedFileGotDirectory(path: String)
         case invalidMaximumPartSize(Int64)
+
+        public var errorDescription: String? {
+            switch self {
+            case .expectedFileGotDirectory(let path):
+                "Expected metadata for file but directory metadata for [\(path)] provided"
+            case .invalidMaximumPartSize(let size):
+                "Invalid [maximumPartSize] provided: [\(size)]"
+            }
+        }
     }
 }

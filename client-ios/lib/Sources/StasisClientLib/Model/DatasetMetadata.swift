@@ -62,8 +62,19 @@ public struct DatasetMetadata: Sendable, Equatable, Hashable {
     }
 }
 
-public enum DatasetMetadataCollectError: Error, Equatable {
+public enum DatasetMetadataCollectError: Error, Equatable, LocalizedError {
     case missingMetadataForEntity(entity: String)
     case missingMetadataForEntityInEntry(entity: String, entry: DatasetEntryId)
     case requiredMetadataMissing(entity: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingMetadataForEntity(let entity):
+            "Metadata for entity [\(entity)] not found"
+        case .missingMetadataForEntityInEntry(let entity, let entry):
+            "Expected metadata for entity [\(entity)] but none was found in metadata for entry [\(entry.uuidString)]"
+        case .requiredMetadataMissing(let entity):
+            "Required metadata for entity [\(entity)] not found"
+        }
+    }
 }

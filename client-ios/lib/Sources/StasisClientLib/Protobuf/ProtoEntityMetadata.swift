@@ -1,8 +1,15 @@
 import Foundation
 import StasisSharedProto
 
-public enum EntityMetadataError: Error, Equatable {
+public enum EntityMetadataError: Error, Equatable, LocalizedError {
     case missingEntity
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingEntity:
+            "Entity metadata is missing its entity data"
+        }
+    }
 }
 
 extension EntityMetadata {

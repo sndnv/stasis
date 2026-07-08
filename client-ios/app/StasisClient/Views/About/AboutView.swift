@@ -4,20 +4,18 @@ struct AboutView: View {
     @Environment(AppContainer.self) private var container
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    header
-                    Divider().padding(.horizontal, 48)
-                    license
-                    Divider().padding(.horizontal, 48)
-                    footer
-                }
-                .multilineTextAlignment(.center)
-                .padding()
+        ScrollView {
+            VStack(spacing: 16) {
+                header
+                Divider().padding(.horizontal, 48)
+                license
+                Divider().padding(.horizontal, 48)
+                footer
             }
-            .navigationTitle("About")
+            .multilineTextAlignment(.center)
+            .padding()
         }
+        .navigationTitle("About")
     }
 
     private var header: some View {
@@ -86,6 +84,8 @@ struct AboutView: View {
 }
 
 #Preview {
-    AboutView()
-        .environment(AppContainer())
+    NavigationStack {
+        AboutView()
+    }
+    .environment(AppContainer())
 }

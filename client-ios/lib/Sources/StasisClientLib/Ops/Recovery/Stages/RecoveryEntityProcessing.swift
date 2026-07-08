@@ -120,12 +120,28 @@ extension Recovery {
         }()
     }
 
-    public enum EntityProcessingError: Error, Equatable {
+    public enum EntityProcessingError: Error, Equatable, LocalizedError {
         case expectedFileGotDirectory(path: String)
+
+        public var errorDescription: String? {
+            switch self {
+            case .expectedFileGotDirectory(let path):
+                "Expected metadata for file but directory metadata for [\(path)] provided"
+            }
+        }
     }
 }
 
-public enum RecoveryPullError: Error, Equatable {
+public enum RecoveryPullError: Error, Equatable, LocalizedError {
     case crateMissing(crate: CrateId, entity: String)
     case unexpectedLastPartId(lastPartId: Int, crateCount: Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .crateMissing(let crate, let entity):
+            "Failed to pull crate [\(crate.uuidString)] for entity [\(entity)]"
+        case .unexpectedLastPartId(let lastPartId, let crateCount):
+            "Unexpected last part ID [\(lastPartId)] encountered for an entity with [\(crateCount)] crate(s)"
+        }
+    }
 }

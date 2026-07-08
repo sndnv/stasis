@@ -37,6 +37,9 @@ struct DebugSection: View {
             } label: {
                 Label("Show Cache Statistics", systemImage: "chart.bar.doc.horizontal")
             }
+            .sheet(isPresented: $showCacheStats) {
+                CacheStatsSheet()
+            }
             Button(role: .destructive, action: onResetTapped) {
                 Label("Reset Configuration", systemImage: "arrow.counterclockwise")
             }
@@ -44,9 +47,6 @@ struct DebugSection: View {
             Text("Debug")
         } footer: {
             Text("Changes to intervals apply after restart.")
-        }
-        .sheet(isPresented: $showCacheStats) {
-            CacheStatsSheet()
         }
     }
 }

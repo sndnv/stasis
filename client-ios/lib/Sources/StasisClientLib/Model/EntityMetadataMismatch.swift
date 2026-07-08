@@ -1,4 +1,6 @@
-public struct EntityMetadataMismatch: Error, Equatable {
+import Foundation
+
+public struct EntityMetadataMismatch: Error, Equatable, LocalizedError {
     public let currentPath: String
     public let existingPath: String
 
@@ -10,4 +12,6 @@ public struct EntityMetadataMismatch: Error, Equatable {
     public var message: String {
         "Mismatched current metadata for [\(currentPath)] and existing metadata for [\(existingPath)]"
     }
+
+    public var errorDescription: String? { message }
 }

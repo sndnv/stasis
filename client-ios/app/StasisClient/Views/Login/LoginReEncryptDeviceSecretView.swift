@@ -41,14 +41,7 @@ struct LoginReEncryptDeviceSecretView: View {
             }
             .navigationTitle("Re-encrypt device secret")
             .navigationBarTitleDisplayMode(.inline)
-            .overlay {
-                if inProgress {
-                    ProgressView()
-                        .controlSize(.large)
-                        .padding(24)
-                        .background(.regularMaterial, in: .rect(cornerRadius: 12))
-                }
-            }
+            .submittingOverlay(inProgress)
             .alert("Re-encrypt Failed", isPresented: errorBinding) {
                 Button("OK") { error = nil }
             } message: {

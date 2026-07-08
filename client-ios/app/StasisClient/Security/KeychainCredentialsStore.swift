@@ -231,7 +231,16 @@ public final class KeychainCredentialsStore: CredentialsStore, @unchecked Sendab
     }
 }
 
-public enum KeychainCredentialsStoreError: Error, Equatable {
+public enum KeychainCredentialsStoreError: Error, Equatable, LocalizedError {
     case invalidUser(String)
     case invalidDevice(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidUser(let value):
+            "Invalid user ID [\(value)]"
+        case .invalidDevice(let value):
+            "Invalid device ID [\(value)]"
+        }
+    }
 }

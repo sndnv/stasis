@@ -90,12 +90,13 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     func publicSchedules() async throws -> [Schedule] {
         await sleep()
-        return [Self.defaultSchedule]
+        return [Self.defaultSchedule, Self.secondSchedule]
     }
 
     func publicSchedule(schedule: ScheduleId) async throws -> Schedule {
         await sleep()
         if schedule == Self.defaultSchedule.id { return Self.defaultSchedule }
+        if schedule == Self.secondSchedule.id { return Self.secondSchedule }
         throw MockError.invalidSchedule(schedule)
     }
 
@@ -167,33 +168,60 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
         await sleep()
     }
 
-    enum MockError: Error {
+    enum MockError: Error, LocalizedError {
         case invalidDefinition(DatasetDefinitionId)
         case invalidEntry(DatasetEntryId)
         case invalidSchedule(ScheduleId)
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidDefinition(let id):
+                "Unknown dataset definition [\(id.uuidString)]"
+            case .invalidEntry(let id):
+                "Unknown dataset entry [\(id.uuidString)]"
+            case .invalidSchedule(let id):
+                "Unknown schedule [\(id.uuidString)]"
+            }
+        }
     }
 
-    static let defaultDefinition = DatasetDefinition(
-        id: UUID(),
-        info: "test-definition",
-        device: MockConfig.device,
-        redundantCopies: 42,
-        existingVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 12)),
-        removedVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 366)),
-        created: Date(timeIntervalSince1970: 0),
-        updated: Date(timeIntervalSince1970: 0)
-    )
+    static func pastDate(minDays: Double, maxDays: Double) -> Date {
+        Date().addingTimeInterval(-TimeInterval.random(in: (86_400 * minDays)...(86_400 * maxDays)))
+    }
 
-    static let otherDefinition = DatasetDefinition(
-        id: UUID(),
-        info: "other-definition",
-        device: MockConfig.device,
-        redundantCopies: 2,
-        existingVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 12)),
-        removedVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 366)),
-        created: Date(),
-        updated: Date()
-    )
+    static func pastDates() -> (created: Date, updated: Date) {
+        let created = pastDate(minDays: 7, maxDays: 365)
+        let updated = min(created.addingTimeInterval(TimeInterval.random(in: 0...(86_400 * 7))), Date())
+        return (created, updated)
+    }
+
+    static let defaultDefinition: DatasetDefinition = {
+        let dates = pastDates()
+        return DatasetDefinition(
+            id: UUID(),
+            info: "test-definition",
+            device: MockConfig.device,
+            redundantCopies: 42,
+            existingVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 12)),
+            removedVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 366)),
+            created: dates.created,
+            updated: dates.updated
+        )
+    }()
+
+    static let otherDefinition: DatasetDefinition = {
+        let dates = pastDates()
+        return DatasetDefinition(
+            id: UUID(),
+            info: "other-definition",
+            device: MockConfig.device,
+            redundantCopies: 2,
+            existingVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 12)),
+            removedVersions: .init(policy: .all, duration: SecondsDuration(3_600 * 366)),
+            created: dates.created,
+            updated: dates.updated
+        )
+    }()
 
     static let defaultEntry = DatasetEntry(
         id: UUID(),
@@ -203,7 +231,7 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
         metadata: UUID(),
         changes: 1,
         size: 2,
-        created: Date()
+        created: pastDate(minDays: 1, maxDays: 60)
     )
 
     static let extraEntry = DatasetEntry(
@@ -214,7 +242,7 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
         metadata: UUID(),
         changes: nil,
         size: 3,
-        created: Date()
+        created: pastDate(minDays: 1, maxDays: 60)
     )
 
     static let defaultSchedule = Schedule(
@@ -222,6 +250,16 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
         info: "test-schedule-1",
         isPublic: true,
         start: LocalDateTime(ISO8601DateFormatter().string(from: Date().addingTimeInterval(3_600 * 4))),
+        interval: SecondsDuration(3_600 * 12),
+        created: Date().addingTimeInterval(-42),
+        updated: Date()
+    )
+
+    static let secondSchedule = Schedule(
+        id: UUID(),
+        info: "test-schedule-2",
+        isPublic: true,
+        start: LocalDateTime(ISO8601DateFormatter().string(from: Date().addingTimeInterval(3_600 * 6))),
         interval: SecondsDuration(3_600 * 12),
         created: Date().addingTimeInterval(-42),
         updated: Date()
@@ -244,23 +282,25 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
     }
 
     private static func makeContentChanged(generatedPrefix: String, count: Int) -> [String: EntityMetadata] {
-        let baseDate = Date(timeIntervalSince1970: 0)
         let baseCrate = UUID(uuidString: "329efbeb-80a3-42b8-b1dc-79bc0fea7bca")!
+        let one = pastDates()
         var result: [String: EntityMetadata] = [
             fileOnePath: .file(.init(
                 path: fileOnePath, link: nil, isHidden: false,
-                created: baseDate, updated: baseDate,
+                created: one.created, updated: one.updated,
                 owner: "root", group: "root", permissions: "rwxrwxrwx",
                 size: 1, checksum: Data([1]),
                 crates: ["/tmp/file/one_0": baseCrate],
                 compression: "none"
             ))
         ]
+        result.merge(MockLibraryFixtures.contentEntities) { current, _ in current }
         for index in 0..<count {
             let path = "/tmp/file/generated_\(generatedPrefix)_\(index)"
+            let dates = pastDates()
             result[path] = .file(.init(
                 path: path, link: nil, isHidden: false,
-                created: baseDate, updated: baseDate,
+                created: dates.created, updated: dates.updated,
                 owner: "root", group: "root", permissions: "rwxrwxrwx",
                 size: Int64(index), checksum: Data([1]),
                 crates: ["\(path)_0": baseCrate],
@@ -271,12 +311,12 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
     }
 
     private static func makeMetadataChanged() -> [String: EntityMetadata] {
-        let baseDate = Date(timeIntervalSince1970: 0)
+        let dates = pastDates()
         let extraCrate = UUID(uuidString: "e672a956-1a95-4304-8af0-9418f0e43cba")!
         return [
             fileTwoPath: .file(.init(
                 path: fileTwoPath, link: "/tmp/file/three", isHidden: false,
-                created: baseDate, updated: baseDate,
+                created: dates.created, updated: dates.updated,
                 owner: "root", group: "root", permissions: "rwxrwxrwx",
                 size: 2, checksum: Data([42]),
                 crates: ["\(fileTwoPath)_0": extraCrate],
@@ -291,6 +331,7 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
             fileTwoPath: .updated,
             fileFourPath: .existing(entry: extraEntry.id)
         ]
+        entities.merge(MockLibraryFixtures.filesystemStates) { current, _ in current }
         for index in 0..<count {
             entities["/tmp/file/generated_\(generatedPrefix)_lu_\(index)"] = .existing(entry: extraEntry.id)
         }
@@ -308,6 +349,7 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
             maxRetention: SecondsDuration(86_400 * 4),
             minRetention: SecondsDuration(3_600 * 12)
         )
+        let dates = pastDates()
         return User(
             id: MockConfig.user,
             salt: "test-salt",
@@ -317,20 +359,23 @@ actor MockServerApiEndpointClient: ServerApiEndpointClient {
                 "manage-service", "view-public", "view-service",
                 "view-privileged", "view-self", "manage-privileged", "manage-self"
             ],
-            created: Date(timeIntervalSince1970: 0),
-            updated: Date(timeIntervalSince1970: 0)
+            created: dates.created,
+            updated: dates.updated
         )
     }()
 
-    static let currentDevice = Device(
-        id: MockConfig.device,
-        name: "test-device",
-        node: MockConfig.deviceNode,
-        owner: MockConfig.user,
-        active: true,
-        limits: nil,
-        created: Date(timeIntervalSince1970: 0),
-        updated: Date(timeIntervalSince1970: 0)
-    )
+    static let currentDevice: Device = {
+        let dates = pastDates()
+        return Device(
+            id: MockConfig.device,
+            name: "test-device",
+            node: MockConfig.deviceNode,
+            owner: MockConfig.user,
+            active: true,
+            limits: nil,
+            created: dates.created,
+            updated: dates.updated
+        )
+    }()
 }
 #endif

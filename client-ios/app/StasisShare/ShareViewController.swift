@@ -1,16 +1,12 @@
-import StasisClientLib
 import UIKit
-import UniformTypeIdentifiers
 
 final class ShareViewController: UIViewController {
-    private static let dismissDelay: Duration = .milliseconds(500)
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
 
         let label = UILabel()
-        label.text = "Saved to stasis"
+        label.text = "Saving to stasis…"
         label.font = .preferredFont(forTextStyle: .title2)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -24,11 +20,15 @@ final class ShareViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Task { [weak self] in
-            try? await Task.sleep(for: Self.dismissDelay)
-            await MainActor.run {
-                self?.extensionContext?.completeRequest(returningItems: nil)
-            }
+        Task { await ingestAndFinish() }
+    }
+
+    private func ingestAndFinish() async {
+        if let inbox = DropInbox.default {
+            let providers = (extensionContext?.inputItems as? [NSExtensionItem])?
+                .flatMap { $0.attachments ?? [] } ?? []
+            _ = await DropIngest.ingest(items: providers, into: inbox)
         }
+        extensionContext?.completeRequest(returningItems: nil)
     }
 }

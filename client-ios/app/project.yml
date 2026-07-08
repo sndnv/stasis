@@ -46,17 +46,21 @@ targets:
       - path: StasisClient
         excludes:
           - "*.entitlements"
+          - "PrivacyInfo.xcprivacy"
+      - path: StasisShared
     scheme:
       testTargets:
         - StasisClientTests
     resources:
       - path: StasisClient/Assets.xcassets
+      - path: StasisClient/PrivacyInfo.xcprivacy
     info:
       path: StasisClient/Info.plist
       properties:
         CFBundleDisplayName: stasis
         CFBundleShortVersionString: "0.0.0"
         CFBundleVersion: "1"
+        ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -116,6 +120,10 @@ targets:
       - path: StasisShare
         excludes:
           - "*.entitlements"
+          - "PrivacyInfo.xcprivacy"
+      - path: StasisShared
+    resources:
+      - path: StasisShare/PrivacyInfo.xcprivacy
     info:
       path: StasisShare/Info.plist
       properties:

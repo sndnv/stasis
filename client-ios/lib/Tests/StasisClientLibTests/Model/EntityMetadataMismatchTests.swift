@@ -13,4 +13,10 @@ struct EntityMetadataMismatchTests {
 
         #expect(mismatch.message == "Mismatched current metadata for [/tmp/current] and existing metadata for [/tmp/existing]")
     }
+
+    @Test("exposes the message as errorDescription")
+    func errorDescriptionMatchesMessage() {
+        let mismatch = EntityMetadataMismatch(currentPath: "/tmp/current", existingPath: "/tmp/existing")
+        #expect(mismatch.errorDescription == mismatch.message)
+    }
 }

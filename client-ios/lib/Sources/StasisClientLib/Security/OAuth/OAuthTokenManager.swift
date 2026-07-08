@@ -3,13 +3,19 @@ import Foundation
 public actor OAuthTokenManager {
     public static let defaultInitTimeout: TimeInterval = 5.0
 
-    public struct NotInitialized: Error, Equatable {
+    public struct NotInitialized: Error, Equatable, LocalizedError {
         public init() {}
+
+        public var errorDescription: String? { "The authentication token manager is not initialized" }
     }
 
-    public struct InitTimeout: Error, Equatable {
+    public struct InitTimeout: Error, Equatable, LocalizedError {
         public let timeout: TimeInterval
         public init(timeout: TimeInterval) { self.timeout = timeout }
+
+        public var errorDescription: String? {
+            "Timed out waiting [\(timeout)s] for the authentication token manager to initialize"
+        }
     }
 
     private struct Stored: Sendable {

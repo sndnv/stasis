@@ -1,3 +1,4 @@
+import CryptoKit
 import StasisClientLib
 import SwiftUI
 
@@ -47,14 +48,7 @@ struct LoginView: View {
             }.listRowBackground(Color.clear)
         }
         .onAppear(perform: prefillSavedUsername)
-        .overlay {
-            if inProgress {
-                ProgressView()
-                    .controlSize(.large)
-                    .padding(24)
-                    .background(.regularMaterial, in: .rect(cornerRadius: 12))
-            }
-        }
+        .submittingOverlay(inProgress)
         .alert("Login Failed", isPresented: alertBinding) {
             Button("OK") { error = nil }
         } message: {
@@ -121,6 +115,9 @@ struct LoginView: View {
 
     private func describeLoginError(_ error: any Error) -> String {
         if error is AccessDeniedFailure {
+            return "Invalid user and/or password provided"
+        }
+        if let cryptoError = error as? CryptoKitError, case .authenticationFailure = cryptoError {
             return "Invalid user and/or password provided"
         }
         return error.localizedDescription

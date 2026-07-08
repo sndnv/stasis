@@ -2,30 +2,38 @@ import SwiftUI
 
 struct UserCredentialsSection: View {
     @Environment(AppContainer.self) private var container
-    @State private var showUpdatePassword: Bool = false
-    @State private var showUpdateSalt: Bool = false
+    @State private var activeSheet: ActiveSheet?
+
+    private enum ActiveSheet: Identifiable {
+        case updatePassword
+        case updateSalt
+
+        var id: Self { self }
+    }
 
     var body: some View {
         Section("User Credentials") {
             Button {
-                showUpdatePassword = true
+                activeSheet = .updatePassword
             } label: {
                 Label("Update Password", systemImage: "key.fill")
             }
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .updatePassword:
+                    UpdatePasswordSheet { current, new in
+                        try await container.updateUserPassword(currentPassword: current, newPassword: new)
+                    }
+                case .updateSalt:
+                    UpdateSaltSheet { current, salt in
+                        try await container.updateUserSalt(currentPassword: current, newSalt: salt)
+                    }
+                }
+            }
             Button {
-                showUpdateSalt = true
+                activeSheet = .updateSalt
             } label: {
                 Label("Update Salt", systemImage: "shuffle")
-            }
-        }
-        .sheet(isPresented: $showUpdatePassword) {
-            UpdatePasswordSheet { current, new in
-                try await container.updateUserPassword(currentPassword: current, newPassword: new)
-            }
-        }
-        .sheet(isPresented: $showUpdateSalt) {
-            UpdateSaltSheet { current, salt in
-                try await container.updateUserSalt(currentPassword: current, newSalt: salt)
             }
         }
     }
@@ -34,4 +42,5 @@ struct UserCredentialsSection: View {
 #Preview {
     Form { UserCredentialsSection() }
         .environment(AppContainer())
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }

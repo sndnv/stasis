@@ -31,8 +31,15 @@ public enum OperationType: String, Sendable, CaseIterable {
     }
 }
 
-public enum OperationTypeError: Error, Equatable {
+public enum OperationTypeError: Error, Equatable, LocalizedError {
     case unexpected(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unexpected(let value):
+            "Unexpected operation type provided: [\(value)]"
+        }
+    }
 }
 
 public struct OperationProgress: Sendable, Equatable, Hashable {
@@ -54,4 +61,11 @@ public struct OperationProgress: Sendable, Equatable, Hashable {
 public enum OperationRestriction: Sendable, Equatable, Hashable {
     case noConnection
     case limitedNetwork
+
+    public var summary: String {
+        switch self {
+        case .noConnection: "no network connection"
+        case .limitedNetwork: "restricted or metered network"
+        }
+    }
 }

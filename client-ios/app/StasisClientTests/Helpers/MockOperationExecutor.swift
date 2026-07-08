@@ -5,8 +5,8 @@ final actor MockOperationExecutor: OperationExecutor {
     enum StartCall: Sendable, Equatable {
         case backupRules(definition: DatasetDefinitionId, rules: Int)
         case backupEntities(definition: DatasetDefinitionId, entities: [URL])
-        case recoveryDefinition(definition: DatasetDefinitionId, until: Date?, hasQuery: Bool, hasDestination: Bool)
-        case recoveryEntry(entry: DatasetEntryId, hasQuery: Bool, hasDestination: Bool)
+        case recoveryDefinition(definition: DatasetDefinitionId, until: Date?, sourceCount: Int, hasDestination: Bool)
+        case recoveryEntry(entry: DatasetEntryId, sourceCount: Int, hasDestination: Bool)
         case expiration
         case validation
         case keyRotation
@@ -58,13 +58,14 @@ final actor MockOperationExecutor: OperationExecutor {
     func startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Date?,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {
         calls.append(.recoveryDefinition(
             definition: definition, until: until,
-            hasQuery: query != nil, hasDestination: destination != nil
+            sourceCount: sources.count, hasDestination: destination != nil
         ))
         deliver(callback: callback)
         return UUID()
@@ -72,12 +73,13 @@ final actor MockOperationExecutor: OperationExecutor {
 
     func startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {
         calls.append(.recoveryEntry(
-            entry: entry, hasQuery: query != nil, hasDestination: destination != nil
+            entry: entry, sourceCount: sources.count, hasDestination: destination != nil
         ))
         deliver(callback: callback)
         return UUID()

@@ -27,7 +27,7 @@ struct LastOperationCard: View {
     private func content(for operation: HomeModel.LastOperation) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             row(label: "Type", value: label(for: operation.type))
-            row(label: "Id", value: shortId(operation.id))
+            row(label: "Id", value: StatusFormatters.shortId(operation.id))
             row(label: "Processed", value: "\(operation.progress.processed) / \(operation.progress.total)")
             if operation.progress.failures > 0 {
                 row(label: "Failures", value: "\(operation.progress.failures)")
@@ -56,9 +56,6 @@ struct LastOperationCard: View {
         }
     }
 
-    private func shortId(_ id: OperationId) -> String {
-        String(id.uuidString.lowercased().prefix(8))
-    }
 }
 
 #Preview("populated") {

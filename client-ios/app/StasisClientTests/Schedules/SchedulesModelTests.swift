@@ -278,6 +278,7 @@ struct SchedulesModelTests {
             ruleRepository: ruleRepo,
             executor: MockOperationExecutor(),
             notifications: MockSchedulingNotifications(),
+            schedulingEnabled: { true },
             publicSchedulesLoader: { publicSchedules },
             taskScheduler: MockBackgroundTaskScheduler()
         )

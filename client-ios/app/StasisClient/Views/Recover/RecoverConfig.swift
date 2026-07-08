@@ -4,36 +4,24 @@ import StasisClientLib
 struct RecoverConfig: Equatable {
     var definition: DatasetDefinitionId?
     var recoverySource: RecoverySource
-    var pathQuery: String
-    var destination: String
-    var discardPaths: Bool
+    var sources: Set<RecoverySourceKind>
+
+    static let allSources: [RecoverySourceKind] =
+        [.filesystem] + LibrarySource.all.map { .library(scheme: $0.scheme) }
 
     static let initial = RecoverConfig(
         definition: nil,
         recoverySource: .latest,
-        pathQuery: "",
-        destination: "",
-        discardPaths: false
+        sources: Set(allSources)
     )
 
     func validate() -> ValidationResult {
         guard definition != nil else { return .missingDefinition }
+        guard !sources.isEmpty else { return .missingSources }
         switch recoverySource {
         case .latest, .until: return .valid
         case .entry(let id): return id == nil ? .missingEntry : .valid
         }
-    }
-
-    var recoveryPathQuery: Recovery.PathQuery? {
-        let trimmed = pathQuery.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return nil }
-        return try? Recovery.PathQuery.parse(trimmed)
-    }
-
-    var recoveryDestination: Recovery.Destination? {
-        let trimmed = destination.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return nil }
-        return Recovery.Destination(path: trimmed, keepStructure: !discardPaths)
     }
 
     enum RecoverySource: Equatable {
@@ -66,12 +54,14 @@ struct RecoverConfig: Equatable {
         case valid
         case missingDefinition
         case missingEntry
+        case missingSources
 
         var buttonLabel: String {
             switch self {
             case .valid: "Run Recover"
             case .missingDefinition: "Pick a Definition"
             case .missingEntry: "Pick an Entry"
+            case .missingSources: "Select Sources"
             }
         }
     }

@@ -14,7 +14,6 @@ public enum Settings {
         public static let manageDeviceSecretRemotelyPull = "manage_device_secret_remotely_pull"
         public static let manageDeviceSecretLocallyExport = "manage_device_secret_locally_export"
         public static let manageDeviceSecretLocallyImport = "manage_device_secret_locally_import"
-        public static let restrictionsIgnored = "restrictions_ignored"
         public static let schedulingEnabled = "scheduling_enabled"
         public static let pingInterval = "ping_interval"
         public static let commandRefreshInterval = "command_refresh_interval"
@@ -36,7 +35,6 @@ public enum Settings {
 
     public enum Defaults {
         public static let dateTimeFormat: DateTimeFormat = .system
-        public static let restrictionsIgnored = false
         public static let schedulingEnabled = true
         public static let pingInterval: TimeInterval = 3 * 60
         public static let commandRefreshInterval: TimeInterval = 5 * 60
@@ -58,8 +56,15 @@ public enum Settings {
     }
 }
 
-public enum SettingsError: Error, Equatable {
+public enum SettingsError: Error, Equatable, LocalizedError {
     case unexpectedDateTimeFormat(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unexpectedDateTimeFormat(let value):
+            "Unexpected date/time format [\(value)]"
+        }
+    }
 }
 
 public extension UserDefaults {
@@ -69,11 +74,6 @@ public extension UserDefaults {
             return Settings.Defaults.dateTimeFormat
         }
         return parsed
-    }
-
-    func restrictionsIgnored() -> Bool {
-        value(forKey: Settings.Keys.restrictionsIgnored) as? Bool
-            ?? Settings.Defaults.restrictionsIgnored
     }
 
     func schedulingEnabled() -> Bool {

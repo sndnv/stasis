@@ -74,7 +74,7 @@ public enum FilesWalker {
     }
 }
 
-public struct NoSuchFileError: Error, Equatable, CustomStringConvertible {
+public struct NoSuchFileError: Error, Equatable, CustomStringConvertible, LocalizedError {
     public let path: String
 
     public init(path: String) {
@@ -82,4 +82,6 @@ public struct NoSuchFileError: Error, Equatable, CustomStringConvertible {
     }
 
     public var description: String { "No such file: \(path)" }
+
+    public var errorDescription: String? { description }
 }

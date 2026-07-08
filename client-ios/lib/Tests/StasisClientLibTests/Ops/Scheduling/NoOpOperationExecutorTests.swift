@@ -31,12 +31,12 @@ struct NoOpOperationExecutorTests {
         let executor = NoOpOperationExecutor()
         await confirmCallback(notImplemented: true) { callback in
             _ = await executor.startRecoveryWithDefinition(
-                definition: UUID(), until: nil, query: nil, destination: nil, callback: callback
+                definition: UUID(), until: nil, entities: nil, sources: [.filesystem], destination: nil, callback: callback
             )
         }
         await confirmCallback(notImplemented: true) { callback in
             _ = await executor.startRecoveryWithEntry(
-                entry: UUID(), query: nil, destination: nil, callback: callback
+                entry: UUID(), entities: nil, sources: [.filesystem], destination: nil, callback: callback
             )
         }
     }

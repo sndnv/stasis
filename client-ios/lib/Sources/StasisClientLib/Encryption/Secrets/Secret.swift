@@ -6,8 +6,15 @@ public extension Secret {
     var description: String { "Secret(\(String(reflecting: type(of: self))))" }
 }
 
-public enum SecretError: Error, Equatable {
+public enum SecretError: Error, Equatable, LocalizedError {
     case passwordAlreadyExtracted
+
+    public var errorDescription: String? {
+        switch self {
+        case .passwordAlreadyExtracted:
+            "Password already extracted"
+        }
+    }
 }
 
 public struct EncryptionSecretConfig: Sendable, Equatable, Hashable {

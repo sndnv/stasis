@@ -127,7 +127,15 @@ private struct BackupViewContent: View {
                         Button { onEdit(definition) } label: {
                             Label("Edit", systemImage: "pencil")
                         }
-                        .tint(.indigo)
+                        .tint(Color.accentColor)
+                    }
+                    .contextMenu {
+                        Button { onEdit(definition) } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) { onDelete(definition) } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
             }
@@ -138,6 +146,9 @@ private struct BackupViewContent: View {
                 Button { onAdd() } label: {
                     Label("Add Definition", systemImage: "plus")
                 }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .backupDefinitions)
             }
         }
         .refreshable { await onRefresh() }
@@ -179,8 +190,8 @@ struct DefinitionSummaryRow: View {
             }
             HStack(spacing: 12) {
                 Label("\(definition.redundantCopies) copies", systemImage: "doc.on.doc")
-                Label("Keep: \(retentionLabel(definition.existingVersions))", systemImage: "clock.arrow.circlepath")
-                Label("Removed: \(retentionLabel(definition.removedVersions))", systemImage: "trash.slash")
+                Label("Keep: \(RetentionFormatter.shortLabel(definition.existingVersions))", systemImage: "clock.arrow.circlepath")
+                Label("Removed: \(RetentionFormatter.shortLabel(definition.removedVersions))", systemImage: "trash.slash")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -195,14 +206,6 @@ struct DefinitionSummaryRow: View {
             .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
-    }
-
-    private func retentionLabel(_ retention: DatasetDefinition.Retention) -> String {
-        switch retention.policy {
-        case .all: "All"
-        case .latestOnly: "Latest only"
-        case .atMost(let versions): "\(versions)"
-        }
     }
 }
 

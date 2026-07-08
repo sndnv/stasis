@@ -4,8 +4,8 @@ import SwiftUI
 struct CollectedAnalyticsSheet: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.dismiss) private var dismiss
+    @Environment(ToastCenter.self) private var toasts
     @State private var model: CollectedAnalyticsModel?
-    @State private var copiedAt: Date?
 
     var body: some View {
         NavigationStack {
@@ -19,6 +19,7 @@ struct CollectedAnalyticsSheet: View {
                 }
                 .task { await loadIfNeeded() }
         }
+        .toastLayer()
     }
 
     @ViewBuilder
@@ -54,7 +55,7 @@ struct CollectedAnalyticsSheet: View {
 
     private func entrySection(_ entry: AnalyticsEntry) -> some View {
         Section("Entry") {
-            LabeledContent("Id", value: shortId(entry.runtime.id))
+            IdLabeledContent("Id", value: entry.runtime.id)
             LabeledContent("Created", value: entry.created.formatted(date: .abbreviated, time: .shortened))
             LabeledContent("Updated", value: entry.updated.formatted(date: .abbreviated, time: .shortened))
         }
@@ -136,13 +137,15 @@ struct CollectedAnalyticsSheet: View {
             Button {
                 Task { await sendNow() }
             } label: {
-                Label("Send Now", systemImage: "paperplane")
+                HStack {
+                    Label("Send Now", systemImage: "paperplane")
+                    if model?.sendInProgress == true {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
             }
             .disabled(model?.sendInProgress == true)
-            if let copiedAt {
-                Text("Copied \(copiedAt.formatted(.relative(presentation: .named))).")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
         } footer: {
             Text("Sending uses your configured analytics endpoint and may not complete immediately.")
         }
@@ -158,6 +161,7 @@ struct CollectedAnalyticsSheet: View {
     private func sendNow() async {
         await model?.send()
         await model?.load()
+        toasts.show("Analytics sent")
     }
 
     private func copyEntry(_ entry: AnalyticsEntry) {
@@ -168,11 +172,7 @@ struct CollectedAnalyticsSheet: View {
               let json = String(data: data, encoding: .utf8)
         else { return }
         UIPasteboard.general.string = json
-        copiedAt = .now
-    }
-
-    private func shortId(_ value: String) -> String {
-        value.count > 12 ? String(value.prefix(12)) + "…" : value
+        toasts.show("Copied to clipboard")
     }
 }
 
@@ -180,5 +180,6 @@ struct CollectedAnalyticsSheet: View {
 #Preview {
     CollectedAnalyticsSheet()
         .environment(AppContainer())
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 #endif

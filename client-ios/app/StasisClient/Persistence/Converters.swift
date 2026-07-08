@@ -1,9 +1,18 @@
 import Foundation
 import StasisClientLib
 
-public enum ConverterError: Error, Equatable {
+public enum ConverterError: Error, Equatable, LocalizedError {
     case unexpectedAssignmentType(String)
     case malformedAssignmentData(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unexpectedAssignmentType(let value):
+            "Unexpected assignment type [\(value)]"
+        case .malformedAssignmentData(let reason):
+            "Malformed assignment data: \(reason)"
+        }
+    }
 }
 
 public extension Rule {

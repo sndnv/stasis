@@ -6,35 +6,33 @@ struct SettingsView: View {
     @State private var resetError: String?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                DateTimeFormatSection()
-                UserCredentialsSection()
-                DeviceSecretSection()
-                AnalyticsSection()
-                CommandsSection()
-                AdvancedSection()
-                DebugSection { showResetConfirmation = true }
+        Form {
+            DateTimeFormatSection()
+            UserCredentialsSection()
+            DeviceSecretSection()
+            AnalyticsSection()
+            CommandsSection()
+            AdvancedSection()
+            DebugSection { showResetConfirmation = true }
+        }
+        .navigationTitle("Settings")
+        .defaultAppStorage(container.settings)
+        .confirmationDialog(
+            "Reset configuration?",
+            isPresented: $showResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset", role: .destructive) {
+                Task { await runReset() }
             }
-            .navigationTitle("Settings")
-            .defaultAppStorage(container.settings)
-            .confirmationDialog(
-                "Reset configuration?",
-                isPresented: $showResetConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Reset", role: .destructive) {
-                    Task { await runReset() }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This logs you out, clears server configuration, rules, and schedules. You'll need to bootstrap the device again.")
-            }
-            .alert("Reset Failed", isPresented: resetErrorBinding) {
-                Button("OK") { resetError = nil }
-            } message: {
-                Text(resetError ?? "")
-            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This logs you out, clears server configuration, rules, and schedules. You'll need to bootstrap the device again.")
+        }
+        .alert("Reset Failed", isPresented: resetErrorBinding) {
+            Button("OK") { resetError = nil }
+        } message: {
+            Text(resetError ?? "")
         }
     }
 
@@ -52,6 +50,9 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
-        .environment(AppContainer())
+    NavigationStack {
+        SettingsView()
+    }
+    .environment(AppContainer())
+    .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }

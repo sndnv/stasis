@@ -21,6 +21,7 @@ final class HomeModel {
     private(set) var lastOperation: LastOperation?
     private(set) var isLoading: Bool = true
     private(set) var startingBackup: Bool = false
+    var didStartBackup: Bool = false
     private(set) var error: String?
 
     private var latestBackups: [OperationId: BackupState] = [:]
@@ -66,6 +67,7 @@ final class HomeModel {
             callback: makeBackupCallback()
         )
         startingBackup = false
+        didStartBackup = true
     }
 
     func load() async {
@@ -73,7 +75,7 @@ final class HomeModel {
             let definitions = try await session.serverApiClient.datasetDefinitions()
             firstDefinition = definitions.min(by: { $0.created < $1.created })
             if let definition = firstDefinition {
-                lastEntry = try await session.serverApiClient.latestEntry(
+                lastEntry = try? await session.serverApiClient.latestEntry(
                     definition: definition.id, until: nil
                 )
             }

@@ -5,7 +5,6 @@ struct SearchView: View {
     @Environment(AppContainer.self) private var container
     @State private var model: SearchModel?
     @State private var query: String = ""
-    @State private var untilEnabled: Bool = false
     @State private var until: Date = .now
 
     var body: some View {
@@ -13,12 +12,16 @@ struct SearchView: View {
             SearchViewContent(
                 state: state,
                 query: $query,
-                untilEnabled: $untilEnabled,
                 until: $until,
                 onRunSearch: { await runSearch() },
                 onClearError: { model?.clearError() }
             )
             .navigationTitle("Search")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    HelpButton(topic: .search)
+                }
+            }
             .navigationDestination(for: DatasetDefinitionResult.self) { result in
                 SearchMatchesView(result: result)
             }
@@ -38,7 +41,7 @@ struct SearchView: View {
     }
 
     private func runSearch() async {
-        await model?.run(query: query, until: untilEnabled ? until : nil)
+        await model?.run(query: query, until: until)
     }
 
     private func initIfNeeded() {
@@ -52,7 +55,7 @@ struct SearchView: View {
 struct SearchViewState: Equatable {
     var status: SearchModel.Status = .idle
     var lastQuery: String = ""
-    var results: [DatasetDefinitionResult] = []
+    var results: [DefinitionSearchRow] = []
     var hasResult: Bool = false
     var error: String?
 
@@ -60,9 +63,9 @@ struct SearchViewState: Equatable {
 }
 
 private struct SearchViewContent: View {
+    @Environment(ToastCenter.self) private var toasts
     let state: SearchViewState
     @Binding var query: String
-    @Binding var untilEnabled: Bool
     @Binding var until: Date
     let onRunSearch: () async -> Void
     let onClearError: () -> Void
@@ -95,12 +98,9 @@ private struct SearchViewContent: View {
 
     private var untilSection: some View {
         Section {
-            Toggle("Filter by date", isOn: $untilEnabled)
-            if untilEnabled {
-                DatePicker("Until", selection: $until, displayedComponents: [.date, .hourAndMinute])
-            }
+            DatePicker("Until", selection: $until, displayedComponents: [.date, .hourAndMinute])
         } footer: {
-            Text("Only search backup entries created before this date.")
+            Text("Searches the latest backup entry created before this date.")
         }
     }
 
@@ -127,14 +127,31 @@ private struct SearchViewContent: View {
                     Text("No matches for \"\(state.lastQuery)\".")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(state.results, id: \.entryId) { result in
-                        NavigationLink(value: result) {
-                            SearchResultRow(result: result)
+                    ForEach(state.results) { row in
+                        NavigationLink(value: row.result) {
+                            SearchResultRow(result: row.result)
+                        }
+                        .contextMenu {
+                            Button {
+                                copy(row.definition, label: "definition ID")
+                            } label: {
+                                Label("Copy definition ID", systemImage: "doc.on.doc")
+                            }
+                            Button {
+                                copy(row.result.entryId, label: "entry ID")
+                            } label: {
+                                Label("Copy entry ID", systemImage: "doc.on.doc")
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    private func copy(_ id: UUID, label: String) {
+        UIPasteboard.general.string = id.uuidString.lowercased()
+        toasts.show("Copied \(label)")
     }
 
     private var errorBinding: Binding<Bool> {
@@ -175,7 +192,6 @@ struct SearchResultRow: View {
 private struct PreviewHarness: View {
     let state: SearchViewState
     @State private var query: String
-    @State private var untilEnabled: Bool = false
     @State private var until: Date = .now
 
     init(state: SearchViewState, query: String = "") {
@@ -188,13 +204,13 @@ private struct PreviewHarness: View {
             SearchViewContent(
                 state: state,
                 query: $query,
-                untilEnabled: $untilEnabled,
                 until: $until,
                 onRunSearch: {},
                 onClearError: {}
             )
             .navigationTitle("Search")
         }
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
     }
 }
 
@@ -222,7 +238,7 @@ private extension DatasetDefinitionResult {
         state: SearchViewState(
             status: .completed,
             lastQuery: "jpg",
-            results: [.mock()],
+            results: [DefinitionSearchRow(definition: UUID(), result: .mock())],
             hasResult: true
         ),
         query: "jpg"

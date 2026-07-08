@@ -119,3 +119,14 @@ struct LoginTests {
         #expect((try? secret.get()) != nil)
     }
 }
+
+@Suite("LoginError")
+struct LoginErrorTests {
+    @Test("describes each case")
+    func messages() {
+        let auth = LoginError.missingAuthenticationConfig.errorDescription
+        let api = LoginError.missingServerApiConfig.errorDescription
+        #expect(auth == "Authentication configuration is missing; bootstrap the device again")
+        #expect(api == "Server configuration is missing; bootstrap the device again")
+    }
+}

@@ -63,9 +63,18 @@ public enum Compressions: Sendable {
     }
 }
 
-public enum CompressionError: Error, Equatable, Sendable {
+public enum CompressionError: Error, Equatable, Sendable, LocalizedError {
     case unsupported(String)
     case expectedFileGotDirectory(path: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unsupported(let compression):
+            "Unsupported compression provided: [\(compression)]"
+        case .expectedFileGotDirectory(let path):
+            "Expected metadata for file but directory metadata for [\(path)] provided"
+        }
+    }
 }
 
 private struct ConfigurableCompression: Compression {

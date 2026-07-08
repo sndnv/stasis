@@ -212,8 +212,15 @@ public enum Metadata {
     }
 }
 
-public enum MetadataError: Error, Equatable, Sendable {
+public enum MetadataError: Error, Equatable, Sendable, LocalizedError {
     case expectedFileGotDirectory(path: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .expectedFileGotDirectory(let path):
+            "Expected metadata for file but directory metadata for [\(path)] provided"
+        }
+    }
 }
 
 private func formatPosixPermissions(mode: mode_t) -> String {

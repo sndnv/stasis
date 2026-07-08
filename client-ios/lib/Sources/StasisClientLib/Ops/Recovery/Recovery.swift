@@ -66,25 +66,31 @@ public final class Recovery: Operation {
 
     public struct Descriptor: Sendable {
         public let targetMetadata: DatasetMetadata
-        public let query: PathQuery?
+        public let entities: Set<String>?
+        public let sources: Set<RecoverySourceKind>
         public let destination: Destination?
         public let deviceSecret: DeviceSecret
 
         public init(
             targetMetadata: DatasetMetadata,
-            query: PathQuery?,
+            entities: Set<String>?,
+            sources: Set<RecoverySourceKind>,
             destination: Destination?,
             deviceSecret: DeviceSecret
         ) {
             self.targetMetadata = targetMetadata
-            self.query = query
+            self.entities = entities
+            self.sources = sources
             self.destination = destination
             self.deviceSecret = deviceSecret
         }
 
         public func keep() -> @Sendable (String, FilesystemMetadata.EntityState) -> Bool {
-            let queryRef = query
-            return { entity, _ in queryRef?.matches(path: entity) ?? true }
+            let entitiesRef = entities
+            let sourcesRef = sources
+            return { entity, _ in
+                (entitiesRef?.contains(entity) ?? true) && sourcesRef.contains(RecoverySourceKind.forEntity(entity))
+            }
         }
 
         public enum Collector: Sendable {
@@ -93,7 +99,8 @@ public final class Recovery: Operation {
         }
 
         public static func build(
-            query: PathQuery?,
+            entities: Set<String>?,
+            sources: Set<RecoverySourceKind>,
             destination: Destination?,
             collector: Collector,
             deviceSecret: DeviceSecret,
@@ -113,30 +120,11 @@ public final class Recovery: Operation {
             let metadata = try await api.datasetMetadata(entry: entry)
             return Descriptor(
                 targetMetadata: metadata,
-                query: query,
+                entities: entities,
+                sources: sources,
                 destination: destination,
                 deviceSecret: deviceSecret
             )
-        }
-    }
-
-    public enum PathQuery: Sendable {
-        case forAbsolutePath(NSRegularExpression)
-        case forFileName(NSRegularExpression)
-
-        public static func parse(_ raw: String) throws -> PathQuery {
-            let regex = try NSRegularExpression(pattern: raw)
-            return raw.contains("/") ? .forAbsolutePath(regex) : .forFileName(regex)
-        }
-
-        public func matches(path: String) -> Bool {
-            switch self {
-            case .forAbsolutePath(let regex):
-                return regex.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)) != nil
-            case .forFileName(let regex):
-                let name = (path as NSString).lastPathComponent
-                return regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)) != nil
-            }
         }
     }
 
@@ -165,10 +153,24 @@ extension Optional where Wrapped == Recovery.Destination {
     }
 }
 
-public enum RecoveryError: Error, Equatable {
+public enum RecoveryError: Error, Equatable, LocalizedError {
     case alreadyStarted(id: OperationId)
+
+    public var errorDescription: String? {
+        switch self {
+        case .alreadyStarted(let id):
+            "Recovery [\(id.uuidString)] already started"
+        }
+    }
 }
 
-public enum RecoveryDescriptorError: Error, Equatable {
+public enum RecoveryDescriptorError: Error, Equatable, LocalizedError {
     case noEntryForDefinition(definition: DatasetDefinitionId)
+
+    public var errorDescription: String? {
+        switch self {
+        case .noEntryForDefinition(let definition):
+            "No entry found for definition [\(definition.uuidString)]"
+        }
+    }
 }

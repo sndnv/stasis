@@ -113,3 +113,12 @@ struct ConvertersTests {
         #expect(throws: RuleEntityError.self) { _ = try RuleEntity.decode("bogus") }
     }
 }
+
+@Suite("ConverterError")
+struct ConverterErrorTests {
+    @Test("describes each case")
+    func messages() {
+        #expect(ConverterError.unexpectedAssignmentType("test").errorDescription == "Unexpected assignment type [test]")
+        #expect(ConverterError.malformedAssignmentData("test a").errorDescription == "Malformed assignment data: test a")
+    }
+}

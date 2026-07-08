@@ -116,28 +116,32 @@ public actor DefaultOperationExecutor: OperationExecutor {
     public func startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Date?,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {
         await startRecovery(
             callback: callback,
             collector: .withDefinition(definition: definition, until: until),
-            query: query,
+            entities: entities,
+            sources: sources,
             destination: destination
         )
     }
 
     public func startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {
         await startRecovery(
             callback: callback,
             collector: .withEntry(entry: entry),
-            query: query,
+            entities: entities,
+            sources: sources,
             destination: destination
         )
     }
@@ -191,7 +195,8 @@ public actor DefaultOperationExecutor: OperationExecutor {
     private func startRecovery(
         callback: @escaping OperationCallback,
         collector: Recovery.Descriptor.Collector,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?
     ) async -> OperationId {
         if let existing = preflight(ofType: .recovery, callback: callback) {
@@ -200,7 +205,8 @@ public actor DefaultOperationExecutor: OperationExecutor {
 
         do {
             let descriptor = try await Recovery.Descriptor.build(
-                query: query,
+                entities: entities,
+                sources: sources,
                 destination: destination,
                 collector: collector,
                 deviceSecret: deviceSecret(),

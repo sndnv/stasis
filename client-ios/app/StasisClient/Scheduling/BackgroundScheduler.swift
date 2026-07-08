@@ -13,9 +13,10 @@ public actor BackgroundScheduler {
     private let ruleRepository: RuleRepository
     private let executor: any OperationExecutor
     private let notifications: any SchedulingNotifications
+    private let schedulingEnabled: @Sendable () -> Bool
     private let publicSchedulesCache: RefreshingCache<Int, [Schedule]>
     public let publicSchedulesTracking: TrackingCache<Int, [Schedule]>
-    private let publicSchedulesLoader: @Sendable () async throws -> [Schedule]
+    private var publicSchedulesLoader: @Sendable () async throws -> [Schedule]
     private let taskScheduler: any BackgroundTaskScheduling
 
     private var state: Schedules = .empty
@@ -29,6 +30,7 @@ public actor BackgroundScheduler {
         ruleRepository: RuleRepository,
         executor: any OperationExecutor,
         notifications: any SchedulingNotifications,
+        schedulingEnabled: @escaping @Sendable () -> Bool,
         publicSchedulesLoader: @escaping @Sendable () async throws -> [Schedule] = { [] },
         publicSchedulesRefreshInterval: TimeInterval = 30 * 60,
         taskScheduler: any BackgroundTaskScheduling = SystemBackgroundTaskScheduler()
@@ -38,6 +40,7 @@ public actor BackgroundScheduler {
         self.ruleRepository = ruleRepository
         self.executor = executor
         self.notifications = notifications
+        self.schedulingEnabled = schedulingEnabled
         self.publicSchedulesLoader = publicSchedulesLoader
         let tracking = TrackingCache<Int, [Schedule]>(underlying: MapCache())
         self.publicSchedulesTracking = tracking
@@ -90,6 +93,12 @@ public actor BackgroundScheduler {
         scheduleNextProcessingTask(from: snapshot)
     }
 
+    public func setPublicSchedulesLoader(_ loader: @escaping @Sendable () async throws -> [Schedule]) async {
+        publicSchedulesLoader = loader
+        try? await publicSchedulesCache.remove(0)
+        await refresh()
+    }
+
     public func executeReady(now: Date = Date()) async {
         let task: Task<Void, Never> = Task { [weak self] in
             await self?.runExecution(now: now)
@@ -100,6 +109,10 @@ public actor BackgroundScheduler {
     }
 
     private func runExecution(now: Date) async {
+        guard schedulingEnabled() else {
+            taskScheduler.cancel(identifier: Self.processingTaskIdentifier)
+            return
+        }
         let snapshot = await loadAll()
         state = snapshot
         broadcast()
@@ -169,6 +182,10 @@ public actor BackgroundScheduler {
     }
 
     private func scheduleNextProcessingTask(from snapshot: Schedules) {
+        guard schedulingEnabled() else {
+            taskScheduler.cancel(identifier: Self.processingTaskIdentifier)
+            return
+        }
         let now = Date()
         let combined = snapshot.publicSchedules + snapshot.local
         let nextFires: [Date] = snapshot.configured.compactMap { active in

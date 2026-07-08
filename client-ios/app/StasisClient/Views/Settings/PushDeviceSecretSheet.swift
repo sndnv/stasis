@@ -4,6 +4,7 @@ struct PushDeviceSecretSheet: View {
     let onPush: (String, String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ToastCenter.self) private var toasts
     @State private var password: String = ""
     @State private var useSeparateRemotePassword: Bool = false
     @State private var remotePassword: String = ""
@@ -36,13 +37,14 @@ struct PushDeviceSecretSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.disabled(isPushing)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Push") { Task { await runPush() } }
                         .disabled(!canSubmit || isPushing)
                 }
             }
+            .submittingOverlay(isPushing)
         }
     }
 
@@ -56,6 +58,7 @@ struct PushDeviceSecretSheet: View {
         isPushing = true
         do {
             try await onPush(password, useSeparateRemotePassword ? remotePassword : nil)
+            toasts.show("Device secret pushed")
             dismiss()
         } catch {
             self.error = error.localizedDescription
@@ -67,5 +70,6 @@ struct PushDeviceSecretSheet: View {
 #if DEBUG
 #Preview {
     PushDeviceSecretSheet(onPush: { _, _ in })
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 #endif

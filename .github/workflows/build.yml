@@ -192,9 +192,27 @@ jobs:
           python-version: '3.14'
 
       - name: Install tooling
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
         run: brew install swiftlint xcodegen
+
+      - name: Resolve Xcode version
+        id: xcode
+        run: echo "version=$(xcodebuild -version | head -1 | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache SwiftPM build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            client-ios/lib/.build
+            client-ios/app/build/DerivedData
+            client-ios/app/build/SourcePackages
+          key: ios-spm-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-${{ hashFiles('client-ios/lib/Package.swift', 'client-ios/app/project.yml') }}
+          restore-keys: |
+            ios-spm-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-
+            ios-spm-${{ runner.os }}-
 
       - name: Run QA
         run: |
           cd client-ios
-          ./qa.py
+          ./qa.py ci

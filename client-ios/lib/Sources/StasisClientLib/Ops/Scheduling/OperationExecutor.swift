@@ -27,14 +27,16 @@ public protocol OperationExecutor: Sendable {
     func startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Date?,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId
 
     func startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId
@@ -46,12 +48,27 @@ public protocol OperationExecutor: Sendable {
     func stop(operation: OperationId) async throws
 }
 
-public enum OperationExecutorError: Error, Equatable {
+public enum OperationExecutorError: Error, Equatable, LocalizedError {
     case notImplemented(String)
     case operationNotFound(OperationId)
     case operationAlreadyActive(type: OperationType, existing: OperationId)
     case cannotResumeCompleted(operation: OperationId)
     case cannotResumeMissing(operation: OperationId)
+
+    public var errorDescription: String? {
+        switch self {
+        case .notImplemented(let what):
+            "[\(what)] is not implemented"
+        case .operationNotFound(let operation):
+            "Operation [\(operation.uuidString)] not found"
+        case .operationAlreadyActive(let type, let existing):
+            "Cannot start [\(type.rawValue)] operation; [\(type.rawValue)] with ID [\(existing.uuidString)] is already active"
+        case .cannotResumeCompleted(let operation):
+            "Cannot resume operation with ID [\(operation.uuidString)]; operation already completed"
+        case .cannotResumeMissing(let operation):
+            "Cannot resume operation with ID [\(operation.uuidString)]; no existing state was found"
+        }
+    }
 }
 
 public struct NoOpOperationExecutor: OperationExecutor {
@@ -92,7 +109,8 @@ public struct NoOpOperationExecutor: OperationExecutor {
     public func startRecoveryWithDefinition(
         definition: DatasetDefinitionId,
         until: Date?,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {
@@ -103,7 +121,8 @@ public struct NoOpOperationExecutor: OperationExecutor {
 
     public func startRecoveryWithEntry(
         entry: DatasetEntryId,
-        query: Recovery.PathQuery?,
+        entities: Set<String>?,
+        sources: Set<RecoverySourceKind>,
         destination: Recovery.Destination?,
         callback: @escaping OperationCallback
     ) async -> OperationId {

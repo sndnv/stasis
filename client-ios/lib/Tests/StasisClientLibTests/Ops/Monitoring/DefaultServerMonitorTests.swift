@@ -65,6 +65,7 @@ struct DefaultServerMonitorTests {
         #expect(mockTracker.statistics[.serverUnreachable] == 0)
 
         await monitor.stop()
+        try await Task.sleep(nanoseconds: UInt64(defaultInterval * 1_000_000_000))
 
         let snapshot = mockTracker.statistics[.serverReachable] ?? 0
         try await Task.sleep(nanoseconds: UInt64(defaultInterval * 2_000_000_000))

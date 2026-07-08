@@ -71,7 +71,11 @@ final class SearchModel {
 }
 
 extension SearchResult {
-    var nonEmptyDefinitions: [DatasetDefinitionResult] {
-        definitions.values.compactMap { $0 }.sorted { $0.definitionInfo < $1.definitionInfo }
+    var nonEmptyDefinitions: [DefinitionSearchRow] {
+        definitions
+            .compactMap { id, result in
+                result.map { DefinitionSearchRow(definition: id, result: $0) }
+            }
+            .sorted { $0.result.definitionInfo < $1.result.definitionInfo }
     }
 }

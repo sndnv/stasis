@@ -26,14 +26,7 @@ struct LoginReInitializeDeviceView: View {
             .padding()
             .navigationTitle("Re-initialize device")
             .navigationBarTitleDisplayMode(.inline)
-            .overlay {
-                if inProgress {
-                    ProgressView()
-                        .controlSize(.large)
-                        .padding(24)
-                        .background(.regularMaterial, in: .rect(cornerRadius: 12))
-                }
-            }
+            .submittingOverlay(inProgress)
             .alert("Re-initialize Failed", isPresented: errorBinding) {
                 Button("OK") { error = nil }
             } message: {

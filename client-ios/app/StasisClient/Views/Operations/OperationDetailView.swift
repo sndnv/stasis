@@ -12,7 +12,13 @@ struct OperationDetailView: View {
             onClearError: { model?.clearError() }
         )
         .navigationTitle(title)
+        .navigationSubtitle(state.definitionInfo ?? "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .operationDetails)
+            }
+        }
         .task { await startIfNeeded() }
     }
 
@@ -67,6 +73,8 @@ private struct OperationDetailContent: View {
     let state: OperationDetailViewState
     let onClearError: () -> Void
 
+    @State private var selection: StageSelection?
+
     var body: some View {
         Form {
             if state.isLoading && state.backup == nil && state.recovery == nil {
@@ -85,6 +93,13 @@ private struct OperationDetailContent: View {
                 }
             }
         }
+        .sheet(item: $selection) { selection in
+            StageEntriesSheet(
+                title: selection.id,
+                description: Self.stageDescriptions[selection.id],
+                entries: allStages.first { $0.title == selection.id }?.entries ?? []
+            )
+        }
         .alert("Error", isPresented: errorBinding) {
             Button("OK") { onClearError() }
         } message: {
@@ -95,11 +110,11 @@ private struct OperationDetailContent: View {
     @ViewBuilder
     private func backupSections(_ backup: BackupState) -> some View {
         Section("Summary") {
-            LabeledContent("Id", value: state.key.id.uuidString)
+            IdLabeledContent("Id", id: state.key.id)
             if let info = state.definitionInfo {
                 LabeledContent("Definition", value: info)
             }
-            LabeledContent("Definition Id", value: StatusFormatters.shortId(backup.definition))
+            IdLabeledContent("Definition Id", id: backup.definition)
             LabeledContent("Status", value: statusLabel(completed: backup.completed))
             LabeledContent("Started", value: backup.started.formatted(date: .abbreviated, time: .shortened))
             if let completed = backup.completed {
@@ -120,32 +135,17 @@ private struct OperationDetailContent: View {
             )
         }
 
-        stagesSection(
-            stages: [
-                .keys("Discovered", Array(backup.entities.discovered)),
-                .keys("Examined", Array(backup.entities.examined)),
-                .keys("Skipped", Array(backup.entities.skipped)),
-                .keys("Collected", Array(backup.entities.collected.keys)),
-                .progress("Pending", backup.entities.pending) { ($0.processedParts, $0.expectedParts) },
-                .progress("Processed", backup.entities.processed) { ($0.processedParts, $0.expectedParts) }
-            ]
-        )
+        stagesSection()
 
-        if !backup.entities.failed.isEmpty || !backup.failures.isEmpty || !backup.entities.unmatched.isEmpty {
-            failuresSection(
-                unmatched: backup.entities.unmatched,
-                entityFailures: backup.entities.failed.map { (ref, reason) in
-                    "\(ref.key): \(reason)"
-                },
-                overallFailures: backup.failures
-            )
+        if !failureStages.isEmpty {
+            failuresSection()
         }
     }
 
     @ViewBuilder
     private func recoverySections(_ recovery: RecoveryState) -> some View {
         Section("Summary") {
-            LabeledContent("Id", value: state.key.id.uuidString)
+            IdLabeledContent("Id", id: state.key.id)
             LabeledContent("Status", value: statusLabel(completed: recovery.completed))
             LabeledContent("Started", value: recovery.started.formatted(date: .abbreviated, time: .shortened))
             if let completed = recovery.completed {
@@ -155,24 +155,10 @@ private struct OperationDetailContent: View {
 
         progressSection(progress: recovery.asProgress())
 
-        stagesSection(
-            stages: [
-                .keys("Examined", Array(recovery.entities.examined)),
-                .keys("Collected", Array(recovery.entities.collected.keys)),
-                .progress("Pending", recovery.entities.pending) { ($0.processedParts, $0.expectedParts) },
-                .progress("Processed", recovery.entities.processed) { ($0.processedParts, $0.expectedParts) },
-                .keys("Metadata Applied", Array(recovery.entities.metadataApplied))
-            ]
-        )
+        stagesSection()
 
-        if !recovery.entities.failed.isEmpty || !recovery.failures.isEmpty {
-            failuresSection(
-                unmatched: [],
-                entityFailures: recovery.entities.failed.map { (ref, reason) in
-                    "\(ref.key): \(reason)"
-                },
-                overallFailures: recovery.failures
-            )
+        if !failureStages.isEmpty {
+            failuresSection()
         }
     }
 
@@ -190,88 +176,99 @@ private struct OperationDetailContent: View {
     }
 
     @ViewBuilder
-    private func stagesSection(stages: [Stage]) -> some View {
+    private func stagesSection() -> some View {
         Section("Stages") {
             ForEach(stages) { stage in
-                DisclosureGroup {
-                    if stage.entries.isEmpty {
-                        Text("None").foregroundStyle(.secondary)
-                    } else {
-                        ForEach(Array(stage.entries.prefix(Self.maxStageEntries).enumerated()), id: \.offset) { _, entry in
-                            Text(entry)
-                                .font(.caption.monospaced())
-                                .lineLimit(2)
-                                .truncationMode(.middle)
-                        }
-                        if stage.entries.count > Self.maxStageEntries {
-                            Text("+\(stage.entries.count - Self.maxStageEntries) more")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Text(stage.title)
-                        Spacer()
-                        Text("\(stage.entries.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                stageRow(stage)
             }
         }
     }
 
     @ViewBuilder
-    private func failuresSection(
-        unmatched: [String],
-        entityFailures: [String],
-        overallFailures: [String]
-    ) -> some View {
+    private func failuresSection() -> some View {
         Section("Failures") {
-            if !overallFailures.isEmpty {
-                DisclosureGroup {
-                    ForEach(Array(overallFailures.enumerated()), id: \.offset) { _, failure in
-                        Text(failure).font(.caption)
-                    }
-                } label: {
-                    HStack {
-                        Text("Overall")
-                        Spacer()
-                        Text("\(overallFailures.count)").foregroundStyle(.secondary)
-                    }
-                }
+            ForEach(failureStages) { stage in
+                stageRow(stage)
             }
-            if !entityFailures.isEmpty {
-                DisclosureGroup {
-                    ForEach(Array(entityFailures.prefix(Self.maxStageEntries).enumerated()), id: \.offset) { _, failure in
-                        Text(failure).font(.caption.monospaced()).lineLimit(3)
-                    }
-                    if entityFailures.count > Self.maxStageEntries {
-                        Text("+\(entityFailures.count - Self.maxStageEntries) more")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } label: {
-                    HStack {
-                        Text("Per Entity")
-                        Spacer()
-                        Text("\(entityFailures.count)").foregroundStyle(.secondary)
-                    }
-                }
+        }
+    }
+
+    private static let stageDescriptions: [String: String] = [
+        "Discovered": "Files and directories found based on the configured backup rules or recovery options.",
+        "Examined": "Discovered files and directories that have been checked for inclusion in the operation "
+            + "- they will be either skipped or collected for further processing.",
+        "Skipped": "Examined files and directories that do not need to be processed because they have not changed "
+            + "since the last backup or they do not need to be recovered.",
+        "Collected": "Examined files and directories that need to be backed up or recovered.",
+        "Pending": "Collected files or folders that are being processed.",
+        "Processed": "Files and directories that have been processed.",
+        "Metadata Applied": "Recovered files and directories that have had their metadata changes applied."
+    ]
+
+    private var stages: [Stage] {
+        if let backup = state.backup {
+            return [
+                .keys("Discovered", Array(backup.entities.discovered)),
+                .keys("Examined", Array(backup.entities.examined)),
+                .keys("Skipped", Array(backup.entities.skipped)),
+                .keys("Collected", Array(backup.entities.collected.keys)),
+                .progress("Pending", backup.entities.pending) { ($0.processedParts, $0.expectedParts) },
+                .progress("Processed", backup.entities.processed) { ($0.processedParts, $0.expectedParts) }
+            ]
+        } else if let recovery = state.recovery {
+            return [
+                .keys("Examined", Array(recovery.entities.examined)),
+                .keys("Collected", Array(recovery.entities.collected.keys)),
+                .progress("Pending", recovery.entities.pending) { ($0.processedParts, $0.expectedParts) },
+                .progress("Processed", recovery.entities.processed) { ($0.processedParts, $0.expectedParts) },
+                .keys("Metadata Applied", Array(recovery.entities.metadataApplied))
+            ]
+        }
+        return []
+    }
+
+    private var failureStages: [Stage] {
+        let groups: [Stage]
+        if let backup = state.backup {
+            groups = [
+                Stage(title: "Overall", entries: backup.failures),
+                Stage(title: "Per Entity", entries: backup.entities.failed.map { "\($0.key.key): \($0.value)" }.sorted()),
+                Stage(title: "Unmatched Rules", entries: backup.entities.unmatched)
+            ]
+        } else if let recovery = state.recovery {
+            groups = [
+                Stage(title: "Overall", entries: recovery.failures),
+                Stage(title: "Per Entity", entries: recovery.entities.failed.map { "\($0.key.key): \($0.value)" }.sorted())
+            ]
+        } else {
+            groups = []
+        }
+        return groups.filter { !$0.entries.isEmpty }
+    }
+
+    private var allStages: [Stage] { stages + failureStages }
+
+    @ViewBuilder
+    private func stageRow(_ stage: Stage) -> some View {
+        if stage.entries.isEmpty {
+            LabeledContent(stage.title) {
+                Text("0").foregroundStyle(.secondary)
             }
-            if !unmatched.isEmpty {
-                DisclosureGroup {
-                    ForEach(Array(unmatched.enumerated()), id: \.offset) { _, value in
-                        Text(value).font(.caption.monospaced()).lineLimit(3)
-                    }
-                } label: {
-                    HStack {
-                        Text("Unmatched Rules")
-                        Spacer()
-                        Text("\(unmatched.count)").foregroundStyle(.secondary)
-                    }
+        } else {
+            Button {
+                selection = StageSelection(id: stage.title)
+            } label: {
+                HStack {
+                    Text(stage.title).foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(stage.entries.count)").foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -287,7 +284,9 @@ private struct OperationDetailContent: View {
         )
     }
 
-    private static let maxStageEntries: Int = 50
+    private struct StageSelection: Identifiable, Hashable {
+        let id: String
+    }
 
     private struct Stage: Identifiable {
         var id: String { title }
@@ -308,6 +307,46 @@ private struct OperationDetailContent: View {
                 return expected > 1 ? "\(ref.key) — \(processed) / \(expected)" : ref.key
             }
             return Stage(title: title, entries: entries)
+        }
+    }
+}
+
+private struct StageEntriesSheet: View {
+    let title: String
+    let description: String?
+    let entries: [String]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let description {
+                    Section {
+                        Text(description)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if entries.isEmpty {
+                    ContentUnavailableView("No Entries", systemImage: "tray")
+                } else {
+                    ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+                        Text(entry)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("\(entries.count)").foregroundStyle(.secondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }

@@ -55,6 +55,13 @@ public struct Aes: Encrypting, Decrypting {
     }
 }
 
-public enum AesError: Error, Equatable {
+public enum AesError: Error, Equatable, LocalizedError {
     case ciphertextTooShort
+
+    public var errorDescription: String? {
+        switch self {
+        case .ciphertextTooShort:
+            "Ciphertext is too short to contain an authentication tag"
+        }
+    }
 }

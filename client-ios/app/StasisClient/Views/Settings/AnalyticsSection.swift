@@ -34,15 +34,17 @@ struct AnalyticsSection: View {
                 Label("Show Collected", systemImage: "chart.bar.doc.horizontal")
             }
             .disabled(!enabled)
+            .sheet(isPresented: $showCollected) { CollectedAnalyticsSheet() }
         } header: {
             Text("Analytics")
         } footer: {
             Text("Changes to intervals apply after restart.")
         }
-        .sheet(isPresented: $showCollected) { CollectedAnalyticsSheet() }
     }
 }
 
 #Preview {
     Form { AnalyticsSection() }
+        .environment(AppContainer())
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }

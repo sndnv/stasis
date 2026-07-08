@@ -75,6 +75,21 @@ struct HomeModelTests {
         #expect(calls.isEmpty)
     }
 
+    @Test("load tolerates a failing latestEntry, leaving lastEntry nil without an error")
+    func loadToleratesLatestEntryFailure() async throws {
+        let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
+        await api.setLatestEntryFailure(EndpointFailure(message: "test"))
+        let session = try TestSession.make(api: api)
+        let model = try makeModel(session: session)
+
+        await model.load()
+
+        #expect(model.isLoading == false)
+        #expect(model.firstDefinition != nil)
+        #expect(model.lastEntry == nil)
+        #expect(model.error == nil)
+    }
+
     @Test("load surfaces an error message when the API throws")
     func loadSurfacesError() async throws {
         let api = StasisClientLibTestSupport.MockServerApiEndpointClient()

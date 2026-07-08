@@ -2,8 +2,15 @@ import Foundation
 import StasisClientLib
 import SwiftData
 
-public enum RuleEntityError: Error, Equatable {
+public enum RuleEntityError: Error, Equatable, LocalizedError {
     case unknownOperation(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unknownOperation(let value):
+            "Unknown rule operation [\(value)]"
+        }
+    }
 }
 
 @Model

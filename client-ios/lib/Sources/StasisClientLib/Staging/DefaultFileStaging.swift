@@ -40,6 +40,13 @@ public struct DefaultFileStaging: FileStaging {
     }
 }
 
-public enum FileStagingError: Error, Equatable {
+public enum FileStagingError: Error, Equatable, LocalizedError {
     case temporaryFileCreationFailed(path: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .temporaryFileCreationFailed(let path):
+            "Failed to create a temporary file at [\(path)]"
+        }
+    }
 }

@@ -2,9 +2,18 @@ import Foundation
 import Gzip
 import StasisSharedProto
 
-public enum DatasetMetadataError: Error, Equatable {
+public enum DatasetMetadataError: Error, Equatable, LocalizedError {
     case decompressionFailed(String)
     case decodingFailed(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .decompressionFailed(let reason):
+            "Failed to decompress dataset metadata: \(reason)"
+        case .decodingFailed(let reason):
+            "Failed to decode dataset metadata: \(reason)"
+        }
+    }
 }
 
 extension DatasetMetadata {

@@ -6,21 +6,24 @@ struct StatusView: View {
     @State private var model: StatusModel?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                UserSection(user: model?.user, isLoading: model?.isLoading ?? true)
-                DeviceSection(device: model?.device, isLoading: model?.isLoading ?? true)
-                ConnectionsSection(servers: model?.servers ?? [:])
-            }
-            .navigationTitle("Status")
-            .refreshable { await model?.refresh() }
-            .alert("Error", isPresented: errorBinding) {
-                Button("OK") { model?.clearError() }
-            } message: {
-                Text(model?.error ?? "")
-            }
-            .task { await loadAndObserve() }
+        Form {
+            UserSection(user: model?.user, isLoading: model?.isLoading ?? true)
+            DeviceSection(device: model?.device, isLoading: model?.isLoading ?? true)
+            ConnectionsSection(servers: model?.servers ?? [:])
         }
+        .navigationTitle("Status")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .status)
+            }
+        }
+        .refreshable { await model?.refresh() }
+        .alert("Error", isPresented: errorBinding) {
+            Button("OK") { model?.clearError() }
+        } message: {
+            Text(model?.error ?? "")
+        }
+        .task { await loadAndObserve() }
     }
 
     private var errorBinding: Binding<Bool> {
@@ -39,6 +42,8 @@ struct StatusView: View {
 }
 
 #Preview {
-    StatusView()
-        .environment(AppContainer())
+    NavigationStack {
+        StatusView()
+    }
+    .environment(AppContainer())
 }

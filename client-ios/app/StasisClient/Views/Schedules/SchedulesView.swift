@@ -3,6 +3,8 @@ import SwiftUI
 
 struct SchedulesView: View {
     @Environment(AppContainer.self) private var container
+    @AppStorage(Settings.Keys.schedulingEnabled)
+    private var schedulingEnabled: Bool = Settings.Defaults.schedulingEnabled
     @State private var model: SchedulesModel?
     @State private var formMode: LocalScheduleFormSheet.Mode?
     @State private var deletionTarget: Schedule?
@@ -10,71 +12,76 @@ struct SchedulesView: View {
     @State private var assignmentTarget: SchedulesModel.Row?
 
     var body: some View {
-        NavigationStack {
-            SchedulesViewContent(
-                state: state,
-                onRefresh: { await model?.refresh() },
-                onClearError: { model?.clearError() },
-                definitionInfo: { model?.definitionInfo($0) },
-                onEdit: { schedule in formMode = .edit(schedule) },
-                onDeleteRequest: { row in
-                    guard let schedule = row.schedule else { return }
-                    if row.assignments.isEmpty {
-                        deletionTarget = schedule
-                    } else {
-                        deletionBlocked = schedule
-                    }
-                },
-                onAddAssignment: { row in assignmentTarget = row },
-                onRemoveAssignment: { active in
-                    Task { await model?.removeAssignment(active.id) }
+        SchedulesViewContent(
+            state: state,
+            schedulingEnabled: schedulingEnabled,
+            onRefresh: { await model?.refresh() },
+            onClearError: { model?.clearError() },
+            definitionInfo: { model?.definitionInfo($0) },
+            onEdit: { schedule in formMode = .edit(schedule) },
+            onDeleteRequest: { row in
+                guard let schedule = row.schedule else { return }
+                if row.assignments.isEmpty {
+                    deletionTarget = schedule
+                } else {
+                    deletionBlocked = schedule
                 }
-            )
-            .navigationTitle("Schedules")
-            .toolbar {
+            },
+            onAddAssignment: { row in assignmentTarget = row },
+            onRemoveAssignment: { active in
+                Task { await model?.removeAssignment(active.id) }
+            }
+        )
+        .navigationTitle("Schedules")
+        .defaultAppStorage(container.settings)
+        .toolbar {
+            if schedulingEnabled {
                 ToolbarItem(placement: .primaryAction) {
                     Button { formMode = .create } label: {
                         Label("Add Schedule", systemImage: "plus")
                     }
                 }
             }
-            .task { await startIfNeeded() }
-            .sheet(item: $formMode) { mode in
-                LocalScheduleFormSheet(
-                    mode: mode,
-                    onSave: { schedule in await model?.saveLocalSchedule(schedule) ?? false }
-                )
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .schedules)
             }
-            .sheet(item: $assignmentTarget) { row in
-                let live = model?.rows.first(where: { $0.id == row.id }) ?? row
-                AssignmentFormSheet(
-                    scheduleId: live.id,
-                    hasExistingBackup: live.hasBackupAssignment,
-                    definitions: model?.definitions ?? [],
-                    onSave: { active in await model?.addAssignment(active) ?? false }
-                )
+        }
+        .task { await startIfNeeded() }
+        .sheet(item: $formMode) { mode in
+            LocalScheduleFormSheet(
+                mode: mode,
+                onSave: { schedule in await model?.saveLocalSchedule(schedule) ?? false }
+            )
+        }
+        .sheet(item: $assignmentTarget) { row in
+            let live = model?.rows.first(where: { $0.id == row.id }) ?? row
+            AssignmentFormSheet(
+                scheduleId: live.id,
+                hasExistingBackup: live.hasBackupAssignment,
+                definitions: model?.definitions ?? [],
+                onSave: { active in await model?.addAssignment(active) ?? false }
+            )
+        }
+        .confirmationDialog(
+            "Delete schedule?",
+            isPresented: deletionBinding,
+            presenting: deletionTarget
+        ) { schedule in
+            Button("Delete", role: .destructive) {
+                Task { await model?.deleteLocalSchedule(schedule.id) }
             }
-            .confirmationDialog(
-                "Delete schedule?",
-                isPresented: deletionBinding,
-                presenting: deletionTarget
-            ) { schedule in
-                Button("Delete", role: .destructive) {
-                    Task { await model?.deleteLocalSchedule(schedule.id) }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: { schedule in
-                Text("Removes \(schedule.info).")
-            }
-            .alert(
-                "Cannot Delete",
-                isPresented: deletionBlockedBinding,
-                presenting: deletionBlocked
-            ) { _ in
-                Button("OK", role: .cancel) {}
-            } message: { schedule in
-                Text("Remove all assignments before deleting \(schedule.info).")
-            }
+            Button("Cancel", role: .cancel) {}
+        } message: { schedule in
+            Text("Removes \(schedule.info).")
+        }
+        .alert(
+            "Cannot Delete",
+            isPresented: deletionBlockedBinding,
+            presenting: deletionBlocked
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { schedule in
+            Text("Remove all assignments before deleting \(schedule.info).")
         }
     }
 
@@ -133,6 +140,7 @@ struct SchedulesViewState: Equatable {
 
 private struct SchedulesViewContent: View {
     let state: SchedulesViewState
+    let schedulingEnabled: Bool
     let onRefresh: () async -> Void
     let onClearError: () -> Void
     let definitionInfo: (DatasetDefinitionId) -> String?
@@ -145,6 +153,17 @@ private struct SchedulesViewContent: View {
 
     var body: some View {
         List {
+            if !schedulingEnabled {
+                Section {
+                    Label {
+                        Text("Scheduling is disabled. Enable it in Settings › Advanced to run and manage schedules.")
+                    } icon: {
+                        Image(systemName: "pause.circle")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
             if state.isLoading && state.rows.isEmpty {
                 Section { ProgressView().frame(maxWidth: .infinity) }
             } else if state.rows.isEmpty {
@@ -160,13 +179,14 @@ private struct SchedulesViewContent: View {
                     ScheduleRow(
                         row: row,
                         isExpanded: expanded.contains(row.id),
+                        managementEnabled: schedulingEnabled,
                         onToggle: { toggle(row.id) },
                         definitionInfo: definitionInfo,
                         onAddAssignment: { onAddAssignment(row) },
                         onRemoveAssignment: onRemoveAssignment
                     )
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        if let schedule = row.schedule, !schedule.isPublic {
+                        if schedulingEnabled, let schedule = row.schedule, !schedule.isPublic {
                             Button(role: .destructive) {
                                 onDeleteRequest(row)
                             } label: {
@@ -177,7 +197,21 @@ private struct SchedulesViewContent: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
-                            .tint(.indigo)
+                            .tint(Color.accentColor)
+                        }
+                    }
+                    .contextMenu {
+                        if schedulingEnabled, let schedule = row.schedule, !schedule.isPublic {
+                            Button {
+                                onEdit(schedule)
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) {
+                                onDeleteRequest(row)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
                 }
@@ -210,6 +244,7 @@ private struct SchedulesViewContent: View {
 struct ScheduleRow: View {
     let row: SchedulesModel.Row
     let isExpanded: Bool
+    let managementEnabled: Bool
     let onToggle: () -> Void
     let definitionInfo: (DatasetDefinitionId) -> String?
     let onAddAssignment: () -> Void
@@ -294,7 +329,7 @@ struct ScheduleRow: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(row.assignments, id: \.id) { active in
-                    HStack(alignment: .top) {
+                    HStack(alignment: .center) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(assignmentLabel(active.assignment))
                                 .font(.caption.weight(.semibold))
@@ -305,12 +340,14 @@ struct ScheduleRow: View {
                             }
                         }
                         Spacer()
-                        Button(role: .destructive) {
-                            onRemoveAssignment(active)
-                        } label: {
-                            Image(systemName: "minus.circle.fill")
+                        if managementEnabled {
+                            Button(role: .destructive) {
+                                onRemoveAssignment(active)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .buttonStyle(.borderless)
                     }
                 }
             }
@@ -324,10 +361,12 @@ struct ScheduleRow: View {
                 .buttonStyle(.borderless)
             }
         }
+        .padding(.top, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var canAddAssignment: Bool {
-        guard row.schedule != nil else { return false }
+        guard managementEnabled, row.schedule != nil else { return false }
         return !row.hasBackupAssignment
     }
 
@@ -363,11 +402,13 @@ struct ScheduleRow: View {
 #if DEBUG
 private struct PreviewHarness: View {
     let state: SchedulesViewState
+    var schedulingEnabled: Bool = true
 
     var body: some View {
         NavigationStack {
             SchedulesViewContent(
                 state: state,
+                schedulingEnabled: schedulingEnabled,
                 onRefresh: {},
                 onClearError: {},
                 definitionInfo: { _ in "Photos" },
@@ -430,5 +471,15 @@ private extension SchedulesModel.Row {
         rows: [.mockPublic(), .mockLocalWithAssignment()],
         isLoading: false
     ))
+}
+
+#Preview("scheduling disabled") {
+    PreviewHarness(
+        state: SchedulesViewState(
+            rows: [.mockPublic(), .mockLocalWithAssignment()],
+            isLoading: false
+        ),
+        schedulingEnabled: false
+    )
 }
 #endif

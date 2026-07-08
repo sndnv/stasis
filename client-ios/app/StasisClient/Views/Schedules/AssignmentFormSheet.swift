@@ -65,13 +65,14 @@ struct AssignmentFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
                         .disabled(isSaving || hasExistingBackup)
                 }
             }
+            .submittingOverlay(isSaving)
         }
     }
 

@@ -2,9 +2,18 @@ import Foundation
 import fsi
 import StasisSharedProto
 
-public enum FilesystemMetadataError: Error, Equatable {
+public enum FilesystemMetadataError: Error, Equatable, LocalizedError {
     case missingEntry
     case emptyState
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingEntry:
+            "Filesystem metadata state is missing its entry reference"
+        case .emptyState:
+            "Filesystem metadata contains an empty entity state"
+        }
+    }
 }
 
 extension FilesystemMetadata {

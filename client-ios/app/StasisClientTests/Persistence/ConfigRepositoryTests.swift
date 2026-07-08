@@ -176,3 +176,12 @@ struct ConfigRepositoryTests {
         #expect(defaults.analyticsCachedEntry() == "payload")
     }
 }
+
+@Suite("RepositoryError")
+struct RepositoryErrorTests {
+    @Test("describes each case")
+    func messages() {
+        #expect(ConfigRepository.RepositoryError.malformedConfig("test a").errorDescription == "Malformed configuration: test a")
+        #expect(ConfigRepository.RepositoryError.missingDeviceSecret.errorDescription == "No device secret is available")
+    }
+}

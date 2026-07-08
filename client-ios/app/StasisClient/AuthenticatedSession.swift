@@ -26,7 +26,8 @@ struct AuthenticatedSession: Sendable {
         credentialsProvider: CredentialsProvider,
         configRepository: ConfigRepository,
         trackers: DefaultTrackers,
-        analytics: any AnalyticsCollector
+        analytics: any AnalyticsCollector,
+        notifications: any SchedulingNotifications
     ) async throws -> AuthenticatedSession {
         let identities = try Self.resolveIdentities(configRepository: configRepository)
         let initialSecret = try await credentialsProvider.currentDeviceSecret().get()
@@ -43,7 +44,8 @@ struct AuthenticatedSession: Sendable {
             serverApi: serverApi,
             serverCore: serverCore,
             trackers: trackers,
-            analytics: analytics
+            analytics: analytics,
+            notifications: notifications
         )
         return AuthenticatedSession(
             credentialsProvider: credentialsProvider,
@@ -62,7 +64,10 @@ struct AuthenticatedSession: Sendable {
     ) -> (any ServerCoreEndpointClient, any ServerApiEndpointClient) {
         #if DEBUG
         if MockConfig.isMockServer(identities.apiUrl) {
-            return (MockServerCoreEndpointClient(), MockServerApiEndpointClient())
+            return (
+                MockServerCoreEndpointClient(resolveSecret: resolveSecret, crates: MockLibraryFixtures.crates),
+                MockServerApiEndpointClient()
+            )
         }
         #endif
         let core = DefaultServerCoreEndpointClient(
@@ -164,7 +169,8 @@ struct AuthenticatedSession: Sendable {
         serverApi: any ServerApiEndpointClient,
         serverCore: any ServerCoreEndpointClient,
         trackers: DefaultTrackers,
-        analytics: any AnalyticsCollector
+        analytics: any AnalyticsCollector,
+        notifications: any SchedulingNotifications
     ) -> any OperationExecutor {
         let clients: any Clients = StaticClients(api: serverApi, core: serverCore)
         let staging: any FileStaging = DefaultFileStaging(
@@ -177,7 +183,14 @@ struct AuthenticatedSession: Sendable {
         let photos = PhotosEntityKind(library: PhotoKitPhotoLibrary())
         let contacts = LibraryRecordKind(source: ContactsSource(store: DeviceContactStore()))
         let calendar = LibraryRecordKind(source: CalendarSource(store: DeviceEventStore()))
-        return DefaultOperationExecutor(
+        var backupKinds: [any BackupEntityKind] = [BackupEntityKinds.filesystem, photos, contacts, calendar]
+        var recoveryKinds: [any RecoveryEntityKind] = [RecoveryEntityKinds.filesystem, photos, contacts, calendar]
+        if let inbox = DropInbox.default {
+            let drops = DropEntityKind(inbox: inbox)
+            backupKinds.append(drops)
+            recoveryKinds.append(drops)
+        }
+        let executor = DefaultOperationExecutor(
             config: .init(backup: .init(limits: .init(
                 maxPartSize: Self.maxBackupPartSize,
                 maxChunkSize: Self.maxBackupChunkSize
@@ -192,7 +205,7 @@ struct AuthenticatedSession: Sendable {
                 clients: clients,
                 track: trackers.backup,
                 analytics: analytics,
-                kinds: [BackupEntityKinds.filesystem, photos, contacts, calendar]
+                kinds: backupKinds
             ),
             recoveryProviders: RecoveryProviders(
                 checksum: Checksums.sha256,
@@ -202,10 +215,11 @@ struct AuthenticatedSession: Sendable {
                 clients: clients,
                 track: trackers.recovery,
                 analytics: analytics,
-                kinds: [RecoveryEntityKinds.filesystem, photos, contacts, calendar]
+                kinds: recoveryKinds
             ),
             restrictions: { _ in [] }
         )
+        return NotifyingOperationExecutor(underlying: executor, notifications: notifications)
     }
 
     private static let maxBackupPartSize: Int64 = 32 * 1024 * 1024
@@ -219,9 +233,22 @@ struct AuthenticatedSession: Sendable {
     ]
 }
 
-enum SessionError: Error, Equatable {
+enum SessionError: Error, Equatable, LocalizedError {
     case missingServerApiConfig
     case missingServerCoreConfig
     case invalidServerApiDeviceId(String)
     case invalidServerCoreNodeId(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingServerApiConfig:
+            "Server API configuration is missing"
+        case .missingServerCoreConfig:
+            "Server core configuration is missing"
+        case .invalidServerApiDeviceId(let value):
+            "Invalid server API device ID [\(value)]"
+        case .invalidServerCoreNodeId(let value):
+            "Invalid server core node ID [\(value)]"
+        }
+    }
 }

@@ -5,6 +5,7 @@ struct PullDeviceSecretSheet: View {
     let onPull: (String, String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ToastCenter.self) private var toasts
     @State private var checking: Bool = true
     @State private var exists: Bool = false
     @State private var password: String = ""
@@ -51,13 +52,14 @@ struct PullDeviceSecretSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.disabled(isPulling)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Pull") { Task { await runPull() } }
                         .disabled(!canSubmit || isPulling)
                 }
             }
+            .submittingOverlay(isPulling)
             .task { await checkRemote() }
         }
     }
@@ -84,6 +86,7 @@ struct PullDeviceSecretSheet: View {
         isPulling = true
         do {
             try await onPull(password, useSeparateRemotePassword ? remotePassword : nil)
+            toasts.show("Device secret pulled")
             dismiss()
         } catch {
             self.error = error.localizedDescription
@@ -101,13 +104,16 @@ struct PullDeviceSecretSheet: View {
         },
         onPull: { _, _ in }
     )
+    .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 
 #Preview("ready") {
     PullDeviceSecretSheet(onCheckExists: { true }, onPull: { _, _ in })
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 
 #Preview("missing") {
     PullDeviceSecretSheet(onCheckExists: { false }, onPull: { _, _ in })
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 #endif

@@ -9,6 +9,9 @@ private let appLogger = Logger(subsystem: "stasis.client.ios", category: "Stasis
 @main
 struct StasisClientApp: App {
     @State private var container = AppContainer()
+    @State private var toasts = ToastCenter(displayDuration: .seconds(2.5))
+
+    private static let healthyStartupDelay: Duration = .seconds(4)
 
     init() {
         let scheduler = container.backgroundScheduler
@@ -22,14 +25,30 @@ struct StasisClientApp: App {
             }
             task.expirationHandler = { handlerTask.cancel() }
         }
+        container.startCrashReporting()
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(container)
-                .task { await onAppLaunch() }
+            Group {
+                if container.isCrashLooping {
+                    CrashReportView()
+                } else {
+                    RootView()
+                        .task { await onAppLaunch() }
+                        .task { await markStartupHealthy() }
+                }
+            }
+            .environment(container)
+            .toastLayer()
+            .environment(toasts)
         }
+    }
+
+    private func markStartupHealthy() async {
+        try? await Task.sleep(for: Self.healthyStartupDelay)
+        guard !Task.isCancelled else { return }
+        container.markStartedHealthy()
     }
 
     private func onAppLaunch() async {

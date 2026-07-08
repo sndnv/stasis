@@ -5,6 +5,7 @@ struct ImportDeviceSecretSheet: View {
     let onImport: (Data, String) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ToastCenter.self) private var toasts
     @State private var secret: String = ""
     @State private var password: String = ""
     @State private var isImporting: Bool = false
@@ -38,13 +39,14 @@ struct ImportDeviceSecretSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.disabled(isImporting)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Import") { Task { await runImport() } }
                         .disabled(!canSubmit || isImporting)
                 }
             }
+            .submittingOverlay(isImporting)
         }
     }
 
@@ -65,6 +67,7 @@ struct ImportDeviceSecretSheet: View {
         isImporting = true
         do {
             try await onImport(decoded, password)
+            toasts.show("Device secret imported")
             dismiss()
         } catch {
             self.error = error.localizedDescription
@@ -76,5 +79,6 @@ struct ImportDeviceSecretSheet: View {
 #if DEBUG
 #Preview {
     ImportDeviceSecretSheet(onImport: { _, _ in })
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 #endif

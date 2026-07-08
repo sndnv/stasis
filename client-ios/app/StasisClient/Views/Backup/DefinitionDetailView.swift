@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DefinitionDetailView: View {
     @Environment(AppContainer.self) private var container
+    @Environment(ToastCenter.self) private var toasts
     let definition: DatasetDefinition
     @State private var model: DefinitionDetailModel?
     @State private var deletionTarget: DatasetEntry?
@@ -20,10 +21,11 @@ struct DefinitionDetailView: View {
             EntryDetailView(entry: entry)
         }
         .task { await loadIfNeeded() }
-        .alert("Backup Started", isPresented: didStartBackupBinding) {
-            Button("OK") {}
-        } message: {
-            Text("The backup operation has been started.")
+        .onChange(of: model?.didStartBackup) { _, started in
+            if started == true {
+                toasts.show("Backup started")
+                model?.didStartBackup = false
+            }
         }
         .confirmationDialog(
             "Delete entry?",
@@ -43,13 +45,6 @@ struct DefinitionDetailView: View {
         Binding(
             get: { deletionTarget != nil },
             set: { if !$0 { deletionTarget = nil } }
-        )
-    }
-
-    private var didStartBackupBinding: Binding<Bool> {
-        Binding(
-            get: { model?.didStartBackup ?? false },
-            set: { if !$0 { model?.didStartBackup = false } }
         )
     }
 
@@ -100,6 +95,11 @@ private struct DefinitionDetailContent: View {
         }
         .navigationTitle(definition.info)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .definitionDetails)
+            }
+        }
         .refreshable { await onRefresh() }
         .alert("Error", isPresented: errorBinding) {
             Button("OK") { onClearError() }
@@ -114,10 +114,10 @@ private struct DefinitionDetailContent: View {
     private var summarySection: some View {
         Section("Summary") {
             LabeledContent("Info", value: definition.info)
-            LabeledContent("Id", value: StatusFormatters.shortId(definition.id))
+            IdLabeledContent("Id", id: definition.id)
             LabeledContent("Redundant Copies", value: "\(definition.redundantCopies)")
-            LabeledContent("Existing Versions", value: retentionDescription(definition.existingVersions))
-            LabeledContent("Removed Versions", value: retentionDescription(definition.removedVersions))
+            LabeledContent("Existing Versions", value: RetentionFormatter.description(definition.existingVersions))
+            LabeledContent("Removed Versions", value: RetentionFormatter.description(definition.removedVersions))
             LabeledContent("Created", value: definition.created.formatted(date: .abbreviated, time: .shortened))
             LabeledContent("Updated", value: definition.updated.formatted(date: .abbreviated, time: .shortened))
         }
@@ -136,6 +136,11 @@ private struct DefinitionDetailContent: View {
                         EntrySummaryRow(entry: entry)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) { onDeleteEntry(entry) } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .contextMenu {
                         Button(role: .destructive) { onDeleteEntry(entry) } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -169,16 +174,6 @@ private struct DefinitionDetailContent: View {
             get: { state.error != nil },
             set: { if !$0 { onClearError() } }
         )
-    }
-
-    private func retentionDescription(_ retention: DatasetDefinition.Retention) -> String {
-        let policy: String
-        switch retention.policy {
-        case .all: policy = "All"
-        case .latestOnly: policy = "Latest only"
-        case .atMost(let versions): policy = "At most \(versions)"
-        }
-        return "\(policy), \(StatusFormatters.duration(retention.duration))"
     }
 }
 

@@ -71,6 +71,34 @@ struct BackgroundSchedulerTests {
         #expect(bundle.taskScheduler.cancellations.contains(BackgroundScheduler.processingTaskIdentifier))
     }
 
+    @Test("refresh submits no BG task and cancels when scheduling is disabled")
+    func refreshSkipsSubmissionWhenSchedulingDisabled() async throws {
+        let schedule = futureSchedule(id: UUID(), inSeconds: 60)
+        let bundle = try makeBundle(publicSchedules: [schedule], schedulingEnabled: { false })
+
+        _ = try await bundle.scheduler.add(activeSchedule: ActiveSchedule(
+            id: 0,
+            assignment: .expiration(schedule: schedule.id)
+        ))
+
+        #expect(bundle.taskScheduler.submissions.isEmpty)
+        #expect(bundle.taskScheduler.cancellations.contains(BackgroundScheduler.processingTaskIdentifier))
+    }
+
+    @Test("executeReady fires nothing and cancels when scheduling is disabled")
+    func executeReadySkipsOperationsWhenSchedulingDisabled() async throws {
+        let schedule = pastSchedule(id: UUID(), agoSeconds: 120, intervalSeconds: 60)
+        let bundle = try makeBundle(publicSchedules: [schedule], schedulingEnabled: { false })
+        let assignment: OperationScheduleAssignment = .expiration(schedule: schedule.id)
+        _ = try await bundle.scheduler.add(activeSchedule: ActiveSchedule(id: 0, assignment: assignment))
+
+        await bundle.scheduler.executeReady()
+
+        #expect(await bundle.executor.calls.isEmpty)
+        #expect(await bundle.notifications.operationStarted.isEmpty)
+        #expect(bundle.taskScheduler.cancellations.contains(BackgroundScheduler.processingTaskIdentifier))
+    }
+
     @Test("executeReady fires the operation for ready schedules and posts notifications")
     func executeReadyFiresReadyOperations() async throws {
         let schedule = pastSchedule(id: UUID(), agoSeconds: 120, intervalSeconds: 60)
@@ -249,7 +277,8 @@ struct BackgroundSchedulerTests {
     }
 
     private func makeBundle(
-        publicSchedules: [Schedule] = []
+        publicSchedules: [Schedule] = [],
+        schedulingEnabled: @escaping @Sendable () -> Bool = { true }
     ) throws -> Bundle {
         let container = try PersistenceSchema.inMemoryContainer()
         let activeRepo = ActiveScheduleRepository(modelContainer: container)
@@ -264,6 +293,7 @@ struct BackgroundSchedulerTests {
             ruleRepository: ruleRepo,
             executor: executor,
             notifications: notifications,
+            schedulingEnabled: schedulingEnabled,
             publicSchedulesLoader: { publicSchedules },
             taskScheduler: taskScheduler
         )

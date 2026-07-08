@@ -100,7 +100,38 @@ struct SearchModelTests {
         await model.run(query: "sunset", until: nil)
 
         #expect(model.result?.definitions.values.compactMap { $0 }.count == 1)
-        #expect(model.result?.nonEmptyDefinitions.first?.entryId == entryId)
+        #expect(model.result?.nonEmptyDefinitions.first?.result.entryId == entryId)
+    }
+
+    @Test("nonEmptyDefinitions pairs each result with its definition id, sorted by info")
+    func nonEmptyDefinitionsPreservesId() {
+        let firstId = UUID(uuidString: "1C089D11-D1BF-452A-94AE-A69AAB4F74E9")!
+        let secondId = UUID(uuidString: "44710E11-9101-48E8-90D6-523D19995B29")!
+        let first = DatasetDefinitionResult(
+            definitionInfo: "test",
+            entryId: UUID(uuidString: "25321E95-5A44-4276-82A1-9F9EE3DDAE10")!,
+            entryCreated: Date(timeIntervalSince1970: 100),
+            matches: ["/test": .new]
+        )
+        let second = DatasetDefinitionResult(
+            definitionInfo: "test a",
+            entryId: UUID(uuidString: "CC3AB058-E06F-499F-9C74-066C54FF8FE6")!,
+            entryCreated: Date(timeIntervalSince1970: 200),
+            matches: ["/test/a": .new]
+        )
+        let result = SearchResult(definitions: [secondId: second, firstId: first])
+
+        let rows = result.nonEmptyDefinitions
+
+        #expect(rows.map(\.definition) == [firstId, secondId])
+        #expect(rows.map(\.result) == [first, second])
+    }
+
+    @Test("nonEmptyDefinitions drops definitions with no result")
+    func nonEmptyDefinitionsDropsNil() {
+        let result = SearchResult(definitions: [UUID(): nil])
+
+        #expect(result.nonEmptyDefinitions.isEmpty)
     }
 
     @Test("run surfaces an error when the search backend throws")

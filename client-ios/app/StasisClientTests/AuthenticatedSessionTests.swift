@@ -34,7 +34,8 @@ struct AuthenticatedSessionTests {
             credentialsProvider: outcome.provider,
             configRepository: environment.configRepository,
             trackers: try TestDefaults.trackers(),
-            analytics: NoOpAnalyticsCollector()
+            analytics: NoOpAnalyticsCollector(),
+            notifications: MockSchedulingNotifications()
         )
 
         #expect(session.serverApiClient.server == params.serverApi.url)
@@ -52,7 +53,8 @@ struct AuthenticatedSessionTests {
                 credentialsProvider: provider,
                 configRepository: environment.configRepository,
                 trackers: try TestDefaults.trackers(),
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                notifications: MockSchedulingNotifications()
             )
         }
     }
@@ -72,7 +74,8 @@ struct AuthenticatedSessionTests {
                 credentialsProvider: provider,
                 configRepository: environment.configRepository,
                 trackers: try TestDefaults.trackers(),
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                notifications: MockSchedulingNotifications()
             )
         }
     }
@@ -94,7 +97,8 @@ struct AuthenticatedSessionTests {
                 credentialsProvider: provider,
                 configRepository: environment.configRepository,
                 trackers: try TestDefaults.trackers(),
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                notifications: MockSchedulingNotifications()
             )
         }
     }
@@ -116,7 +120,8 @@ struct AuthenticatedSessionTests {
                 credentialsProvider: provider,
                 configRepository: environment.configRepository,
                 trackers: try TestDefaults.trackers(),
-                analytics: NoOpAnalyticsCollector()
+                analytics: NoOpAnalyticsCollector(),
+                notifications: MockSchedulingNotifications()
             )
         }
     }
@@ -132,5 +137,16 @@ struct AuthenticatedSessionTests {
             oAuthClient: MockOAuthClient(coreOutcome: .success(.test()), apiOutcome: .success(.test())),
             store: store
         )
+    }
+}
+
+@Suite("SessionError")
+struct SessionErrorTests {
+    @Test("describes each case")
+    func messages() {
+        #expect(SessionError.missingServerApiConfig.errorDescription == "Server API configuration is missing")
+        #expect(SessionError.missingServerCoreConfig.errorDescription == "Server core configuration is missing")
+        #expect(SessionError.invalidServerApiDeviceId("test").errorDescription == "Invalid server API device ID [test]")
+        #expect(SessionError.invalidServerCoreNodeId("test").errorDescription == "Invalid server core node ID [test]")
     }
 }

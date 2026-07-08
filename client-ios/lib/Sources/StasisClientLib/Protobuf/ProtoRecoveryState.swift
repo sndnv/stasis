@@ -1,9 +1,18 @@
 import Foundation
 import StasisSharedProto
 
-public enum RecoveryStateError: Error, Equatable {
+public enum RecoveryStateError: Error, Equatable, LocalizedError {
     case missingEntities
     case missingExistingTargetMetadata
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingEntities:
+            "Recovery state is missing its entities"
+        case .missingExistingTargetMetadata:
+            "Recovery state is missing existing target metadata"
+        }
+    }
 }
 
 extension RecoveryState {

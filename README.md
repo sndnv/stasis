@@ -114,7 +114,8 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/snd
 On Android, installing and updating is done by simply downloading the `apk` file and running it.
 
 #### iOS
-The iOS client is in early development.
+The iOS client is a native SwiftUI application (see [`client-ios`](client-ios)). App Store / TestFlight
+distribution is not yet available; for now it can be built and run from source.
 
 ### Testing
 Images and binaries for testing/development purposes can be created locally using the existing [dev tools](deployment/dev).

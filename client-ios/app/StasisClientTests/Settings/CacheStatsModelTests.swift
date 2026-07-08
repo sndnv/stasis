@@ -75,6 +75,7 @@ struct CacheStatsModelTests {
             ruleRepository: RuleRepository(modelContainer: container),
             executor: MockOperationExecutor(),
             notifications: MockSchedulingNotifications(),
+            schedulingEnabled: { true },
             publicSchedulesLoader: { [] },
             taskScheduler: MockBackgroundTaskScheduler()
         )

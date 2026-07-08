@@ -86,4 +86,43 @@ struct DefaultSearchTests {
         #expect(calls.commandsRetrieved == 0)
         #expect(calls.analyticsEntriesSent == 0)
     }
+
+    @Test("skips definitions that fail to resolve instead of failing the whole search")
+    func skipsFailingDefinitions() async throws {
+        let matchingDefinition = UUID()
+        let failingDefinition = UUID()
+        let matchingEntry = UUID()
+
+        let searchTerm = "test-file-name"
+
+        let definitions = [
+            TestGenerators.definition(id: matchingDefinition),
+            TestGenerators.definition(id: failingDefinition)
+        ]
+
+        let matchingFiles: [String: FilesystemMetadata.EntityState] = ["/\(searchTerm)-01": .new]
+        let matchingMetadata = DatasetMetadata(
+            contentChanged: [:],
+            metadataChanged: [:],
+            filesystem: .asTrie(underlying: TrieIndex(matchingFiles))
+        )
+
+        let mockApi = MockServerApiEndpointClient()
+        await mockApi.setDatasetDefinitionsOverride(definitions)
+        await mockApi.setLatestEntryOverride(matchingDefinition, matchingEntry)
+        await mockApi.setDatasetMetadataOverride(matchingEntry, matchingMetadata)
+        await mockApi.setLatestEntryFailureOverride(failingDefinition, EndpointFailure(message: "test"))
+
+        let search = DefaultSearch(api: mockApi)
+
+        let pattern = try NSRegularExpression(pattern: ".*\(searchTerm).*")
+        let result = try await search.search(query: pattern, until: nil)
+
+        #expect(result.definitions.count == definitions.count)
+
+        let matchingResult = try #require(result.definitions[matchingDefinition].flatMap { $0 })
+        #expect(matchingResult.matches == matchingFiles)
+
+        #expect(result.definitions[failingDefinition] == .some(nil))
+    }
 }

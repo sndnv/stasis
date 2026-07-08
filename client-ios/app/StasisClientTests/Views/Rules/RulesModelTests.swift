@@ -116,10 +116,10 @@ struct RulesModelTests {
         #expect(model.rows.first?.isEnabled == false)
     }
 
-    @Test("resetting to defaults clears the rules")
+    @Test("resetting to defaults restores the default rules")
     func resetToDefaults() async throws {
         let repo = try repository()
-        try await repo.put(Rule(id: 0, operation: .include, source: "photos:/", pattern: "*", definition: nil))
+        try await repo.put(Rule(id: 0, operation: .include, source: "contacts:/", pattern: "*", definition: nil))
         let model = RulesModel(
             ruleRepository: repo,
             sources: [source(FakeLibrarySourcePermission(status: .granted, grantOnRequest: true))]
@@ -128,7 +128,7 @@ struct RulesModelTests {
 
         await model.resetToDefaults()
 
-        #expect(try await repo.rules().count == RulesConfig.defaultRules.count)
-        #expect(model.rows.first?.isEnabled == false)
+        #expect(try await repo.rules() == RulesConfig.defaultRules)
+        #expect(model.rows.first?.isEnabled == true)
     }
 }

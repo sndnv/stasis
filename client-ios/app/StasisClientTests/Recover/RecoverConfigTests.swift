@@ -45,38 +45,25 @@ struct RecoverConfigTests {
         #expect(config.validate() == .valid)
     }
 
-    @Test("recoveryPathQuery is nil for empty or whitespace-only input")
-    func recoveryPathQueryNilForEmpty() {
-        var config = RecoverConfig.initial
-        config.pathQuery = ""
-        #expect(config.recoveryPathQuery == nil)
-        config.pathQuery = "   "
-        #expect(config.recoveryPathQuery == nil)
+    @Test("initial config selects all sources")
+    func initialSelectsAllSources() {
+        #expect(RecoverConfig.initial.sources == Set(RecoverConfig.allSources))
+        #expect(!RecoverConfig.initial.sources.isEmpty)
     }
 
-    @Test("recoveryPathQuery parses a non-empty input")
-    func recoveryPathQueryParses() {
+    @Test("empty sources is missing sources when a definition is set")
+    func emptySourcesMissingSources() {
         var config = RecoverConfig.initial
-        config.pathQuery = ".*\\.txt"
-        #expect(config.recoveryPathQuery != nil)
+        config.definition = UUID()
+        config.sources = []
+        #expect(config.validate() == .missingSources)
     }
 
-    @Test("recoveryDestination is nil for empty input")
-    func recoveryDestinationNilForEmpty() {
+    @Test("missing definition takes precedence over empty sources")
+    func missingDefinitionBeforeSources() {
         var config = RecoverConfig.initial
-        config.destination = ""
-        #expect(config.recoveryDestination == nil)
-    }
-
-    @Test("recoveryDestination builds with keepStructure inverse of discardPaths")
-    func recoveryDestinationKeepStructureInverse() {
-        var config = RecoverConfig.initial
-        config.destination = "/tmp/recover"
-        config.discardPaths = false
-        #expect(config.recoveryDestination?.keepStructure == true)
-
-        config.discardPaths = true
-        #expect(config.recoveryDestination?.keepStructure == false)
+        config.sources = []
+        #expect(config.validate() == .missingDefinition)
     }
 
     @Test("RecoverySource kind reflects the case")
@@ -91,5 +78,6 @@ struct RecoverConfigTests {
         #expect(RecoverConfig.ValidationResult.valid.buttonLabel == "Run Recover")
         #expect(RecoverConfig.ValidationResult.missingDefinition.buttonLabel == "Pick a Definition")
         #expect(RecoverConfig.ValidationResult.missingEntry.buttonLabel == "Pick an Entry")
+        #expect(RecoverConfig.ValidationResult.missingSources.buttonLabel == "Select Sources")
     }
 }

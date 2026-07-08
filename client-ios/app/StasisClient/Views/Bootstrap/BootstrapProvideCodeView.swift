@@ -36,14 +36,7 @@ struct BootstrapProvideCodeView: View {
         }
         .navigationTitle("Code")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if inProgress {
-                ProgressView()
-                    .controlSize(.large)
-                    .padding(24)
-                    .background(.regularMaterial, in: .rect(cornerRadius: 12))
-            }
-        }
+        .submittingOverlay(inProgress)
         .alert("Bootstrap Failed", isPresented: alertBinding) {
             Button("OK") { error = nil }
         } message: {

@@ -134,7 +134,7 @@ struct RecoverModelTests {
         }
     }
 
-    @Test("startRecovery forwards a non-empty path query and destination")
+    @Test("startRecovery forwards the selected sources and no destination")
     func startRecoveryForwardsExtras() async throws {
         let api = StasisClientLibTestSupport.MockServerApiEndpointClient()
         let executor = MockOperationExecutor()
@@ -143,15 +143,14 @@ struct RecoverModelTests {
         var config = RecoverConfig.initial
         config.definition = UUID()
         config.recoverySource = .latest
-        config.pathQuery = ".*\\.txt"
-        config.destination = "/tmp/dest"
+        config.sources = [.filesystem, .library(scheme: "contacts")]
 
         await model.startRecovery(config: config)
 
         let calls = await executor.calls
-        if case let .recoveryDefinition(_, _, hasQuery, hasDestination) = calls.first {
-            #expect(hasQuery == true)
-            #expect(hasDestination == true)
+        if case let .recoveryDefinition(_, _, sourceCount, hasDestination) = calls.first {
+            #expect(sourceCount == 2)
+            #expect(hasDestination == false)
         } else {
             Issue.record("expected recoveryDefinition")
         }

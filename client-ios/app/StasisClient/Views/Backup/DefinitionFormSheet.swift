@@ -62,18 +62,15 @@ struct DefinitionFormSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    HelpButton(topic: .definitionForm)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
                         .disabled(!canSave)
                 }
             }
-            .overlay {
-                if saving {
-                    ProgressView().controlSize(.large)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(.ultraThinMaterial)
-                }
-            }
+            .submittingOverlay(saving)
         }
     }
 

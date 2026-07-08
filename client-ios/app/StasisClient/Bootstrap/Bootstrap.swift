@@ -18,7 +18,12 @@ enum Bootstrap {
     }
 
     static let defaultOAuthClientFactory: OAuthClientFactory = { endpoint, client, secret in
-        try DefaultOAuthClient(tokenEndpoint: endpoint, client: client, clientSecret: secret)
+        #if DEBUG
+        if MockConfig.isMockTokenEndpoint(endpoint) {
+            return MockOAuthClient()
+        }
+        #endif
+        return try DefaultOAuthClient(tokenEndpoint: endpoint, client: client, clientSecret: secret)
     }
 
     static let defaultApiClientFactory: ApiClientFactory = { apiConfig, credentials in
@@ -263,7 +268,16 @@ enum Bootstrap {
     }
 }
 
-enum BootstrapError: Error, Equatable {
+enum BootstrapError: Error, Equatable, LocalizedError {
     case invalidUserId(String)
     case invalidDeviceId(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidUserId(let value):
+            "Invalid user ID [\(value)]"
+        case .invalidDeviceId(let value):
+            "Invalid device ID [\(value)]"
+        }
+    }
 }

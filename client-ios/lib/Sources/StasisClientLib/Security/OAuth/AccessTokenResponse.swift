@@ -78,8 +78,19 @@ public struct AccessTokenResponse: Sendable, Equatable, Codable {
     }
 }
 
-public enum JwtDecodingError: Error, Equatable {
+public enum JwtDecodingError: Error, Equatable, LocalizedError {
     case malformedJwt
     case malformedPayloadEncoding
     case malformedPayloadJson
+
+    public var errorDescription: String? {
+        switch self {
+        case .malformedJwt:
+            "The authentication token is malformed"
+        case .malformedPayloadEncoding:
+            "The authentication token payload encoding is invalid"
+        case .malformedPayloadJson:
+            "The authentication token payload is invalid"
+        }
+    }
 }

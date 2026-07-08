@@ -114,7 +114,7 @@ struct DefaultOperationExecutorTests {
         let completed = Flag()
 
         _ = await executor.startRecoveryWithDefinition(
-            definition: UUID(), until: nil, query: nil, destination: nil
+            definition: UUID(), until: nil, entities: nil, sources: [.filesystem], destination: nil
         ) { _ in completed.set() }
 
         await waitUntil { completed.isSet }
@@ -135,7 +135,7 @@ struct DefaultOperationExecutorTests {
         let result = Box<Error?>(nil)
 
         _ = await executor.startRecoveryWithDefinition(
-            definition: UUID(), until: nil, query: nil, destination: nil
+            definition: UUID(), until: nil, entities: nil, sources: [.filesystem], destination: nil
         ) { result.set($0) }
 
         await waitUntil { result.value != nil }
@@ -149,7 +149,7 @@ struct DefaultOperationExecutorTests {
         let completed = Flag()
 
         _ = await executor.startRecoveryWithEntry(
-            entry: UUID(), query: nil, destination: nil
+            entry: UUID(), entities: nil, sources: [.filesystem], destination: nil
         ) { _ in completed.set() }
 
         await waitUntil { completed.isSet }
@@ -168,7 +168,7 @@ struct DefaultOperationExecutorTests {
         let result = Box<Error?>(nil)
 
         _ = await executor.startRecoveryWithEntry(
-            entry: UUID(), query: nil, destination: nil
+            entry: UUID(), entities: nil, sources: [.filesystem], destination: nil
         ) { result.set($0) }
 
         await waitUntil { result.value != nil }
@@ -271,7 +271,7 @@ struct DefaultOperationExecutorTests {
         ) { _ in }
 
         let recovery = await executor.startRecoveryWithEntry(
-            entry: UUID(), query: nil, destination: nil
+            entry: UUID(), entities: nil, sources: [.filesystem], destination: nil
         ) { _ in }
 
         // find returns the type whether the op is active or completed

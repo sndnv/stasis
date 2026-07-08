@@ -7,7 +7,12 @@ enum Login {
     static let defaultExpirationTolerance: TimeInterval = 120
 
     static let defaultOAuthClientFactory: OAuthClientFactory = { endpoint, client, secret in
-        try DefaultOAuthClient(tokenEndpoint: endpoint, client: client, clientSecret: secret)
+        #if DEBUG
+        if MockConfig.isMockTokenEndpoint(endpoint) {
+            return MockOAuthClient()
+        }
+        #endif
+        return try DefaultOAuthClient(tokenEndpoint: endpoint, client: client, clientSecret: secret)
     }
 
     static func execute(
@@ -52,7 +57,16 @@ enum Login {
     }
 }
 
-enum LoginError: Error, Equatable {
+enum LoginError: Error, Equatable, LocalizedError {
     case missingAuthenticationConfig
     case missingServerApiConfig
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAuthenticationConfig:
+            "Authentication configuration is missing; bootstrap the device again"
+        case .missingServerApiConfig:
+            "Server configuration is missing; bootstrap the device again"
+        }
+    }
 }

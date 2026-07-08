@@ -51,3 +51,11 @@ struct KeychainTests {
         try keychain.remove(account: "bytes")
     }
 }
+
+@Suite("KeychainError")
+struct KeychainErrorTests {
+    @Test("describes an unexpected status")
+    func message() {
+        #expect(KeychainError.unexpectedStatus(-25300).errorDescription == "Keychain access failed with status [-25300]")
+    }
+}

@@ -90,23 +90,23 @@ final class RecoverModel {
         case .latest:
             _ = await session.operationExecutor.startRecoveryWithDefinition(
                 definition: definition, until: nil,
-                query: config.recoveryPathQuery,
-                destination: config.recoveryDestination,
+                entities: nil, sources: config.sources,
+                destination: nil,
                 callback: callback
             )
         case .entry(let entry):
             guard let entry else { startingRecovery = false; return }
             _ = await session.operationExecutor.startRecoveryWithEntry(
                 entry: entry,
-                query: config.recoveryPathQuery,
-                destination: config.recoveryDestination,
+                entities: nil, sources: config.sources,
+                destination: nil,
                 callback: callback
             )
         case .until(let date):
             _ = await session.operationExecutor.startRecoveryWithDefinition(
                 definition: definition, until: date,
-                query: config.recoveryPathQuery,
-                destination: config.recoveryDestination,
+                entities: nil, sources: config.sources,
+                destination: nil,
                 callback: callback
             )
         }

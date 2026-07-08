@@ -31,6 +31,13 @@ public enum MergedCrates {
     }
 }
 
-public enum MergedCratesError: Error, Equatable {
+public enum MergedCratesError: Error, Equatable, LocalizedError {
     case noCrates
+
+    public var errorDescription: String? {
+        switch self {
+        case .noCrates:
+            "No crates were available to merge"
+        }
+    }
 }

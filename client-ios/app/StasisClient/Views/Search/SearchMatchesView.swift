@@ -47,6 +47,7 @@ struct SearchMatchesView: View {
             }
         }
         .navigationTitle("Matches")
+        .navigationSubtitle(result.definitionInfo)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $pushTarget) { target in
             EntryDetailView(entry: target.entry, initialFilters: filters(for: target.path))
@@ -87,7 +88,8 @@ struct SearchMatchesView: View {
             filesOnly: false,
             noHidden: false,
             pathQuery: path,
-            exactPath: true
+            exactPath: true,
+            kind: .all
         )
     }
 

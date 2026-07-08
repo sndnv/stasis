@@ -1,11 +1,24 @@
 import Foundation
 import StasisSharedProto
 
-public enum BackupStateError: Error, Equatable {
+public enum BackupStateError: Error, Equatable, LocalizedError {
     case missingEntities
     case invalidDefinition(String)
     case missingCurrentSourceMetadata
     case missingProcessedSourceEntityMetadata
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingEntities:
+            "Backup state is missing its entities"
+        case .invalidDefinition(let reason):
+            "Backup state has an invalid definition: \(reason)"
+        case .missingCurrentSourceMetadata:
+            "Backup state is missing current source metadata"
+        case .missingProcessedSourceEntityMetadata:
+            "Backup state is missing processed source entity metadata"
+        }
+    }
 }
 
 extension BackupState {

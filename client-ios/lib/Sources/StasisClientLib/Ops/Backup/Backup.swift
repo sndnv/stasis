@@ -168,6 +168,13 @@ public final class Backup: Operation {
     }
 }
 
-public enum BackupError: Error, Equatable {
+public enum BackupError: Error, Equatable, LocalizedError {
     case alreadyStarted(id: OperationId)
+
+    public var errorDescription: String? {
+        switch self {
+        case .alreadyStarted(let id):
+            "Backup [\(id.uuidString)] already started"
+        }
+    }
 }

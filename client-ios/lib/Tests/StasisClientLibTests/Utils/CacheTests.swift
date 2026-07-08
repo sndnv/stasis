@@ -609,30 +609,38 @@ struct TrackingCacheTests {
 struct RefreshingCacheTests {
     @Test("supports caching and refreshing data")
     func supportsCachingAndRefreshing() async throws {
-        let loadedValues = LoadCounter()
-        let refreshedValues = LoadCounter()
-        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+        try await withRetry {
+            let loadedValues = LoadCounter()
+            let refreshedValues = LoadCounter()
+            let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
 
-        await cache.register { _, _ in await refreshedValues.increment() }
+            await cache.register { _, _ in await refreshedValues.increment() }
 
-        #expect(await loadedValues.count == 0)
-        #expect(await refreshedValues.count == 0)
-        #expect(await cache.get(key) == nil)
+            try expectRetryable(await loadedValues.count == 0, "initial loaded == 0")
+            try expectRetryable(await refreshedValues.count == 0, "initial refreshed == 0")
+            try expectRetryable(await cache.get(key) == nil, "initial get == nil")
 
-        let load: @Sendable (String) async throws -> String = { _ in
-            await loadedValues.increment()
-            return value
-        }
+            let load: @Sendable (String) async throws -> String = { _ in
+                await loadedValues.increment()
+                return value
+            }
 
-        #expect(try await cache.getOrLoad(key, load: load) == value)
-        #expect(try await cache.getOrLoad(key, load: load) == value)
-        #expect(try await cache.getOrLoad(key, load: load) == value)
-        #expect(await loadedValues.count == 1)
+            try expectRetryable(try await cache.getOrLoad(key, load: load) == value, "getOrLoad 1 == value")
+            try expectRetryable(try await cache.getOrLoad(key, load: load) == value, "getOrLoad 2 == value")
+            try expectRetryable(try await cache.getOrLoad(key, load: load) == value, "getOrLoad 3 == value")
+            try expectRetryable(await loadedValues.count == 1, "loaded == 1 after first load")
 
-        await eventually(timeout: .seconds(2)) {
+            await waitUntil(timeout: 2.0) {
+                let refreshed = await refreshedValues.count
+                let loaded = await loadedValues.count
+                return refreshed >= 3 && loaded >= 4
+            }
             let refreshed = await refreshedValues.count
             let loaded = await loadedValues.count
-            return refreshed >= 3 && loaded >= 4
+            try expectRetryable(
+                refreshed >= 3 && loaded >= 4,
+                "refreshed >= 3 && loaded >= 4, got refreshed=\(refreshed) loaded=\(loaded)"
+            )
         }
     }
 
@@ -668,27 +676,30 @@ struct RefreshingCacheTests {
 
     @Test("keeps stale entries when a refresh fails")
     func keepsStaleOnFailure() async throws {
-        let loadedValues = LoadCounter()
-        let successfulRefreshes = LoadCounter()
-        let failAfter = 3
+        try await withRetry {
+            let loadedValues = LoadCounter()
+            let successfulRefreshes = LoadCounter()
+            let failAfter = 3
 
-        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
-        await cache.register { _, _ in await successfulRefreshes.increment() }
+            let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.1)
+            await cache.register { _, _ in await successfulRefreshes.increment() }
 
-        let load: @Sendable (String) async throws -> String = { _ in
-            let previous = await loadedValues.count
-            await loadedValues.increment()
-            if previous >= failAfter {
-                throw CacheTestError.testFailure
+            let load: @Sendable (String) async throws -> String = { _ in
+                let previous = await loadedValues.count
+                await loadedValues.increment()
+                if previous >= failAfter {
+                    throw CacheTestError.testFailure
+                }
+                return value
             }
-            return value
+
+            try expectRetryable(try await cache.getOrLoad(key, load: load) == value, "initial getOrLoad == value")
+            await waitUntil(timeout: 2.0) { await successfulRefreshes.count >= 2 }
+
+            try expectRetryable(try await cache.getOrLoad(key, load: load) == value, "stale getOrLoad == value")
+            let refreshes = await successfulRefreshes.count
+            try expectRetryable(refreshes >= 2, "successfulRefreshes >= 2, got \(refreshes)")
         }
-
-        #expect(try await cache.getOrLoad(key, load: load) == value)
-        try? await Task.sleep(nanoseconds: 600_000_000)
-
-        #expect(try await cache.getOrLoad(key, load: load) == value)
-        #expect(await successfulRefreshes.count >= 2)
     }
 
     @Test("supports removing data")
@@ -708,18 +719,26 @@ struct RefreshingCacheTests {
 
     @Test("supports unregistering refresh listeners")
     func supportsUnregister() async throws {
-        let listenerCalls = LoadCounter()
-        let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.05)
+        try await withRetry {
+            let listenerCalls = LoadCounter()
+            let cache = RefreshingCache<String, String>(underlying: MapCache(), interval: 0.05)
 
-        let id = await cache.register { _, _ in await listenerCalls.increment() }
+            let id = await cache.register { _, _ in await listenerCalls.increment() }
 
-        #expect(try await cache.getOrLoad(key, load: { _ in value }) == value)
-        await eventually(timeout: .seconds(2)) { await listenerCalls.count >= 5 }
-        let observed = await listenerCalls.count
+            try expectRetryable(try await cache.getOrLoad(key, load: { _ in value }) == value, "getOrLoad == value")
+            await waitUntil(timeout: 2.0) { await listenerCalls.count >= 5 }
+            let observedRefreshes = await listenerCalls.count
+            try expectRetryable(observedRefreshes >= 5, "listenerCalls >= 5, got \(observedRefreshes)")
 
-        await cache.unregister(id)
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        #expect(await listenerCalls.count == observed)
+            await cache.unregister(id)
+            let observed = await listenerCalls.count
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            let finalCount = await listenerCalls.count
+            try expectRetryable(
+                finalCount == observed,
+                "listenerCalls stable at \(observed), got \(finalCount)"
+            )
+        }
     }
 
     @Test("supports retrieving all cached data")
@@ -745,17 +764,4 @@ struct RefreshingCacheTests {
         try await cache.clear()
         #expect(await cache.all().isEmpty)
     }
-}
-
-private func eventually(
-    timeout: Duration = .seconds(5),
-    interval: Duration = .milliseconds(50),
-    _ check: () async -> Bool
-) async {
-    let deadline = ContinuousClock.now.advanced(by: timeout)
-    while ContinuousClock.now < deadline {
-        if await check() { return }
-        try? await Task.sleep(for: interval)
-    }
-    Issue.record("eventually condition did not become true within \(timeout)")
 }

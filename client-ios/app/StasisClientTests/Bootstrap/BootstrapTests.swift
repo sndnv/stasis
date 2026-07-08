@@ -138,3 +138,12 @@ private func defaultRequest(pullSecret: Bool = false) -> BootstrapRequest {
         remotePassword: nil
     )
 }
+
+@Suite("BootstrapError")
+struct BootstrapErrorTests {
+    @Test("describes each case")
+    func messages() {
+        #expect(BootstrapError.invalidUserId("test").errorDescription == "Invalid user ID [test]")
+        #expect(BootstrapError.invalidDeviceId("test").errorDescription == "Invalid device ID [test]")
+    }
+}

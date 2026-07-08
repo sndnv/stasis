@@ -37,6 +37,7 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
     private var datasetMetadataOverrides: [DatasetEntryId: DatasetMetadata] = [:]
     private var datasetDefinitionsOverride: [DatasetDefinition]?
     private var latestEntryOverrides: [DatasetDefinitionId: DatasetEntryId?] = [:]
+    private var latestEntryFailureOverrides: [DatasetDefinitionId: any Error] = [:]
     private var deviceKeyExistsOverride: Bool?
     private var pullDeviceKeyOverride: Data?
     private let pingDisabled: Bool
@@ -96,6 +97,10 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
         latestEntryOverrides[definition] = entry
     }
 
+    public func setLatestEntryFailureOverride(_ definition: DatasetDefinitionId, _ error: any Error) {
+        latestEntryFailureOverrides[definition] = error
+    }
+
     public func setDeviceKeyExistsOverride(_ value: Bool) { deviceKeyExistsOverride = value }
     public func setPullDeviceKeyOverride(_ value: Data) { pullDeviceKeyOverride = value }
 
@@ -149,6 +154,7 @@ public actor MockServerApiEndpointClient: ServerApiEndpointClient {
 
     public func latestEntry(definition: DatasetDefinitionId, until: Date?) async throws -> DatasetEntry? {
         calls.entryLatestRetrieved += 1
+        if let failure = latestEntryFailureOverrides[definition] { throw failure }
         if let latestEntryFailure { throw latestEntryFailure }
         if let override = latestEntryOverrides[definition] {
             return override.map { TestGenerators.entry(id: $0, definition: definition) }

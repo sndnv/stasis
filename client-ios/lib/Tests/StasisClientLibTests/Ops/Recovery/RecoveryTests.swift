@@ -11,7 +11,8 @@ struct RecoveryTests {
         let recovery = Recovery(
             descriptor: Recovery.Descriptor(
                 targetMetadata: .empty(),
-                query: nil,
+                entities: nil,
+                sources: [.filesystem],
                 destination: nil,
                 deviceSecret: Fixtures.Secrets.default
             ),
@@ -29,7 +30,8 @@ struct RecoveryTests {
         let providers = makeProviders(api: api)
 
         let descriptor = try await Recovery.Descriptor.build(
-            query: nil,
+            entities: nil,
+            sources: [.filesystem],
             destination: nil,
             collector: .withDefinition(definition: UUID(), until: nil),
             deviceSecret: Fixtures.Secrets.default,
@@ -48,7 +50,8 @@ struct RecoveryTests {
         let providers = makeProviders(api: api)
 
         _ = try await Recovery.Descriptor.build(
-            query: nil,
+            entities: nil,
+            sources: [.filesystem],
             destination: nil,
             collector: .withEntry(entry: UUID()),
             deviceSecret: Fixtures.Secrets.default,
@@ -76,7 +79,8 @@ struct RecoveryTests {
         )
         await #expect(throws: RecoveryDescriptorError.noEntryForDefinition(definition: definition)) {
             _ = try await Recovery.Descriptor.build(
-                query: nil,
+                entities: nil,
+                sources: [.filesystem],
                 destination: nil,
                 collector: .withDefinition(definition: definition, until: nil),
                 deviceSecret: Fixtures.Secrets.default,
@@ -96,35 +100,40 @@ struct RecoveryTests {
         #expect(collector is FilesystemRecoveryCollector)
     }
 
-    @Test("PathQuery matches absolute path regexes")
-    func pathQueryMatchesAbsolute() throws {
-        let path = "/tmp/a/b/c/test-file.json"
-        for raw in ["/tmp/.*", "/.*/a/.*/c"] {
-            let query = Recovery.PathQuery.forAbsolutePath(try NSRegularExpression(pattern: raw))
-            #expect(query.matches(path: path), "Should match \(raw)")
-        }
+    @Test("RecoverySourceKind.forEntity maps a scheme to a library, else filesystem")
+    func forEntityMapsScheme() {
+        #expect(RecoverySourceKind.forEntity("/tmp/a/b/c.txt") == .filesystem)
+        #expect(RecoverySourceKind.forEntity("contacts:/1") == .library(scheme: "contacts"))
+        #expect(RecoverySourceKind.forEntity("calendar:/e/2") == .library(scheme: "calendar"))
     }
 
-    @Test("PathQuery matches file name regexes")
-    func pathQueryMatchesFileName() throws {
-        let path = "/tmp/a/b/c/test-file.json"
-        for raw in ["test-file", "test-file\\.json", ".*"] {
-            let query = Recovery.PathQuery.forFileName(try NSRegularExpression(pattern: raw))
-            #expect(query.matches(path: path), "Should match \(raw)")
-        }
-        for raw in ["tmp", "/tmp$", "^/a/b/c.*"] {
-            let query = Recovery.PathQuery.forFileName(try NSRegularExpression(pattern: raw))
-            #expect(!query.matches(path: path), "Should not match \(raw)")
-        }
+    @Test("keep filters entities by the selected source kinds")
+    func keepFiltersBySourceKind() {
+        let descriptor = Recovery.Descriptor(
+            targetMetadata: .empty(),
+            entities: nil,
+            sources: [.filesystem, .library(scheme: "contacts")],
+            destination: nil,
+            deviceSecret: Fixtures.Secrets.default
+        )
+        let keep = descriptor.keep()
+        #expect(keep("/tmp/file.txt", .new))
+        #expect(keep("contacts:/1", .new))
+        #expect(!keep("calendar:/e/2", .new))
     }
 
-    @Test("PathQuery.parse picks absolute or file-name variant by '/' presence")
-    func pathQueryParseSelectsVariant() throws {
-        let absolute = try Recovery.PathQuery.parse("/tmp/some-file.txt")
-        if case .forAbsolutePath = absolute {} else { Issue.record("expected forAbsolutePath") }
-
-        let fileName = try Recovery.PathQuery.parse("some-file.txt")
-        if case .forFileName = fileName {} else { Issue.record("expected forFileName") }
+    @Test("keep also restricts to an explicit entities set when present")
+    func keepRestrictsToEntities() {
+        let descriptor = Recovery.Descriptor(
+            targetMetadata: .empty(),
+            entities: ["/tmp/keep.txt"],
+            sources: [.filesystem],
+            destination: nil,
+            deviceSecret: Fixtures.Secrets.default
+        )
+        let keep = descriptor.keep()
+        #expect(keep("/tmp/keep.txt", .new))
+        #expect(!keep("/tmp/other.txt", .new))
     }
 
     @Test("Destination converts to TargetEntity destination")
@@ -142,7 +151,8 @@ struct RecoveryTests {
         let recovery = Recovery(
             descriptor: Recovery.Descriptor(
                 targetMetadata: .empty(),
-                query: nil,
+                entities: nil,
+                sources: [.filesystem],
                 destination: nil,
                 deviceSecret: Fixtures.Secrets.default
             ),
@@ -152,13 +162,6 @@ struct RecoveryTests {
         try await Task.sleep(for: .milliseconds(1))
         recovery.stop()
         _ = await runTask.result
-    }
-
-    @Test("PathQuery.parse rejects invalid regex strings")
-    func pathQueryParseFailsForInvalidRegex() {
-        #expect(throws: (any Error).self) {
-            _ = try Recovery.PathQuery.parse("[invalid")
-        }
     }
 
     private func makeProviders(api: any ServerApiEndpointClient = MockServerApiEndpointClient()) -> RecoveryProviders {

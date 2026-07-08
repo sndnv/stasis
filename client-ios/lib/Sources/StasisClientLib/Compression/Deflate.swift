@@ -99,7 +99,20 @@ public struct Deflate: Compressor {
     }
 }
 
-public enum DeflateError: Error, Equatable, Sendable {
+public enum DeflateError: Error, Equatable, Sendable, LocalizedError {
     case initialization(code: Int32)
     case processing(code: Int32, message: String?)
+
+    public var errorDescription: String? {
+        switch self {
+        case .initialization(let code):
+            "Compression stream initialization failed with code [\(code)]"
+        case .processing(let code, let message):
+            if let message {
+                "Compression failed with code [\(code)]: \(message)"
+            } else {
+                "Compression failed with code [\(code)]"
+            }
+        }
+    }
 }

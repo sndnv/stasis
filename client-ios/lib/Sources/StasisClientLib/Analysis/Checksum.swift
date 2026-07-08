@@ -107,7 +107,16 @@ extension Checksums: Checksum {
     }
 }
 
-public enum ChecksumError: Error, Equatable, Sendable {
+public enum ChecksumError: Error, Equatable, Sendable, LocalizedError {
     case unsupported(String)
     case fileUnreadable(URL)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unsupported(let checksum):
+            "Unsupported checksum provided: [\(checksum)]"
+        case .fileUnreadable(let url):
+            "File [\(url.path)] could not be read for checksum calculation"
+        }
+    }
 }

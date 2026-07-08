@@ -10,8 +10,7 @@ struct UserDetailsSheet: View {
             Form {
                 if let user {
                     Section("Metadata") {
-                        LabeledContent("Id", value: user.id.uuidString)
-                            .textSelection(.enabled)
+                        IdLabeledContent("Id", id: user.id)
                         LabeledContent("Created", value: user.created.formatted(date: .abbreviated, time: .shortened))
                         LabeledContent("Updated", value: user.updated.formatted(date: .abbreviated, time: .shortened))
                     }

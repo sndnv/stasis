@@ -6,21 +6,24 @@ struct OperationsView: View {
     @State private var model: OperationsModel?
 
     var body: some View {
-        NavigationStack {
-            OperationsViewContent(
-                state: state,
-                onRefresh: { await model?.refresh() },
-                onClearError: { model?.clearError() },
-                onStop: { id in Task { await model?.stop(id) } },
-                onResume: { id, type in Task { await model?.resume(id, type: type) } },
-                onRemove: { id, type in Task { await model?.remove(id, type: type) } }
-            )
-            .navigationTitle("Operations")
-            .navigationDestination(for: OperationDetailKey.self) { key in
-                OperationDetailView(key: key)
+        OperationsViewContent(
+            state: state,
+            onRefresh: { await model?.refresh() },
+            onClearError: { model?.clearError() },
+            onStop: { id in Task { await model?.stop(id) } },
+            onResume: { id, type in Task { await model?.resume(id, type: type) } },
+            onRemove: { id, type in Task { await model?.remove(id, type: type) } }
+        )
+        .navigationTitle("Operations")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .operations)
             }
-            .task { await startIfNeeded() }
         }
+        .navigationDestination(for: OperationDetailKey.self) { key in
+            OperationDetailView(key: key)
+        }
+        .task { await startIfNeeded() }
     }
 
     private var state: OperationsViewState {
@@ -104,24 +107,32 @@ private struct OperationsViewContent: View {
             OperationSummaryRow(summary: summary)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            switch summary.status {
-            case .active:
-                Button(role: .destructive) { onStop(summary.id) } label: {
-                    Label("Stop", systemImage: "stop.fill")
+            operationActions(for: summary)
+        }
+        .contextMenu {
+            operationActions(for: summary)
+        }
+    }
+
+    @ViewBuilder
+    private func operationActions(for summary: OperationsModel.Summary) -> some View {
+        switch summary.status {
+        case .active:
+            Button(role: .destructive) { onStop(summary.id) } label: {
+                Label("Stop", systemImage: "stop.fill")
+            }
+        case .stopped:
+            if summary.type == .backup {
+                Button { onResume(summary.id, summary.type) } label: {
+                    Label("Resume", systemImage: "play.fill")
                 }
-            case .stopped:
-                if summary.type == .backup {
-                    Button { onResume(summary.id, summary.type) } label: {
-                        Label("Resume", systemImage: "play.fill")
-                    }
-                }
-                Button(role: .destructive) { onRemove(summary.id, summary.type) } label: {
-                    Label("Remove", systemImage: "trash")
-                }
-            case .completed:
-                Button(role: .destructive) { onRemove(summary.id, summary.type) } label: {
-                    Label("Remove", systemImage: "trash")
-                }
+            }
+            Button(role: .destructive) { onRemove(summary.id, summary.type) } label: {
+                Label("Remove", systemImage: "trash")
+            }
+        case .completed:
+            Button(role: .destructive) { onRemove(summary.id, summary.type) } label: {
+                Label("Remove", systemImage: "trash")
             }
         }
     }

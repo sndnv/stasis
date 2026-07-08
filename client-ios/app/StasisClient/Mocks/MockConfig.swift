@@ -43,5 +43,9 @@ enum MockConfig {
     static func isMockServer(_ server: String) -> Bool {
         server == serverApi
     }
+
+    static func isMockTokenEndpoint(_ endpoint: String) -> Bool {
+        endpoint.hasPrefix(tokenApi)
+    }
 }
 #endif

@@ -12,27 +12,28 @@ public final class DefaultSearch: Search {
 
         var results: [DatasetDefinitionId: DatasetDefinitionResult?] = [:]
         for definition in definitions {
-            let entry = try await api.latestEntry(definition: definition.id, until: until)
-            guard let entry else {
-                results[definition.id] = .some(nil)
-                continue
-            }
-            let metadata = try await api.datasetMetadata(entry: entry)
-            let matches = metadata.filesystem.search(query)
-            if matches.isEmpty {
-                results[definition.id] = .some(nil)
-            } else {
-                results[definition.id] = .some(
-                    DatasetDefinitionResult(
-                        definitionInfo: definition.info,
-                        entryId: entry.id,
-                        entryCreated: entry.created,
-                        matches: matches
-                    )
-                )
-            }
+            let resolved = try? await result(for: definition, query: query, until: until)
+            results.updateValue(resolved ?? nil, forKey: definition.id)
         }
 
         return SearchResult(definitions: results)
+    }
+
+    private func result(
+        for definition: DatasetDefinition,
+        query: NSRegularExpression,
+        until: Date?
+    ) async throws -> DatasetDefinitionResult? {
+        guard let entry = try await api.latestEntry(definition: definition.id, until: until) else {
+            return nil
+        }
+        let matches = try await api.datasetMetadata(entry: entry).filesystem.search(query)
+        guard !matches.isEmpty else { return nil }
+        return DatasetDefinitionResult(
+            definitionInfo: definition.info,
+            entryId: entry.id,
+            entryCreated: entry.created,
+            matches: matches
+        )
     }
 }

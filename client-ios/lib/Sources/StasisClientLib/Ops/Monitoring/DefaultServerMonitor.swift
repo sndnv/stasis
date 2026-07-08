@@ -31,6 +31,7 @@ public final class DefaultServerMonitor: ServerMonitor {
             while !Task.isCancelled {
                 do {
                     _ = try await api.ping()
+                    try Task.checkCancellation()
                     await tracker.reachable(server: api.server)
                     try await Task.sleep(nanoseconds: Intervals.nanoseconds(Intervals.fuzzy(interval)))
                 } catch is CancellationError {
@@ -49,6 +50,5 @@ public final class DefaultServerMonitor: ServerMonitor {
 
     public func stop() async {
         task.cancel()
-        _ = await task.value
     }
 }

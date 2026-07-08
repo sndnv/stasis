@@ -9,6 +9,8 @@ public protocol SchedulingNotifications: Sendable {
     func notifyActiveScheduleNotFound(activeScheduleId: Int64) async
     func notifyOperationStarted(activeSchedule: ActiveSchedule) async
     func notifyOperationCompleted(activeSchedule: ActiveSchedule, failure: (any Error)?) async
+    func notifyOperationStarted(id: String, operation: OperationType) async
+    func notifyOperationCompleted(id: String, operation: OperationType, failure: (any Error)?) async
 }
 
 public actor DefaultSchedulingNotifications: SchedulingNotifications {
@@ -17,6 +19,7 @@ public actor DefaultSchedulingNotifications: SchedulingNotifications {
     private static let logger = Logger(subsystem: "stasis.client.ios", category: "SchedulingNotifications")
 
     private let center: UNUserNotificationCenter
+    private var hasRequestedAuthorization: Bool = false
 
     public init(center: UNUserNotificationCenter = .current()) {
         self.center = center
@@ -79,16 +82,49 @@ public actor DefaultSchedulingNotifications: SchedulingNotifications {
         )
     }
 
-    private func restrictionsString(_ restrictions: [OperationRestriction]) -> String {
-        restrictions.map { restriction in
-            switch restriction {
-            case .noConnection: "no network connection"
-            case .limitedNetwork: "restricted or metered network"
+    public func notifyOperationStarted(id: String, operation: OperationType) async {
+        let name = displayName(of: operation)
+        await post(
+            identifier: identifier(forOperation: id),
+            title: "\(name) started",
+            body: "Running a new \(name.lowercased()) operation"
+        )
+    }
+
+    public func notifyOperationCompleted(id: String, operation: OperationType, failure: (any Error)?) async {
+        let name = displayName(of: operation)
+        let title: String
+        let body: String
+        if let failure {
+            title = "\(name) operation failed"
+            if let restricted = failure as? OperationRestrictedFailure {
+                body = "Operation could not be started: \(restrictionsString(restricted.restrictions))"
+            } else {
+                body = failure.localizedDescription
             }
-        }.joined(separator: ", ")
+        } else {
+            title = "\(name) completed"
+            body = "\(name) operation completed successfully"
+        }
+        await post(
+            identifier: identifier(forOperation: id),
+            title: title,
+            body: body
+        )
+    }
+
+    private func restrictionsString(_ restrictions: [OperationRestriction]) -> String {
+        restrictions.map(\.summary).joined(separator: ", ")
+    }
+
+    private func ensureAuthorization() async {
+        guard !hasRequestedAuthorization else { return }
+        hasRequestedAuthorization = true
+        _ = await requestAuthorization()
     }
 
     private func post(identifier: String, title: String, body: String) async {
+        await ensureAuthorization()
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -103,6 +139,21 @@ public actor DefaultSchedulingNotifications: SchedulingNotifications {
 
     private func identifier(for activeScheduleId: Int64) -> String {
         "stasis.client.ios.scheduling.\(activeScheduleId)"
+    }
+
+    private func identifier(forOperation id: String) -> String {
+        "stasis.client.ios.operation.\(id)"
+    }
+
+    private func displayName(of operation: OperationType) -> String {
+        switch operation {
+        case .backup: "Backup"
+        case .recovery: "Recovery"
+        case .expiration: "Expiration"
+        case .validation: "Validation"
+        case .keyRotation: "Key Rotation"
+        case .garbageCollection: "Garbage Collection"
+        }
     }
 
     private func displayName(of assignment: OperationScheduleAssignment) -> String {

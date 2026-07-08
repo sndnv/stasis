@@ -131,6 +131,26 @@ struct DatasetMetadataTests {
         #expect(fileTwo == Fixtures.Metadata.fileTwo)
     }
 
+    @Test("collect errors expose human-readable descriptions")
+    func collectErrorDescriptions() {
+        let entry = UUID()
+
+        let missingForEntity = DatasetMetadataCollectError.missingMetadataForEntity(entity: "test")
+        #expect(missingForEntity.errorDescription == "Metadata for entity [test] not found")
+
+        let missingInEntry = DatasetMetadataCollectError.missingMetadataForEntityInEntry(
+            entity: "test", entry: entry
+        )
+        #expect(
+            missingInEntry.errorDescription
+                == "Expected metadata for entity [test] but none was found in metadata for entry [\(entry.uuidString)]"
+        )
+        #expect(missingInEntry.localizedDescription == missingInEntry.errorDescription)
+
+        let requiredMissing = DatasetMetadataCollectError.requiredMetadataMissing(entity: "test")
+        #expect(requiredMissing.errorDescription == "Required metadata for entity [test] not found")
+    }
+
     @Test("require throws when metadata is missing")
     func requireMissing() async {
         let clients: any Clients = StaticClients(

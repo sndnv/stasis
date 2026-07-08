@@ -10,53 +10,56 @@ struct RulesView: View {
     @State private var resetConfirming = false
 
     var body: some View {
-        NavigationStack {
-            RulesViewContent(
-                rows: model?.rows ?? [],
-                isLoading: model?.isLoading ?? true,
-                onEnable: { scheme in Task { await model?.setEnabled(scheme, true) } },
-                onDisableRequest: { disableTarget = $0 },
-                onReset: { resetConfirming = true }
-            )
-            .navigationTitle("Rules")
-            .task { await startIfNeeded() }
-            .refreshable { await model?.refresh() }
-            .confirmationDialog(
-                "Stop backing up \(disableTarget?.displayName ?? "")?",
-                isPresented: disableBinding,
-                presenting: disableTarget
-            ) { source in
-                Button("Stop Backing Up", role: .destructive) {
-                    Task { await model?.setEnabled(source.scheme, false) }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: { source in
-                Text("Removes the rule that backs up your \(source.displayName.lowercased()).")
+        RulesViewContent(
+            rows: model?.rows ?? [],
+            isLoading: model?.isLoading ?? true,
+            onEnable: { scheme in Task { await model?.setEnabled(scheme, true) } },
+            onDisableRequest: { disableTarget = $0 },
+            onReset: { resetConfirming = true }
+        )
+        .navigationTitle("Rules")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .rules)
             }
-            .confirmationDialog(
-                "Reset to defaults?",
-                isPresented: $resetConfirming,
-                titleVisibility: .visible
-            ) {
-                Button("Reset", role: .destructive) { Task { await model?.resetToDefaults() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Removes all source rules.")
+        }
+        .task { await startIfNeeded() }
+        .refreshable { await model?.refresh() }
+        .confirmationDialog(
+            "Stop backing up \(disableTarget?.displayName ?? "")?",
+            isPresented: disableBinding,
+            presenting: disableTarget
+        ) { source in
+            Button("Stop Backing Up", role: .destructive) {
+                Task { await model?.setEnabled(source.scheme, false) }
             }
-            .alert("Permission Required", isPresented: permissionBinding, presenting: model?.permissionDenied) { _ in
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-                    model?.permissionDenied = nil
-                }
-                Button("Cancel", role: .cancel) { model?.permissionDenied = nil }
-            } message: { source in
-                Text("Grant \(source.displayName) access in Settings to back it up.")
+            Button("Cancel", role: .cancel) {}
+        } message: { source in
+            Text("Removes the rule that backs up your \(source.displayName.lowercased()).")
+        }
+        .confirmationDialog(
+            "Reset to defaults?",
+            isPresented: $resetConfirming,
+            titleVisibility: .visible
+        ) {
+            Button("Reset", role: .destructive) { Task { await model?.resetToDefaults() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Removes all source rules.")
+        }
+        .alert("Permission Required", isPresented: permissionBinding, presenting: model?.permissionDenied) { _ in
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                model?.permissionDenied = nil
             }
-            .alert("Error", isPresented: errorBinding) {
-                Button("OK") { model?.clearError() }
-            } message: {
-                Text(model?.error ?? "")
-            }
+            Button("Cancel", role: .cancel) { model?.permissionDenied = nil }
+        } message: { source in
+            Text("Grant \(source.displayName) access in Settings to back it up.")
+        }
+        .alert("Error", isPresented: errorBinding) {
+            Button("OK") { model?.clearError() }
+        } message: {
+            Text(model?.error ?? "")
         }
     }
 

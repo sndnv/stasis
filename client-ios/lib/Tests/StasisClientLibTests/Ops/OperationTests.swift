@@ -31,3 +31,23 @@ struct OperationTypeTests {
         }
     }
 }
+
+@Suite("OperationTypeError")
+struct OperationTypeErrorTests {
+    @Test("describes an unexpected type")
+    func rendersMessage() {
+        #expect(
+            OperationTypeError.unexpected("other").errorDescription
+                == "Unexpected operation type provided: [other]"
+        )
+    }
+}
+
+@Suite("OperationRestriction")
+struct OperationRestrictionTests {
+    @Test("summarizes each restriction")
+    func summaries() {
+        #expect(OperationRestriction.noConnection.summary == "no network connection")
+        #expect(OperationRestriction.limitedNetwork.summary == "restricted or metered network")
+    }
+}

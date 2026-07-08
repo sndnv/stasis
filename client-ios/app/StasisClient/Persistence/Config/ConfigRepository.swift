@@ -90,9 +90,18 @@ public final class ConfigRepository: @unchecked Sendable {
         }
     }
 
-    public enum RepositoryError: Error, Equatable {
+    public enum RepositoryError: Error, Equatable, LocalizedError {
         case malformedConfig(String)
         case missingDeviceSecret
+
+        public var errorDescription: String? {
+            switch self {
+            case .malformedConfig(let reason):
+                "Malformed configuration: \(reason)"
+            case .missingDeviceSecret:
+                "No device secret is available"
+            }
+        }
     }
 
     private let preferences: UserDefaults

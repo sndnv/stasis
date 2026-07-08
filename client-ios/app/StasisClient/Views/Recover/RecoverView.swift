@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RecoverView: View {
     @Environment(AppContainer.self) private var container
+    @Environment(ToastCenter.self) private var toasts
     @State private var model: RecoverModel?
     @State private var config: RecoverConfig = .initial
 
@@ -17,20 +18,19 @@ struct RecoverView: View {
                 onRunRecover: { await model?.startRecovery(config: config) }
             )
             .navigationTitle("Recover")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    HelpButton(topic: .recover)
+                }
+            }
             .task { await loadIfNeeded() }
-            .alert("Recovery Started", isPresented: didStartRecoveryBinding) {
-                Button("OK") {}
-            } message: {
-                Text("The recovery operation has been started.")
+            .onChange(of: model?.didStartRecovery) { _, started in
+                if started == true {
+                    toasts.show("Recovery started")
+                    model?.didStartRecovery = false
+                }
             }
         }
-    }
-
-    private var didStartRecoveryBinding: Binding<Bool> {
-        Binding(
-            get: { model?.didStartRecovery ?? false },
-            set: { if !$0 { model?.didStartRecovery = false } }
-        )
     }
 
     private var state: RecoverViewState {
@@ -81,7 +81,6 @@ private struct RecoverViewContent: View {
     let onDefinitionChange: (DatasetDefinitionId?) async -> Void
     let onRunRecover: () async -> Void
 
-    @State private var showMoreOptions: Bool = false
     @State private var untilDate: Date = Date()
 
     var body: some View {
@@ -89,8 +88,7 @@ private struct RecoverViewContent: View {
             definitionSection
             if config.definition != nil {
                 sourceSection
-                pathQuerySection
-                moreOptionsSection
+                sourcesSection
             }
         }
         .refreshable { await onRefresh() }
@@ -163,30 +161,42 @@ private struct RecoverViewContent: View {
         }
     }
 
-    private var pathQuerySection: some View {
+    private var sourcesSection: some View {
         Section {
-            TextField("Path query (regex)", text: $config.pathQuery)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            ForEach(Self.sourceOptions) { option in
+                Toggle(isOn: sourceBinding(option.kind)) {
+                    Label(option.label, systemImage: option.icon)
+                }
+            }
         } header: {
-            Text("Path Query")
+            Text("Restore From")
         } footer: {
-            Text("Use a regex to filter restored files by path. Empty restores all.")
+            Text("Choose which kinds of backed-up data to restore. Everything else is left untouched.")
         }
     }
 
-    private var moreOptionsSection: some View {
-        Section {
-            DisclosureGroup("More Options", isExpanded: $showMoreOptions) {
-                TextField("Destination directory", text: $config.destination)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                Toggle("Discard original paths", isOn: $config.discardPaths)
-                    .disabled(config.destination.trimmingCharacters(in: .whitespaces).isEmpty)
+    private func sourceBinding(_ kind: RecoverySourceKind) -> Binding<Bool> {
+        Binding(
+            get: { config.sources.contains(kind) },
+            set: { isOn in
+                if isOn {
+                    config.sources.insert(kind)
+                } else {
+                    config.sources.remove(kind)
+                }
             }
-        } footer: {
-            Text("Leave the destination empty to restore files to their original locations.")
-        }
+        )
+    }
+
+    private static let sourceOptions: [SourceOption] =
+        [SourceOption(kind: .filesystem, label: "Files", icon: "folder")] +
+        LibrarySource.all.map { SourceOption(kind: .library(scheme: $0.scheme), label: $0.displayName, icon: $0.systemImage) }
+
+    private struct SourceOption: Identifiable {
+        let kind: RecoverySourceKind
+        let label: String
+        let icon: String
+        var id: RecoverySourceKind { kind }
     }
 
     private var runRecoverBar: some View {
@@ -328,9 +338,7 @@ private struct PreviewHarness: View {
         config: RecoverConfig(
             definition: MockServerApiEndpointClient.defaultDefinition.id,
             recoverySource: .entry(MockServerApiEndpointClient.defaultEntry.id),
-            pathQuery: "",
-            destination: "",
-            discardPaths: false
+            sources: Set(RecoverConfig.allSources)
         )
     )
 }

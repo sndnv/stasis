@@ -157,3 +157,12 @@ private extension Config.ServerApi {
         Config.ServerApi(url: url, user: user, userSalt: userSalt, device: device)
     }
 }
+
+@Suite("KeychainCredentialsStoreError")
+struct KeychainCredentialsStoreErrorTests {
+    @Test("describes each case")
+    func messages() {
+        #expect(KeychainCredentialsStoreError.invalidUser("test").errorDescription == "Invalid user ID [test]")
+        #expect(KeychainCredentialsStoreError.invalidDevice("test").errorDescription == "Invalid device ID [test]")
+    }
+}

@@ -51,13 +51,25 @@ struct EntryDetailViewState: Equatable {
 }
 
 struct EntryMetadataFilters: Equatable {
+    enum KindFilter: Hashable {
+        case all
+        case scheme(String?)
+    }
+
     var updatesOnly: Bool = true
     var filesOnly: Bool = true
     var noHidden: Bool = true
     var pathQuery: String = ""
     var exactPath: Bool = false
+    var kind: KindFilter = .all
 
     static let `default` = EntryMetadataFilters()
+
+    func withoutKind() -> EntryMetadataFilters {
+        var copy = self
+        copy.kind = .all
+        return copy
+    }
 
     func apply(to entries: [PathEntry]) -> [PathEntry] {
         let query = pathQuery.trimmingCharacters(in: .whitespaces).lowercased()
@@ -65,6 +77,7 @@ struct EntryMetadataFilters: Equatable {
             if updatesOnly, case .existing = entry.state { return false }
             if filesOnly, case .directory = entry.metadata { return false }
             if noHidden, EntryMetadataFilters.isPathHidden(entry: entry) { return false }
+            if case .scheme(let scheme) = kind, SourceUri.scheme(entry.path) != scheme { return false }
             if !query.isEmpty {
                 let path = entry.path.lowercased()
                 if exactPath {
@@ -136,7 +149,13 @@ private struct EntryDetailContent: View {
             }
         }
         .navigationTitle("Entry")
+        .navigationSubtitle(entry.created.formatted(date: .abbreviated, time: .shortened))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HelpButton(topic: .entryDetails)
+            }
+        }
         .refreshable { await onRefresh() }
         .alert("Error", isPresented: errorBinding) {
             Button("OK") { onClearError() }
@@ -150,7 +169,7 @@ private struct EntryDetailContent: View {
 
     private var entrySection: some View {
         Section("Entry") {
-            LabeledContent("Id", value: StatusFormatters.shortId(entry.id))
+            IdLabeledContent("Id", id: entry.id)
             LabeledContent("Created", value: entry.created.formatted(date: .abbreviated, time: .shortened))
             if let size = entry.size {
                 LabeledContent("Size", value: StatusFormatters.bytes(size))
@@ -165,11 +184,17 @@ private struct EntryDetailContent: View {
     @ViewBuilder
     private func metadataBody(metadata: DatasetMetadata) -> some View {
         let buckets = metadata.pathEntries()
+        let nonKind = filters.withoutKind().apply(to: buckets.content + buckets.metadata)
+        let schemes = Self.presentSchemes(nonKind)
+        let counts = Self.schemeCounts(nonKind)
         let filteredContent = filters.apply(to: buckets.content)
         let filteredMeta = filters.apply(to: buckets.metadata)
         let shownCount = filteredContent.count + filteredMeta.count
 
         filtersSection(shown: shownCount, total: buckets.totalCount)
+        if schemes.count > 1 {
+            kindChipsSection(schemes: schemes, counts: counts)
+        }
         if !filteredContent.isEmpty {
             pathSection(title: "Content Changed", entries: filteredContent, onTap: { sheetEntry = $0 })
         }
@@ -181,6 +206,72 @@ private struct EntryDetailContent: View {
                 Text("No items match the filters").foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func kindChipsSection(schemes: [String?], counts: [EntryMetadataFilters.KindFilter: Int]) -> some View {
+        Section {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    kindChip(filter: .all, label: "All", count: counts[.all] ?? 0)
+                    ForEach(schemes, id: \.self) { scheme in
+                        kindChip(
+                            filter: .scheme(scheme),
+                            label: Self.schemeLabel(scheme),
+                            count: counts[.scheme(scheme)] ?? 0
+                        )
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+        }
+    }
+
+    private func kindChip(filter: EntryMetadataFilters.KindFilter, label: String, count: Int) -> some View {
+        let isSelected = filters.kind == filter
+        return Button {
+            filters.kind = filter
+        } label: {
+            Text("\(label) (\(count))")
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private static func presentSchemes(_ entries: [PathEntry]) -> [String?] {
+        var hasFiles = false
+        var seen = Set<String>()
+        var ordered: [String] = []
+        for entry in entries {
+            if let scheme = SourceUri.scheme(entry.path) {
+                if seen.insert(scheme).inserted { ordered.append(scheme) }
+            } else {
+                hasFiles = true
+            }
+        }
+        let known = LibrarySource.all.map(\.scheme)
+        let libraries = known.filter { ordered.contains($0) }
+        let others = ordered.filter { !known.contains($0) }.sorted()
+        let files: [String?] = hasFiles ? [String?.none] : []
+        return files + (libraries + others).map { Optional($0) }
+    }
+
+    private static func schemeCounts(_ entries: [PathEntry]) -> [EntryMetadataFilters.KindFilter: Int] {
+        var counts: [EntryMetadataFilters.KindFilter: Int] = [.all: entries.count]
+        for entry in entries {
+            counts[.scheme(SourceUri.scheme(entry.path)), default: 0] += 1
+        }
+        return counts
+    }
+
+    private static func schemeLabel(_ scheme: String?) -> String {
+        guard let scheme else { return "Files" }
+        return LibrarySource.all.first { $0.scheme == scheme }?.displayName ?? scheme
     }
 
     private func filtersSection(shown: Int, total: Int) -> some View {
@@ -222,22 +313,29 @@ private struct MetadataRowView: View {
     let entry: PathEntry
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            stateIcon
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: EntryDisplay.kindIcon(path: entry.path, metadata: entry.metadata))
+                .font(.title3)
+                .foregroundStyle(stateColor)
+                .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(entityName).font(.callout).bold()
-                if !parentPath.isEmpty {
-                    Text(parentPath)
-                        .font(.caption2.monospaced())
+                Text(EntryDisplay.displayName(path: entry.path, metadata: entry.metadata))
+                    .font(.callout).bold()
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if !secondary.isEmpty {
+                    Text(secondary)
+                        .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
                 HStack(spacing: 8) {
-                    Text(kindLabel)
-                    if case .file(let file) = entry.metadata {
-                        Text(StatusFormatters.bytes(file.size))
+                    Text(EntryDisplay.kindLabel(path: entry.path, metadata: entry.metadata))
+                    if let content = entry.metadata.content {
+                        Text(StatusFormatters.bytes(content.size))
                     }
+                    Text(stateLabel).foregroundStyle(stateColor)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -250,33 +348,23 @@ private struct MetadataRowView: View {
         .contentShape(.rect)
     }
 
-    private var stateIcon: some View {
-        let (system, color): (String, Color) = switch entry.state {
-        case .new: ("plus.circle.fill", .green)
-        case .updated: ("pencil.circle.fill", .orange)
-        case .existing: ("checkmark.circle.fill", .secondary)
+    private var secondary: String {
+        EntryDisplay.secondary(path: entry.path, metadata: entry.metadata)
+    }
+
+    private var stateColor: Color {
+        switch entry.state {
+        case .new: .green
+        case .updated: .orange
+        case .existing: .secondary
         }
-        return Image(systemName: system).foregroundStyle(color).font(.title3)
     }
 
-    private var entityName: String {
-        let trimmed = entry.path.hasSuffix("/") && entry.path.count > 1
-            ? String(entry.path.dropLast())
-            : entry.path
-        let component = (trimmed as NSString).lastPathComponent
-        return component.isEmpty ? entry.path : component
-    }
-
-    private var parentPath: String {
-        let parent = (entry.path as NSString).deletingLastPathComponent
-        return parent == "/" ? "" : parent
-    }
-
-    private var kindLabel: String {
-        switch entry.metadata {
-        case .file: "File"
-        case .directory: "Directory"
-        case .library: "Library"
+    private var stateLabel: String {
+        switch entry.state {
+        case .new: "New"
+        case .updated: "Updated"
+        case .existing: "Existing"
         }
     }
 }
@@ -288,6 +376,8 @@ private struct EntityMetadataSheet: View {
     @State private var model: EntryContentModel?
     @State private var shareItem: ShareItem?
     @State private var actionError: String?
+    @State private var pendingConfirmation: String?
+    @State private var toasts = ToastCenter(displayDuration: .seconds(2.5))
 
     @MainActor
     init(entry: PathEntry, session: AuthenticatedSession?) {
@@ -298,7 +388,7 @@ private struct EntityMetadataSheet: View {
             return EntryContentModel.live(
                 session: session,
                 entityKey: entry.path,
-                displayName: Self.entityDisplayName(entry),
+                displayName: EntryDisplay.displayName(path: entry.path, metadata: entry.metadata),
                 metadata: entry.metadata
             )
         }()
@@ -328,14 +418,14 @@ private struct EntityMetadataSheet: View {
                     LabeledContent("Created", value: entry.metadata.created.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("Updated", value: entry.metadata.updated.formatted(date: .abbreviated, time: .shortened))
                 }
-                if case .file(let file) = entry.metadata {
-                    fileSection(file: file)
+                if let content = entry.metadata.content {
+                    contentInfoSection(content: content)
                 }
                 if let model {
                     contentSection(model: model)
                 }
             }
-            .navigationTitle((entry.path as NSString).lastPathComponent)
+            .navigationTitle(EntryDisplay.displayName(path: entry.path, metadata: entry.metadata))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -343,13 +433,20 @@ private struct EntityMetadataSheet: View {
                 }
             }
             .sheet(item: $shareItem) { item in
-                ShareSheet(url: item.url)
+                ShareSheet(url: item.url) { completed in
+                    if completed, let message = pendingConfirmation {
+                        toasts.show(message)
+                    }
+                    pendingConfirmation = nil
+                }
             }
             .alert("Error", isPresented: errorBinding) {
                 Button("OK") { actionError = nil }
             } message: {
                 Text(actionError ?? "")
             }
+            .toastLayer()
+            .environment(toasts)
         }
         .presentationDetents([.medium, .large])
     }
@@ -368,11 +465,13 @@ private struct EntityMetadataSheet: View {
         Task { @MainActor in
             do {
                 let bytes = try await model.rawContent()
-                shareItem = ShareItem(url: try ExportFile.write(
+                let url = try ExportFile.write(
                     name: model.displayName,
                     fileExtension: ExportFile.inferExtension(bytes),
                     bytes: bytes
-                ))
+                )
+                pendingConfirmation = "Saved"
+                shareItem = ShareItem(url: url)
             } catch {
                 actionError = error.localizedDescription
             }
@@ -383,11 +482,13 @@ private struct EntityMetadataSheet: View {
         Task { @MainActor in
             do {
                 let content = try await model.exportedContent()
-                shareItem = ShareItem(url: try ExportFile.write(
+                let url = try ExportFile.write(
                     name: model.displayName,
                     fileExtension: content.fileExtension,
                     bytes: content.bytes
-                ))
+                )
+                pendingConfirmation = "Exported"
+                shareItem = ShareItem(url: url)
             } catch {
                 actionError = error.localizedDescription
             }
@@ -406,34 +507,20 @@ private struct EntityMetadataSheet: View {
         Binding(get: { actionError != nil }, set: { if !$0 { actionError = nil } })
     }
 
-    private static func entityDisplayName(_ entry: PathEntry) -> String {
-        if case .library(let library) = entry.metadata,
-           let attributes = try? JSONDecoder().decode([String: String].self, from: library.attributes),
-           let name = attributes["name"], !name.isEmpty {
-            return name
-        }
-        let component = (entry.path as NSString).lastPathComponent
-        return component.isEmpty ? entry.path : component
-    }
-
-    private func fileSection(file: EntityMetadata.File) -> some View {
-        Section("File") {
-            LabeledContent("Size", value: StatusFormatters.bytes(file.size))
-            LabeledContent("Checksum", value: file.checksum.map { String(format: "%02x", $0) }.joined())
+    private func contentInfoSection(content: any EntityContentMetadata) -> some View {
+        Section(entry.metadata.filesystem != nil ? "File" : "Library") {
+            LabeledContent("Size", value: StatusFormatters.bytes(content.size))
+            LabeledContent("Checksum", value: content.checksum.map { String(format: "%02x", $0) }.joined())
                 .textSelection(.enabled)
             if entry.kind == .content {
-                LabeledContent("Crates", value: "\(file.crates.count)")
-                LabeledContent("Compression", value: file.compression)
+                LabeledContent("Crates", value: "\(content.crates.count)")
+                LabeledContent("Compression", value: content.compression)
             }
         }
     }
 
     private var kindLabel: String {
-        switch entry.metadata {
-        case .file: "File"
-        case .directory: "Directory"
-        case .library: "Library"
-        }
+        EntryDisplay.kindLabel(path: entry.path, metadata: entry.metadata)
     }
 
     private var stateLabel: String {

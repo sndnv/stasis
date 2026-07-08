@@ -25,6 +25,8 @@ interop_target = os.path.join(
 simulator_destination = "generic/platform=iOS Simulator"
 simulator_test_destination = "platform=iOS Simulator,name=iPhone 17 Pro"
 app_test_result_bundle = os.path.join(app_path, "build", "StasisClientTests.xcresult")
+app_derived_data = os.path.join(app_path, "build", "DerivedData")
+app_source_packages = os.path.join(app_path, "build", "SourcePackages")
 
 
 def log(message):
@@ -69,24 +71,51 @@ def lib_test():
     )
 
 
+def app_xcodebuild_command(*args):
+    return [
+        "xcodebuild",
+        "-project", xcodeproj_path,
+        "-scheme", "StasisClient",
+        "-configuration", "Debug",
+        "-derivedDataPath", app_derived_data,
+        "-clonedSourcePackagesDirPath", app_source_packages,
+        "-skipPackagePluginValidation",
+        "-skipMacroValidation",
+    ] + list(args)
+
+
 def app_build():
     run_command(
-        command=[
-            "xcodebuild",
-            "-project", xcodeproj_path,
-            "-scheme", "StasisClient",
+        command=app_xcodebuild_command(
             "-destination", simulator_destination,
-            "-configuration", "Debug",
-            "-skipPackagePluginValidation",
-            "-skipMacroValidation",
             "-quiet",
             "build",
-        ],
+        ),
+        cwd=app_path,
+    )
+
+
+def app_build_for_testing():
+    run_command(
+        command=app_xcodebuild_command(
+            "-destination", simulator_test_destination,
+            "-enableCodeCoverage", "YES",
+            "-quiet",
+            "build-for-testing",
+        ),
         cwd=app_path,
     )
 
 
 def app_test():
+    run_app_tests("test")
+
+
+def app_test_only():
+    run_app_tests("test-without-building")
+
+
+def run_app_tests(action):
     test_attempts = 2
     for attempt in range(1, test_attempts + 1):
         if os.path.exists(app_test_result_bundle):
@@ -94,19 +123,13 @@ def app_test():
         if attempt > 1:
             log("retrying (attempt {}/{})".format(attempt, test_attempts))
         test_result = subprocess.run(
-            [
-                "xcodebuild",
-                "-project", xcodeproj_path,
-                "-scheme", "StasisClient",
+            app_xcodebuild_command(
                 "-destination", simulator_test_destination,
-                "-configuration", "Debug",
                 "-enableCodeCoverage", "YES",
                 "-resultBundlePath", app_test_result_bundle,
-                "-skipPackagePluginValidation",
-                "-skipMacroValidation",
                 "-quiet",
-                "test",
-            ],
+                action,
+            ),
             cwd=app_path,
         ).returncode
         if test_result == 0:
@@ -243,13 +266,16 @@ PHASES = {
     "lib-build": lib_build,
     "lib-test": lib_test,
     "app-build": app_build,
+    "app-build-for-testing": app_build_for_testing,
     "app-test": app_test,
+    "app-test-only": app_test_only,
     "lib-coverage": lib_coverage,
     "app-coverage": app_coverage,
 }
 
 ALIASES = {
     "all": ["lint", "gen", "lib-build", "lib-test", "app-build", "app-test", "lib-coverage", "app-coverage"],
+    "ci": ["lint", "gen", "lib-test", "app-build-for-testing", "app-test-only", "lib-coverage", "app-coverage"],
     "lib": ["lint", "gen", "lib-build", "lib-test", "lib-coverage"],
     "app": ["lint", "gen", "lib-build", "app-build", "app-test", "app-coverage"],
     "quick-app": ["app-build", "app-test"],

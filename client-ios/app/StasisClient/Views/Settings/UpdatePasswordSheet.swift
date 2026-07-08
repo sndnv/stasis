@@ -5,6 +5,7 @@ struct UpdatePasswordSheet: View {
     let onUpdate: (_ currentPassword: String, _ newPassword: String) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ToastCenter.self) private var toasts
     @State private var currentPassword: String = ""
     @State private var newPassword: String = ""
     @State private var newPasswordConfirmation: String = ""
@@ -34,13 +35,14 @@ struct UpdatePasswordSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.disabled(isSubmitting)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Update") { Task { await runUpdate() } }
                         .disabled(!canSubmit || isSubmitting)
                 }
             }
+            .submittingOverlay(isSubmitting)
         }
     }
 
@@ -67,6 +69,7 @@ struct UpdatePasswordSheet: View {
         isSubmitting = true
         do {
             try await onUpdate(currentPassword, newPassword)
+            toasts.show("Password updated")
             dismiss()
         } catch is InvalidUserCredentials {
             error = "Invalid current password."
@@ -80,5 +83,6 @@ struct UpdatePasswordSheet: View {
 #if DEBUG
 #Preview {
     UpdatePasswordSheet(onUpdate: { _, _ in })
+        .environment(ToastCenter(displayDuration: .seconds(2.5)))
 }
 #endif

@@ -19,7 +19,6 @@ struct SettingsTests {
     func defaultsWhenMissing() {
         let defaults = TestDefaults.isolatedDefaults()
         #expect(defaults.dateTimeFormat() == Settings.Defaults.dateTimeFormat)
-        #expect(defaults.restrictionsIgnored() == Settings.Defaults.restrictionsIgnored)
         #expect(defaults.schedulingEnabled() == Settings.Defaults.schedulingEnabled)
         #expect(defaults.pingInterval() == Settings.Defaults.pingInterval)
         #expect(defaults.commandRefreshInterval() == Settings.Defaults.commandRefreshInterval)
@@ -37,13 +36,11 @@ struct SettingsTests {
     func storedValues() {
         let defaults = TestDefaults.isolatedDefaults()
         defaults.set("iso", forKey: Settings.Keys.dateTimeFormat)
-        defaults.set(true, forKey: Settings.Keys.restrictionsIgnored)
         defaults.set(false, forKey: Settings.Keys.schedulingEnabled)
         defaults.set("42", forKey: Settings.Keys.pingInterval)
         defaults.set(false, forKey: Settings.Keys.analyticsKeepFailures)
 
         #expect(defaults.dateTimeFormat() == .iso)
-        #expect(defaults.restrictionsIgnored())
         #expect(!defaults.schedulingEnabled())
         #expect(defaults.pingInterval() == 42)
         #expect(!defaults.analyticsKeepFailures())
@@ -119,5 +116,13 @@ struct SettingsTests {
         defaults.set(900.0 as Double, forKey: Settings.Keys.analyticsTransmissionInterval)
         #expect(defaults.pingInterval() == 180)
         #expect(defaults.analyticsTransmissionInterval() == 900)
+    }
+}
+
+@Suite("SettingsError")
+struct SettingsErrorTests {
+    @Test("describes an unexpected date/time format")
+    func message() {
+        #expect(SettingsError.unexpectedDateTimeFormat("test").errorDescription == "Unexpected date/time format [test]")
     }
 }

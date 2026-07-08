@@ -1,8 +1,15 @@
 import Foundation
 import Security
 
-public enum KeychainError: Error, Equatable {
+public enum KeychainError: Error, Equatable, LocalizedError {
     case unexpectedStatus(OSStatus)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unexpectedStatus(let status):
+            "Keychain access failed with status [\(status)]"
+        }
+    }
 }
 
 public struct Keychain: Sendable {

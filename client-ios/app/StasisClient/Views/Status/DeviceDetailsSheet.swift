@@ -10,8 +10,7 @@ struct DeviceDetailsSheet: View {
             Form {
                 if let device {
                     Section("Metadata") {
-                        LabeledContent("Id", value: device.id.uuidString)
-                            .textSelection(.enabled)
+                        IdLabeledContent("Id", id: device.id)
                         LabeledContent("Created", value: device.created.formatted(date: .abbreviated, time: .shortened))
                         LabeledContent("Updated", value: device.updated.formatted(date: .abbreviated, time: .shortened))
                     }

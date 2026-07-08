@@ -100,3 +100,11 @@ struct AppContainerTests {
         }
     }
 }
+
+@Suite("AppContainerError")
+struct AppContainerErrorTests {
+    @Test("describes notConfigured")
+    func message() {
+        #expect(AppContainer.AppContainerError.notConfigured.errorDescription == "The device is not configured")
+    }
+}

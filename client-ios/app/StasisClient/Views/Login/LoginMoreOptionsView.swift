@@ -3,14 +3,20 @@ import SwiftUI
 struct LoginMoreOptionsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showReEncrypt: Bool = false
-    @State private var showReInitialize: Bool = false
+    @State private var activeSheet: ActiveSheet?
+
+    private enum ActiveSheet: Identifiable {
+        case reEncrypt
+        case reInitialize
+
+        var id: Self { self }
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Button { showReEncrypt = true } label: {
+                    Button { activeSheet = .reEncrypt } label: {
                         optionLabel(
                             title: "Re-encrypt device secret",
                             detail: "If your password was changed on a different device, this allows decrypting "
@@ -21,7 +27,7 @@ struct LoginMoreOptionsView: View {
                 }
 
                 Section {
-                    Button { showReInitialize = true } label: {
+                    Button { activeSheet = .reInitialize } label: {
                         optionLabel(
                             title: "Re-initialize device",
                             detail: "Allows re-running the bootstrap process for this device."
@@ -47,11 +53,13 @@ struct LoginMoreOptionsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showReEncrypt) {
-            LoginReEncryptDeviceSecretView()
-        }
-        .sheet(isPresented: $showReInitialize) {
-            LoginReInitializeDeviceView()
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .reEncrypt:
+                LoginReEncryptDeviceSecretView()
+            case .reInitialize:
+                LoginReInitializeDeviceView()
+            }
         }
     }
 
