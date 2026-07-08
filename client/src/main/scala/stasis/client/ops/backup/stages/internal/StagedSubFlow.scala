@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.util.Failure
+import scala.util.Success
 import scala.util.control.NonFatal
 
 import org.apache.pekko.stream.scaladsl.FileIO
@@ -80,9 +82,18 @@ object StagedSubFlow {
           .viaMat(
             Flow.fromSinkAndSourceMat(
               sink = FileIO.toPath(staged),
-              source = Source.single[(String, Path)]((partSecret.file, staged))
-            )(Keep.left[Future[IOResult], NotUsed])
-          )(Keep.right[NotUsed, Future[IOResult]])
+              source = Source
+                .single[(String, Path)]((partSecret.file, staged))
+                .concatMat(Source.maybe[(String, Path)])(Keep.right)
+            )(Keep.both)
+          )(Keep.right)
+          .mapMaterializedValue { case (written, completion) =>
+            written.onComplete {
+              case Success(_)     => val _ = completion.trySuccess(None)
+              case Failure(cause) => val _ = completion.tryFailure(cause)
+            }
+            written
+          }
       }
   }
 

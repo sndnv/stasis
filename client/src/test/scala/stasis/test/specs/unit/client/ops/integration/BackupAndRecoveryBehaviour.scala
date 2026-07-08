@@ -63,7 +63,7 @@ trait BackupAndRecoveryBehaviour { _: UnitSpec with FileSystemHelpers =>
       secret = ByteString("some-secret")
     )
 
-    it should "back up and recover filesystem entities" in withRetry {
+    it should s"back up and recover filesystem entities (${setup.name})" in withRetry {
       val (fs, _) = createMockFileSystem(setup = setup)
 
       val directory = createSourceDirectory(fs)
@@ -102,7 +102,7 @@ trait BackupAndRecoveryBehaviour { _: UnitSpec with FileSystemHelpers =>
       Files.exists(fileThree) should be(true) // excluded from backup; left untouched
     }
 
-    it should "back up and recover library entities" in withRetry {
+    it should s"back up and recover library entities (${setup.name})" in withRetry {
       val (fs, _) = createMockFileSystem(setup = setup)
       val separator = fs.getSeparator
 
@@ -150,7 +150,7 @@ trait BackupAndRecoveryBehaviour { _: UnitSpec with FileSystemHelpers =>
       )
     }
 
-    it should "back up and recover a mix of filesystem and library entities" in withRetry {
+    it should s"back up and recover a mix of filesystem and library entities (${setup.name})" in withRetry {
       val (fs, _) = createMockFileSystem(setup = setup)
       val directory = createSourceDirectory(fs)
 
