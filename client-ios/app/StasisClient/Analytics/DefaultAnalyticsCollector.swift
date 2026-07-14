@@ -11,6 +11,7 @@ public actor DefaultAnalyticsCollector: AnalyticsCollector {
     private let persistenceInterval: TimeInterval
     private let transmissionInterval: TimeInterval
     private var latest: AnalyticsEntry.Collected
+    private var pending: [AnalyticsEntry.Collected] = []
     private var persistTask: Task<Void, Never>?
     private var startupTask: Task<Void, Never>?
     private var inflightPersist: Task<Void, Never>?
@@ -60,12 +61,35 @@ public actor DefaultAnalyticsCollector: AnalyticsCollector {
 
     private func loadState() async {
         guard let persistence else { return }
+
+        let restoredPending: [AnalyticsEntry.Collected]
+        switch await persistence.restorePending() {
+        case .success(let entries): restoredPending = entries.map { $0.asCollected() }
+        case .failure: restoredPending = []
+        }
+
         switch await persistence.restore() {
         case .success(let entry):
-            latest = entry?.asCollected() ?? AnalyticsEntry.Collected(app: app)
+            guard let restored = entry?.asCollected() else {
+                latest = AnalyticsEntry.Collected(app: app)
+                pending = restoredPending
+                return
+            }
+
+            if restored.runtime.app == app.asString() {
+                latest = restored
+                pending = restoredPending
+            } else {
+                let fresh = AnalyticsEntry.Collected(app: app)
+                latest = fresh
+                pending = restoredPending + [restored]
+                await persistence.cache(.collected(fresh))
+                await persistence.cachePending(pending.map { .collected($0) })
+            }
         case .failure(let error):
             Self.logger.error("failed to restore analytics state: \(error.localizedDescription)")
             latest = AnalyticsEntry.Collected(app: app)
+            pending = restoredPending
         }
     }
 
@@ -90,6 +114,7 @@ public actor DefaultAnalyticsCollector: AnalyticsCollector {
             || lastTransmitted.addingTimeInterval(transmissionInterval) < Date()
 
         if shouldTransmit {
+            await transmitPending()
             switch await persistence.transmit(entry) {
             case .success:
                 dropTransmitted(snapshot)
@@ -100,6 +125,23 @@ public actor DefaultAnalyticsCollector: AnalyticsCollector {
             }
         } else {
             await persistence.cache(entry)
+        }
+    }
+
+    private func transmitPending() async {
+        guard let persistence, !pending.isEmpty else { return }
+
+        var remaining: [AnalyticsEntry.Collected] = []
+        for entry in pending {
+            switch await persistence.transmit(.collected(entry)) {
+            case .success: break
+            case .failure: remaining.append(entry)
+            }
+        }
+
+        if remaining.count != pending.count {
+            pending = remaining
+            await persistence.cachePending(pending.map { .collected($0) })
         }
     }
 

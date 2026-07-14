@@ -8,6 +8,9 @@ interface AnalyticsPersistence {
     suspend fun transmit(entry: AnalyticsEntry): Try<Unit>
     suspend fun restore(): Try<AnalyticsEntry?>
 
+    fun cachePending(entries: List<AnalyticsEntry>)
+    suspend fun restorePending(): Try<List<AnalyticsEntry>>
+
     val lastCached: Instant
     val lastTransmitted: Instant
 }

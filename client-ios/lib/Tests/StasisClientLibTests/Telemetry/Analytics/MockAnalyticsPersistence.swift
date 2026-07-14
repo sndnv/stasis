@@ -27,6 +27,12 @@ actor MockAnalyticsPersistence: AnalyticsPersistence {
         existing
     }
 
+    func cachePending(_ entries: [AnalyticsEntry]) async {}
+
+    func restorePending() async -> Result<[AnalyticsEntry], Error> {
+        .success([])
+    }
+
     var lastCached: Date { lastCachedTime }
     var lastTransmitted: Date { lastTransmittedTime }
 

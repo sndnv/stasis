@@ -27,6 +27,11 @@ class MockAnalyticsPersistence(private val existing: Try<AnalyticsEntry?>) : Ana
     override suspend fun restore(): Try<AnalyticsEntry?> =
         existing
 
+    override fun cachePending(entries: List<AnalyticsEntry>) {}
+
+    override suspend fun restorePending(): Try<List<AnalyticsEntry>> =
+        Try.Success(emptyList())
+
     override val lastCached: Instant
         get() = lastCachedRef.get()
 

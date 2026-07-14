@@ -128,6 +128,7 @@ class _SchedulesState extends State<Schedules> {
       title: 'Interval',
       onChange: (updated) => interval = updated,
       errorMessage: 'A schedule interval is required',
+      minimum: scheduleMinInterval,
     );
 
     bool isPublic = false;
@@ -194,6 +195,7 @@ class _SchedulesState extends State<Schedules> {
       onChange: (updated) => interval = updated,
       errorMessage: 'A schedule interval is required',
       initialDuration: interval,
+      minimum: scheduleMinInterval,
     );
 
     showDialog(

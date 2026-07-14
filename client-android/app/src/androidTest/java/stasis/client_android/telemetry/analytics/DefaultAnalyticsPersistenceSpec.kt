@@ -144,6 +144,47 @@ class DefaultAnalyticsPersistenceSpec {
     }
 
     @Test
+    fun cacheAndRestorePendingEntries() {
+        val preferences = mockk<SharedPreferences>()
+        val client = MockAnalyticsClient()
+        val persistence = DefaultAnalyticsPersistence(preferences) { client }
+
+        val first = AnalyticsEntry.collected(app).withEvent(name = "test", emptyMap())
+        val second = AnalyticsEntry.collected(app).withEvent(name = "test a", emptyMap())
+
+        val serialized = persistence.serializePending(listOf(first, second))
+
+        val editor = mockk<SharedPreferences.Editor>(relaxUnitFun = true)
+        every { preferences.edit() } returns editor
+        every { editor.putString(Keys.Analytics.PendingCache, serialized) } returns editor
+        every { editor.commit() } returns true
+        every { preferences.getString(Keys.Analytics.PendingCache, null) } returns serialized
+
+        persistence.cachePending(listOf(first, second))
+
+        runBlocking {
+            val restored = persistence.restorePending().get()
+
+            assertThat(restored.size, equalTo(2))
+            assertThat(restored[0].events.map { it.event }, equalTo(listOf("test")))
+            assertThat(restored[1].events.map { it.event }, equalTo(listOf("test a")))
+        }
+    }
+
+    @Test
+    fun notRestorePendingEntriesWhenNotAvailable() {
+        val preferences = mockk<SharedPreferences>()
+        val client = MockAnalyticsClient()
+        val persistence = DefaultAnalyticsPersistence(preferences) { client }
+
+        every { preferences.getString(Keys.Analytics.PendingCache, null) } returns null
+
+        runBlocking {
+            assertThat(persistence.restorePending(), equalTo(Try.Success(emptyList<AnalyticsEntry>())))
+        }
+    }
+
+    @Test
     fun compareInstants() {
         val preferences = mockk<SharedPreferences>()
         val client = MockAnalyticsClient()

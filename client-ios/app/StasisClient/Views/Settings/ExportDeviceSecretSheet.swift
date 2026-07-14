@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct ExportDeviceSecretSheet: View {
     let secret: String?
@@ -22,12 +23,20 @@ struct ExportDeviceSecretSheet: View {
                     }
                     Section {
                         Button {
-                            UIPasteboard.general.string = secret
+                            UIPasteboard.general.setItems(
+                                [[UTType.utf8PlainText.identifier: secret]],
+                                options: [
+                                    .localOnly: true,
+                                    .expirationDate: Date().addingTimeInterval(120)
+                                ]
+                            )
                             copied = true
                         } label: {
                             Label(copied ? "Copied" : "Copy to Clipboard", systemImage: "doc.on.doc")
                         }
                         .disabled(copied)
+                    } footer: {
+                        Text("Copying places the secret on the clipboard, where other apps can read it. It stays on this device only and is cleared automatically after a short time.")
                     }
                 } else {
                     Section {

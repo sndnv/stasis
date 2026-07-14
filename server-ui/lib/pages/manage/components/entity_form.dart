@@ -166,8 +166,15 @@ DurationField durationField({
   required void Function(Duration) onChange,
   Duration? initialDuration,
   String? errorMessage,
+  Duration? minimum,
 }) {
-  return DurationField(title: title, onChange: onChange, initialDuration: initialDuration, errorMessage: errorMessage);
+  return DurationField(
+    title: title,
+    onChange: onChange,
+    initialDuration: initialDuration,
+    errorMessage: errorMessage,
+    minimum: minimum,
+  );
 }
 
 DeviceLimitsField deviceLimitsField({

@@ -10,12 +10,14 @@ class DurationField extends StatefulWidget {
     required this.onChange,
     this.initialDuration,
     this.errorMessage,
+    this.minimum,
   });
 
   final String title;
   final Duration? initialDuration;
   final void Function(Duration) onChange;
   final String? errorMessage;
+  final Duration? minimum;
 
   @override
   State createState() {
@@ -47,10 +49,19 @@ class _DurationFieldState extends State<DurationField> {
             _amountInvalid = true;
           });
           return widget.errorMessage;
-        } else {
-          setState(() => _amountInvalid = false);
-          return null;
         }
+
+        final minimum = widget.minimum;
+        if (minimum != null && actualValue != null && _fromFields(actualValue, _unit) < minimum) {
+          setState(() {
+            _amount = null;
+            _amountInvalid = true;
+          });
+          return 'Must be at least ${minimum.render()}';
+        }
+
+        setState(() => _amountInvalid = false);
+        return null;
       },
       onChanged: (value) {
         final actualValue = int.tryParse(value);

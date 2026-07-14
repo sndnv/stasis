@@ -56,6 +56,26 @@ public final class DefaultAnalyticsPersistence: AnalyticsPersistence, @unchecked
         }
     }
 
+    public func cachePending(_ entries: [AnalyticsEntry]) async {
+        do {
+            let serialized = try serializePending(entries: entries)
+            preferences.putAnalyticsPendingEntries(serialized)
+        } catch {
+            Self.logger.error("failed to cache pending analytics entries: \(error.localizedDescription)")
+        }
+    }
+
+    public func restorePending() async -> Result<[AnalyticsEntry], any Error> {
+        guard let raw = preferences.analyticsPendingEntries() else {
+            return .success([])
+        }
+        do {
+            return .success(try deserializePending(raw))
+        } catch {
+            return .failure(error)
+        }
+    }
+
     public var lastCached: Date {
         get async { lastCachedState.withLock { $0 } }
     }
@@ -93,6 +113,16 @@ public final class DefaultAnalyticsPersistence: AnalyticsPersistence, @unchecked
 
     public func deserialize(_ raw: String) throws -> StoredAnalyticsEntry {
         try Self.decoder.decode(StoredAnalyticsEntry.self, from: Data(raw.utf8))
+    }
+
+    public func serializePending(entries: [AnalyticsEntry]) throws -> String {
+        let data = try Self.encoder.encode(entries.map { $0.asJson() })
+        // swiftlint:disable:next optional_data_string_conversion
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    public func deserializePending(_ raw: String) throws -> [AnalyticsEntry] {
+        try Self.decoder.decode([AnalyticsEntry.AsJson].self, from: Data(raw.utf8)).map { .asJson($0) }
     }
 
     private static let encoder: JSONEncoder = {

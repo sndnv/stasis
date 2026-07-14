@@ -88,6 +88,7 @@ class ConfigRepository(
                     .remove(Keys.General.SavedUsername)
                     .remove(Keys.General.LastProcessedCommand)
                     .remove(Keys.Analytics.EntryCache)
+                    .remove(Keys.Analytics.PendingCache)
             }
     }
 
@@ -176,6 +177,7 @@ class ConfigRepository(
 
             object Analytics {
                 const val EntryCache: String = "analytics_entry_cache"
+                const val PendingCache: String = "analytics_pending_cache"
             }
         }
 
@@ -395,6 +397,15 @@ class ConfigRepository(
         fun SharedPreferences.putAnalyticsCachedEntry(entry: String) {
             this.edit(commit = true) {
                 putString(Keys.Analytics.EntryCache, entry)
+            }
+        }
+
+        fun SharedPreferences.getAnalyticsPendingEntries(): String? =
+            this.getString(Keys.Analytics.PendingCache, null)
+
+        fun SharedPreferences.putAnalyticsPendingEntries(entries: String) {
+            this.edit(commit = true) {
+                putString(Keys.Analytics.PendingCache, entries)
             }
         }
 

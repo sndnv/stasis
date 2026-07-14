@@ -95,6 +95,8 @@ void main() {
       expect(1000.renderFileSize(), '1 kB');
       expect(1024.renderFileSize(), '1 kB');
       expect((10 * 1024).renderFileSize(), '10.2 kB');
+      expect((38 * 1000 * 1000).renderFileSize(), '38 MB');
+      expect((512 * 1000 * 1000 * 1000).renderFileSize(), '512 GB');
     });
 
     test('convert numbers to strings', () {

@@ -915,6 +915,7 @@
     <string name="settings_manage_device_secret_import_password_confirmation_hint_extra">Confirming your password ensures that the imported device secret is correctly encrypted.</string>
     <string name="settings_manage_device_secret_export_clip_label">Device secret export</string>
     <string name="settings_manage_device_secret_export_clip_created">Device secret copied to clipboard</string>
+    <string name="settings_manage_device_secret_export_clipboard_warning">Copying places the secret on the system clipboard, where any app with clipboard access can read it. Clear the clipboard when you are done.</string>
     <string name="settings_manage_device_secret_import_empty_password">A password needs to be provided</string>
     <string name="settings_manage_device_secret_import_mismatched_passwords">The provided passwords do not match</string>
     <string name="settings_manage_device_secret_import_invalid_current_password">The provided password is not valid</string>

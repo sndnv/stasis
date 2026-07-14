@@ -148,7 +148,7 @@ extension ExtendedNum on num {
         FileSizeUnit.terabytes,
         FileSizeUnit.petabytes,
       ];
-      final digitGroups = (log(this) / log(base)).round();
+      final digitGroups = (log(this) / log(base)).floor();
       final amount = NumberFormat('#,##0.#').format(this / pow(base, digitGroups));
       final unit = units[digitGroups].symbol;
 

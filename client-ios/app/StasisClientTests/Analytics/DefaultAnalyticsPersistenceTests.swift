@@ -96,6 +96,27 @@ struct DefaultAnalyticsPersistenceTests {
         Int64(date.timeIntervalSince1970 * 1000)
     }
 
+    @Test("caches and restores the pending queue")
+    func cacheAndRestorePendingQueue() async throws {
+        let defaults = TestDefaults.isolatedDefaults()
+        let client = TestAnalyticsClient()
+        let persistence = DefaultAnalyticsPersistence(preferences: defaults, client: { client })
+
+        let emptyBefore = try (await persistence.restorePending()).get()
+        #expect(emptyBefore.isEmpty)
+
+        let first = AnalyticsEntry.Collected(app: NoApplicationInformation())
+            .withEvent(name: "test", attributes: [:])
+        let second = AnalyticsEntry.Collected(app: NoApplicationInformation())
+            .withEvent(name: "test a", attributes: [:])
+        await persistence.cachePending([.collected(first), .collected(second)])
+
+        let restored = try (await persistence.restorePending()).get()
+        #expect(restored.count == 2)
+        #expect(restored[0].asCollected().events.map(\.event) == ["test"])
+        #expect(restored[1].asCollected().events.map(\.event) == ["test a"])
+    }
+
     @Test("returns nil restoring an empty cache")
     func notRestoreEntriesFromLocalCacheWhenNotAvailable() async throws {
         let defaults = TestDefaults.isolatedDefaults()

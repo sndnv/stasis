@@ -14,9 +14,12 @@ import stasis.client_android.lib.telemetry.analytics.AnalyticsClient
 import stasis.client_android.lib.telemetry.analytics.AnalyticsEntry
 import stasis.client_android.lib.telemetry.analytics.AnalyticsPersistence
 import stasis.client_android.lib.utils.Try
+import stasis.client_android.lib.utils.Try.Companion.flatMap
 import stasis.client_android.lib.utils.Try.Companion.map
 import stasis.client_android.persistence.config.ConfigRepository.Companion.getAnalyticsCachedEntry
+import stasis.client_android.persistence.config.ConfigRepository.Companion.getAnalyticsPendingEntries
 import stasis.client_android.persistence.config.ConfigRepository.Companion.putAnalyticsCachedEntry
+import stasis.client_android.persistence.config.ConfigRepository.Companion.putAnalyticsPendingEntries
 import stasis.client_android.settings.Settings.getAnalyticsKeepEvents
 import stasis.client_android.settings.Settings.getAnalyticsKeepFailures
 import java.lang.reflect.Type
@@ -39,7 +42,7 @@ class DefaultAnalyticsPersistence(
         val updated = if (preferences.getAnalyticsKeepEvents()) entry else entry.asCollected().discardEvents()
         val outgoing = if (preferences.getAnalyticsKeepFailures()) updated else updated.asCollected().discardFailures()
 
-        return client().sendAnalyticsEntry(entry = outgoing).map {
+        return Try { client() }.flatMap { it.sendAnalyticsEntry(entry = outgoing) }.map {
             lastTransmittedRef.set(Instant.now())
         }
     }
@@ -54,6 +57,17 @@ class DefaultAnalyticsPersistence(
 
                 stored.entry.asCollected()
             }
+        }
+
+    override fun cachePending(entries: List<AnalyticsEntry>) {
+        preferences.putAnalyticsPendingEntries(entries = serializePending(entries))
+    }
+
+    override suspend fun restorePending(): Try<List<AnalyticsEntry>> =
+        Try {
+            preferences.getAnalyticsPendingEntries()
+                ?.let { deserializePending(it) }
+                ?: emptyList()
         }
 
     override val lastCached: Instant
@@ -76,6 +90,12 @@ class DefaultAnalyticsPersistence(
 
     internal fun deserialize(entry: String): StoredAnalyticsEntry =
         gson.fromJson(entry, StoredAnalyticsEntry::class.java)
+
+    internal fun serializePending(entries: List<AnalyticsEntry>): String =
+        gson.toJson(entries.map { it.asJson() }.toTypedArray())
+
+    internal fun deserializePending(entries: String): List<AnalyticsEntry> =
+        gson.fromJson(entries, Array<AnalyticsEntry.AsJson>::class.java).map { it.asCollected() }
 
     data class StoredAnalyticsEntry(
         val entry: AnalyticsEntry.AsJson,

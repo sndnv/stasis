@@ -51,6 +51,7 @@ class DefaultAnalyticsCollector(
 
     private inner class CollectorHandler(looper: Looper) : Handler(looper) {
         private var isPersistScheduled: Boolean = false
+        private var pending: List<AnalyticsEntry> = emptyList()
 
         init {
             obtainMessage().let { msg ->
@@ -86,6 +87,8 @@ class DefaultAnalyticsCollector(
                     if (message.forceTransmit || persistence.lastTransmitted.plusMillis(transmissionInterval.toMillis())
                             .isBefore(Instant.now())
                     ) {
+                        transmitPending()
+
                         when (runBlocking { persistence.transmit(entry) }) {
                             is Try.Success -> {
                                 val empty = AnalyticsEntry.collected(app)
@@ -103,15 +106,48 @@ class DefaultAnalyticsCollector(
                 }
 
                 is CollectorMessage.LoadState -> {
-                    val loaded = when (val result = runBlocking { persistence.restore() }) {
-                        is Try.Success -> result.value ?: AnalyticsEntry.collected(app)
-                        is Try.Failure -> AnalyticsEntry.collected(app)
+                    val restoredPending = when (val result = runBlocking { persistence.restorePending() }) {
+                        is Try.Success -> result.value
+                        is Try.Failure -> emptyList()
                     }
 
-                    latest.set(loaded.asCollected())
+                    val restored = when (val result = runBlocking { persistence.restore() }) {
+                        is Try.Success -> result.value
+                        is Try.Failure -> null
+                    }
+
+                    when {
+                        restored == null -> {
+                            pending = restoredPending
+                            latest.set(AnalyticsEntry.collected(app))
+                        }
+
+                        restored.runtime.app == app.asString() -> {
+                            pending = restoredPending
+                            latest.set(restored.asCollected())
+                        }
+
+                        else -> {
+                            val fresh = AnalyticsEntry.collected(app)
+                            pending = restoredPending + restored
+                            persistence.cache(entry = fresh)
+                            persistence.cachePending(pending)
+                            latest.set(fresh)
+                        }
+                    }
                 }
 
                 else -> throw IllegalArgumentException("Unexpected message encountered: [$message]")
+            }
+        }
+
+        private fun transmitPending() {
+            if (pending.isEmpty()) return
+
+            val remaining = pending.filterNot { runBlocking { persistence.transmit(it) } is Try.Success }
+            if (remaining.size != pending.size) {
+                pending = remaining
+                persistence.cachePending(pending)
             }
         }
 

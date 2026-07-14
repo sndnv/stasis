@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
 open class MockAnalyticsPersistence(private val existing: Try<AnalyticsEntry?>) : AnalyticsPersistence {
     private val cachedEntries: MutableList<AnalyticsEntry> = mutableListOf()
     private val transmittedEntries: MutableList<AnalyticsEntry> = mutableListOf()
+    private val pendingRef: AtomicReference<List<AnalyticsEntry>> = AtomicReference(emptyList())
 
     private val lastCachedRef: AtomicReference<Instant> = AtomicReference(Instant.MIN)
     private val lastTransmittedRef: AtomicReference<Instant> = AtomicReference(Instant.MIN)
@@ -27,6 +28,13 @@ open class MockAnalyticsPersistence(private val existing: Try<AnalyticsEntry?>) 
     override suspend fun restore(): Try<AnalyticsEntry?> =
         existing
 
+    override fun cachePending(entries: List<AnalyticsEntry>) {
+        pendingRef.set(entries)
+    }
+
+    override suspend fun restorePending(): Try<List<AnalyticsEntry>> =
+        Try.Success(pendingRef.get())
+
     override val lastCached: Instant
         get() = lastCachedRef.get()
 
@@ -38,4 +46,7 @@ open class MockAnalyticsPersistence(private val existing: Try<AnalyticsEntry?>) 
 
     val transmitted: List<AnalyticsEntry>
         get() = transmittedEntries
+
+    val pending: List<AnalyticsEntry>
+        get() = pendingRef.get()
 }

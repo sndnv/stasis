@@ -12,6 +12,7 @@ final actor MockAnalyticsPersistence: AnalyticsPersistence {
     private let lastTransmittedOverride: Date?
     private(set) var cached: [AnalyticsEntry] = []
     private(set) var transmitted: [AnalyticsEntry] = []
+    private(set) var pending: [AnalyticsEntry] = []
     private var lastCachedAt: Date = .init(timeIntervalSince1970: 0)
     private var lastTransmittedAt: Date = .init(timeIntervalSince1970: 0)
 
@@ -43,6 +44,14 @@ final actor MockAnalyticsPersistence: AnalyticsPersistence {
 
     func restore() async -> Result<AnalyticsEntry?, any Error> {
         existing
+    }
+
+    func cachePending(_ entries: [AnalyticsEntry]) async {
+        pending = entries
+    }
+
+    func restorePending() async -> Result<[AnalyticsEntry], any Error> {
+        .success(pending)
     }
 
     var lastCached: Date { lastCachedAt }

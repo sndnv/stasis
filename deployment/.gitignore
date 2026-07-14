@@ -12,3 +12,4 @@ htmlcov
 *.iml
 *.db
 *.egg-info
+.vagrant

@@ -5,6 +5,9 @@ public protocol AnalyticsPersistence: Sendable {
     func transmit(_ entry: AnalyticsEntry) async -> Result<Void, Error>
     func restore() async -> Result<AnalyticsEntry?, Error>
 
+    func cachePending(_ entries: [AnalyticsEntry]) async
+    func restorePending() async -> Result<[AnalyticsEntry], Error>
+
     var lastCached: Date { get async }
     var lastTransmitted: Date { get async }
 }

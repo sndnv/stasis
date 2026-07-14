@@ -17,6 +17,12 @@ import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class DefaultAnalyticsCollectorSpec {
+    private fun appInfo(appVersion: String): ApplicationInformation = object : ApplicationInformation {
+        override val name: String = "test"
+        override val version: String = appVersion
+        override val buildTime: Long = 1L
+    }
+
     @Test
     fun recordEvents() {
         val collector = DefaultAnalyticsCollector(
@@ -139,6 +145,168 @@ class DefaultAnalyticsCollectorSpec {
                 assertThat(state.failures.size, equalTo(0))
 
                 assertThat(persistence.cached.size, equalTo(0))
+                assertThat(persistence.transmitted.size, equalTo(0))
+            }
+        }
+    }
+
+    @Test
+    fun deferCachedStateToPendingWhenAppVersionChanges() {
+        val oldApp = appInfo(appVersion = "1.0.0")
+        val newApp = appInfo(appVersion = "2.0.0")
+
+        val persistence = MockAnalyticsPersistence(
+            existing = Try.Success(
+                AnalyticsEntry
+                    .collected(app = oldApp)
+                    .withEvent(name = "old_event", attributes = emptyMap())
+            )
+        )
+
+        val collector = DefaultAnalyticsCollector(
+            app = newApp,
+            persistenceInterval = Duration.ofSeconds(60),
+            transmissionInterval = Duration.ofSeconds(60),
+            persistence = persistence,
+        )
+
+        collector.recordEvent("new_event")
+
+        runBlocking {
+            eventually {
+                val state = collector.state().get()
+
+                assertThat(state.runtime.app, equalTo(newApp.asString()))
+                assertThat(state.events.size, equalTo(1))
+                assertThat(state.events[0].event, equalTo("new_event"))
+
+                assertThat(persistence.pending.size, equalTo(1))
+                assertThat(persistence.pending[0].runtime.app, equalTo(oldApp.asString()))
+                assertThat(persistence.pending[0].events.size, equalTo(1))
+                assertThat(persistence.pending[0].events[0].event, equalTo("old_event"))
+
+                assertThat(persistence.transmitted.size, equalTo(0))
+            }
+        }
+    }
+
+    @Test
+    fun transmitPendingEntriesOnNextTransmission() {
+        val oldApp = appInfo(appVersion = "1.0.0")
+        val newApp = appInfo(appVersion = "2.0.0")
+
+        val persistence = MockAnalyticsPersistence(
+            existing = Try.Success(
+                AnalyticsEntry
+                    .collected(app = oldApp)
+                    .withEvent(name = "old_event", attributes = emptyMap())
+            )
+        )
+
+        val collector = DefaultAnalyticsCollector(
+            app = newApp,
+            persistenceInterval = Duration.ofSeconds(60),
+            transmissionInterval = Duration.ofSeconds(60),
+            persistence = persistence,
+        )
+
+        collector.recordEvent("new_event")
+        collector.send()
+
+        runBlocking {
+            eventually {
+                assertThat(persistence.pending.size, equalTo(0))
+
+                assertThat(persistence.transmitted.size, equalTo(2))
+
+                assertThat(persistence.transmitted[0].runtime.app, equalTo(oldApp.asString()))
+                assertThat(persistence.transmitted[0].events.size, equalTo(1))
+                assertThat(persistence.transmitted[0].events[0].event, equalTo("old_event"))
+
+                assertThat(persistence.transmitted[1].runtime.app, equalTo(newApp.asString()))
+                assertThat(persistence.transmitted[1].events.size, equalTo(1))
+                assertThat(persistence.transmitted[1].events[0].event, equalTo("new_event"))
+            }
+        }
+    }
+
+    @Test
+    fun queueMultiplePendingEntriesAcrossVersionChanges() {
+        val appV1 = appInfo(appVersion = "1.0.0")
+        val appV2 = appInfo(appVersion = "2.0.0")
+        val appV3 = appInfo(appVersion = "3.0.0")
+
+        val persistence = MockAnalyticsPersistence(
+            existing = Try.Success(
+                AnalyticsEntry
+                    .collected(app = appV2)
+                    .withEvent(name = "v2_event", attributes = emptyMap())
+            )
+        )
+        persistence.cachePending(
+            listOf(
+                AnalyticsEntry
+                    .collected(app = appV1)
+                    .withEvent(name = "v1_event", attributes = emptyMap())
+            )
+        )
+
+        val collector = DefaultAnalyticsCollector(
+            app = appV3,
+            persistenceInterval = Duration.ofSeconds(60),
+            transmissionInterval = Duration.ofSeconds(60),
+            persistence = persistence,
+        )
+
+        runBlocking {
+            eventually {
+                val state = collector.state().get()
+
+                assertThat(state.runtime.app, equalTo(appV3.asString()))
+
+                assertThat(persistence.pending.size, equalTo(2))
+
+                assertThat(persistence.pending[0].runtime.app, equalTo(appV1.asString()))
+                assertThat(persistence.pending[0].events[0].event, equalTo("v1_event"))
+
+                assertThat(persistence.pending[1].runtime.app, equalTo(appV2.asString()))
+                assertThat(persistence.pending[1].events[0].event, equalTo("v2_event"))
+            }
+        }
+    }
+
+    @Test
+    fun retainPendingWhenTransmissionFails() {
+        val oldApp = appInfo(appVersion = "1.0.0")
+        val newApp = appInfo(appVersion = "2.0.0")
+
+        val persistence = object : MockAnalyticsPersistence(
+            existing = Try.Success(
+                AnalyticsEntry
+                    .collected(app = oldApp)
+                    .withEvent(name = "old_event", attributes = emptyMap())
+            )
+        ) {
+            override suspend fun transmit(entry: AnalyticsEntry): Try<Unit> =
+                Try.Failure(RuntimeException("Test failure"))
+        }
+
+        val collector = DefaultAnalyticsCollector(
+            app = newApp,
+            persistenceInterval = Duration.ofSeconds(60),
+            transmissionInterval = Duration.ofSeconds(60),
+            persistence = persistence,
+        )
+
+        collector.send()
+
+        runBlocking {
+            eventually {
+                assertThat(persistence.pending.size, equalTo(1))
+                assertThat(persistence.pending[0].runtime.app, equalTo(oldApp.asString()))
+                assertThat(persistence.pending[0].events.size, equalTo(1))
+                assertThat(persistence.pending[0].events[0].event, equalTo("old_event"))
+
                 assertThat(persistence.transmitted.size, equalTo(0))
             }
         }

@@ -101,6 +101,137 @@ struct DefaultAnalyticsCollectorTests {
         }
     }
 
+    @Test("defers the cached entry to the pending queue when the app version changes")
+    func deferCachedStateToPendingWhenAppVersionChanges() async {
+        let oldApp = TestApplicationInformation(version: "1.0.0")
+        let newApp = TestApplicationInformation(version: "2.0.0")
+
+        let existing = AnalyticsEntry.Collected(app: oldApp)
+            .withEvent(name: "old_event", attributes: [:])
+        let persistence = MockAnalyticsPersistence(existing: .success(.collected(existing)))
+
+        let collector = DefaultAnalyticsCollector(
+            app: newApp,
+            persistenceInterval: 60,
+            transmissionInterval: 60,
+            persistence: persistence
+        )
+
+        await collector.recordEvent(name: "new_event")
+
+        await eventually {
+            guard case .success(let state) = await collector.state() else { return false }
+            let pending = await persistence.pending
+            let transmitted = await persistence.transmitted
+            return state.runtime.app == newApp.asString()
+                && state.events.count == 1
+                && state.events[0].event == "new_event"
+                && pending.count == 1
+                && pending[0].runtime.app == oldApp.asString()
+                && pending[0].events.count == 1
+                && pending[0].events[0].event == "old_event"
+                && transmitted.isEmpty
+        }
+    }
+
+    @Test("transmits pending entries on the next transmission")
+    func transmitPendingEntriesOnNextTransmission() async {
+        let oldApp = TestApplicationInformation(version: "1.0.0")
+        let newApp = TestApplicationInformation(version: "2.0.0")
+
+        let existing = AnalyticsEntry.Collected(app: oldApp)
+            .withEvent(name: "old_event", attributes: [:])
+        let persistence = MockAnalyticsPersistence(existing: .success(.collected(existing)))
+
+        let collector = DefaultAnalyticsCollector(
+            app: newApp,
+            persistenceInterval: 60,
+            transmissionInterval: 60,
+            persistence: persistence
+        )
+
+        await collector.recordEvent(name: "new_event")
+        await collector.send()
+
+        await eventually {
+            let pending = await persistence.pending
+            let transmitted = await persistence.transmitted
+            return pending.isEmpty
+                && transmitted.count == 2
+                && transmitted[0].runtime.app == oldApp.asString()
+                && transmitted[0].events.count == 1
+                && transmitted[0].events[0].event == "old_event"
+                && transmitted[1].runtime.app == newApp.asString()
+                && transmitted[1].events.count == 1
+                && transmitted[1].events[0].event == "new_event"
+        }
+    }
+
+    @Test("queues multiple pending entries across version changes")
+    func queueMultiplePendingEntriesAcrossVersionChanges() async {
+        let appV1 = TestApplicationInformation(version: "1.0.0")
+        let appV2 = TestApplicationInformation(version: "2.0.0")
+        let appV3 = TestApplicationInformation(version: "3.0.0")
+
+        let existingV2 = AnalyticsEntry.Collected(app: appV2)
+            .withEvent(name: "v2_event", attributes: [:])
+        let persistence = MockAnalyticsPersistence(existing: .success(.collected(existingV2)))
+
+        let existingV1 = AnalyticsEntry.Collected(app: appV1)
+            .withEvent(name: "v1_event", attributes: [:])
+        await persistence.cachePending([.collected(existingV1)])
+
+        let collector = DefaultAnalyticsCollector(
+            app: appV3,
+            persistenceInterval: 60,
+            transmissionInterval: 60,
+            persistence: persistence
+        )
+
+        await eventually {
+            guard case .success(let state) = await collector.state() else { return false }
+            let pending = await persistence.pending
+            return state.runtime.app == appV3.asString()
+                && pending.count == 2
+                && pending[0].runtime.app == appV1.asString()
+                && pending[0].events[0].event == "v1_event"
+                && pending[1].runtime.app == appV2.asString()
+                && pending[1].events[0].event == "v2_event"
+        }
+    }
+
+    @Test("retains pending entries when transmission fails")
+    func retainPendingWhenTransmissionFails() async {
+        let oldApp = TestApplicationInformation(version: "1.0.0")
+        let newApp = TestApplicationInformation(version: "2.0.0")
+
+        let existing = AnalyticsEntry.Collected(app: oldApp)
+            .withEvent(name: "old_event", attributes: [:])
+        let persistence = MockAnalyticsPersistence(
+            existing: .success(.collected(existing)),
+            transmitMode: .failure(TestFailure(message: "Test failure"))
+        )
+
+        let collector = DefaultAnalyticsCollector(
+            app: newApp,
+            persistenceInterval: 60,
+            transmissionInterval: 60,
+            persistence: persistence
+        )
+
+        await collector.send()
+
+        await eventually {
+            let pending = await persistence.pending
+            let transmitted = await persistence.transmitted
+            return pending.count == 1
+                && pending[0].runtime.app == oldApp.asString()
+                && pending[0].events.count == 1
+                && pending[0].events[0].event == "old_event"
+                && transmitted.isEmpty
+        }
+    }
+
     @Test("caches state locally on the persistence interval")
     func supportCachingStateLocally() async {
         let persistence = MockAnalyticsPersistence(lastTransmittedOverride: Date())
@@ -226,5 +357,11 @@ struct DefaultAnalyticsCollectorTests {
     private struct TestFailure: LocalizedError {
         let message: String
         var errorDescription: String? { message }
+    }
+
+    private struct TestApplicationInformation: ApplicationInformation {
+        let name: String = "test"
+        let version: String
+        let buildTime: Int64 = 1
     }
 }

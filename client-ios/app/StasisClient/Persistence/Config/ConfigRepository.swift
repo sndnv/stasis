@@ -50,6 +50,7 @@ public final class ConfigRepository: @unchecked Sendable {
 
         public enum Analytics {
             public static let entryCache = "analytics_entry_cache"
+            public static let pendingCache = "analytics_pending_cache"
         }
     }
 
@@ -191,7 +192,8 @@ public final class ConfigRepository: @unchecked Sendable {
                 Keys.General.isFirstRun,
                 Keys.General.savedUsername,
                 Keys.General.lastProcessedCommand,
-                Keys.Analytics.entryCache
+                Keys.Analytics.entryCache,
+                Keys.Analytics.pendingCache
             ]
         for key in keys { preferences.removeObject(forKey: key) }
     }
@@ -365,6 +367,14 @@ public extension UserDefaults {
 
     func putAnalyticsCachedEntry(_ entry: String) {
         set(entry, forKey: ConfigRepository.Keys.Analytics.entryCache)
+    }
+
+    func analyticsPendingEntries() -> String? {
+        string(forKey: ConfigRepository.Keys.Analytics.pendingCache)
+    }
+
+    func putAnalyticsPendingEntries(_ entries: String) {
+        set(entries, forKey: ConfigRepository.Keys.Analytics.pendingCache)
     }
 
     private func integerOrDefault(forKey key: String, default fallback: Int) -> Int {

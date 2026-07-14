@@ -1,10 +1,13 @@
 package stasis.client_android.activities.fragments
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.widget.Toast
@@ -213,12 +216,18 @@ class SettingsFragment : PreferenceFragmentCompat(), DynamicArguments.Provider {
                     val clipboard =
                         context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-                    clipboard.setPrimaryClip(
-                        ClipData.newPlainText(
-                            getString(R.string.settings_manage_device_secret_export_clip_label),
-                            secret
-                        )
+                    val clip = ClipData.newPlainText(
+                        getString(R.string.settings_manage_device_secret_export_clip_label),
+                        secret
                     )
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        clip.description.extras = PersistableBundle().apply {
+                            putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+                        }
+                    }
+
+                    clipboard.setPrimaryClip(clip)
 
                     providerContext.analytics.recordEvent(name = "export_device_secret")
 

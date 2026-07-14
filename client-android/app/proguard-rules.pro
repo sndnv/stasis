@@ -16,6 +16,9 @@
 -dontwarn groovy.**
 -dontwarn org.codehaus.groovy.**
 -dontwarn org.ccil.cowan.tagsoup.**
+-dontwarn org.joda.convert.FromString
+-dontwarn org.joda.convert.ToString
+-dontwarn java.time.zone.ZoneRulesProvider
 
 # used for (error) messages and notifications
 -keepnames class stasis.client_android.lib.ops.Operation$* { *; }

@@ -7,6 +7,8 @@ part 'schedule.freezed.dart';
 
 part 'schedule.g.dart';
 
+const scheduleMinInterval = Duration(minutes: 5);
+
 @freezed
 abstract class Schedule with _$Schedule {
   @JsonSerializable(fieldRename: FieldRename.snake)
