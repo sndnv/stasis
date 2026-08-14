@@ -34,15 +34,6 @@ dev_dependencies:
   freezed: ^3.2.5
   json_serializable: ^6.13.0
   mockito: ^5.6.3
-  msix: ^3.16.8
-
-msix_config:
-  display_name: stasis
-  publisher_display_name: sndnv
-  identity_name: com.github.sndnv.stasis.clientUi
-  logo_path: assets/logo.png
-  capabilities: internetClient
-  execution_alias: stasis-ui
 
 flutter:
   uses-material-design: true

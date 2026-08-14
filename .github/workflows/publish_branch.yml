@@ -259,14 +259,14 @@ jobs:
           cd client-ui
           flutter pub get
           dart run build_runner build
-          dart run msix:create --install-certificate false
-          Move-Item build\windows\x64\runner\Release\stasis_client_ui.msix stasis-client-ui-windows-${{ github.ref_name }}.msix
+          flutter build windows
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath stasis-client-ui-windows-${{ github.ref_name }}.zip -Force
 
       - name: Upload client-ui Windows artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: client-ui-windows
-          path: client-ui/stasis-client-ui-windows-${{ github.ref_name }}.msix
+          path: client-ui/stasis-client-ui-windows-${{ github.ref_name }}.zip
           if-no-files-found: error
           retention-days: 1
 

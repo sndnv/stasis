@@ -64,12 +64,10 @@ Log-Debug "Removing python venv from [$CLIENT_VENV_PATH]..."
 Remove-Item -Path $CLIENT_VENV_PATH -Recurse -Force -ErrorAction SilentlyContinue
 
 Log-Info "Uninstalling [stasis-client-ui]..."
-$PACKAGE = Get-AppxPackage -Name 'com.github.sndnv.stasis.clientUi' -ErrorAction SilentlyContinue
-if ($PACKAGE) {
-    Remove-AppxPackage -Package $PACKAGE.PackageFullName
-} else {
-    Log-Debug "No MSIX package found"
-}
+$CLIENT_UI_PATH = "$CLIENT_PATH\ui"
+Remove-Item -Path $CLIENT_UI_PATH -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\stasis.lnk" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$CLIENT_USER_HOME\Desktop\stasis.lnk" -Force -ErrorAction SilentlyContinue
 
 Log-Info "Removing PATH entries..."
 $USER_PATH = [Environment]::GetEnvironmentVariable('Path', 'User')

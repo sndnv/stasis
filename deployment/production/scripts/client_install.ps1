@@ -53,7 +53,7 @@ if (-not $PYTHON3_VERSION_ACTUAL -or [int]$PYTHON3_VERSION_ACTUAL -lt $PYTHON3_V
 }
 
 $CLIENT_UI_TARGET = 'windows'
-$CLIENT_UI_EXT = 'msix'
+$CLIENT_UI_EXT = 'zip'
 
 Log-Debug "Target system detected as [$CLIENT_UI_TARGET]"
 
@@ -71,10 +71,11 @@ if ($SkipDownload) {
         exit 1
     } elseif ($DOWNLOAD_DIRS.Count -eq 1) {
         $ACTUAL_VERSION = $DOWNLOAD_DIRS[0].Name -replace '^stasis-download-', ''
+        $ACTUAL_PYTHON_VERSION = ($ACTUAL_VERSION -replace '-', '+').ToLower()
         $DOWNLOAD_DIR = $DOWNLOAD_DIRS[0].FullName
 
         $STASIS_CLIENT_FILE = "$DOWNLOAD_DIR\stasis-client-$ACTUAL_VERSION.zip"
-        $STASIS_CLIENT_CLI_FILE = "$DOWNLOAD_DIR\stasis_client_cli-$ACTUAL_VERSION-py3-none-any.whl"
+        $STASIS_CLIENT_CLI_FILE = "$DOWNLOAD_DIR\stasis_client_cli-$ACTUAL_PYTHON_VERSION-py3-none-any.whl"
         $STASIS_CLIENT_UI_FILE = "$DOWNLOAD_DIR\stasis-client-ui-$CLIENT_UI_TARGET-$ACTUAL_VERSION.$CLIENT_UI_EXT"
 
         $FILE_MISSING = $false
@@ -133,9 +134,11 @@ if ($SkipDownload) {
     $DOWNLOAD_DIR = "$DOWNLOAD_DIR_BASE$ACTUAL_VERSION"
     New-Item -ItemType Directory -Force -Path $DOWNLOAD_DIR | Out-Null
 
+    $ACTUAL_PYTHON_VERSION = ($ACTUAL_VERSION -replace '-', '+').ToLower()
+
     $ASSETS = @(
         "stasis-client-$ACTUAL_VERSION.zip",
-        "stasis_client_cli-$ACTUAL_VERSION-py3-none-any.whl",
+        "stasis_client_cli-$ACTUAL_PYTHON_VERSION-py3-none-any.whl",
         "stasis-client-ui-$CLIENT_UI_TARGET-$ACTUAL_VERSION.$CLIENT_UI_EXT"
     )
 
@@ -153,8 +156,8 @@ Log-Debug "User detected with home directory at [$CLIENT_USER_HOME]"
 
 $CLIENT_ARCHIVE = "$DOWNLOAD_DIR\stasis-client-$ACTUAL_VERSION.zip"
 $CLIENT_ARCHIVE_NAME = [System.IO.Path]::GetFileNameWithoutExtension($CLIENT_ARCHIVE) -replace '^stasis-client-v', 'stasis-client-'
-$CLIENT_CLI_ARCHIVE = "$DOWNLOAD_DIR\stasis_client_cli-$ACTUAL_VERSION-py3-none-any.whl"
-$CLIENT_UI_BINARY = "$DOWNLOAD_DIR\stasis-client-ui-$CLIENT_UI_TARGET-$ACTUAL_VERSION.$CLIENT_UI_EXT"
+$CLIENT_CLI_ARCHIVE = "$DOWNLOAD_DIR\stasis_client_cli-$ACTUAL_PYTHON_VERSION-py3-none-any.whl"
+$CLIENT_UI_ARCHIVE = "$DOWNLOAD_DIR\stasis-client-ui-$CLIENT_UI_TARGET-$ACTUAL_VERSION.$CLIENT_UI_EXT"
 
 $CLIENT_PATH = "$CLIENT_USER_HOME\stasis-client"
 $CLIENT_VENV_PATH = "$CLIENT_PATH\.venv"
@@ -174,16 +177,16 @@ Log-Debug "    CLIENT_CONFIG_PATH = $CLIENT_CONFIG_PATH"
 Log-Debug "    CLIENT_CERTS_PATH = $CLIENT_CERTS_PATH"
 Log-Debug "    CLIENT_LOGS_PATH = $CLIENT_LOGS_PATH"
 Log-Debug "    CLIENT_STATE_PATH = $CLIENT_STATE_PATH"
-Log-Debug "    CLIENT_UI_BINARY = $CLIENT_UI_BINARY"
+Log-Debug "    CLIENT_UI_ARCHIVE = $CLIENT_UI_ARCHIVE"
 
 $CLIENT_ARCHIVE_CHECKSUM = (Get-FileHash -Algorithm SHA256 $CLIENT_ARCHIVE).Hash
 $CLIENT_CLI_ARCHIVE_CHECKSUM = (Get-FileHash -Algorithm SHA256 $CLIENT_CLI_ARCHIVE).Hash
-$CLIENT_UI_BINARY_CHECKSUM = (Get-FileHash -Algorithm SHA256 $CLIENT_UI_BINARY).Hash
+$CLIENT_UI_ARCHIVE_CHECKSUM = (Get-FileHash -Algorithm SHA256 $CLIENT_UI_ARCHIVE).Hash
 
 Log-Debug "  Files:"
 Log-Debug "    $CLIENT_ARCHIVE_CHECKSUM  $CLIENT_ARCHIVE"
 Log-Debug "    $CLIENT_CLI_ARCHIVE_CHECKSUM  $CLIENT_CLI_ARCHIVE"
-Log-Debug "    $CLIENT_UI_BINARY_CHECKSUM  $CLIENT_UI_BINARY"
+Log-Debug "    $CLIENT_UI_ARCHIVE_CHECKSUM  $CLIENT_UI_ARCHIVE"
 
 Log-Info "Installing [stasis-client]..."
 
@@ -208,24 +211,74 @@ New-Item -ItemType Directory -Force -Path "$CLIENT_STATE_PATH\recoveries" | Out-
 
 Log-Debug "Extracting client from [$CLIENT_ARCHIVE] to [$CLIENT_PATH]..."
 Expand-Archive -Path $CLIENT_ARCHIVE -DestinationPath $CLIENT_PATH -Force
-Move-Item -Path "$CLIENT_PATH\$CLIENT_ARCHIVE_NAME\*" -Destination $CLIENT_PATH -Force
+Copy-Item -Path "$CLIENT_PATH\$CLIENT_ARCHIVE_NAME\*" -Destination $CLIENT_PATH -Recurse -Force
 Remove-Item -Path "$CLIENT_PATH\$CLIENT_ARCHIVE_NAME" -Recurse -Force
 
 Log-Debug "Setting up new python venv in [$CLIENT_VENV_PATH]..."
-try { & python3 -m venv $CLIENT_VENV_PATH 2>$null } catch {}
-if ($LASTEXITCODE -ne 0) {
+if (Get-Command python3 -ErrorAction SilentlyContinue) {
+    & python3 -m venv $CLIENT_VENV_PATH
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
     & python -m venv $CLIENT_VENV_PATH
+} else {
+    Log-Error "Python 3 is required to install the client CLI but was not found"
+    exit 1
+}
+if ($LASTEXITCODE -ne 0) {
+    Log-Error "Failed to create the python venv in [$CLIENT_VENV_PATH]"
+    exit 1
 }
 
 & "$CLIENT_VENV_PATH\Scripts\Activate.ps1"
 
 Log-Info "Installing [stasis-client-cli]..."
 & pip install $CLIENT_CLI_ARCHIVE
+if ($LASTEXITCODE -ne 0) {
+    Log-Error "Failed to install [stasis-client-cli]"
+    exit 1
+}
 
 & deactivate
 
 Log-Info "Installing [stasis-client-ui]..."
-Add-AppxPackage -Path $CLIENT_UI_BINARY
+
+$CLIENT_UI_PATH = "$CLIENT_PATH\ui"
+$CLIENT_UI_EXE = "$CLIENT_UI_PATH\stasis_client_ui.exe"
+
+Log-Debug "Setting up UI directory [$CLIENT_UI_PATH]..."
+if (Test-Path $CLIENT_UI_PATH) {
+    Remove-Item -Path $CLIENT_UI_PATH -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $CLIENT_UI_PATH | Out-Null
+
+Log-Debug "Extracting UI from [$CLIENT_UI_ARCHIVE] to [$CLIENT_UI_PATH]..."
+Expand-Archive -Path $CLIENT_UI_ARCHIVE -DestinationPath $CLIENT_UI_PATH -Force
+
+if (-not (Test-Path $CLIENT_UI_EXE)) {
+    Log-Error "UI executable not found after extraction: [$CLIENT_UI_EXE]"
+    exit 1
+}
+
+function New-UiShortcut {
+    param(
+        [Parameter(Mandatory = $true)][string]$ShortcutPath
+    )
+
+    $Shell = New-Object -ComObject WScript.Shell
+    $Shortcut = $Shell.CreateShortcut($ShortcutPath)
+    $Shortcut.TargetPath = $CLIENT_UI_EXE
+    $Shortcut.WorkingDirectory = $CLIENT_UI_PATH
+    $Shortcut.Description = 'stasis - client user interface'
+    $Shortcut.Save()
+}
+
+$START_MENU_UI_SHORTCUT = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\stasis.lnk"
+$DESKTOP_UI_SHORTCUT = "$CLIENT_USER_HOME\Desktop\stasis.lnk"
+
+Log-Debug "Creating Start Menu shortcut [$START_MENU_UI_SHORTCUT]..."
+New-UiShortcut -ShortcutPath $START_MENU_UI_SHORTCUT
+
+Log-Debug "Creating Desktop shortcut [$DESKTOP_UI_SHORTCUT]..."
+New-UiShortcut -ShortcutPath $DESKTOP_UI_SHORTCUT
 
 Log-Info "Linking executables..."
 
